@@ -25,6 +25,15 @@ const {
     <link rel="icon" href="/brand/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/brand/icons/gizlet-180.png" />
     <title>{title}</title>
+    <script is:inline>
+      {`(() => {
+        const preference = localStorage.getItem('gizlet-theme');
+        const theme = preference === 'dark' || preference === 'light'
+          ? preference
+          : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = theme;
+      })()`}
+    </script>
   </head>
   <body>
     <div class="site-shell">

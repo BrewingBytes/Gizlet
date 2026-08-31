@@ -25,12 +25,24 @@ const navigationItems = [
       <button class="site-header__control" type="button" aria-label="Search Gizlet">
         Search
       </button>
-      <button class="site-header__control" type="button" aria-label="Choose color theme">
+      <button
+        class="site-header__control"
+        type="button"
+        data-theme-toggle
+        aria-label="Choose color theme"
+        aria-pressed="false"
+      >
         Theme
       </button>
     </div>
   </div>
 </header>
+
+<script>
+  import { initializeThemeToggle } from '../scripts/theme';
+
+  initializeThemeToggle();
+</script>
 
 <style>
   .site-header {
