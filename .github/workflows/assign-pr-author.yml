@@ -7,7 +7,7 @@ on:
       - reopened
 
 permissions:
-  issues: write
+  pull-requests: write
 
 jobs:
   assign-author:
@@ -16,12 +16,4 @@ jobs:
 
     steps:
       - name: Assign pull request author
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.issues.addAssignees({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              assignees: [context.payload.pull_request.user.login],
-            });
+        uses: toshimaru/auto-author-assign@v3.0.3
