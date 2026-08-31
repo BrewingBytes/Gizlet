@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Production architecture and stack decision record, plus repository agent guidance.
 - Minimal Astro application foundation with strict TypeScript and pnpm.
 - Renovate dependency-update policy.
+- Approved Gizlet brand assets and design system reference.
 
 ## Release policy
 

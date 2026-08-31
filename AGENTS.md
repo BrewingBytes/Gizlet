@@ -4,7 +4,7 @@
 
 Gizlet is a static-first collection of small browser utilities. It prioritizes fast loading, accessible interactions, and local processing. For tools marked local, user files and entered content must stay on-device.
 
-Read [docs/architecture.md](docs/architecture.md) before changing the application stack or adding a dependency. GitHub issues define the scope and acceptance criteria for each unit of work.
+Read [docs/architecture.md](docs/architecture.md) before changing the application stack or adding a dependency, and read [design.md](design.md) before visual UI work. GitHub issues define the scope and acceptance criteria for each unit of work.
 
 ## Architecture constraints
 

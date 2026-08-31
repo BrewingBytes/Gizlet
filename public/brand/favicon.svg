@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title>Gizlet icon</title>
+<rect x="4" y="4" width="120" height="120" rx="28" fill="#F6A500"/>
+<g fill="#0F172A">
+  <path d="M84 43c-5-5-12-8-20-8-15 0-27 11-27 26s12 27 27 27c8 0 14-3 18-7V68H63V54h34v32c-9 10-20 15-34 15-24 0-43-17-43-40s19-40 43-40c12 0 22 4 31 11L84 43z"/>
+  <path d="M45 22l-6-14 8-3 6 14-8 3zm20-5L64 2h9l1 15h-9zm19 5 8-13 8 5-8 13-8-5z"/>
+</g>
+</svg>

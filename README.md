@@ -6,6 +6,8 @@ Gizlet is a static-first collection of focused web utilitiesâ€”called *Gizlets*â
 
 The approved application architecture, toolchain, dependency policy, and Rust/WASM adoption rule are documented in [docs/architecture.md](docs/architecture.md).
 
+The approved brand identity and UI guidance are in [design.md](design.md); reusable logo, icon, favicon, app-icon, and brand-reference assets live in `public/brand/`.
+
 ## Development
 
 Gizlet uses Node.js 24 LTS and pnpm 10.
