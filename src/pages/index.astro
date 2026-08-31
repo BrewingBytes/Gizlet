@@ -1,8 +1,290 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { toolRegistry } from '../data/tools';
+
+const categories = [
+  'Images',
+  'PDF',
+  'SEO',
+  'Developer',
+  'Text',
+  'Generators',
+  'Video',
+  'Audio',
+  'Security',
+  'Calculators',
+];
 ---
 
-<BaseLayout>
-  <h1>Gizlet</h1>
-  <p>Small, useful tools that run in your browser.</p>
+<BaseLayout description="Useful internet things, without the nonsense. Small browser tools from Gizlet.">
+  <section class="homepage-intro" aria-labelledby="homepage-title">
+    <p class="metadata">Small browser tools, made properly</p>
+    <h1 id="homepage-title">Useful internet things, without the nonsense.</h1>
+    <p class="homepage-intro__copy">
+      A little tool for the annoying thing you need to do right now. No signup, no fuss.
+    </p>
+
+    <form class="tool-search" role="search">
+      <label for="tool-search">I need to…</label>
+      <input
+        id="tool-search"
+        name="tool-search"
+        type="search"
+        placeholder="compress a photo, merge a PDF, make JSON-LD…"
+        autocomplete="off"
+      />
+    </form>
+  </section>
+
+  <aside class="ad-reservation" aria-label="Advertisement">
+    <p class="metadata">Advertisement</p>
+  </aside>
+
+  <section id="tools" class="tool-index" aria-labelledby="popular-tools-title">
+    <div class="section-heading">
+      <p class="metadata">Start here</p>
+      <h2 id="popular-tools-title">Popular Gizlets</h2>
+    </div>
+
+    <ol class="tool-index__list">
+      {
+        toolRegistry.map((tool) => (
+          <li class="tool-index__item">
+            <a href={tool.path}>
+              <span class="tool-index__number">{String(tool.id).padStart(3, '0')}</span>
+              <span class="tool-index__details">
+                <strong>{tool.name}</strong>
+                <span>{tool.description}</span>
+              </span>
+              {tool.processesLocally && <span class="status-local">Local</span>}
+              <span class="tool-index__category">{tool.category}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <nav class="category-strip" aria-label="Browse tool categories">
+    <p class="metadata">Browse by type</p>
+    <ul>
+      {
+        categories.map((category) => (
+          <li><a href="#tools">{category}</a></li>
+        ))
+      }
+    </ul>
+  </nav>
+
+  <section id="pro" class="pro-strip" aria-labelledby="pro-title">
+    <div>
+      <p class="metadata">Gizlet Pro</p>
+      <h2 id="pro-title">Same Gizlets. No ads.</h2>
+    </div>
+    <p>
+      Gizlet Pro removes advertisements while keeping every tool just as useful. Nothing is
+      locked behind it.
+    </p>
+  </section>
 </BaseLayout>
+
+<style>
+  .homepage-intro {
+    max-width: 48rem;
+  }
+
+  .homepage-intro h1 {
+    max-width: 42rem;
+    margin-top: var(--space-2);
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+  }
+
+  .homepage-intro__copy {
+    max-width: 38rem;
+    color: var(--text-muted);
+    font-size: var(--font-size-lg);
+  }
+
+  .tool-search {
+    max-width: 42rem;
+    margin-top: var(--space-5);
+  }
+
+  .tool-search label {
+    display: block;
+    margin-bottom: var(--space-1);
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+  }
+
+  .tool-search input {
+    border-width: var(--border-strong-width);
+    border-color: var(--text);
+    font-size: var(--font-size-lg);
+  }
+
+  .ad-reservation {
+    display: grid;
+    min-height: 5.625rem;
+    place-items: center;
+    margin-top: var(--space-6);
+    border-top: var(--border-width) solid var(--border);
+    border-bottom: var(--border-width) solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .ad-reservation .metadata {
+    margin: 0;
+  }
+
+  .tool-index {
+    margin-top: var(--space-7);
+  }
+
+  .section-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+  }
+
+  .section-heading .metadata {
+    margin: 0;
+  }
+
+  .section-heading h2 {
+    margin: 0;
+  }
+
+  .tool-index__list {
+    margin: 0;
+    padding: 0;
+    border-top: var(--border-width) solid var(--border);
+    list-style: none;
+  }
+
+  .tool-index__item {
+    border-bottom: var(--border-width) solid var(--border);
+  }
+
+  .tool-index__item a {
+    display: grid;
+    grid-template-columns: 4rem minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-2);
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .tool-index__item a:hover {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .tool-index__number,
+  .tool-index__category {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .tool-index__details {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .tool-index__details strong {
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+  }
+
+  .tool-index__details span {
+    color: var(--text-muted);
+  }
+
+  .category-strip {
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: var(--border-width) solid var(--border);
+  }
+
+  .category-strip .metadata {
+    margin-bottom: var(--space-2);
+  }
+
+  .category-strip ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .category-strip a {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .pro-strip {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.8fr);
+    gap: var(--space-5);
+    align-items: end;
+    margin-top: var(--space-7);
+    padding: var(--space-5);
+    border: var(--border-strong-width) solid var(--color-amber);
+    background: var(--surface);
+  }
+
+  .pro-strip .metadata {
+    margin-bottom: var(--space-1);
+  }
+
+  .pro-strip h2,
+  .pro-strip p:last-child {
+    margin: 0;
+  }
+
+  .pro-strip p:last-child {
+    color: var(--text-muted);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .tool-index__item a {
+      transition: background 120ms ease, padding-left 120ms ease;
+    }
+
+    .tool-index__item a:hover {
+      padding-left: var(--space-3);
+    }
+  }
+
+  @media (max-width: 44rem) {
+    .tool-index__item a {
+      grid-template-columns: 2.75rem minmax(0, 1fr);
+      gap: var(--space-2);
+    }
+
+    .tool-index__item .status-local,
+    .tool-index__category {
+      grid-column: 2;
+    }
+
+    .tool-index__item .status-local {
+      margin-top: var(--space-1);
+    }
+
+    .pro-strip {
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+      padding: var(--space-4);
+    }
+  }
+</style>

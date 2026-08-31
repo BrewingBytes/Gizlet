@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Reusable header, navigation, footer, and page layout shell.
 - Typed registry for the planned launch Gizlets, including their routes, categories, search terms, local-processing status, and launch status.
 - Add a light and dark theme toggle that follows the system preference by default and persists an explicit choice locally.
+- Editorial homepage with an intent-led search field, labeled ad reservation, registry-driven popular Gizlets, category navigation, and a Gizlet Pro explanation.
 
 ### Fixed
 
