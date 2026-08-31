@@ -24,3 +24,27 @@ test('provides accessible shared navigation', async ({ page }) => {
 
   await expect(page.getByRole('contentinfo')).toContainText('A little tool for everything.');
 });
+
+test('keeps the shared shell usable on mobile widths', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+
+  await expect(page.getByRole('banner').getByRole('button', { name: 'Search Gizlet' })).toBeVisible();
+  await expect(
+    page.getByRole('banner').getByRole('navigation', { name: 'Primary navigation' }),
+  ).toBeVisible();
+  await expect(page.getByRole('contentinfo')).toBeVisible();
+
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test('allows keyboard users to skip shared navigation', async ({ page }) => {
+  await page.goto('/');
+
+  const skipLink = page.getByRole('link', { name: 'Skip to content' });
+  await page.keyboard.press('Tab');
+  await expect(skipLink).toBeFocused();
+
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('main')).toBeFocused();
+});
