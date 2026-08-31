@@ -1,22 +1,8 @@
 ---
-import '../styles/global.css';
+import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg" />
-    <link rel="icon" href="/brand/favicon.ico" sizes="any" />
-    <link rel="apple-touch-icon" href="/brand/icons/gizlet-180.png" />
-    <title>Gizlet</title>
-  </head>
-  <body>
-    <main>
-      <h1>Gizlet</h1>
-      <p>Small, useful tools that run in your browser.</p>
-    </main>
-  </body>
-</html>
+<BaseLayout>
+  <h1>Gizlet</h1>
+  <p>Small, useful tools that run in your browser.</p>
+</BaseLayout>

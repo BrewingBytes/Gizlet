@@ -1,0 +1,52 @@
+<footer class="site-footer">
+  <div class="site-container site-footer__inner">
+    <p class="site-footer__tagline">A little tool for everything.</p>
+    <nav aria-label="Footer navigation">
+      <a href="/#tools">Tools</a>
+      <a href="/#pro">Pro</a>
+    </nav>
+    <p class="metadata">Built by BrewingBytes</p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: auto;
+    border-top: var(--border-width) solid var(--border);
+  }
+
+  .site-footer__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-top: var(--space-5);
+    padding-bottom: var(--space-5);
+  }
+
+  .site-footer__tagline,
+  .site-footer .metadata {
+    margin: 0;
+  }
+
+  .site-footer__tagline {
+    font-family: var(--font-display);
+    font-weight: 700;
+  }
+
+  .site-footer nav {
+    display: flex;
+    gap: var(--space-3);
+  }
+
+  .site-footer a {
+    color: var(--text);
+  }
+
+  @media (max-width: 44rem) {
+    .site-footer__inner {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>

@@ -1,0 +1,143 @@
+---
+const navigationItems = [
+  { href: '/#tools', label: 'Tools' },
+  { href: '/#pro', label: 'Pro' },
+];
+---
+
+<header class="site-header">
+  <div class="site-container site-header__inner">
+    <a class="site-logo" href="/" aria-label="Gizlet home">
+      <img src="/brand/gizlet-logo.svg" alt="Gizlet" width="160" height="48" />
+    </a>
+
+    <nav class="site-navigation" aria-label="Primary navigation">
+      <ul>
+        {
+          navigationItems.map(({ href, label }) => (
+            <li><a href={href}>{label}</a></li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="site-header__actions">
+      <button class="site-header__control" type="button" aria-label="Search Gizlet">
+        Search
+      </button>
+      <button class="site-header__control" type="button" aria-label="Choose color theme">
+        Theme
+      </button>
+    </div>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    border-bottom: var(--border-width) solid var(--border);
+  }
+
+  .site-header__inner {
+    display: flex;
+    min-height: 5rem;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .site-logo {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    color: inherit;
+    line-height: 0;
+  }
+
+  .site-logo:hover {
+    color: inherit;
+  }
+
+  .site-logo img {
+    width: 10rem;
+    height: auto;
+  }
+
+  .site-navigation {
+    margin-right: auto;
+  }
+
+  .site-navigation ul,
+  .site-header__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .site-navigation ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .site-navigation a {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    color: var(--text);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .site-navigation a:hover {
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+  }
+
+  .site-header__control {
+    min-width: 2.75rem;
+    border-color: var(--text);
+    background: transparent;
+    color: var(--text);
+  }
+
+  @media (max-width: 44rem) {
+    .site-header__inner {
+      min-height: 0;
+      flex-wrap: wrap;
+      gap: var(--space-2) var(--space-3);
+      padding-top: var(--space-3);
+      padding-bottom: var(--space-3);
+    }
+
+    .site-logo {
+      margin-right: auto;
+    }
+
+    .site-navigation {
+      order: 3;
+      width: 100%;
+      margin-right: 0;
+    }
+
+    .site-navigation ul {
+      justify-content: space-between;
+    }
+
+    .site-navigation li {
+      flex: 1;
+    }
+
+    .site-navigation a {
+      width: 100%;
+    }
+
+    .site-header__actions {
+      gap: var(--space-2);
+    }
+
+    .site-header__control {
+      padding-right: var(--space-2);
+      padding-left: var(--space-2);
+    }
+  }
+</style>

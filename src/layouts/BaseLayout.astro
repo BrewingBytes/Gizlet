@@ -1,0 +1,41 @@
+---
+import SiteFooter from '../components/SiteFooter.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import '../styles/global.css';
+
+interface Props {
+  description?: string;
+  title?: string;
+}
+
+const {
+  description = 'Small, useful browser tools from Gizlet.',
+  title = 'Gizlet',
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg" />
+    <link rel="icon" href="/brand/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/brand/icons/gizlet-180.png" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <div class="site-shell">
+      <a class="skip-link" href="#main-content">Skip to content</a>
+      <SiteHeader />
+      <main id="main-content" class="site-main" tabindex="-1">
+        <div class="site-container">
+          <slot />
+        </div>
+      </main>
+      <SiteFooter />
+    </div>
+  </body>
+</html>
