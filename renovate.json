@@ -8,6 +8,7 @@
   "semanticCommits": "enabled",
   "semanticCommitType": "chore",
   "semanticCommitScope": "deps",
+  "enabledManagers": ["npm", "github-actions"],
   "packageRules": [
     {
       "groupName": "Astro dependencies",
