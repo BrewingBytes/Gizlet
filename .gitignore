@@ -7,6 +7,10 @@ dist/
 # dependencies
 node_modules/
 
+# browser-test output
+playwright-report/
+test-results/
+
 # environment files
 .env
 .env.*

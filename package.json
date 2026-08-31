@@ -12,14 +12,18 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "astro": "^7.2.9"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^26.4.0",
     "typescript": "^6.0.3",
+    "vite": "^8.2.2",
     "vitest": "^4.1.11"
   }
 }

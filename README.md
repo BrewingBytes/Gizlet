@@ -20,6 +20,16 @@ pnpm dev
 
 The standard validation commands are `pnpm run check`, `pnpm test`, and `pnpm run build`. Browser test coverage is added in the test-foundation milestone.
 
+### Tests
+
+Run unit tests with `pnpm test`. Run browser smoke tests with `pnpm run test:e2e`.
+
+The first browser-test setup also needs Chromium installed locally:
+
+```sh
+pnpm exec playwright install chromium
+```
+
 ## Product principles
 
 - **Useful by default.** Each Gizlet should solve one clear task without an account, a tutorial, or unnecessary setup.

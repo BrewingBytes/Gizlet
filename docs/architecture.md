@@ -44,7 +44,7 @@ Do not import browser-only WASM code from Astro frontmatter or other build-time 
 
 ## Testing policy
 
-Test transformations, validation, filenames, registry rules, and other deterministic behavior with Vitest. Browser tests use Playwright with a local Astro web server and cover the homepage plus high-value user paths such as a tool's primary action and download/copy result.
+Test transformations, validation, filenames, registry rules, and other deterministic behavior with Vitest. Browser tests use Playwright against a local Vite preview of the Astro production build and cover the homepage plus high-value user paths such as a tool's primary action and download/copy result.
 
 The project uses these scripts once initialized:
 
