@@ -20,6 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Typed registry for the planned launch Gizlets, including their routes, categories, search terms, local-processing status, and launch status.
 - Add a light and dark theme toggle that follows the system preference by default and persists an explicit choice locally.
 
+### Fixed
+
+- Keep the Gizlet wordmark visible on dark theme backgrounds.
+
 ## Release policy
 
 - Releases use `MAJOR.MINOR.PATCH` version numbers.

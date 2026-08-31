@@ -56,6 +56,8 @@ test('uses the system theme on a first visit', async ({ page }) => {
   await page.goto('/');
 
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('.site-logo__dark')).toBeVisible();
+  await expect(page.locator('.site-logo__light')).not.toBeVisible();
   await expect(page.getByRole('button', { name: 'Switch to light theme' })).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -68,6 +70,8 @@ test('persists an explicitly selected theme across reloads', async ({ page }) =>
 
   await page.getByRole('button', { name: 'Switch to light theme' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(page.locator('.site-logo__light')).toBeVisible();
+  await expect(page.locator('.site-logo__dark')).not.toBeVisible();
   await expect(page.getByRole('button', { name: 'Switch to dark theme' })).toHaveAttribute(
     'aria-pressed',
     'false',

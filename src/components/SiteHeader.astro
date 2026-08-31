@@ -8,7 +8,14 @@ const navigationItems = [
 <header class="site-header">
   <div class="site-container site-header__inner">
     <a class="site-logo" href="/" aria-label="Gizlet home">
-      <img src="/brand/gizlet-logo.svg" alt="Gizlet" width="160" height="48" />
+      <img class="site-logo__light" src="/brand/gizlet-logo.svg" alt="" width="160" height="48" />
+      <img
+        class="site-logo__dark"
+        src="/brand/gizlet-logo-dark.svg"
+        alt=""
+        width="160"
+        height="48"
+      />
     </a>
 
     <nav class="site-navigation" aria-label="Primary navigation">
@@ -71,6 +78,33 @@ const navigationItems = [
   .site-logo img {
     width: 10rem;
     height: auto;
+  }
+
+  .site-logo__dark {
+    display: none;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .site-logo__light {
+      display: none;
+    }
+
+    .site-logo__dark {
+      display: block;
+    }
+  }
+
+  :global(:root[data-theme='light']) .site-logo__light {
+    display: block;
+  }
+
+  :global(:root[data-theme='light']) .site-logo__dark,
+  :global(:root[data-theme='dark']) .site-logo__light {
+    display: none;
+  }
+
+  :global(:root[data-theme='dark']) .site-logo__dark {
+    display: block;
   }
 
   .site-navigation {
