@@ -55,7 +55,7 @@ The project uses these scripts once initialized:
 - `test` for Vitest
 - `test:e2e` for Playwright
 
-GitHub Actions validates pull requests and pushes to `main`. It installs from the lockfile and runs checks, tests, the production build, and Playwright smoke tests without deployment secrets.
+GitHub Actions validates pull requests and pushes to `main`. The pull-request-only `Commit Title` job requires Conventional Commit subjects. The validation job installs from the lockfile and runs checks, tests, the production build, and Playwright smoke tests without deployment secrets.
 
 ## Dependency policy
 

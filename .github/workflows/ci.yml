@@ -10,6 +10,29 @@ permissions:
   contents: read
 
 jobs:
+  commit-title:
+    name: Commit Title
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate commit titles
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          invalid_titles="$(git log --format=%s "$BASE_SHA..$HEAD_SHA" | grep -Ev '^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([^)]+\))?!?: .+$' || true)"
+          if [ -n "$invalid_titles" ]; then
+            echo "Commit titles must follow Conventional Commits:"
+            echo "$invalid_titles"
+            exit 1
+          fi
+
   validate:
     name: Validate
     runs-on: ubuntu-latest
