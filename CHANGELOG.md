@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - GitHub Actions validation for Conventional Commit titles, type checks, tests, builds, and browser smoke tests.
 - Reusable Gizlet design tokens and accessible base styles, including warm dark-mode support.
 - Reusable header, navigation, footer, and page layout shell.
+- Typed registry for the planned launch Gizlets, including their routes, categories, search terms, local-processing status, and launch status.
 
 ## Release policy
 
