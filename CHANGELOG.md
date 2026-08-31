@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Approved Gizlet brand assets and design system reference.
 - Vitest and Playwright test foundations.
 - GitHub Actions validation for Conventional Commit titles, type checks, tests, builds, and browser smoke tests.
+- Reusable Gizlet design tokens and accessible base styles, including warm dark-mode support.
 
 ## Release policy
 

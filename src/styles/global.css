@@ -1,0 +1,280 @@
+/* Gizlet's shared visual foundation. Page-specific layout belongs with its route. */
+
+:root {
+  color-scheme: light dark;
+
+  --color-amber: #f6a500;
+  --color-ink: #0f172a;
+  --color-paper: #f3efe6;
+  --color-surface: #fffdfc;
+  --color-slate: #6f685e;
+  --color-soft: #e7dfd2;
+  --color-blue: #315fa8;
+  --color-green: #257a4e;
+  --color-red: #c8443a;
+  --color-warning: #a35f00;
+
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-body: Arial, Helvetica, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: clamp(2rem, 5vw, 3.5rem);
+
+  --space-1: 0.5rem;
+  --space-2: 0.75rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 2rem;
+  --space-6: 3rem;
+  --space-7: 4.5rem;
+
+  --border-width: 1px;
+  --border-strong-width: 2px;
+  --border-radius: 0.125rem;
+  --container-width: 73.75rem;
+  --focus-ring: 3px solid var(--color-amber);
+  --focus-offset: 3px;
+
+  --background: var(--color-paper);
+  --surface: var(--color-surface);
+  --text: var(--color-ink);
+  --text-muted: var(--color-slate);
+  --border: var(--color-soft);
+  --link: var(--color-blue);
+  --control-background: var(--color-surface);
+  --control-text: var(--color-ink);
+  --button-background: var(--color-ink);
+  --button-text: var(--color-paper);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1b1a17;
+    --surface: #26231e;
+    --text: #fffdf7;
+    --text-muted: #c4baaa;
+    --border: #5d564b;
+    --link: #91b8f4;
+    --control-background: #26231e;
+    --control-text: #fffdf7;
+    --button-background: #fffdf7;
+    --button-text: #0f172a;
+  }
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --background: var(--color-paper);
+  --surface: var(--color-surface);
+  --text: var(--color-ink);
+  --text-muted: var(--color-slate);
+  --border: var(--color-soft);
+  --link: var(--color-blue);
+  --control-background: var(--color-surface);
+  --control-text: var(--color-ink);
+  --button-background: var(--color-ink);
+  --button-text: var(--color-paper);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #1b1a17;
+  --surface: #26231e;
+  --text: #fffdf7;
+  --text-muted: #c4baaa;
+  --border: #5d564b;
+  --link: #91b8f4;
+  --control-background: #26231e;
+  --control-text: #fffdf7;
+  --button-background: #fffdf7;
+  --button-text: #0f172a;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  min-width: 20rem;
+  background: var(--background);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  min-height: 2.75rem;
+  padding: calc(var(--space-2) - 2px) var(--space-3);
+  border: var(--border-strong-width) solid var(--button-background);
+  border-radius: var(--border-radius);
+  background: var(--button-background);
+  color: var(--button-text);
+  cursor: pointer;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+button:hover:not(:disabled),
+input[type="button"]:hover:not(:disabled),
+input[type="submit"]:hover:not(:disabled),
+input[type="reset"]:hover:not(:disabled) {
+  box-shadow: 3px 3px 0 var(--color-amber);
+  transform: translate(-1px, -1px);
+}
+
+button:active:not(:disabled),
+input[type="button"]:active:not(:disabled),
+input[type="submit"]:active:not(:disabled),
+input[type="reset"]:active:not(:disabled) {
+  box-shadow: none;
+  transform: translate(1px, 1px);
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: calc(var(--space-2) - 1px) var(--space-2);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--control-background);
+  color: var(--control-text);
+  line-height: 1.5;
+}
+
+textarea {
+  min-height: 7.5rem;
+  resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--color-amber);
+}
+
+a {
+  color: var(--link);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+}
+
+a:hover {
+  color: var(--text);
+}
+
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0 0 var(--space-3);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+}
+
+h1 {
+  font-size: var(--font-size-2xl);
+}
+
+h2 {
+  font-size: var(--font-size-xl);
+}
+
+h3 {
+  font-size: var(--font-size-lg);
+}
+
+p,
+ul,
+ol {
+  margin: 0 0 var(--space-3);
+}
+
+.button-secondary {
+  border-color: var(--text);
+  background: transparent;
+  color: var(--text);
+}
+
+.button-secondary:hover:not(:disabled) {
+  box-shadow: 3px 3px 0 var(--color-amber);
+}
+
+.utility-text,
+.metadata {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.status-local {
+  color: var(--color-green);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.status-local::before {
+  content: "● ";
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  button,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"] {
+    transition: box-shadow 120ms ease, transform 120ms ease;
+  }
+}
