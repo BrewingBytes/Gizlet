@@ -6,6 +6,18 @@ Gizlet is a static-first collection of focused web utilitiesâ€”called *Gizlets*â
 
 The approved application architecture, toolchain, dependency policy, and Rust/WASM adoption rule are documented in [docs/architecture.md](docs/architecture.md).
 
+## Development
+
+Gizlet uses Node.js 24 LTS and pnpm 10.
+
+```sh
+corepack enable
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+The standard validation commands are `pnpm run check`, `pnpm test`, and `pnpm run build`. Browser test coverage is added in the test-foundation milestone.
+
 ## Product principles
 
 - **Useful by default.** Each Gizlet should solve one clear task without an account, a tutorial, or unnecessary setup.

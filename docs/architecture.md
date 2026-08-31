@@ -6,7 +6,7 @@ This document defines the production baseline for Gizlet v1. It is intentionally
 
 | Area | Decision |
 | --- | --- |
-| Framework | Astro 6, with `output: "static"` explicitly configured. |
+| Framework | Astro 7, with `output: "static"` explicitly configured. |
 | Runtime | Node.js 24 LTS. |
 | Package manager | pnpm 10, pinned with the `packageManager` field. Commit `pnpm-lock.yaml`. |
 | Language | TypeScript using Astro's strict configuration. |

@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Project documentation and Apache-2.0 licensing.
 - Production architecture and stack decision record, plus repository agent guidance.
+- Minimal Astro application foundation with strict TypeScript and pnpm.
+- Renovate dependency-update policy.
 
 ## Release policy
 
