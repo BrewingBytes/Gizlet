@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - Project documentation and Apache-2.0 licensing.
+- Production architecture and stack decision record, plus repository agent guidance.
 
 ## Release policy
 

@@ -4,6 +4,8 @@
 
 Gizlet is a static-first collection of focused web utilities—called *Gizlets*—for everyday image, developer, and SEO tasks. The initial product is designed to be fast, straightforward, and privacy-conscious: where a tool is marked local, its work happens in the browser rather than by uploading the user's content to a server.
 
+The approved application architecture, toolchain, dependency policy, and Rust/WASM adoption rule are documented in [docs/architecture.md](docs/architecture.md).
+
 ## Product principles
 
 - **Useful by default.** Each Gizlet should solve one clear task without an account, a tutorial, or unnecessary setup.
