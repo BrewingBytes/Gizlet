@@ -55,7 +55,7 @@ The project uses these scripts once initialized:
 - `test` for Vitest
 - `test:e2e` for Playwright
 
-GitHub Actions validation is intentionally deferred to the CI issue. It must install from the lockfile and run checks, tests, and the production build without deployment secrets.
+GitHub Actions validates pull requests and pushes to `main`. It installs from the lockfile and runs checks, tests, the production build, and Playwright smoke tests without deployment secrets.
 
 ## Dependency policy
 
