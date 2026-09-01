@@ -24,7 +24,7 @@ const categories = [
       A little tool for the annoying thing you need to do right now. No signup, no fuss.
     </p>
 
-    <form class="tool-search" role="search">
+    <form class="tool-search" role="search" data-tool-search-panel>
       <label for="tool-search">I need to…</label>
       <input
         id="tool-search"
@@ -32,7 +32,10 @@ const categories = [
         type="search"
         placeholder="compress a photo, merge a PDF, make JSON-LD…"
         autocomplete="off"
+        data-tool-search-input
       />
+      <p class="tool-search__status" aria-live="polite" data-tool-search-status></p>
+      <ol class="tool-search__results" data-tool-search-results></ol>
     </form>
   </section>
 
@@ -123,6 +126,24 @@ const categories = [
     border-width: var(--border-strong-width);
     border-color: var(--text);
     font-size: var(--font-size-lg);
+  }
+
+  .tool-search__status {
+    min-height: 1.25rem;
+    margin: var(--space-2) 0;
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .tool-search__results {
+    margin: 0;
+    padding: 0;
+    border-top: var(--border-width) solid var(--border);
+    list-style: none;
+  }
+
+  .tool-search__results li {
+    border-bottom: var(--border-width) solid var(--border);
   }
 
   .ad-reservation {

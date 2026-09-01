@@ -29,7 +29,15 @@ const navigationItems = [
     </nav>
 
     <div class="site-header__actions">
-      <button class="site-header__control" type="button" aria-label="Search Gizlet">
+      <button
+        class="site-header__control"
+        type="button"
+        aria-label="Search Gizlet"
+        aria-haspopup="dialog"
+        aria-controls="tool-search-overlay"
+        aria-expanded="false"
+        data-search-open
+      >
         Search
       </button>
       <button

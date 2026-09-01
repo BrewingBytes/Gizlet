@@ -1,6 +1,7 @@
 ---
 import SiteFooter from '../components/SiteFooter.astro';
 import SiteHeader from '../components/SiteHeader.astro';
+import ToolSearchOverlay from '../components/ToolSearchOverlay.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -39,6 +40,7 @@ const {
     <div class="site-shell">
       <a class="skip-link" href="#main-content">Skip to content</a>
       <SiteHeader />
+      <ToolSearchOverlay />
       <main id="main-content" class="site-main" tabindex="-1">
         <div class="site-container">
           <slot />
@@ -48,3 +50,9 @@ const {
     </div>
   </body>
 </html>
+
+<script>
+  import { initialiseToolSearch } from '../scripts/tool-search';
+
+  initialiseToolSearch();
+</script>
