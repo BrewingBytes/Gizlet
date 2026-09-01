@@ -8,7 +8,7 @@ const remoteTool: ToolRegistryEntry = {
   ...toolRegistry[0],
   name: 'Remote Gizlet',
   slug: 'remote-gizlet',
-  path: '/tools/remote-gizlet',
+  path: '/tools/remote-gizlet/',
   processesLocally: false,
 };
 

@@ -216,6 +216,23 @@ test('renders the editorial homepage content from the tool registry', async ({ p
   await expect(page.getByRole('heading', { name: 'Same Gizlets. No ads.' })).toBeVisible();
 });
 
+test('links Gizlet cards to canonical trailing-slash routes', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(page.getByRole('link', { name: /Compress Image/ }).first()).toHaveAttribute(
+    'href',
+    '/tools/compress-image/',
+  );
+  await expect(page.getByRole('link', { name: /Resize Image/ }).first()).toHaveAttribute(
+    'href',
+    '/tools/resize-image/',
+  );
+  await expect(page.getByRole('link', { name: /Convert Image/ }).first()).toHaveAttribute(
+    'href',
+    '/tools/convert-image/',
+  );
+});
+
 test('finds Gizlets from the homepage search by intent', async ({ page }) => {
   await page.goto('/');
 
@@ -223,6 +240,10 @@ test('finds Gizlets from the homepage search by intent', async ({ page }) => {
   const search = searchForm.getByLabel('I need to…');
   await search.fill('compress photo');
   await expect(searchForm.getByRole('link', { name: /Compress Image/ })).toBeVisible();
+  await expect(searchForm.getByRole('link', { name: /Compress Image/ })).toHaveAttribute(
+    'href',
+    '/tools/compress-image/',
+  );
   await expect(searchForm.getByText('1 Gizlet found.')).toBeVisible();
 
   await search.fill('spreadsheet');
