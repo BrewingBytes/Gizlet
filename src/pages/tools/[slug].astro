@@ -1,0 +1,66 @@
+---
+import ToolPageLayout from '../../components/ToolPageLayout.astro';
+import { getRelatedTools } from '../../data/tool-page-related';
+import { toolRegistry, type ToolRegistryEntry } from '../../data/tools';
+
+interface Props {
+  tool: ToolRegistryEntry;
+  relatedTools: readonly ToolRegistryEntry[];
+}
+
+export function getStaticPaths() {
+  return toolRegistry.map((tool) => ({
+    params: { slug: tool.slug },
+    props: {
+      tool,
+      relatedTools: getRelatedTools(tool),
+    },
+  }));
+}
+
+const { tool, relatedTools } = Astro.props;
+---
+
+<ToolPageLayout tool={tool} relatedTools={relatedTools} showRail showPostResultAd>
+  <section slot="workspace" class="tool-page-placeholder" aria-labelledby="workspace-title">
+    <p class="metadata">Coming soon</p>
+    <h2 id="workspace-title">This Gizlet is being prepared.</h2>
+    <p>Its workspace will live here, ready for one job done properly.</p>
+  </section>
+
+  <section slot="result" class="tool-page-placeholder__result" aria-label="Tool result area">
+    <p class="metadata">Results will appear here</p>
+  </section>
+</ToolPageLayout>
+
+<style>
+  .tool-page-placeholder {
+    padding: var(--space-5);
+    border: var(--border-strong-width) solid var(--text);
+    background: var(--surface);
+  }
+
+  .tool-page-placeholder .metadata {
+    margin-bottom: var(--space-2);
+  }
+
+  .tool-page-placeholder h2 {
+    max-width: 30rem;
+  }
+
+  .tool-page-placeholder p:last-child {
+    max-width: 34rem;
+    margin-bottom: 0;
+    color: var(--text-muted);
+  }
+
+  .tool-page-placeholder__result {
+    min-height: 4rem;
+    padding: var(--space-3) 0;
+    border-top: var(--border-width) solid var(--border);
+  }
+
+  .tool-page-placeholder__result .metadata {
+    margin: 0;
+  }
+</style>

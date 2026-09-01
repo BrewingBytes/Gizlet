@@ -1,0 +1,244 @@
+---
+import type { AdvertisementRailSize } from '../data/advertisement-slots';
+import { getToolProcessingStatus } from '../data/tool-page-status';
+import type { ToolRegistryEntry } from '../data/tools';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AdvertisementSlot from './AdvertisementSlot.astro';
+
+interface Props {
+  tool: ToolRegistryEntry;
+  relatedTools?: readonly ToolRegistryEntry[];
+  processingStatus?: string;
+  showPostResultAd?: boolean;
+  showRail?: boolean;
+  railSize?: AdvertisementRailSize;
+}
+
+const {
+  tool,
+  relatedTools = [],
+  processingStatus,
+  showPostResultAd = false,
+  showRail = false,
+  railSize = 'standard',
+} = Astro.props;
+const status = getToolProcessingStatus(tool, processingStatus);
+---
+
+<BaseLayout title={`${tool.name} | Gizlet`} description={tool.description}>
+  <article class="tool-page">
+    <nav class="tool-page__breadcrumb" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="/">Gizlet</a></li>
+        <li><a href="/#tools">Tools</a></li>
+        <li aria-current="page">{tool.name}</li>
+      </ol>
+    </nav>
+
+    <header class="tool-page__header">
+      <p class="metadata">{tool.category}</p>
+      <h1>{tool.name}</h1>
+      <p>{tool.description}</p>
+
+      {
+        status && (
+          <div
+            class:list={['tool-page__processing-status', { 'tool-page__processing-status--local': status.isLocal }]}
+            aria-label={status.label}
+          >
+            <p class="metadata">{status.label}</p>
+            <p>{status.description}</p>
+          </div>
+        )
+      }
+    </header>
+
+    <div class:list={['tool-page__body', { 'tool-page__body--with-rail': showRail }]}>
+      <div class="tool-page__main-column">
+        <section class="tool-page__workspace" aria-label={`${tool.name} workspace`}>
+          <slot name="workspace" />
+        </section>
+
+        <slot name="result" />
+
+        {showPostResultAd && <AdvertisementSlot variant="inline" />}
+      </div>
+
+      {showRail && <AdvertisementSlot variant="rail" railSize={railSize} />}
+    </div>
+
+    {
+      relatedTools.length > 0 && (
+        <section class="tool-page__related" aria-labelledby="related-gizlets-title">
+          <div class="tool-page__section-heading">
+            <p class="metadata">Keep going</p>
+            <h2 id="related-gizlets-title">Related Gizlets</h2>
+          </div>
+          <ul>
+            {relatedTools.map((relatedTool) => (
+              <li>
+                <a href={relatedTool.path}>
+                  <span>
+                    <strong>{relatedTool.name}</strong>
+                    <span>{relatedTool.description}</span>
+                  </span>
+                  {relatedTool.processesLocally && <span class="status-local">Local</span>}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+  </article>
+</BaseLayout>
+
+<style>
+  .tool-page {
+    max-width: var(--container-width);
+  }
+
+  .tool-page__breadcrumb {
+    margin-bottom: var(--space-5);
+  }
+
+  .tool-page__breadcrumb ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    list-style: none;
+  }
+
+  .tool-page__breadcrumb li:not(:last-child)::after {
+    margin-left: var(--space-1);
+    content: '/';
+  }
+
+  .tool-page__header {
+    max-width: 48rem;
+  }
+
+  .tool-page__header > .metadata {
+    margin-bottom: var(--space-1);
+  }
+
+  .tool-page__header h1 {
+    font-size: clamp(2.25rem, 5vw, 3.75rem);
+  }
+
+  .tool-page__header > p:not(.metadata) {
+    max-width: 42rem;
+    color: var(--text-muted);
+    font-size: var(--font-size-lg);
+  }
+
+  .tool-page__processing-status {
+    margin-top: var(--space-4);
+    padding: var(--space-3);
+    border-left: var(--border-strong-width) solid var(--border);
+  }
+
+  .tool-page__processing-status--local {
+    border-left-color: var(--color-green);
+  }
+
+  .tool-page__processing-status .metadata {
+    margin-bottom: var(--space-1);
+  }
+
+  .tool-page__processing-status--local .metadata {
+    color: var(--color-green);
+  }
+
+  .tool-page__processing-status p:last-child {
+    margin: 0;
+  }
+
+  .tool-page__body {
+    margin-top: var(--space-6);
+  }
+
+  .tool-page__body--with-rail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 18.75rem);
+    gap: var(--space-6);
+    align-items: start;
+  }
+
+  .tool-page__workspace {
+    min-width: 0;
+  }
+
+  .tool-page__main-column > :global(*) + :global(*) {
+    margin-top: var(--space-5);
+  }
+
+  .tool-page__related {
+    max-width: 48rem;
+    margin-top: var(--space-7);
+  }
+
+  .tool-page__section-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+  }
+
+  .tool-page__section-heading .metadata,
+  .tool-page__section-heading h2 {
+    margin: 0;
+  }
+
+  .tool-page__related ul {
+    margin: 0;
+    padding: 0;
+    border-top: var(--border-width) solid var(--border);
+    list-style: none;
+  }
+
+  .tool-page__related li {
+    border-bottom: var(--border-width) solid var(--border);
+  }
+
+  .tool-page__related a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: 3.5rem;
+    padding: var(--space-2);
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .tool-page__related a:hover {
+    background: var(--surface);
+  }
+
+  .tool-page__related a > span:first-child {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .tool-page__related strong {
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+  }
+
+  .tool-page__related a > span:first-child span {
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 56rem) {
+    .tool-page__body--with-rail {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>
