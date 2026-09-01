@@ -1,0 +1,72 @@
+---
+import {
+  getAdvertisementSlotReservation,
+  type AdvertisementRailSize,
+  type AdvertisementSlotVariant,
+} from '../data/advertisement-slots';
+
+interface Props {
+  variant: AdvertisementSlotVariant;
+  railSize?: AdvertisementRailSize;
+}
+
+const { variant, railSize = 'standard' } = Astro.props;
+const railSizeClass = variant === 'rail' ? `advertisement-slot--rail-${railSize}` : '';
+const reservation = getAdvertisementSlotReservation(variant, railSize);
+---
+
+<aside
+  class:list={['advertisement-slot', `advertisement-slot--${variant}`, railSizeClass]}
+  aria-label="Advertisement"
+  data-ad-slot
+  data-ad-slot-variant={variant}
+  style={`--advertisement-slot-min-height: ${reservation.minimumHeight}; --advertisement-slot-mobile-min-height: ${reservation.mobileMinimumHeight};`}
+>
+  <slot>
+    <p class="metadata">Advertisement</p>
+  </slot>
+</aside>
+
+<style>
+  .advertisement-slot {
+    display: grid;
+    width: 100%;
+    min-height: var(--advertisement-slot-min-height);
+    place-items: center;
+    border-top: var(--border-width) solid var(--border);
+    border-bottom: var(--border-width) solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .advertisement-slot :global(.metadata) {
+    margin: 0;
+  }
+
+  .advertisement-slot--banner,
+  .advertisement-slot--inline {
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .advertisement-slot--banner {
+    max-width: 60.625rem;
+  }
+
+  .advertisement-slot--inline {
+    max-width: 45.5rem;
+  }
+
+  .advertisement-slot--rail {
+    max-width: 18.75rem;
+  }
+
+  @media (max-width: 44rem) {
+    .advertisement-slot {
+      min-height: var(--advertisement-slot-mobile-min-height);
+    }
+
+    .advertisement-slot--rail {
+      max-width: none;
+    }
+  }
+</style>

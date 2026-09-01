@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import AdvertisementSlot from '../components/AdvertisementSlot.astro';
 import { toolRegistry } from '../data/tools';
 
 const categories = [
@@ -39,9 +40,7 @@ const categories = [
     </form>
   </section>
 
-  <aside class="ad-reservation" aria-label="Advertisement">
-    <p class="metadata">Advertisement</p>
-  </aside>
+  <AdvertisementSlot variant="banner" />
 
   <section id="tools" class="tool-index" aria-labelledby="popular-tools-title">
     <div class="section-heading">
@@ -146,18 +145,8 @@ const categories = [
     border-bottom: var(--border-width) solid var(--border);
   }
 
-  .ad-reservation {
-    display: grid;
-    min-height: 5.625rem;
-    place-items: center;
+  :global(.advertisement-slot--banner) {
     margin-top: var(--space-6);
-    border-top: var(--border-width) solid var(--border);
-    border-bottom: var(--border-width) solid var(--border);
-    color: var(--text-muted);
-  }
-
-  .ad-reservation .metadata {
-    margin: 0;
   }
 
   .tool-index {

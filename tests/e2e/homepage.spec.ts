@@ -17,6 +17,7 @@ test('renders the editorial homepage content from the tool registry', async ({ p
     'compress a photo, merge a PDF, make JSON-LD…',
   );
   await expect(page.getByLabel('Advertisement')).toBeVisible();
+  await expect(page.locator('[data-ad-slot-variant="banner"]')).toHaveCSS('min-height', '90px');
   await expect(page.getByRole('heading', { name: 'Popular Gizlets' })).toBeVisible();
 
   for (const toolName of [
