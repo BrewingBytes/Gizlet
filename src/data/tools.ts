@@ -42,7 +42,7 @@ export const toolRegistry = [
     description: 'Change image dimensions without leaving your browser.',
     keywords: ['resize', 'image resizer', 'change image size', 'scale photo'],
     processesLocally: true,
-    launchStatus: 'planned',
+    launchStatus: 'available',
   },
   {
     id: 3,
