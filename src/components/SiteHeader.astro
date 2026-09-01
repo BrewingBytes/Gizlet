@@ -36,9 +36,11 @@ const navigationItems = [
         aria-haspopup="dialog"
         aria-controls="tool-search-overlay"
         aria-expanded="false"
+        aria-keyshortcuts="Control+K Meta+K"
         data-search-open
       >
-        Search
+        <span>Search</span>
+        <span class="site-header__shortcut" aria-hidden="true">⌘K / Ctrl K</span>
       </button>
       <button
         class="site-header__control"
@@ -148,6 +150,9 @@ const navigationItems = [
   }
 
   .site-header__control {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
     min-width: 2.75rem;
     border-color: var(--text);
     background: transparent;
@@ -193,5 +198,17 @@ const navigationItems = [
       padding-right: var(--space-2);
       padding-left: var(--space-2);
     }
+
+    .site-header__shortcut {
+      display: none;
+    }
+  }
+
+  .site-header__shortcut {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    font-weight: 400;
+    white-space: nowrap;
   }
 </style>

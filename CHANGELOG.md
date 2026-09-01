@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- Local registry search on the homepage and through the keyboard-accessible global search overlay.
+- Local registry search on the homepage and through the keyboard-accessible global search overlay, with a visible Ctrl/Cmd+K hint.
 - Project documentation and Apache-2.0 licensing.
 - Production architecture and stack decision record, plus repository agent guidance.
 - Minimal Astro application foundation with strict TypeScript and pnpm.

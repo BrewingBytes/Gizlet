@@ -95,6 +95,7 @@ test('provides accessible shared navigation', async ({ page }) => {
   );
   await expect(header.getByRole('link', { name: 'Pro' })).toBeVisible();
   await expect(header.getByRole('button', { name: 'Search Gizlet' })).toBeVisible();
+  await expect(header.getByRole('button', { name: 'Search Gizlet' })).toContainText('⌘K / Ctrl K');
   await expect(
     header.getByRole('button', { name: /Switch to (light|dark) theme/ }),
   ).toBeVisible();
