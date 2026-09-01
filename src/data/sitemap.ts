@@ -14,7 +14,7 @@ export function getSitemapUrls(): readonly string[] {
 
   for (const tool of toolRegistry) {
     if (tool.launchStatus === 'available') {
-      urls.push(new URL(`${tool.path}/`, siteUrl).toString());
+      urls.push(new URL(tool.path, siteUrl).toString());
     }
   }
 
