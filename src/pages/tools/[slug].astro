@@ -2,6 +2,7 @@
 import ToolPageLayout from '../../components/ToolPageLayout.astro';
 import CompressImageTool from '../../components/CompressImageTool.astro';
 import ConvertImageTool from '../../components/ConvertImageTool.astro';
+import JsonLdGeneratorTool from '../../components/JsonLdGeneratorTool.astro';
 import ResizeImageTool from '../../components/ResizeImageTool.astro';
 import { getRelatedTools } from '../../data/tool-page-related';
 import { toolRegistry, type ToolRegistryEntry } from '../../data/tools';
@@ -32,6 +33,8 @@ const { tool, relatedTools } = Astro.props;
       <div slot="workspace"><ResizeImageTool /></div>
     ) : tool.slug === 'convert-image' ? (
       <div slot="workspace"><ConvertImageTool /></div>
+    ) : tool.slug === 'json-ld-generator' ? (
+      <div slot="workspace"><JsonLdGeneratorTool /></div>
     ) : (
       <section slot="workspace" class="tool-page-placeholder" aria-labelledby="workspace-title">
         <p class="metadata">Coming soon</p>
@@ -42,7 +45,7 @@ const { tool, relatedTools } = Astro.props;
   }
 
   {
-    tool.slug !== 'compress-image' && tool.slug !== 'resize-image' && tool.slug !== 'convert-image' && (
+    tool.slug !== 'compress-image' && tool.slug !== 'resize-image' && tool.slug !== 'convert-image' && tool.slug !== 'json-ld-generator' && (
       <section slot="result" class="tool-page-placeholder__result" aria-label="Tool result area">
         <p class="metadata">Results will appear here</p>
       </section>
