@@ -53,7 +53,7 @@ export const toolRegistry = [
     description: 'Convert images between common file formats in your browser.',
     keywords: ['convert', 'image converter', 'change image format', 'jpg to png'],
     processesLocally: true,
-    launchStatus: 'planned',
+    launchStatus: 'available',
   },
   {
     id: 4,

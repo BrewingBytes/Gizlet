@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Local Convert Image Gizlet with drag/drop, source-format detection, JPEG/PNG/WebP output, transparency-loss warnings, and verified downloads.
 - Local Resize Image Gizlet with exact dimensions, an aspect-ratio lock, percentage scaling, output format choices, large-image feedback, and downloads.
 - Local Compress Image Gizlet with drag/drop, JPEG/PNG/WebP/AVIF/BMP input, previews, quality and format controls, output-size comparison, and downloads.
 - Reusable tool-page layout with breadcrumbs, truthful processing status, responsive ad placements, workspace slots, and registry-driven related Gizlets.
