@@ -1,0 +1,655 @@
+---
+---
+
+<section class="compress-image-tool" data-compress-image-tool>
+  <div class="compress-image-tool__picker" data-drop-zone>
+    <input
+      id="compress-image-file"
+      class="compress-image-tool__file-input"
+      type="file"
+      accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp"
+      aria-label="Select an image to compress"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">One image at a time</p>
+    <h2>Drop an image here</h2>
+    <p>JPEG, PNG, WebP, AVIF, or BMP. Nothing leaves this device.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose an image</button>
+  </div>
+
+  <p class="compress-image-tool__error" data-error role="alert" hidden></p>
+
+  <div class="compress-image-tool__editor" data-editor hidden>
+    <figure class="compress-image-tool__preview">
+      <img data-preview-image alt="Selected image preview" />
+      <figcaption data-input-name></figcaption>
+    </figure>
+
+    <div class="compress-image-tool__settings">
+      <div>
+        <label for="compress-output-format">Output format</label>
+        <select id="compress-output-format" data-output-format>
+          <option value="image/jpeg">JPEG</option>
+          <option value="image/png">PNG</option>
+          <option value="image/webp">WebP</option>
+        </select>
+      </div>
+      <div data-quality-control>
+        <label for="compress-quality">Quality <output for="compress-quality" data-quality-value>82%</output></label>
+        <input id="compress-quality" type="range" min="40" max="100" value="82" data-quality />
+        <p class="utility-text">JPEG and WebP only</p>
+      </div>
+    </div>
+
+    <div class="compress-image-tool__actions">
+      <button type="button" data-compress>Compress it</button>
+      <button type="button" class="button-secondary" data-clear>Choose another image</button>
+    </div>
+  </div>
+
+  <section class="compress-image-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2>Your image is ready.</h2>
+    <dl>
+      <div><dt>Before</dt><dd data-before-size></dd></div>
+      <div><dt>After</dt><dd data-after-size></dd></div>
+      <div><dt>Change</dt><dd data-size-change></dd></div>
+    </dl>
+    <section class="compress-image-tool__comparison" aria-labelledby="comparison-title">
+      <div class="compress-image-tool__comparison-heading">
+        <div>
+          <p class="metadata">Look closer</p>
+          <h3 id="comparison-title">Original / compressed</h3>
+        </div>
+        <p class="utility-text" data-comparison-dimensions></p>
+      </div>
+      <div class="compress-image-tool__comparison-stage" data-comparison-stage>
+        <img data-comparison-original alt="Original image" />
+        <div class="compress-image-tool__comparison-overlay" data-comparison-overlay aria-hidden="true">
+          <img data-comparison-result alt="" />
+        </div>
+        <span class="compress-image-tool__comparison-label compress-image-tool__comparison-label--original" aria-hidden="true">Original</span>
+        <span class="compress-image-tool__comparison-label compress-image-tool__comparison-label--compressed" aria-hidden="true">Compressed</span>
+        <span class="compress-image-tool__comparison-divider" data-comparison-divider aria-hidden="true"><i></i></span>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value="50"
+          aria-label="Compare original and compressed image"
+          aria-describedby="comparison-help"
+          data-comparison-slider
+        />
+      </div>
+      <p id="comparison-help" class="compress-image-tool__comparison-help">Drag to compare. The dimensions stay the same.</p>
+    </section>
+    <div class="compress-image-tool__result-actions">
+      <a class="compress-image-tool__download" data-download>Download image</a>
+      <button type="button" class="button-secondary" data-result-clear>Choose another image</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .compress-image-tool {
+    border: var(--border-strong-width) solid var(--text);
+    background: var(--surface);
+  }
+
+  .compress-image-tool__picker {
+    padding: var(--space-5);
+    border: 2px dashed var(--border);
+    outline: 0;
+    outline-offset: -0.5rem;
+    text-align: center;
+  }
+
+  .compress-image-tool__picker[data-dragging='true'] {
+    border-color: var(--color-amber);
+    background: color-mix(in srgb, var(--color-amber) 12%, var(--surface));
+  }
+
+  .compress-image-tool__picker[hidden] {
+    display: none;
+  }
+
+  .compress-image-tool__picker h2 {
+    margin-bottom: var(--space-2);
+  }
+
+  .compress-image-tool__picker p:not(.metadata) {
+    margin-bottom: var(--space-4);
+    color: var(--text-muted);
+  }
+
+  .compress-image-tool__file-input {
+    display: none;
+  }
+
+  .compress-image-tool__error {
+    margin: var(--space-3);
+    padding: var(--space-3);
+    border-left: var(--border-strong-width) solid var(--color-red);
+    color: var(--color-red);
+  }
+
+  .compress-image-tool__editor,
+  .compress-image-tool__result {
+    padding: var(--space-4);
+    border-top: var(--border-width) solid var(--border);
+  }
+
+  .compress-image-tool__editor {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .compress-image-tool__editor[hidden],
+  .compress-image-tool__result[hidden] {
+    display: none;
+  }
+
+  .compress-image-tool__preview {
+    margin: 0;
+  }
+
+  .compress-image-tool__preview img {
+    display: block;
+    max-width: 100%;
+    max-height: 24rem;
+    margin: 0 auto;
+    border: var(--border-width) solid var(--border);
+  }
+
+  .compress-image-tool__preview figcaption {
+    margin-top: var(--space-2);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+  }
+
+  .compress-image-tool__settings {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: var(--border-width) solid var(--border);
+  }
+
+  .compress-image-tool__settings label {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2);
+    margin-bottom: var(--space-1);
+    font-weight: 700;
+  }
+
+  .compress-image-tool__settings output {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    font-weight: 400;
+  }
+
+  .compress-image-tool__settings input[type='range'] {
+    width: 100%;
+    accent-color: var(--color-amber);
+  }
+
+  .compress-image-tool__settings .utility-text {
+    margin: var(--space-1) 0 0;
+  }
+
+  .compress-image-tool__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .compress-image-tool__result h2 {
+    margin-bottom: var(--space-4);
+  }
+
+  .compress-image-tool__result dl {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2);
+    margin: 0 0 var(--space-4);
+  }
+
+  .compress-image-tool__result dl div {
+    padding: var(--space-2);
+    border-top: var(--border-width) solid var(--border);
+  }
+
+  .compress-image-tool__result dt {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+  }
+
+  .compress-image-tool__result dd {
+    margin: var(--space-1) 0 0;
+    font-weight: 700;
+  }
+
+  .compress-image-tool__comparison {
+    margin-bottom: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: var(--border-width) solid var(--border);
+  }
+
+  .compress-image-tool__comparison-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+  }
+
+  .compress-image-tool__comparison-heading .metadata,
+  .compress-image-tool__comparison-heading h3,
+  .compress-image-tool__comparison-heading .utility-text {
+    margin: 0;
+  }
+
+  .compress-image-tool__comparison-heading h3 {
+    margin-top: var(--space-1);
+  }
+
+  .compress-image-tool__comparison-stage {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+    background: var(--border);
+  }
+
+  .compress-image-tool__comparison-stage:focus-within {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+  }
+
+  .compress-image-tool__comparison-stage > img,
+  .compress-image-tool__comparison-overlay,
+  .compress-image-tool__comparison-overlay img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .compress-image-tool__comparison-stage > img,
+  .compress-image-tool__comparison-overlay img {
+    object-fit: contain;
+    background: var(--surface);
+  }
+
+  .compress-image-tool__comparison-overlay {
+    position: absolute;
+    inset: 0;
+    clip-path: inset(0 50% 0 0);
+  }
+
+  .compress-image-tool__comparison-label {
+    position: absolute;
+    top: var(--space-2);
+    padding: 0.25rem var(--space-1);
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .compress-image-tool__comparison-label--original {
+    right: var(--space-2);
+  }
+
+  .compress-image-tool__comparison-label--compressed {
+    left: var(--space-2);
+  }
+
+  .compress-image-tool__comparison-divider {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: var(--border-strong-width);
+    background: var(--text);
+    pointer-events: none;
+    transform: translateX(-50%);
+  }
+
+  .compress-image-tool__comparison-divider i {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: var(--border-strong-width) solid var(--text);
+    border-radius: 50%;
+    background: var(--color-amber);
+    transform: translate(-50%, -50%);
+  }
+
+  .compress-image-tool__comparison-stage input[type='range'] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: ew-resize;
+    opacity: 0;
+  }
+
+  .compress-image-tool__comparison-help {
+    margin: var(--space-2) 0 0;
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .compress-image-tool__download {
+    display: inline-block;
+    min-height: 2.75rem;
+    padding: calc(var(--space-2) - 2px) var(--space-3);
+    border: var(--border-strong-width) solid var(--button-background);
+    background: var(--button-background);
+    color: var(--button-text);
+    font-weight: 700;
+    line-height: 1.25;
+    text-decoration: none;
+  }
+
+  .compress-image-tool__download:hover {
+    color: var(--button-text);
+    box-shadow: 3px 3px 0 var(--color-amber);
+    transform: translate(-1px, -1px);
+  }
+
+  .compress-image-tool__result-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  @media (max-width: 36rem) {
+    .compress-image-tool__picker,
+    .compress-image-tool__editor,
+    .compress-image-tool__result {
+      padding: var(--space-3);
+    }
+
+    .compress-image-tool__settings,
+    .compress-image-tool__result dl {
+      grid-template-columns: 1fr;
+    }
+
+    .compress-image-tool__comparison-heading {
+      align-items: start;
+      flex-direction: column;
+    }
+  }
+</style>
+
+<script>
+  import {
+    formatFileSize,
+    formatSizeChange,
+    getInputImageFormat,
+    getOutputFilename,
+    getPreferredOutputFormat,
+    isImageOutputFormat,
+    isSupportedImageFile,
+    type ImageOutputFormat,
+  } from '../data/image-compression';
+
+  const root = document.querySelector<HTMLElement>('[data-compress-image-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const editor = root.querySelector<HTMLElement>('[data-editor]');
+    const previewImage = root.querySelector<HTMLImageElement>('[data-preview-image]');
+    const inputName = root.querySelector<HTMLElement>('[data-input-name]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const outputFormat = root.querySelector<HTMLSelectElement>('[data-output-format]');
+    const quality = root.querySelector<HTMLInputElement>('[data-quality]');
+    const qualityValue = root.querySelector<HTMLOutputElement>('[data-quality-value]');
+    const qualityControl = root.querySelector<HTMLElement>('[data-quality-control]');
+    const compressButton = root.querySelector<HTMLButtonElement>('[data-compress]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const beforeSize = root.querySelector<HTMLElement>('[data-before-size]');
+    const afterSize = root.querySelector<HTMLElement>('[data-after-size]');
+    const sizeChange = root.querySelector<HTMLElement>('[data-size-change]');
+    const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+    const comparisonStage = root.querySelector<HTMLElement>('[data-comparison-stage]');
+    const comparisonOriginal = root.querySelector<HTMLImageElement>('[data-comparison-original]');
+    const comparisonOverlay = root.querySelector<HTMLElement>('[data-comparison-overlay]');
+    const comparisonResult = root.querySelector<HTMLImageElement>('[data-comparison-result]');
+    const comparisonDimensions = root.querySelector<HTMLElement>('[data-comparison-dimensions]');
+    const comparisonDivider = root.querySelector<HTMLElement>('[data-comparison-divider]');
+    const comparisonSlider = root.querySelector<HTMLInputElement>('[data-comparison-slider]');
+
+    if (
+      !fileInput ||
+      !selectFileButton ||
+      !dropZone ||
+      !editor ||
+      !previewImage ||
+      !inputName ||
+      !error ||
+      !outputFormat ||
+      !quality ||
+      !qualityValue ||
+      !qualityControl ||
+      !compressButton ||
+      !clearButton ||
+      !result ||
+      !beforeSize ||
+      !afterSize ||
+      !sizeChange ||
+      !download ||
+      !resultClearButton ||
+      !comparisonStage ||
+      !comparisonOriginal ||
+      !comparisonOverlay ||
+      !comparisonResult ||
+      !comparisonDimensions ||
+      !comparisonDivider ||
+      !comparisonSlider
+    ) {
+      throw new Error('Compress Image tool could not initialise.');
+    }
+
+    let selectedFile: File | undefined;
+    let previewUrl: string | undefined;
+    let resultUrl: string | undefined;
+
+    const updateComparison = () => {
+      const position = Number(comparisonSlider.value);
+      comparisonOverlay.style.clipPath = `inset(0 ${100 - position}% 0 0)`;
+      comparisonDivider.style.left = `${position}%`;
+    };
+
+    const clearError = () => {
+      error.hidden = true;
+      error.textContent = '';
+    };
+
+    const showError = (message: string) => {
+      error.textContent = message;
+      error.hidden = false;
+    };
+
+    const revokePreviewUrl = () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        previewUrl = undefined;
+      }
+    };
+
+    const revokeResultUrl = () => {
+      if (resultUrl) {
+        URL.revokeObjectURL(resultUrl);
+        resultUrl = undefined;
+      }
+    };
+
+    const updateQualityControl = () => {
+      const usesQuality = outputFormat.value !== 'image/png';
+      quality.disabled = !usesQuality;
+      qualityControl.setAttribute('aria-disabled', String(!usesQuality));
+    };
+
+    const resetResult = () => {
+      revokeResultUrl();
+      result.hidden = true;
+      download.removeAttribute('href');
+      download.removeAttribute('download');
+      comparisonOriginal.removeAttribute('src');
+      comparisonResult.removeAttribute('src');
+      comparisonDimensions.textContent = '';
+      comparisonStage.style.removeProperty('aspect-ratio');
+      comparisonSlider.value = '50';
+      updateComparison();
+    };
+
+    const resetTool = () => {
+      selectedFile = undefined;
+      fileInput.value = '';
+      revokePreviewUrl();
+      resetResult();
+      previewImage.removeAttribute('src');
+      dropZone.hidden = false;
+      editor.hidden = true;
+      clearError();
+    };
+
+    const selectFile = (file: File | undefined) => {
+      resetTool();
+
+      if (!file) {
+        return;
+      }
+
+      if (!isSupportedImageFile(file)) {
+        showError('Choose a JPEG, PNG, WebP, AVIF, or BMP image.');
+        return;
+      }
+
+      selectedFile = file;
+      previewUrl = URL.createObjectURL(file);
+      previewImage.src = previewUrl;
+      inputName.textContent = `${file.name} · ${formatFileSize(file.size)}`;
+      outputFormat.value = getPreferredOutputFormat(getInputImageFormat(file));
+      updateQualityControl();
+      dropZone.hidden = true;
+      editor.hidden = false;
+    };
+
+    const loadImage = (file: File): Promise<HTMLImageElement> => {
+      const sourceUrl = URL.createObjectURL(file);
+      const image = new Image();
+
+      return new Promise((resolve, reject) => {
+        image.onload = () => {
+          URL.revokeObjectURL(sourceUrl);
+          resolve(image);
+        };
+        image.onerror = () => {
+          URL.revokeObjectURL(sourceUrl);
+          reject(new Error('This image could not be read.'));
+        };
+        image.src = sourceUrl;
+      });
+    };
+
+    const canvasToBlob = (canvas: HTMLCanvasElement, format: ImageOutputFormat, imageQuality: number) =>
+      new Promise<Blob | null>((resolve) => {
+        canvas.toBlob(resolve, format, format === 'image/png' ? undefined : imageQuality);
+      });
+
+    const compressImage = async () => {
+      if (!selectedFile || !isImageOutputFormat(outputFormat.value)) {
+        return;
+      }
+
+      clearError();
+      resetResult();
+      compressButton.disabled = true;
+      compressButton.textContent = 'Compressing…';
+
+      try {
+        const image = await loadImage(selectedFile);
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext('2d');
+        if (!context) {
+          throw new Error('Your browser cannot prepare this image.');
+        }
+
+        context.drawImage(image, 0, 0);
+        const format = outputFormat.value;
+        const output = await canvasToBlob(canvas, format, Number(quality.value) / 100);
+
+        if (!output || output.type !== format) {
+          throw new Error(`Your browser cannot create ${format.replace('image/', '').toUpperCase()} images.`);
+        }
+
+        resultUrl = URL.createObjectURL(output);
+        beforeSize.textContent = formatFileSize(selectedFile.size);
+        afterSize.textContent = formatFileSize(output.size);
+        sizeChange.textContent = formatSizeChange(selectedFile.size, output.size);
+        comparisonOriginal.src = previewUrl ?? '';
+        comparisonResult.src = resultUrl;
+        comparisonDimensions.textContent = `${image.naturalWidth} × ${image.naturalHeight} px`;
+        comparisonStage.style.aspectRatio = `${image.naturalWidth} / ${image.naturalHeight}`;
+        updateComparison();
+        download.href = resultUrl;
+        download.download = getOutputFilename(selectedFile.name, format);
+        editor.hidden = true;
+        result.hidden = false;
+      } catch (caughtError) {
+        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be compressed.');
+      } finally {
+        compressButton.disabled = false;
+        compressButton.textContent = 'Compress it';
+      }
+    };
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => selectFile(fileInput.files?.[0]));
+    clearButton.addEventListener('click', resetTool);
+    resultClearButton.addEventListener('click', resetTool);
+    compressButton.addEventListener('click', compressImage);
+    outputFormat.addEventListener('change', updateQualityControl);
+    quality.addEventListener('input', () => {
+      qualityValue.value = `${quality.value}%`;
+      qualityValue.textContent = `${quality.value}%`;
+    });
+    comparisonSlider.addEventListener('input', updateComparison);
+
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropZone.dataset.dragging = 'true';
+      });
+    }
+
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        delete dropZone.dataset.dragging;
+      });
+    }
+
+    dropZone.addEventListener('drop', (event) => selectFile(event.dataTransfer?.files[0]));
+    updateQualityControl();
+  }
+</script>

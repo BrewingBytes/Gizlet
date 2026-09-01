@@ -31,7 +31,7 @@ export const toolRegistry = [
     description: 'Shrink image files while keeping them ready to share.',
     keywords: ['compress', 'image compression', 'reduce image size', 'photo compressor'],
     processesLocally: true,
-    launchStatus: 'planned',
+    launchStatus: 'available',
   },
   {
     id: 2,
