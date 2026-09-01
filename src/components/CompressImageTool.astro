@@ -107,6 +107,10 @@
     background: color-mix(in srgb, var(--color-amber) 12%, var(--surface));
   }
 
+  .compress-image-tool__picker[hidden] {
+    display: none;
+  }
+
   .compress-image-tool__picker h2 {
     margin-bottom: var(--space-2);
   }
@@ -508,6 +512,7 @@
       revokePreviewUrl();
       resetResult();
       previewImage.removeAttribute('src');
+      dropZone.hidden = false;
       editor.hidden = true;
       clearError();
     };
@@ -528,6 +533,7 @@
       previewUrl = URL.createObjectURL(file);
       previewImage.src = previewUrl;
       inputName.textContent = `${file.name} · ${formatFileSize(file.size)}`;
+      dropZone.hidden = true;
       editor.hidden = false;
     };
 

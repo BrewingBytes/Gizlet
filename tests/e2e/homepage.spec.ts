@@ -41,6 +41,7 @@ test('compresses a selected image locally and offers it for download', async ({ 
   });
 
   await expect(page.getByAltText('Selected image preview')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Drop an image here' })).not.toBeVisible();
   await page.getByLabel('Output format').selectOption('image/jpeg');
   await page.getByRole('button', { name: 'Compress it' }).click();
 
@@ -59,6 +60,9 @@ test('compresses a selected image locally and offers it for download', async ({ 
     'download',
     'tiny-compressed.jpg',
   );
+
+  await page.getByRole('button', { name: 'Choose another image' }).click();
+  await expect(page.getByRole('heading', { name: 'Drop an image here' })).toBeVisible();
 });
 
 test('explains unsupported and corrupt image files', async ({ page }) => {
