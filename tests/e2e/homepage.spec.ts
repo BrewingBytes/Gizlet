@@ -35,6 +35,56 @@ test('renders the editorial homepage content from the tool registry', async ({ p
   await expect(page.getByRole('heading', { name: 'Same Gizlets. No ads.' })).toBeVisible();
 });
 
+test('finds Gizlets from the homepage search by intent', async ({ page }) => {
+  await page.goto('/');
+
+  const searchForm = page.getByRole('search');
+  const search = searchForm.getByLabel('I need to…');
+  await search.fill('compress photo');
+  await expect(searchForm.getByRole('link', { name: /Compress Image/ })).toBeVisible();
+  await expect(searchForm.getByText('1 Gizlet found.')).toBeVisible();
+
+  await search.fill('spreadsheet');
+  await expect(searchForm.getByText('No Gizlets found for “spreadsheet”.')).toBeVisible();
+});
+
+test('opens, navigates, and closes the global search overlay with the keyboard', async ({ page }) => {
+  await page.goto('/');
+
+  const overlay = page.getByRole('dialog', { name: 'What do you need?' });
+  await page.getByRole('banner').getByRole('button', { name: 'Search Gizlet' }).click();
+  await expect(overlay).toBeVisible();
+  await expect(overlay.getByText('Start typing to find a Gizlet.')).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(overlay).not.toBeVisible();
+
+  await page.keyboard.press('ControlOrMeta+K');
+  await expect(overlay).toBeVisible();
+
+  const search = overlay.getByLabel('Search Gizlets');
+  await expect(search).toBeFocused();
+  await search.fill('schema');
+  await expect(overlay.getByRole('link', { name: /JSON-LD Generator/ })).toBeVisible();
+
+  await search.press('ArrowDown');
+  await expect(overlay.getByRole('link', { name: /JSON-LD Generator/ })).toBeFocused();
+
+  await page.keyboard.press('Escape');
+  await expect(overlay).not.toBeVisible();
+});
+
+test('does not steal the search shortcut from a text field', async ({ page }) => {
+  await page.goto('/');
+
+  const search = page.getByRole('search').getByLabel('I need to…');
+  await search.focus();
+  await page.keyboard.press('ControlOrMeta+K');
+
+  await expect(search).toBeFocused();
+  await expect(page.getByRole('dialog', { name: 'What do you need?' })).not.toBeVisible();
+});
+
 test('provides accessible shared navigation', async ({ page }) => {
   await page.goto('/');
 
@@ -45,6 +95,7 @@ test('provides accessible shared navigation', async ({ page }) => {
   );
   await expect(header.getByRole('link', { name: 'Pro' })).toBeVisible();
   await expect(header.getByRole('button', { name: 'Search Gizlet' })).toBeVisible();
+  await expect(header.getByRole('button', { name: 'Search Gizlet' })).toContainText('⌘K / Ctrl K');
   await expect(
     header.getByRole('button', { name: /Switch to (light|dark) theme/ }),
   ).toBeVisible();
