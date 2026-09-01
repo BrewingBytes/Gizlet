@@ -1,5 +1,6 @@
 ---
 import ToolPageLayout from '../../components/ToolPageLayout.astro';
+import CompressImageTool from '../../components/CompressImageTool.astro';
 import { getRelatedTools } from '../../data/tool-page-related';
 import { toolRegistry, type ToolRegistryEntry } from '../../data/tools';
 
@@ -22,15 +23,25 @@ const { tool, relatedTools } = Astro.props;
 ---
 
 <ToolPageLayout tool={tool} relatedTools={relatedTools} showRail showPostResultAd>
-  <section slot="workspace" class="tool-page-placeholder" aria-labelledby="workspace-title">
-    <p class="metadata">Coming soon</p>
-    <h2 id="workspace-title">This Gizlet is being prepared.</h2>
-    <p>Its workspace will live here, ready for one job done properly.</p>
-  </section>
+  {
+    tool.slug === 'compress-image' ? (
+      <div slot="workspace"><CompressImageTool /></div>
+    ) : (
+      <section slot="workspace" class="tool-page-placeholder" aria-labelledby="workspace-title">
+        <p class="metadata">Coming soon</p>
+        <h2 id="workspace-title">This Gizlet is being prepared.</h2>
+        <p>Its workspace will live here, ready for one job done properly.</p>
+      </section>
+    )
+  }
 
-  <section slot="result" class="tool-page-placeholder__result" aria-label="Tool result area">
-    <p class="metadata">Results will appear here</p>
-  </section>
+  {
+    tool.slug !== 'compress-image' && (
+      <section slot="result" class="tool-page-placeholder__result" aria-label="Tool result area">
+        <p class="metadata">Results will appear here</p>
+      </section>
+    )
+  }
 </ToolPageLayout>
 
 <style>

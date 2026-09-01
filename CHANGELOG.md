@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Local Compress Image Gizlet with drag/drop, previews, quality and format controls, output-size comparison, and downloads.
 - Reusable tool-page layout with breadcrumbs, truthful processing status, responsive ad placements, workspace slots, and registry-driven related Gizlets.
 - Reusable, responsive advertisement slots for banner, inline, and right-rail placements.
 - Local registry search on the homepage and through the keyboard-accessible global search overlay, with a visible Ctrl/Cmd+K hint.
