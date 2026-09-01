@@ -1,0 +1,357 @@
+---
+---
+
+<section class="resize-image-tool" data-resize-image-tool>
+  <div class="resize-image-tool__picker" data-drop-zone>
+    <input
+      id="resize-image-file"
+      class="resize-image-tool__file-input"
+      type="file"
+      accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp"
+      aria-label="Select an image to resize"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">One image at a time</p>
+    <h2>Drop an image here</h2>
+    <p>JPEG, PNG, WebP, AVIF, or BMP. Nothing leaves this device.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose an image</button>
+  </div>
+
+  <p class="resize-image-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="resize-image-tool__error" data-error role="alert" hidden></p>
+
+  <div class="resize-image-tool__editor" data-editor hidden>
+    <figure class="resize-image-tool__preview">
+      <img data-preview-image alt="Selected image preview" />
+      <figcaption data-input-name></figcaption>
+    </figure>
+
+    <div class="resize-image-tool__controls">
+      <fieldset>
+        <legend>How should it resize?</legend>
+        <div class="resize-image-tool__modes">
+          <label><input type="radio" name="resize-mode" value="dimensions" checked data-resize-mode /> Exact dimensions</label>
+          <label><input type="radio" name="resize-mode" value="percentage" data-resize-mode /> Percentage</label>
+        </div>
+      </fieldset>
+
+      <div class="resize-image-tool__dimensions" data-dimension-fields>
+        <label for="resize-width">Width <span>px</span></label>
+        <input id="resize-width" type="number" min="1" step="1" inputmode="numeric" data-width />
+        <label for="resize-height">Height <span>px</span></label>
+        <input id="resize-height" type="number" min="1" step="1" inputmode="numeric" data-height />
+        <label class="resize-image-tool__lock" for="resize-aspect-lock">
+          <input id="resize-aspect-lock" type="checkbox" checked data-aspect-lock />
+          Keep proportions
+        </label>
+      </div>
+
+      <div class="resize-image-tool__percentage" data-percentage-fields hidden>
+        <label for="resize-percentage">Scale <span>%</span></label>
+        <input id="resize-percentage" type="number" min="0.1" max="1000" step="0.1" inputmode="decimal" value="100" data-percentage />
+        <p class="utility-text">100% keeps the original size.</p>
+      </div>
+
+      <div class="resize-image-tool__summary" aria-live="polite">
+        <span class="metadata">Resulting dimensions</span>
+        <strong data-dimension-preview></strong>
+      </div>
+
+      <div class="resize-image-tool__format">
+        <label for="resize-output-format">Output format</label>
+        <select id="resize-output-format" data-output-format>
+          <option value="image/jpeg">JPEG</option>
+          <option value="image/png">PNG</option>
+          <option value="image/webp">WebP</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="resize-image-tool__actions">
+      <button type="button" data-resize>Resize it</button>
+      <button type="button" class="button-secondary" data-clear>Choose another image</button>
+    </div>
+  </div>
+
+  <section class="resize-image-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2>Right size. Ready to go.</h2>
+    <dl>
+      <div><dt>Original</dt><dd data-original-dimensions></dd></div>
+      <div><dt>Resized</dt><dd data-result-dimensions></dd></div>
+    </dl>
+    <div class="resize-image-tool__result-actions">
+      <a class="resize-image-tool__download" data-download>Download image</a>
+      <button type="button" class="button-secondary" data-result-clear>Choose another image</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .resize-image-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .resize-image-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .resize-image-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .resize-image-tool__picker[hidden], .resize-image-tool__editor[hidden], .resize-image-tool__result[hidden] { display: none; }
+  .resize-image-tool__picker h2 { margin-bottom: var(--space-2); }
+  .resize-image-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .resize-image-tool__status, .resize-image-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--color-green); color: var(--text-muted); }
+  .resize-image-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .resize-image-tool__editor, .resize-image-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .resize-image-tool__editor { display: grid; gap: var(--space-4); }
+  .resize-image-tool__preview { margin: 0; }
+  .resize-image-tool__preview img { display: block; max-width: 100%; max-height: 24rem; margin: 0 auto; border: var(--border-width) solid var(--border); }
+  .resize-image-tool__preview figcaption { margin-top: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .resize-image-tool__controls { display: grid; gap: var(--space-3); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .resize-image-tool__controls fieldset { margin: 0; padding: 0; border: 0; }
+  .resize-image-tool__controls legend, .resize-image-tool__controls > div > label { margin-bottom: var(--space-1); font-weight: 700; }
+  .resize-image-tool__modes { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+  .resize-image-tool__modes label, .resize-image-tool__lock { display: flex; align-items: center; gap: var(--space-1); min-height: 2.75rem; }
+  .resize-image-tool__dimensions { display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--space-2); }
+  .resize-image-tool__dimensions label span, .resize-image-tool__percentage label span { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-sm); font-weight: 400; }
+  .resize-image-tool__lock { grid-column: 1 / -1; font-weight: 700; }
+  .resize-image-tool__percentage { display: grid; grid-template-columns: auto minmax(0, 12rem); align-items: center; gap: var(--space-2); }
+  .resize-image-tool__percentage .utility-text { grid-column: 1 / -1; margin: 0; }
+  .resize-image-tool__summary { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); padding: var(--space-2); border-top: var(--border-width) solid var(--border); border-bottom: var(--border-width) solid var(--border); }
+  .resize-image-tool__summary strong { font-family: var(--font-mono); }
+  .resize-image-tool__format { max-width: 20rem; }
+  .resize-image-tool__format label { display: block; }
+  .resize-image-tool__actions, .resize-image-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .resize-image-tool__result h2 { margin-bottom: var(--space-4); }
+  .resize-image-tool__result dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); margin: 0 0 var(--space-4); }
+  .resize-image-tool__result dl div { padding: var(--space-2); border-top: var(--border-width) solid var(--border); }
+  .resize-image-tool__result dt { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
+  .resize-image-tool__result dd { margin: var(--space-1) 0 0; font-weight: 700; }
+  .resize-image-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .resize-image-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+  @media (max-width: 36rem) { .resize-image-tool__picker, .resize-image-tool__editor, .resize-image-tool__result { padding: var(--space-3); } .resize-image-tool__dimensions { grid-template-columns: auto minmax(0, 1fr); } .resize-image-tool__dimensions label:nth-of-type(2) { grid-column: 1; } .resize-image-tool__dimensions input[data-height] { grid-column: 2; } .resize-image-tool__percentage { grid-template-columns: 1fr; } .resize-image-tool__result dl { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+  import {
+    getInputImageFormat,
+    getPreferredOutputFormat,
+    isImageOutputFormat,
+    isSupportedImageFile,
+    type ImageOutputFormat,
+  } from '../data/image-compression';
+  import {
+    dimensionsFromHeight,
+    dimensionsFromPercentage,
+    dimensionsFromWidth,
+    getResizeOutputFilename,
+    isLargeImage,
+    validateResizeDimensions,
+    type ImageDimensions,
+  } from '../data/image-resize';
+
+  const root = document.querySelector<HTMLElement>('[data-resize-image-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const editor = root.querySelector<HTMLElement>('[data-editor]');
+    const previewImage = root.querySelector<HTMLImageElement>('[data-preview-image]');
+    const inputName = root.querySelector<HTMLElement>('[data-input-name]');
+    const resizeModes = root.querySelectorAll<HTMLInputElement>('[data-resize-mode]');
+    const dimensionFields = root.querySelector<HTMLElement>('[data-dimension-fields]');
+    const percentageFields = root.querySelector<HTMLElement>('[data-percentage-fields]');
+    const widthInput = root.querySelector<HTMLInputElement>('[data-width]');
+    const heightInput = root.querySelector<HTMLInputElement>('[data-height]');
+    const aspectLock = root.querySelector<HTMLInputElement>('[data-aspect-lock]');
+    const percentageInput = root.querySelector<HTMLInputElement>('[data-percentage]');
+    const dimensionPreview = root.querySelector<HTMLElement>('[data-dimension-preview]');
+    const outputFormat = root.querySelector<HTMLSelectElement>('[data-output-format]');
+    const resizeButton = root.querySelector<HTMLButtonElement>('[data-resize]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const originalDimensions = root.querySelector<HTMLElement>('[data-original-dimensions]');
+    const resultDimensions = root.querySelector<HTMLElement>('[data-result-dimensions]');
+    const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !previewImage || !inputName || !dimensionFields || !percentageFields || !widthInput || !heightInput || !aspectLock || !percentageInput || !dimensionPreview || !outputFormat || !resizeButton || !clearButton || !result || !originalDimensions || !resultDimensions || !download || !resultClearButton) {
+      throw new Error('Resize Image tool could not initialise.');
+    }
+
+    let selectedFile: File | undefined;
+    let sourceImage: HTMLImageElement | undefined;
+    let sourceDimensions: ImageDimensions | undefined;
+    let previewUrl: string | undefined;
+    let resultUrl: string | undefined;
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+    const revoke = (url: string | undefined) => { if (url) URL.revokeObjectURL(url); };
+    const currentMode = () => root.querySelector<HTMLInputElement>('[data-resize-mode]:checked')?.value ?? 'dimensions';
+
+    const resetResult = () => {
+      revoke(resultUrl);
+      resultUrl = undefined;
+      result.hidden = true;
+      download.removeAttribute('href');
+      download.removeAttribute('download');
+    };
+
+    const resetTool = () => {
+      selectedFile = undefined;
+      sourceImage = undefined;
+      sourceDimensions = undefined;
+      fileInput.value = '';
+      revoke(previewUrl);
+      previewUrl = undefined;
+      resetResult();
+      previewImage.removeAttribute('src');
+      dropZone.hidden = false;
+      editor.hidden = true;
+      clearError();
+      clearStatus();
+    };
+
+    const getRequestedDimensions = (): ImageDimensions | undefined => {
+      if (!sourceDimensions) return undefined;
+      if (currentMode() === 'percentage') {
+        const percentage = Number(percentageInput.value);
+        if (!Number.isFinite(percentage) || percentage <= 0) return undefined;
+        return dimensionsFromPercentage(sourceDimensions, percentage);
+      }
+
+      const width = Number(widthInput.value);
+      const height = Number(heightInput.value);
+      if (!Number.isFinite(width) || !Number.isFinite(height)) return undefined;
+      return { width, height };
+    };
+
+    const updateDimensionPreview = () => {
+      const dimensions = getRequestedDimensions();
+      const validation = dimensions && validateResizeDimensions(dimensions);
+      dimensionPreview.textContent = dimensions && !validation ? `${dimensions.width} × ${dimensions.height} px` : 'Enter valid dimensions';
+    };
+
+    const updateMode = () => {
+      const usesPercentage = currentMode() === 'percentage';
+      dimensionFields.hidden = usesPercentage;
+      percentageFields.hidden = !usesPercentage;
+      updateDimensionPreview();
+    };
+
+    const loadImage = (file: File): Promise<HTMLImageElement> => {
+      const sourceUrl = URL.createObjectURL(file);
+      const image = new Image();
+      return new Promise((resolve, reject) => {
+        image.onload = () => { URL.revokeObjectURL(sourceUrl); resolve(image); };
+        image.onerror = () => { URL.revokeObjectURL(sourceUrl); reject(new Error('This image could not be read.')); };
+        image.src = sourceUrl;
+      });
+    };
+
+    const selectFile = async (file: File | undefined) => {
+      resetTool();
+      if (!file) return;
+      if (!isSupportedImageFile(file)) {
+        showError('Choose a JPEG, PNG, WebP, AVIF, or BMP image.');
+        return;
+      }
+
+      selectedFile = file;
+      dropZone.hidden = true;
+      showStatus('Reading image dimensions…');
+      await nextPaint();
+      try {
+        sourceImage = await loadImage(file);
+        sourceDimensions = { width: sourceImage.naturalWidth, height: sourceImage.naturalHeight };
+        if (!sourceDimensions.width || !sourceDimensions.height) throw new Error('This image has no usable dimensions.');
+        if (isLargeImage(sourceDimensions)) {
+          showStatus('Large image detected. Preparing it locally…');
+          await nextPaint();
+        }
+        previewUrl = URL.createObjectURL(file);
+        previewImage.src = previewUrl;
+        inputName.textContent = `${file.name} · ${sourceDimensions.width} × ${sourceDimensions.height} px`;
+        widthInput.value = String(sourceDimensions.width);
+        heightInput.value = String(sourceDimensions.height);
+        percentageInput.value = '100';
+        outputFormat.value = getPreferredOutputFormat(getInputImageFormat(file));
+        updateDimensionPreview();
+        clearStatus();
+        editor.hidden = false;
+      } catch (caughtError) {
+        selectedFile = undefined;
+        sourceImage = undefined;
+        sourceDimensions = undefined;
+        dropZone.hidden = false;
+        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be read.');
+        clearStatus();
+      }
+    };
+
+    const canvasToBlob = (canvas: HTMLCanvasElement, format: ImageOutputFormat) => new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, format));
+
+    const resizeImage = async () => {
+      if (!selectedFile || !sourceImage || !sourceDimensions || !isImageOutputFormat(outputFormat.value)) return;
+      const dimensions = getRequestedDimensions();
+      const validation = dimensions && validateResizeDimensions(dimensions);
+      if (!dimensions || validation) {
+        showError(validation ?? 'Enter valid dimensions before resizing.');
+        return;
+      }
+
+      clearError();
+      resetResult();
+      resizeButton.disabled = true;
+      resizeButton.textContent = 'Resizing…';
+      showStatus(isLargeImage(sourceDimensions) ? 'Large image: resizing locally…' : 'Resizing locally…');
+      await nextPaint();
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = dimensions.width;
+        canvas.height = dimensions.height;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Your browser cannot prepare this image.');
+        context.drawImage(sourceImage, 0, 0, dimensions.width, dimensions.height);
+        const format = outputFormat.value;
+        const output = await canvasToBlob(canvas, format);
+        if (!output || output.type !== format) throw new Error(`Your browser cannot create ${format.replace('image/', '').toUpperCase()} images.`);
+        resultUrl = URL.createObjectURL(output);
+        originalDimensions.textContent = `${sourceDimensions.width} × ${sourceDimensions.height} px`;
+        resultDimensions.textContent = `${dimensions.width} × ${dimensions.height} px`;
+        download.href = resultUrl;
+        download.download = getResizeOutputFilename(selectedFile.name, format);
+        editor.hidden = true;
+        result.hidden = false;
+      } catch (caughtError) {
+        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be resized.');
+      } finally {
+        clearStatus();
+        resizeButton.disabled = false;
+        resizeButton.textContent = 'Resize it';
+      }
+    };
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void selectFile(fileInput.files?.[0]));
+    clearButton.addEventListener('click', resetTool);
+    resultClearButton.addEventListener('click', resetTool);
+    resizeButton.addEventListener('click', () => void resizeImage());
+    resizeModes.forEach((mode) => mode.addEventListener('change', updateMode));
+    widthInput.addEventListener('input', () => {
+      if (aspectLock.checked && sourceDimensions && Number(widthInput.value) > 0) heightInput.value = String(dimensionsFromWidth(sourceDimensions, Number(widthInput.value)).height);
+      updateDimensionPreview();
+    });
+    heightInput.addEventListener('input', () => {
+      if (aspectLock.checked && sourceDimensions && Number(heightInput.value) > 0) widthInput.value = String(dimensionsFromHeight(sourceDimensions, Number(heightInput.value)).width);
+      updateDimensionPreview();
+    });
+    percentageInput.addEventListener('input', updateDimensionPreview);
+    for (const eventName of ['dragenter', 'dragover']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    for (const eventName of ['dragleave', 'drop']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    dropZone.addEventListener('drop', (event) => void selectFile(event.dataTransfer?.files[0]));
+    updateMode();
+  }
+</script>
