@@ -4,7 +4,35 @@ test('renders the Gizlet homepage', async ({ page }) => {
   await page.goto('/');
 
   await expect(page).toHaveTitle('Gizlet');
-  await expect(page.getByRole('heading', { name: 'Gizlet' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Useful internet things, without the nonsense.' }),
+  ).toBeVisible();
+});
+
+test('renders the editorial homepage content from the tool registry', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(page.getByRole('search').getByLabel('I need to…')).toHaveAttribute(
+    'placeholder',
+    'compress a photo, merge a PDF, make JSON-LD…',
+  );
+  await expect(page.getByLabel('Advertisement')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Popular Gizlets' })).toBeVisible();
+
+  for (const toolName of [
+    'Compress Image',
+    'Resize Image',
+    'Convert Image',
+    'JSON-LD Generator',
+    'JSON Formatter',
+  ]) {
+    await expect(page.getByRole('link', { name: new RegExp(toolName) })).toBeVisible();
+  }
+
+  await expect(page.getByRole('navigation', { name: 'Browse tool categories' })).toContainText(
+    'Images',
+  );
+  await expect(page.getByRole('heading', { name: 'Same Gizlets. No ads.' })).toBeVisible();
 });
 
 test('provides accessible shared navigation', async ({ page }) => {
