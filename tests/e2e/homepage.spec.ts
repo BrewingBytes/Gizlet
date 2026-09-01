@@ -47,6 +47,7 @@ test('compresses a selected image locally and offers it for download', async ({ 
 
   const result = page.getByText('Your image is ready.');
   await expect(result).toBeVisible();
+  await expect(page.getByLabel('Output format')).not.toBeVisible();
   await expect(page.getByText('Before')).toBeVisible();
   await expect(page.getByText('After')).toBeVisible();
   await expect(page.getByText(/(smaller|larger)/)).toBeVisible();
