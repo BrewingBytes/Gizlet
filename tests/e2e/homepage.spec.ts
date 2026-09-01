@@ -3,7 +3,13 @@ import { expect, test } from '@playwright/test';
 test('renders the Gizlet homepage', async ({ page }) => {
   await page.goto('/');
 
-  await expect(page).toHaveTitle('Gizlet');
+  await expect(page).toHaveTitle('Gizlet | Useful internet things, without the nonsense.');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://gizlet.com/');
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    'content',
+    'https://gizlet.com/brand/brand-board.png',
+  );
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'index, follow');
   await expect(
     page.getByRole('heading', { name: 'Useful internet things, without the nonsense.' }),
   ).toBeVisible();
@@ -13,6 +19,18 @@ test('renders the reusable tool page layout with truthful status and responsive 
   await page.goto('/tools/compress-image/');
 
   await expect(page).toHaveTitle('Compress Image | Gizlet');
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    'content',
+    'Shrink image files while keeping them ready to share.',
+  );
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    'href',
+    'https://gizlet.com/tools/compress-image/',
+  );
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+    'content',
+    'https://gizlet.com/tools/compress-image/',
+  );
   await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toContainText('Compress Image');
   await expect(page.getByRole('heading', { name: 'Compress Image' })).toBeVisible();
   await expect(page.getByLabel('Local processing')).toContainText('Your file stays on this device.');

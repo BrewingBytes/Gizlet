@@ -2,17 +2,27 @@
 import SiteFooter from '../components/SiteFooter.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import ToolSearchOverlay from '../components/ToolSearchOverlay.astro';
+import { getPageMetadata, type PageMetadata } from '../data/metadata';
 import '../styles/global.css';
 
 interface Props {
   description?: string;
+  image?: string;
+  metadata?: PageMetadata;
+  pathname?: string;
+  robots?: string;
   title?: string;
 }
 
 const {
-  description = 'Small, useful browser tools from Gizlet.',
-  title = 'Gizlet',
+  description,
+  image,
+  metadata: suppliedMetadata,
+  pathname = Astro.url.pathname,
+  robots,
+  title,
 } = Astro.props;
+const metadata = suppliedMetadata ?? getPageMetadata({ title, description, pathname, image, robots });
 ---
 
 <!doctype html>
@@ -20,12 +30,23 @@ const {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <meta name="description" content={description} />
+    <meta name="description" content={metadata.description} />
     <meta name="generator" content={Astro.generator} />
+    <meta name="robots" content={metadata.robots} />
+    <link rel="canonical" href={metadata.canonicalUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={metadata.title} />
+    <meta property="og:description" content={metadata.description} />
+    <meta property="og:url" content={metadata.canonicalUrl} />
+    <meta property="og:image" content={metadata.socialImageUrl} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={metadata.title} />
+    <meta name="twitter:description" content={metadata.description} />
+    <meta name="twitter:image" content={metadata.socialImageUrl} />
     <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg" />
     <link rel="icon" href="/brand/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/brand/icons/gizlet-180.png" />
-    <title>{title}</title>
+    <title>{metadata.title}</title>
     <script is:inline>
       {`(() => {
         const preference = localStorage.getItem('gizlet-theme');

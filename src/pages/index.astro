@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AdvertisementSlot from '../components/AdvertisementSlot.astro';
+import { getPageMetadata } from '../data/metadata';
 import { toolRegistry } from '../data/tools';
 
 const categories = [
@@ -15,9 +16,15 @@ const categories = [
   'Security',
   'Calculators',
 ];
+
+const metadata = getPageMetadata({
+  title: 'Gizlet | Useful internet things, without the nonsense.',
+  description: 'Useful internet things, without the nonsense. Small browser tools from Gizlet.',
+  pathname: '/',
+});
 ---
 
-<BaseLayout description="Useful internet things, without the nonsense. Small browser tools from Gizlet.">
+<BaseLayout metadata={metadata}>
   <section class="homepage-intro" aria-labelledby="homepage-title">
     <p class="metadata">Small browser tools, made properly</p>
     <h1 id="homepage-title">Useful internet things, without the nonsense.</h1>
