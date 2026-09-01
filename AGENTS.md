@@ -39,4 +39,5 @@ Read [docs/architecture.md](docs/architecture.md) before changing the applicatio
 - Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), for example `feat: add image resize tool` or `fix(json): retain invalid input`.
 - Use [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Keep `CHANGELOG.md` current for user- or contributor-visible changes.
 - Before creating a pull request, fetch `origin`, rebase the feature branch directly onto the latest `origin/main`, and verify that no unrelated, unmerged issue commits remain in the branch history.
+- After completing a change, create a pull request unless the user explicitly asks not to.
 - Do not amend, reset, force-push, close issues, or modify GitHub settings unless the user explicitly requests it.
