@@ -97,6 +97,7 @@
 </style>
 
 <script>
+  import { analyticsEvents } from '../data/analytics';
   import {
     getConversionOutputFilename,
     getOutputFormatLabel,
@@ -110,6 +111,7 @@
     isSupportedImageFile,
     type ImageOutputFormat,
   } from '../data/image-compression';
+  import { trackToolEvent } from '../scripts/analytics';
 
   const root = document.querySelector<HTMLElement>('[data-convert-image-tool]');
 
@@ -146,7 +148,11 @@
     const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     const revoke = (url: string | undefined) => { if (url) URL.revokeObjectURL(url); };
     const clearError = () => { error.hidden = true; error.textContent = ''; };
-    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showError = (message: string) => {
+      error.textContent = message;
+      error.hidden = false;
+      trackToolEvent(analyticsEvents.toolError, 'convert-image');
+    };
     const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
     const clearStatus = () => { status.hidden = true; status.textContent = ''; };
 
@@ -270,6 +276,7 @@
         download.download = getConversionOutputFilename(selectedFile.name, format);
         editor.hidden = true;
         result.hidden = false;
+        trackToolEvent(analyticsEvents.toolActionCompleted, 'convert-image');
       } catch (caughtError) {
         showError(caughtError instanceof Error ? caughtError.message : 'This image could not be converted.');
       } finally {

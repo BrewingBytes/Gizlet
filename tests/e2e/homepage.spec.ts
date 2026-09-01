@@ -13,6 +13,7 @@ test('renders the Gizlet homepage', async ({ page }) => {
   await expect(
     page.getByRole('heading', { name: 'Useful internet things, without the nonsense.' }),
   ).toBeVisible();
+  await expect(page.locator('script[src="https://plausible.io/js/script.js"]')).toHaveCount(0);
 });
 
 test('serves public sitemap and crawler-discovery files', async ({ request }) => {

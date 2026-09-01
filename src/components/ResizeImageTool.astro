@@ -135,6 +135,7 @@
 </style>
 
 <script>
+  import { analyticsEvents } from '../data/analytics';
   import {
     getInputImageFormat,
     getPreferredOutputFormat,
@@ -151,6 +152,7 @@
     validateResizeDimensions,
     type ImageDimensions,
   } from '../data/image-resize';
+  import { trackToolEvent } from '../scripts/analytics';
 
   const root = document.querySelector<HTMLElement>('[data-resize-image-tool]');
 
@@ -193,7 +195,11 @@
 
     const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     const clearError = () => { error.hidden = true; error.textContent = ''; };
-    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showError = (message: string) => {
+      error.textContent = message;
+      error.hidden = false;
+      trackToolEvent(analyticsEvents.toolError, 'resize-image');
+    };
     const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
     const clearStatus = () => { status.hidden = true; status.textContent = ''; };
     const revoke = (url: string | undefined) => { if (url) URL.revokeObjectURL(url); };
@@ -335,6 +341,7 @@
         download.download = getResizeOutputFilename(selectedFile.name, format);
         editor.hidden = true;
         result.hidden = false;
+        trackToolEvent(analyticsEvents.toolActionCompleted, 'resize-image');
       } catch (caughtError) {
         showError(caughtError instanceof Error ? caughtError.message : 'This image could not be resized.');
       } finally {
