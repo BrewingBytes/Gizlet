@@ -56,6 +56,34 @@
       <div><dt>After</dt><dd data-after-size></dd></div>
       <div><dt>Change</dt><dd data-size-change></dd></div>
     </dl>
+    <section class="compress-image-tool__comparison" aria-labelledby="comparison-title">
+      <div class="compress-image-tool__comparison-heading">
+        <div>
+          <p class="metadata">Look closer</p>
+          <h3 id="comparison-title">Original / compressed</h3>
+        </div>
+        <p class="utility-text" data-comparison-dimensions></p>
+      </div>
+      <div class="compress-image-tool__comparison-stage" data-comparison-stage>
+        <img data-comparison-original alt="Original image" />
+        <div class="compress-image-tool__comparison-overlay" data-comparison-overlay aria-hidden="true">
+          <img data-comparison-result alt="" />
+        </div>
+        <span class="compress-image-tool__comparison-label compress-image-tool__comparison-label--original" aria-hidden="true">Original</span>
+        <span class="compress-image-tool__comparison-label compress-image-tool__comparison-label--compressed" aria-hidden="true">Compressed</span>
+        <span class="compress-image-tool__comparison-divider" data-comparison-divider aria-hidden="true"><i></i></span>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value="50"
+          aria-label="Compare original and compressed image"
+          aria-describedby="comparison-help"
+          data-comparison-slider
+        />
+      </div>
+      <p id="comparison-help" class="compress-image-tool__comparison-help">Drag to compare. The dimensions stay the same.</p>
+    </section>
     <a class="compress-image-tool__download" data-download>Download image</a>
   </section>
 </section>
@@ -200,6 +228,121 @@
     font-weight: 700;
   }
 
+  .compress-image-tool__comparison {
+    margin-bottom: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: var(--border-width) solid var(--border);
+  }
+
+  .compress-image-tool__comparison-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+  }
+
+  .compress-image-tool__comparison-heading .metadata,
+  .compress-image-tool__comparison-heading h3,
+  .compress-image-tool__comparison-heading .utility-text {
+    margin: 0;
+  }
+
+  .compress-image-tool__comparison-heading h3 {
+    margin-top: var(--space-1);
+  }
+
+  .compress-image-tool__comparison-stage {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+    background: var(--border);
+  }
+
+  .compress-image-tool__comparison-stage:focus-within {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+  }
+
+  .compress-image-tool__comparison-stage > img,
+  .compress-image-tool__comparison-overlay,
+  .compress-image-tool__comparison-overlay img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .compress-image-tool__comparison-stage > img,
+  .compress-image-tool__comparison-overlay img {
+    object-fit: contain;
+    background: var(--surface);
+  }
+
+  .compress-image-tool__comparison-overlay {
+    position: absolute;
+    inset: 0;
+    clip-path: inset(0 50% 0 0);
+  }
+
+  .compress-image-tool__comparison-label {
+    position: absolute;
+    top: var(--space-2);
+    padding: 0.25rem var(--space-1);
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .compress-image-tool__comparison-label--original {
+    right: var(--space-2);
+  }
+
+  .compress-image-tool__comparison-label--compressed {
+    left: var(--space-2);
+  }
+
+  .compress-image-tool__comparison-divider {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: var(--border-strong-width);
+    background: var(--text);
+    pointer-events: none;
+    transform: translateX(-50%);
+  }
+
+  .compress-image-tool__comparison-divider i {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: var(--border-strong-width) solid var(--text);
+    border-radius: 50%;
+    background: var(--color-amber);
+    transform: translate(-50%, -50%);
+  }
+
+  .compress-image-tool__comparison-stage input[type='range'] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: ew-resize;
+    opacity: 0;
+  }
+
+  .compress-image-tool__comparison-help {
+    margin: var(--space-2) 0 0;
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+  }
+
   .compress-image-tool__download {
     display: inline-block;
     min-height: 2.75rem;
@@ -228,6 +371,11 @@
     .compress-image-tool__settings,
     .compress-image-tool__result dl {
       grid-template-columns: 1fr;
+    }
+
+    .compress-image-tool__comparison-heading {
+      align-items: start;
+      flex-direction: column;
     }
   }
 </style>
@@ -263,6 +411,13 @@
     const afterSize = root.querySelector<HTMLElement>('[data-after-size]');
     const sizeChange = root.querySelector<HTMLElement>('[data-size-change]');
     const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const comparisonStage = root.querySelector<HTMLElement>('[data-comparison-stage]');
+    const comparisonOriginal = root.querySelector<HTMLImageElement>('[data-comparison-original]');
+    const comparisonOverlay = root.querySelector<HTMLElement>('[data-comparison-overlay]');
+    const comparisonResult = root.querySelector<HTMLImageElement>('[data-comparison-result]');
+    const comparisonDimensions = root.querySelector<HTMLElement>('[data-comparison-dimensions]');
+    const comparisonDivider = root.querySelector<HTMLElement>('[data-comparison-divider]');
+    const comparisonSlider = root.querySelector<HTMLInputElement>('[data-comparison-slider]');
 
     if (
       !fileInput ||
@@ -282,7 +437,14 @@
       !beforeSize ||
       !afterSize ||
       !sizeChange ||
-      !download
+      !download ||
+      !comparisonStage ||
+      !comparisonOriginal ||
+      !comparisonOverlay ||
+      !comparisonResult ||
+      !comparisonDimensions ||
+      !comparisonDivider ||
+      !comparisonSlider
     ) {
       throw new Error('Compress Image tool could not initialise.');
     }
@@ -290,6 +452,12 @@
     let selectedFile: File | undefined;
     let previewUrl: string | undefined;
     let resultUrl: string | undefined;
+
+    const updateComparison = () => {
+      const position = Number(comparisonSlider.value);
+      comparisonOverlay.style.clipPath = `inset(0 ${100 - position}% 0 0)`;
+      comparisonDivider.style.left = `${position}%`;
+    };
 
     const clearError = () => {
       error.hidden = true;
@@ -326,6 +494,12 @@
       result.hidden = true;
       download.removeAttribute('href');
       download.removeAttribute('download');
+      comparisonOriginal.removeAttribute('src');
+      comparisonResult.removeAttribute('src');
+      comparisonDimensions.textContent = '';
+      comparisonStage.style.removeProperty('aspect-ratio');
+      comparisonSlider.value = '50';
+      updateComparison();
     };
 
     const resetTool = () => {
@@ -411,6 +585,11 @@
         beforeSize.textContent = formatFileSize(selectedFile.size);
         afterSize.textContent = formatFileSize(output.size);
         sizeChange.textContent = formatSizeChange(selectedFile.size, output.size);
+        comparisonOriginal.src = previewUrl ?? '';
+        comparisonResult.src = resultUrl;
+        comparisonDimensions.textContent = `${image.naturalWidth} × ${image.naturalHeight} px`;
+        comparisonStage.style.aspectRatio = `${image.naturalWidth} / ${image.naturalHeight}`;
+        updateComparison();
         download.href = resultUrl;
         download.download = getOutputFilename(selectedFile.name, format);
         result.hidden = false;
@@ -431,6 +610,7 @@
       qualityValue.value = `${quality.value}%`;
       qualityValue.textContent = `${quality.value}%`;
     });
+    comparisonSlider.addEventListener('input', updateComparison);
 
     for (const eventName of ['dragenter', 'dragover']) {
       dropZone.addEventListener(eventName, (event) => {

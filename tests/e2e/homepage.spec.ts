@@ -49,6 +49,12 @@ test('compresses a selected image locally and offers it for download', async ({ 
   await expect(page.getByText('Before')).toBeVisible();
   await expect(page.getByText('After')).toBeVisible();
   await expect(page.getByText(/(smaller|larger)/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Original / compressed' })).toBeVisible();
+  await expect(page.getByAltText('Original image')).toBeVisible();
+  const comparison = page.getByLabel('Compare original and compressed image');
+  await comparison.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(comparison).toHaveValue('51');
   await expect(page.getByRole('link', { name: 'Download image' })).toHaveAttribute(
     'download',
     'tiny-compressed.jpg',
