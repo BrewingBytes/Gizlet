@@ -9,6 +9,24 @@ test('renders the Gizlet homepage', async ({ page }) => {
   ).toBeVisible();
 });
 
+test('renders the reusable tool page layout with truthful status and responsive ads', async ({ page }) => {
+  await page.goto('/tools/compress-image/');
+
+  await expect(page).toHaveTitle('Compress Image | Gizlet');
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toContainText('Compress Image');
+  await expect(page.getByRole('heading', { name: 'Compress Image' })).toBeVisible();
+  await expect(page.getByLabel('Local processing')).toContainText('Your file stays on this device.');
+  await expect(page.getByLabel('Compress Image workspace')).toBeVisible();
+  await expect(page.locator('[data-ad-slot-variant="rail"]')).toHaveCSS('min-height', '250px');
+  await expect(page.locator('[data-ad-slot-variant="inline"]')).toHaveCSS('min-height', '90px');
+  await expect(page.getByRole('heading', { name: 'Related Gizlets' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Resize Image/ })).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('[data-ad-slot-variant="rail"]')).toHaveCSS('min-height', '90px');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 test('renders the editorial homepage content from the tool registry', async ({ page }) => {
   await page.goto('/');
 
