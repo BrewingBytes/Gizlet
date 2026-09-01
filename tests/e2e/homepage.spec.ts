@@ -42,6 +42,7 @@ test('compresses a selected image locally and offers it for download', async ({ 
 
   await expect(page.getByAltText('Selected image preview')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Drop an image here' })).not.toBeVisible();
+  await expect(page.getByLabel('Output format')).toHaveValue('image/png');
   await page.getByLabel('Output format').selectOption('image/jpeg');
   await page.getByRole('button', { name: 'Compress it' }).click();
 
@@ -75,7 +76,7 @@ test('explains unsupported and corrupt image files', async ({ page }) => {
     mimeType: 'text/plain',
     buffer: Buffer.from('not an image'),
   });
-  await expect(page.getByRole('alert')).toHaveText('Choose a JPEG, PNG, or WebP image.');
+  await expect(page.getByRole('alert')).toHaveText('Choose a JPEG, PNG, WebP, AVIF, or BMP image.');
 
   await fileInput.setInputFiles({
     name: 'broken.png',

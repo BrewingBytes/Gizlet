@@ -2,6 +2,14 @@ export const imageOutputFormats = ['image/jpeg', 'image/png', 'image/webp'] as c
 
 export type ImageOutputFormat = (typeof imageOutputFormats)[number];
 
+export const imageInputFormats = [
+  ...imageOutputFormats,
+  'image/avif',
+  'image/bmp',
+] as const;
+
+export type ImageInputFormat = (typeof imageInputFormats)[number];
+
 interface FileDetails {
   readonly name: string;
   readonly type: string;
@@ -18,11 +26,47 @@ export function isImageOutputFormat(format: string): format is ImageOutputFormat
 }
 
 export function isSupportedImageFile(file: FileDetails): boolean {
-  if (isImageOutputFormat(file.type)) {
+  if (isImageInputFormat(file.type)) {
     return true;
   }
 
-  return /\.(jpe?g|png|webp)$/i.test(file.name);
+  return /\.(jpe?g|png|webp|avif|bmp)$/i.test(file.name);
+}
+
+export function isImageInputFormat(format: string): format is ImageInputFormat {
+  return imageInputFormats.includes(format as ImageInputFormat);
+}
+
+export function getInputImageFormat(file: FileDetails): ImageInputFormat | undefined {
+  if (isImageInputFormat(file.type)) {
+    return file.type;
+  }
+
+  if (/\.jpe?g$/i.test(file.name)) {
+    return 'image/jpeg';
+  }
+
+  if (/\.png$/i.test(file.name)) {
+    return 'image/png';
+  }
+
+  if (/\.webp$/i.test(file.name)) {
+    return 'image/webp';
+  }
+
+  if (/\.avif$/i.test(file.name)) {
+    return 'image/avif';
+  }
+
+  if (/\.bmp$/i.test(file.name)) {
+    return 'image/bmp';
+  }
+
+  return undefined;
+}
+
+export function getPreferredOutputFormat(inputFormat: ImageInputFormat | undefined): ImageOutputFormat {
+  return inputFormat && isImageOutputFormat(inputFormat) ? inputFormat : 'image/webp';
 }
 
 export function getOutputFilename(inputName: string, format: ImageOutputFormat): string {
