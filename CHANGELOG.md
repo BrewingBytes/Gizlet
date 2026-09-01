@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - Optional, privacy-conscious Plausible analytics with anonymous page views and minimal Gizlet usage events.
+- Local JSON-LD Generator Gizlet for Product, Organization, Article, LocalBusiness, Event, and BreadcrumbList markup with live previews, copy actions, and separate validation guidance.
 - Static sitemap.xml and robots.txt generated from the launch-ready Gizlet registry routes.
 - Local Convert Image Gizlet with drag/drop, source-format detection, JPEG/PNG/WebP output, transparency-loss warnings, and verified downloads.
 - Reusable page metadata with deterministic canonical URLs, Open Graph and Twitter previews, social-image fallbacks, robots defaults, and registry-driven tool-page defaults.

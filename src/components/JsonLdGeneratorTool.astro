@@ -1,0 +1,273 @@
+---
+---
+
+<section class="json-ld-generator" data-json-ld-generator>
+  <div class="json-ld-generator__intro">
+    <label for="json-ld-type">Schema type</label>
+    <select id="json-ld-type" data-schema-type>
+      <option value="Product">Product</option>
+      <option value="Organization">Organization</option>
+      <option value="Article">Article</option>
+      <option value="LocalBusiness">Local business</option>
+      <option value="Event">Event</option>
+      <option value="BreadcrumbList">Breadcrumb list</option>
+    </select>
+    <p class="utility-text">Fill in what applies. Blank optional fields stay out of the markup.</p>
+  </div>
+
+  <div class="json-ld-generator__forms">
+    <div data-schema-form="Product">
+      <h2>Product details</h2>
+      <div class="json-ld-generator__fields">
+        <label>Product name <input name="name" autocomplete="off" required /></label>
+        <label>Brand <input name="brand" autocomplete="organization" /></label>
+        <label class="json-ld-generator__wide">Description <textarea name="description"></textarea></label>
+        <label>Image URL <input name="image" type="url" inputmode="url" placeholder="https://…" /></label>
+        <label>SKU <input name="sku" autocomplete="off" /></label>
+      </div>
+      <details class="json-ld-generator__advanced">
+        <summary>Advanced: offer details</summary>
+        <div class="json-ld-generator__fields">
+          <label>Price <input name="price" inputmode="decimal" placeholder="24.00" /></label>
+          <label>Currency <select name="currency"><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="RON">RON</option></select></label>
+          <label>Availability <select name="availability"><option value="https://schema.org/InStock">In stock</option><option value="https://schema.org/OutOfStock">Out of stock</option><option value="https://schema.org/PreOrder">Pre-order</option></select></label>
+          <label>Offer URL <input name="offerUrl" type="url" inputmode="url" placeholder="https://…" /></label>
+        </div>
+      </details>
+    </div>
+
+    <div data-schema-form="Organization" hidden>
+      <h2>Organization details</h2>
+      <div class="json-ld-generator__fields">
+        <label>Organization name <input name="name" autocomplete="organization" required /></label>
+        <label>Website URL <input name="url" type="url" inputmode="url" placeholder="https://…" /></label>
+        <label class="json-ld-generator__wide">Logo URL <input name="logo" type="url" inputmode="url" placeholder="https://…" /></label>
+      </div>
+      <details class="json-ld-generator__advanced">
+        <summary>Advanced organization details</summary>
+        <div class="json-ld-generator__fields">
+          <label>Email <input name="email" type="email" autocomplete="email" /></label>
+          <label>Telephone <input name="telephone" type="tel" autocomplete="tel" /></label>
+          <label class="json-ld-generator__wide">Social profile URL <input name="sameAs" type="url" inputmode="url" placeholder="https://…" /></label>
+        </div>
+      </details>
+    </div>
+
+    <div data-schema-form="Article" hidden>
+      <h2>Article details</h2>
+      <div class="json-ld-generator__fields">
+        <label class="json-ld-generator__wide">Headline <input name="headline" required /></label>
+        <label class="json-ld-generator__wide">Description <textarea name="description"></textarea></label>
+        <label>Image URL <input name="image" type="url" inputmode="url" placeholder="https://…" /></label>
+        <label>Date published <input name="datePublished" type="date" /></label>
+        <label>Author name <input name="authorName" autocomplete="name" /></label>
+        <label>Publisher name <input name="publisherName" autocomplete="organization" /></label>
+      </div>
+      <details class="json-ld-generator__advanced">
+        <summary>Advanced article details</summary>
+        <div class="json-ld-generator__fields">
+          <label>Date modified <input name="dateModified" type="date" /></label>
+          <label>Publisher logo URL <input name="publisherLogo" type="url" inputmode="url" placeholder="https://…" /></label>
+        </div>
+      </details>
+    </div>
+
+    <div data-schema-form="LocalBusiness" hidden>
+      <h2>Local business details</h2>
+      <div class="json-ld-generator__fields">
+        <label>Business name <input name="name" autocomplete="organization" required /></label>
+        <label>Telephone <input name="telephone" type="tel" autocomplete="tel" /></label>
+        <label class="json-ld-generator__wide">Street address <input name="streetAddress" autocomplete="street-address" /></label>
+        <label>City or locality <input name="addressLocality" autocomplete="address-level2" /></label>
+        <label>Postal code <input name="postalCode" autocomplete="postal-code" /></label>
+        <label>Country <input name="addressCountry" autocomplete="country-name" /></label>
+      </div>
+      <details class="json-ld-generator__advanced">
+        <summary>Advanced business details</summary>
+        <div class="json-ld-generator__fields">
+          <label>Website URL <input name="url" type="url" inputmode="url" placeholder="https://…" /></label>
+          <label>Image URL <input name="image" type="url" inputmode="url" placeholder="https://…" /></label>
+          <label>Price range <input name="priceRange" placeholder="$$" /></label>
+          <label>Opening hours <input name="openingHours" placeholder="Mo-Fr 09:00-17:00" /></label>
+        </div>
+      </details>
+    </div>
+
+    <div data-schema-form="Event" hidden>
+      <h2>Event details</h2>
+      <div class="json-ld-generator__fields">
+        <label class="json-ld-generator__wide">Event name <input name="name" required /></label>
+        <label>Start date and time <input name="startDate" type="datetime-local" required /></label>
+        <label>End date and time <input name="endDate" type="datetime-local" /></label>
+        <label>Location name <input name="locationName" required /></label>
+        <label>Location address <input name="locationAddress" autocomplete="street-address" /></label>
+        <label class="json-ld-generator__wide">Description <textarea name="description"></textarea></label>
+      </div>
+      <details class="json-ld-generator__advanced">
+        <summary>Advanced event details</summary>
+        <div class="json-ld-generator__fields">
+          <label>Image URL <input name="image" type="url" inputmode="url" placeholder="https://…" /></label>
+          <label>Ticket price <input name="price" inputmode="decimal" /></label>
+          <label>Currency <select name="currency"><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="RON">RON</option></select></label>
+          <label>Availability <select name="availability"><option value="https://schema.org/InStock">In stock</option><option value="https://schema.org/SoldOut">Sold out</option></select></label>
+          <label>Ticket URL <input name="offerUrl" type="url" inputmode="url" placeholder="https://…" /></label>
+          <label>Event status <select name="eventStatus"><option value="">Choose a status (optional)</option><option value="https://schema.org/EventScheduled">Scheduled</option><option value="https://schema.org/EventCancelled">Cancelled</option><option value="https://schema.org/EventPostponed">Postponed</option></select></label>
+        </div>
+      </details>
+    </div>
+
+    <div data-schema-form="BreadcrumbList" hidden>
+      <h2>Breadcrumb items</h2>
+      <p class="utility-text">Add at least two items, ordered from the broadest page to the current one.</p>
+      <div class="json-ld-generator__breadcrumbs">
+        <fieldset><legend>Item 1</legend><label>Name <input name="breadcrumb1Name" required /></label><label>URL <input name="breadcrumb1Url" type="url" inputmode="url" placeholder="https://…" required /></label></fieldset>
+        <fieldset><legend>Item 2</legend><label>Name <input name="breadcrumb2Name" required /></label><label>URL <input name="breadcrumb2Url" type="url" inputmode="url" placeholder="https://…" required /></label></fieldset>
+        <fieldset><legend>Item 3 <span>(optional)</span></legend><label>Name <input name="breadcrumb3Name" /></label><label>URL <input name="breadcrumb3Url" type="url" inputmode="url" placeholder="https://…" /></label></fieldset>
+      </div>
+    </div>
+  </div>
+
+  <section class="json-ld-generator__validation" data-validation aria-live="polite">
+    <div data-errors><p class="metadata">Schema.org errors</p><ul data-error-list></ul></div>
+    <div data-recommendations><p class="metadata">Google search recommendations</p><ul data-recommendation-list></ul><p class="utility-text">Recommendations can improve eligibility, but do not guarantee rich results or rankings.</p></div>
+  </section>
+
+  <section class="json-ld-generator__preview" aria-labelledby="json-ld-preview-title">
+    <div class="json-ld-generator__preview-heading">
+      <div><p class="metadata">Live JSON-LD preview</p><h2 id="json-ld-preview-title">Ready to paste</h2></div>
+      <div class="json-ld-generator__actions">
+        <button type="button" class="button-secondary" data-copy="json">Copy JSON-LD</button>
+        <button type="button" data-copy="script">Copy script block</button>
+      </div>
+    </div>
+    <p class="json-ld-generator__copy-status" data-copy-status role="status" aria-live="polite"></p>
+    <pre><code data-preview></code></pre>
+  </section>
+</section>
+
+<style>
+  .json-ld-generator { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .json-ld-generator__intro, .json-ld-generator__forms, .json-ld-generator__validation, .json-ld-generator__preview { padding: var(--space-4); }
+  .json-ld-generator__forms, .json-ld-generator__validation, .json-ld-generator__preview { border-top: var(--border-width) solid var(--border); }
+  .json-ld-generator__intro { max-width: 28rem; }
+  .json-ld-generator__intro > label, .json-ld-generator label { display: grid; gap: var(--space-1); font-weight: 700; }
+  .json-ld-generator__intro .utility-text { margin: var(--space-2) 0 0; }
+  .json-ld-generator__forms h2 { margin-bottom: var(--space-4); }
+  .json-ld-generator__fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+  .json-ld-generator__wide { grid-column: 1 / -1; }
+  .json-ld-generator__advanced { margin-top: var(--space-4); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .json-ld-generator__advanced summary { cursor: pointer; font-weight: 700; }
+  .json-ld-generator__advanced > div { margin-top: var(--space-3); }
+  .json-ld-generator__breadcrumbs { display: grid; gap: var(--space-3); }
+  .json-ld-generator__breadcrumbs fieldset { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin: 0; padding: var(--space-3); border: var(--border-width) solid var(--border); }
+  .json-ld-generator__breadcrumbs legend { padding: 0 var(--space-1); font-weight: 700; }
+  .json-ld-generator__breadcrumbs legend span { color: var(--text-muted); font-weight: 400; }
+  .json-ld-generator__validation { display: grid; gap: var(--space-3); }
+  .json-ld-generator__validation > div { padding-left: var(--space-3); border-left: var(--border-strong-width) solid var(--color-red); }
+  .json-ld-generator__validation > div:last-child { border-left-color: var(--color-warning); }
+  .json-ld-generator__validation p { margin-bottom: var(--space-1); }
+  .json-ld-generator__validation ul { margin: 0; padding-left: var(--space-3); }
+  .json-ld-generator__validation .utility-text { margin-top: var(--space-2); }
+  .json-ld-generator__preview-heading { display: flex; align-items: end; justify-content: space-between; gap: var(--space-3); }
+  .json-ld-generator__preview-heading p, .json-ld-generator__preview-heading h2 { margin-bottom: 0; }
+  .json-ld-generator__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .json-ld-generator__copy-status { min-height: 1.5rem; margin: var(--space-2) 0; color: var(--color-green); font-weight: 700; }
+  .json-ld-generator pre { max-height: 32rem; margin: 0; padding: var(--space-3); overflow: auto; background: var(--color-ink); color: #fffdf7; font-family: var(--font-mono); font-size: var(--font-size-sm); line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  @media (max-width: 40rem) { .json-ld-generator__intro, .json-ld-generator__forms, .json-ld-generator__validation, .json-ld-generator__preview { padding: var(--space-3); } .json-ld-generator__fields, .json-ld-generator__breadcrumbs fieldset { grid-template-columns: 1fr; } .json-ld-generator__preview-heading { align-items: start; flex-direction: column; } }
+</style>
+
+<script>
+  import {
+    formatJsonLd,
+    generateJsonLd,
+    getJsonLdMessages,
+    getJsonLdScriptBlock,
+    jsonLdSchemaTypes,
+    type JsonLdFormValues,
+    type JsonLdSchemaType,
+  } from '../data/json-ld';
+
+  const root = document.querySelector<HTMLElement>('[data-json-ld-generator]');
+
+  if (root) {
+    const typeSelect = root.querySelector<HTMLSelectElement>('[data-schema-type]');
+    const forms = root.querySelectorAll<HTMLElement>('[data-schema-form]');
+    const preview = root.querySelector<HTMLElement>('[data-preview]');
+    const errors = root.querySelector<HTMLElement>('[data-errors]');
+    const errorList = root.querySelector<HTMLUListElement>('[data-error-list]');
+    const recommendations = root.querySelector<HTMLElement>('[data-recommendations]');
+    const recommendationList = root.querySelector<HTMLUListElement>('[data-recommendation-list]');
+    const copyStatus = root.querySelector<HTMLElement>('[data-copy-status]');
+
+    if (!typeSelect || !preview || !errors || !errorList || !recommendations || !recommendationList || !copyStatus) {
+      throw new Error('JSON-LD Generator could not initialise.');
+    }
+
+    const selectedType = (): JsonLdSchemaType => {
+      const candidate = typeSelect.value;
+      return jsonLdSchemaTypes.includes(candidate as JsonLdSchemaType) ? candidate as JsonLdSchemaType : 'Product';
+    };
+    const activeForm = (): HTMLElement => root.querySelector<HTMLElement>(`[data-schema-form="${selectedType()}"]`)!;
+    const values = (): JsonLdFormValues => Object.fromEntries(
+      [...activeForm().querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('input, textarea, select')]
+        .map((field) => [field.name, field.value]),
+    );
+    const addMessages = (list: HTMLUListElement, messages: readonly string[]) => {
+      list.replaceChildren(...messages.map((message) => {
+        const item = document.createElement('li');
+        item.textContent = message;
+        return item;
+      }));
+    };
+    let generated = generateJsonLd(selectedType(), values());
+
+    const render = () => {
+      generated = generateJsonLd(selectedType(), values());
+      preview.textContent = formatJsonLd(generated);
+      const messages = getJsonLdMessages(selectedType(), values());
+      const errorMessages = messages.filter((message) => message.level === 'error').map((message) => message.text);
+      const recommendationMessages = messages.filter((message) => message.level === 'recommendation').map((message) => message.text);
+      errors.hidden = errorMessages.length === 0;
+      recommendations.hidden = recommendationMessages.length === 0;
+      addMessages(errorList, errorMessages);
+      addMessages(recommendationList, recommendationMessages);
+    };
+    const changeType = () => {
+      forms.forEach((form) => { form.hidden = form.dataset.schemaForm !== selectedType(); });
+      copyStatus.textContent = '';
+      render();
+    };
+    const copy = async (text: string) => {
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          return;
+        }
+      } catch {
+        // Some browsers expose Clipboard but deny it outside a secure context.
+      }
+      const fallback = document.createElement('textarea');
+      fallback.value = text;
+      fallback.style.position = 'fixed';
+      fallback.style.left = '-9999px';
+      document.body.append(fallback);
+      fallback.select();
+      const copied = document.execCommand('copy');
+      fallback.remove();
+      if (!copied) throw new Error('Copy is unavailable in this browser.');
+    };
+
+    typeSelect.addEventListener('change', changeType);
+    root.addEventListener('input', render);
+    root.addEventListener('change', render);
+    root.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const script = button.dataset.copy === 'script';
+        void copy(script ? getJsonLdScriptBlock(generated) : formatJsonLd(generated))
+          .then(() => { copyStatus.textContent = script ? 'Script block copied to your clipboard.' : 'JSON-LD copied to your clipboard.'; })
+          .catch(() => { copyStatus.textContent = 'Could not copy automatically. Select the preview and copy it manually.'; });
+      });
+    });
+    render();
+  }
+</script>
