@@ -77,6 +77,10 @@
   <section class="resize-image-tool__result" data-result aria-live="polite" hidden>
     <p class="metadata">Ready to download</p>
     <h2>Right size. Ready to go.</h2>
+    <figure class="resize-image-tool__result-preview">
+      <img data-result-image alt="Resized image preview" />
+      <figcaption>Actual resized image</figcaption>
+    </figure>
     <dl>
       <div><dt>Original</dt><dd data-original-dimensions></dd></div>
       <div><dt>Resized</dt><dd data-result-dimensions></dd></div>
@@ -92,7 +96,7 @@
   .resize-image-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
   .resize-image-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
   .resize-image-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
-  .resize-image-tool__picker[hidden], .resize-image-tool__editor[hidden], .resize-image-tool__result[hidden] { display: none; }
+  .resize-image-tool__picker[hidden], .resize-image-tool__editor[hidden], .resize-image-tool__result[hidden], .resize-image-tool__dimensions[hidden], .resize-image-tool__percentage[hidden] { display: none; }
   .resize-image-tool__picker h2 { margin-bottom: var(--space-2); }
   .resize-image-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
   .resize-image-tool__status, .resize-image-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--color-green); color: var(--text-muted); }
@@ -118,6 +122,9 @@
   .resize-image-tool__format label { display: block; }
   .resize-image-tool__actions, .resize-image-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
   .resize-image-tool__result h2 { margin-bottom: var(--space-4); }
+  .resize-image-tool__result-preview { margin: 0 0 var(--space-4); }
+  .resize-image-tool__result-preview img { display: block; max-width: 100%; max-height: 24rem; margin: 0 auto; border: var(--border-width) solid var(--border); }
+  .resize-image-tool__result-preview figcaption { margin-top: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
   .resize-image-tool__result dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); margin: 0 0 var(--space-4); }
   .resize-image-tool__result dl div { padding: var(--space-2); border-top: var(--border-width) solid var(--border); }
   .resize-image-tool__result dt { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
@@ -168,12 +175,13 @@
     const resizeButton = root.querySelector<HTMLButtonElement>('[data-resize]');
     const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
     const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultImage = root.querySelector<HTMLImageElement>('[data-result-image]');
     const originalDimensions = root.querySelector<HTMLElement>('[data-original-dimensions]');
     const resultDimensions = root.querySelector<HTMLElement>('[data-result-dimensions]');
     const download = root.querySelector<HTMLAnchorElement>('[data-download]');
     const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
 
-    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !previewImage || !inputName || !dimensionFields || !percentageFields || !widthInput || !heightInput || !aspectLock || !percentageInput || !dimensionPreview || !outputFormat || !resizeButton || !clearButton || !result || !originalDimensions || !resultDimensions || !download || !resultClearButton) {
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !previewImage || !inputName || !dimensionFields || !percentageFields || !widthInput || !heightInput || !aspectLock || !percentageInput || !dimensionPreview || !outputFormat || !resizeButton || !clearButton || !result || !resultImage || !originalDimensions || !resultDimensions || !download || !resultClearButton) {
       throw new Error('Resize Image tool could not initialise.');
     }
 
@@ -195,6 +203,7 @@
       revoke(resultUrl);
       resultUrl = undefined;
       result.hidden = true;
+      resultImage.removeAttribute('src');
       download.removeAttribute('href');
       download.removeAttribute('download');
     };
@@ -321,6 +330,7 @@
         resultUrl = URL.createObjectURL(output);
         originalDimensions.textContent = `${sourceDimensions.width} × ${sourceDimensions.height} px`;
         resultDimensions.textContent = `${dimensions.width} × ${dimensions.height} px`;
+        resultImage.src = resultUrl;
         download.href = resultUrl;
         download.download = getResizeOutputFilename(selectedFile.name, format);
         editor.hidden = true;
