@@ -9,3 +9,7 @@ test('each Gizlet has a unique stable id and slug', () => {
   expect(new Set(ids)).toHaveLength(ids.length);
   expect(new Set(slugs)).toHaveLength(slugs.length);
 });
+
+test('each Gizlet path uses Astro’s canonical trailing-slash route', () => {
+  expect(toolRegistry.every((tool) => tool.path.endsWith('/'))).toBe(true);
+});

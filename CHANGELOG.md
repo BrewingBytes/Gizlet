@@ -31,6 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- Link Gizlet cards and search results to Astro’s required trailing-slash routes.
 - Keep the Gizlet wordmark visible on dark theme backgrounds.
 
 ## Release policy

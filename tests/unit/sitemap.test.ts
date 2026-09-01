@@ -15,7 +15,7 @@ describe('sitemap generation', () => {
       new URL('/', siteUrl).toString(),
       ...toolRegistry
         .filter((tool) => tool.launchStatus === 'available')
-        .map((tool) => new URL(`${tool.path}/`, siteUrl).toString()),
+        .map((tool) => new URL(tool.path, siteUrl).toString()),
     ];
 
     expect(getSitemapUrls()).toEqual(expectedUrls);
