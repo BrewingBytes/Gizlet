@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Static sitemap.xml and robots.txt generated from the launch-ready Gizlet registry routes.
 - Local Convert Image Gizlet with drag/drop, source-format detection, JPEG/PNG/WebP output, transparency-loss warnings, and verified downloads.
 - Reusable page metadata with deterministic canonical URLs, Open Graph and Twitter previews, social-image fallbacks, robots defaults, and registry-driven tool-page defaults.
 - Local Resize Image Gizlet with exact dimensions, an aspect-ratio lock, percentage scaling, output format choices, large-image feedback, and downloads.

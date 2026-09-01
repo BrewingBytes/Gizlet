@@ -15,6 +15,20 @@ test('renders the Gizlet homepage', async ({ page }) => {
   ).toBeVisible();
 });
 
+test('serves public sitemap and crawler-discovery files', async ({ request }) => {
+  const sitemap = await request.get('/sitemap.xml');
+  const robots = await request.get('/robots.txt');
+
+  expect(sitemap.headers()['content-type']).toContain('xml');
+  await expect(sitemap).toBeOK();
+  await expect(sitemap.text()).resolves.toContain('https://gizlet.com/tools/compress-image/');
+  await expect(sitemap.text()).resolves.not.toContain('json-ld-generator');
+
+  expect(robots.headers()['content-type']).toContain('text/plain');
+  await expect(robots).toBeOK();
+  await expect(robots.text()).resolves.toContain('Sitemap: https://gizlet.com/sitemap.xml');
+});
+
 test('renders the reusable tool page layout with truthful status and responsive ads', async ({ page }) => {
   await page.goto('/tools/compress-image/');
 
