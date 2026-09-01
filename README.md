@@ -70,6 +70,8 @@ The final public privacy policy will describe the implemented behavior—not ass
 
 Policy pages and the finalized disclosure are tracked in [#21](https://github.com/BrewingBytes/Gizlet/issues/21), [#22](https://github.com/BrewingBytes/Gizlet/issues/22), and [#24](https://github.com/BrewingBytes/Gizlet/issues/24).
 
+See [docs/privacy.md](docs/privacy.md) for the implemented analytics data contract and production setup.
+
 ## License
 
 Copyright 2026 BrewingBytes. Gizlet is licensed under the [Apache License 2.0](LICENSE). You may use, modify, and distribute it under that license's terms.

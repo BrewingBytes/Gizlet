@@ -394,6 +394,7 @@
 </style>
 
 <script>
+  import { analyticsEvents } from '../data/analytics';
   import {
     formatFileSize,
     formatSizeChange,
@@ -404,6 +405,7 @@
     isSupportedImageFile,
     type ImageOutputFormat,
   } from '../data/image-compression';
+  import { trackToolEvent } from '../scripts/analytics';
 
   const root = document.querySelector<HTMLElement>('[data-compress-image-tool]');
 
@@ -484,6 +486,7 @@
     const showError = (message: string) => {
       error.textContent = message;
       error.hidden = false;
+      trackToolEvent(analyticsEvents.toolError, 'compress-image');
     };
 
     const revokePreviewUrl = () => {
@@ -615,6 +618,7 @@
         download.download = getOutputFilename(selectedFile.name, format);
         editor.hidden = true;
         result.hidden = false;
+        trackToolEvent(analyticsEvents.toolActionCompleted, 'compress-image');
       } catch (caughtError) {
         showError(caughtError instanceof Error ? caughtError.message : 'This image could not be compressed.');
       } finally {
