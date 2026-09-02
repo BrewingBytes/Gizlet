@@ -30,11 +30,11 @@ function storeThemePreference(theme: Theme): void {
   }
 }
 
+/** The visible label follows `data-theme` in CSS, so this only updates state. */
 function applyTheme(theme: Theme, toggle: HTMLButtonElement): void {
   document.documentElement.dataset.theme = theme;
   toggle.setAttribute('aria-pressed', String(theme === 'dark'));
   toggle.setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`);
-  toggle.textContent = theme === 'dark' ? 'Light' : 'Dark';
 }
 
 export function initializeThemeToggle(): void {

@@ -51,7 +51,8 @@ const navigationItems = [
         aria-label="Choose color theme"
         aria-pressed="false"
       >
-        Theme
+        <span class="site-header__theme-label site-header__theme-label--light">Dark</span>
+        <span class="site-header__theme-label site-header__theme-label--dark">Light</span>
       </button>
     </div>
   </div>
@@ -159,6 +160,38 @@ const navigationItems = [
     border-color: var(--text);
     background: transparent;
     color: var(--text);
+  }
+
+  /*
+    The label follows the theme in CSS rather than from the toggle script, so the
+    first paint already shows the resolved theme. Writing it from script instead
+    resized the button after hydration and shifted the whole page on narrow screens.
+  */
+  .site-header__theme-label--dark {
+    display: none;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .site-header__theme-label--light {
+      display: none;
+    }
+
+    .site-header__theme-label--dark {
+      display: inline;
+    }
+  }
+
+  :global(:root[data-theme='light']) .site-header__theme-label--light {
+    display: inline;
+  }
+
+  :global(:root[data-theme='light']) .site-header__theme-label--dark,
+  :global(:root[data-theme='dark']) .site-header__theme-label--light {
+    display: none;
+  }
+
+  :global(:root[data-theme='dark']) .site-header__theme-label--dark {
+    display: inline;
   }
 
   @media (max-width: 44rem) {

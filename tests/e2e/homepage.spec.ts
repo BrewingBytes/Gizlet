@@ -693,3 +693,32 @@ test("persists an explicitly selected theme across reloads", async ({
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 });
+
+test("labels the theme toggle without shifting the page after load", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    (window as unknown as { __layoutShift: number }).__layoutShift = 0;
+    new PerformanceObserver((entries) => {
+      for (const entry of entries.getEntries() as (PerformanceEntry & {
+        value: number;
+        hadRecentInput: boolean;
+      })[]) {
+        if (!entry.hadRecentInput) {
+          (window as unknown as { __layoutShift: number }).__layoutShift +=
+            entry.value;
+        }
+      }
+    }).observe({ type: "layout-shift", buffered: true });
+  });
+  await page.goto("/");
+
+  const toggle = page.getByRole("button", { name: "Switch to dark theme" });
+  await expect(toggle).toHaveText("Dark", { useInnerText: true });
+
+  const shift = await page.evaluate(
+    () => (window as unknown as { __layoutShift: number }).__layoutShift,
+  );
+  expect(shift).toBeLessThan(0.05);
+});
