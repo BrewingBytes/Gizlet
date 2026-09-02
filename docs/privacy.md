@@ -8,6 +8,8 @@ Nothing. Gizlet ships no analytics module, no provider script tag, and no client
 
 Because Gizlet defines no events, there is no code path that could put a file's contents, filename, size, dimensions, or format, JSON contents, a generated password, a tool result, or an error message into analytics. Cloudflare Web Analytics also does not log URL query strings, so a value that reached a URL could not be collected either.
 
+Cloudflare's proxy adds more to a page load than the analytics beacon. The browser also fetches Cloudflare's bot-detection script from `/cdn-cgi/challenge-platform/` and posts its result, next to the `/cdn-cgi/rum` request that carries the Web Analytics measurement. These are zone-level Cloudflare features rather than Gizlet code, and they do not respond to tool activity: loading a 325 KB image into a Gizlet and compressing it leaves their payloads the same size as a page load with no file at all. No Gizlet input reaches them.
+
 Cloudflare Web Analytics does not currently support custom events, so the previous `tool_opened`, `tool_action_completed`, and `tool_error` events are gone. Per-Gizlet usage is still visible because every Gizlet is its own route, such as `/tools/compress-image/`; completion and error rates are not. Retention is limited to roughly 30 days.
 
 For Cloudflare's handling of this data, see its [privacy policy](https://www.cloudflare.com/privacypolicy/) and the [Web Analytics documentation](https://developers.cloudflare.com/web-analytics/).
