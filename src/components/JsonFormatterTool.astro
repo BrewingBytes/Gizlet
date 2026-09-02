@@ -100,23 +100,11 @@
       });
     };
     const copy = async (text: string) => {
-      try {
-        if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(text);
-          return;
-        }
-      } catch {
-        // Some browsers expose Clipboard but deny it outside a secure context.
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('Copy is unavailable in this browser.');
       }
-      const fallback = document.createElement('textarea');
-      fallback.value = text;
-      fallback.style.position = 'fixed';
-      fallback.style.left = '-9999px';
-      document.body.append(fallback);
-      fallback.select();
-      const copied = document.execCommand('copy');
-      fallback.remove();
-      if (!copied) throw new Error('Copy is unavailable in this browser.');
+
+      await navigator.clipboard.writeText(text);
     };
     const transform = (action: JsonTransformAction) => {
       const transformed = transformJson(input.value, action);
