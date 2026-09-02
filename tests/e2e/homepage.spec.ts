@@ -240,7 +240,7 @@ test("renders the reusable tool page layout without reserved ad space while ads 
     page.getByRole("navigation", { name: "Breadcrumb" }),
   ).toContainText("Compress Image");
   await expect(
-    page.getByRole("heading", { name: "Compress Image" }),
+    page.getByRole("heading", { level: 1, name: "Compress Image" }),
   ).toBeVisible();
   await expect(page.getByLabel("Local processing")).toContainText(
     "Your file stays on this device.",
@@ -268,7 +268,7 @@ test("creates, previews, and copies JSON-LD locally", async ({
   await page.goto("/tools/json-ld-generator/");
 
   await expect(
-    page.getByRole("heading", { name: "JSON-LD Generator" }),
+    page.getByRole("heading", { level: 1, name: "JSON-LD Generator" }),
   ).toBeVisible();
   await expect(page.getByLabel("Local processing")).toContainText(
     "Your file stays on this device.",
@@ -362,9 +362,10 @@ test("compresses a selected image locally and offers it for download", async ({
   const result = page.getByText("Your image is ready.");
   await expect(result).toBeVisible();
   await expect(page.getByLabel("Output format")).not.toBeVisible();
-  await expect(page.getByText("Before")).toBeVisible();
-  await expect(page.getByText("After")).toBeVisible();
-  await expect(page.getByText(/(smaller|larger)/)).toBeVisible();
+  const resultPanel = page.locator("[data-result]");
+  await expect(resultPanel.getByText("Before", { exact: true })).toBeVisible();
+  await expect(resultPanel.getByText("After", { exact: true })).toBeVisible();
+  await expect(resultPanel.locator("[data-size-change]")).toHaveText(/(smaller|larger)/);
   await expect(
     page.getByRole("heading", { name: "Original / compressed" }),
   ).toBeVisible();
@@ -823,4 +824,52 @@ test("publishes structured data search engines can read", async ({ page }) => {
       .textContent()) as string,
   );
   expect(siteMarkup["@type"]).toBe("WebSite");
+});
+
+test("keeps the workspace above the supporting content at every width", async ({
+  page,
+}) => {
+  await page.goto("/tools/compress-image/");
+
+  const workspace = page.getByLabel("Compress Image workspace");
+  const firstSection = page.getByRole("heading", {
+    level: 2,
+    name: "What Compress Image does",
+  });
+  const faqQuestion = page.getByRole("heading", {
+    level: 3,
+    name: "Why does the quality slider do nothing for PNG?",
+  });
+
+  const markup = JSON.parse(
+    (await page
+      .locator('script[type="application/ld+json"]')
+      .textContent()) as string,
+  );
+  const faqMarkup = markup.find(
+    (item: { "@type": string }) => item["@type"] === "FAQPage",
+  );
+  expect(faqMarkup.mainEntity).toHaveLength(5);
+
+  for (const question of faqMarkup.mainEntity) {
+    await expect(
+      page.getByRole("heading", { level: 3, name: question.name }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(question.acceptedAnswer.text, { exact: true }),
+    ).toBeVisible();
+  }
+
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+
+    const workspaceBox = (await workspace.boundingBox())!;
+    const sectionBox = (await firstSection.boundingBox())!;
+    const faqBox = (await faqQuestion.boundingBox())!;
+
+    expect(sectionBox.y, `${width}px`).toBeGreaterThan(
+      workspaceBox.y + workspaceBox.height,
+    );
+    expect(faqBox.y, `${width}px`).toBeGreaterThan(sectionBox.y);
+  }
 });

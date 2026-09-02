@@ -2,6 +2,11 @@
 import type { AdvertisementRailSize } from '../data/advertisement-slots';
 import { getAdvertisementConfiguration } from '../data/advertising';
 import { getToolMetadata } from '../data/metadata';
+import {
+  getContentSectionId,
+  getToolContentSections,
+  getToolPageContent,
+} from '../data/tool-page-content';
 import { getToolProcessingStatus } from '../data/tool-page-status';
 import { getToolStructuredData } from '../data/structured-data';
 import type { ToolRegistryEntry } from '../data/tools';
@@ -34,6 +39,7 @@ const {
   title,
 } = Astro.props;
 const status = getToolProcessingStatus(tool, processingStatus);
+const content = getToolPageContent(tool);
 const metadata = getToolMetadata(tool, { title, description, image, robots });
 const advertising = getAdvertisementConfiguration({
   isDevelopment: import.meta.env.DEV,
@@ -88,6 +94,41 @@ const shouldShowRail = showRail && advertising.enabled && advertising.slots.rail
 
       {shouldShowRail && <AdvertisementSlot variant="rail" railSize={railSize} />}
     </div>
+
+    {
+      content && (
+        <div class="tool-page__about">
+          {getToolContentSections(content).map((section) => (
+            <section class="tool-page__about-section" aria-labelledby={getContentSectionId(section)}>
+              <h2 id={getContentSectionId(section)}>{section.heading}</h2>
+              {section.paragraphs.map((paragraph) => (
+                <p>{paragraph}</p>
+              ))}
+              {section.details && section.details.length > 0 && (
+                <dl class="tool-page__about-details">
+                  {section.details.map((detail) => (
+                    <>
+                      <dt>{detail.term}</dt>
+                      <dd>{detail.description}</dd>
+                    </>
+                  ))}
+                </dl>
+              )}
+            </section>
+          ))}
+
+          <section class="tool-page__faq" aria-labelledby="tool-faq-title">
+            <h2 id="tool-faq-title">Common questions about {tool.name}</h2>
+            {content.faq.map((entry) => (
+              <div class="tool-page__faq-entry">
+                <h3>{entry.question}</h3>
+                <p>{entry.answer}</p>
+              </div>
+            ))}
+          </section>
+        </div>
+      )
+    }
 
     {
       relatedTools.length > 0 && (
@@ -198,6 +239,56 @@ const shouldShowRail = showRail && advertising.enabled && advertising.slots.rail
 
   .tool-page__main-column > :global(*) + :global(*) {
     margin-top: var(--space-5);
+  }
+
+  .tool-page__about {
+    max-width: 44rem;
+    margin-top: var(--space-7);
+  }
+
+  .tool-page__about-section + .tool-page__about-section,
+  .tool-page__faq {
+    margin-top: var(--space-6);
+  }
+
+  .tool-page__about h2 {
+    padding-bottom: var(--space-1);
+    border-bottom: var(--border-width) solid var(--border);
+    font-size: var(--font-size-xl);
+  }
+
+  .tool-page__about p {
+    color: var(--text-muted);
+  }
+
+  .tool-page__about-details {
+    margin: 0;
+  }
+
+  .tool-page__about-details dt {
+    margin-top: var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .tool-page__about-details dd {
+    margin: var(--space-1) 0 0;
+    color: var(--text-muted);
+  }
+
+  .tool-page__faq-entry + .tool-page__faq-entry {
+    margin-top: var(--space-4);
+  }
+
+  .tool-page__faq h3 {
+    margin-bottom: var(--space-1);
+    font-size: var(--font-size-lg);
+  }
+
+  .tool-page__faq p {
+    margin: 0;
   }
 
   .tool-page__related {

@@ -6,6 +6,7 @@ import {
   getToolStructuredData,
   serialiseStructuredData,
 } from '../../src/data/structured-data';
+import { getToolPageContent } from '../../src/data/tool-page-content';
 import { getAvailableTools, toolRegistry } from '../../src/data/tools';
 
 const compressImage = toolRegistry.find((tool) => tool.slug === 'compress-image')!;
@@ -77,6 +78,32 @@ describe('getToolStructuredData', () => {
     for (const tool of getAvailableTools()) {
       expect(getToolStructuredData(tool)[0].name).toBe(tool.name);
     }
+  });
+
+  it('publishes the FAQ the page renders, question for question', () => {
+    for (const tool of getAvailableTools()) {
+      const faq = getToolPageContent(tool)!.faq;
+      const markup = getToolStructuredData(tool).find((item) => item['@type'] === 'FAQPage');
+
+      expect(markup, tool.slug).toBeDefined();
+      expect(markup!.url).toBe(`https://gizlet.app${tool.path}`);
+      expect(markup!.mainEntity).toEqual(
+        faq.map((entry) => ({
+          '@type': 'Question',
+          name: entry.question,
+          acceptedAnswer: { '@type': 'Answer', text: entry.answer },
+        })),
+      );
+    }
+  });
+
+  it('publishes no FAQ markup for a Gizlet without supporting content', () => {
+    const plannedTool = { ...compressImage, slug: 'planned-gizlet' } as const;
+
+    expect(getToolStructuredData(plannedTool).map((item) => item['@type'])).toEqual([
+      'SoftwareApplication',
+      'BreadcrumbList',
+    ]);
   });
 });
 

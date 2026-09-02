@@ -1,4 +1,5 @@
 import { siteUrl } from './metadata';
+import { getToolPageContent, type ToolFaqEntry } from './tool-page-content';
 import { getAvailableTools, toolsIndexPath, type ToolRegistryEntry } from './tools';
 
 /**
@@ -59,11 +60,36 @@ export function getToolIndexStructuredData(): readonly StructuredDataItem[] {
 }
 
 /**
+ * Describes the questions a Gizlet page answers, from the same copy the page
+ * renders. A Gizlet without supporting content publishes no FAQ markup.
+ */
+function getToolFaqStructuredData(
+  tool: ToolRegistryEntry,
+  faq: readonly ToolFaqEntry[],
+): StructuredDataItem {
+  return {
+    '@context': schemaContext,
+    '@type': 'FAQPage',
+    url: absoluteUrl(tool.path),
+    mainEntity: faq.map((entry) => ({
+      '@type': 'Question',
+      name: entry.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: entry.answer,
+      },
+    })),
+  };
+}
+
+/**
  * Describes a Gizlet as the free browser application it is, with the trail that
  * leads to it. The trailing crumb intentionally has no `item`: it is the page
- * being described.
+ * being described. The FAQ is appended only when the page renders one.
  */
 export function getToolStructuredData(tool: ToolRegistryEntry): readonly StructuredDataItem[] {
+  const faq = getToolPageContent(tool)?.faq;
+
   return [
     {
       '@context': schemaContext,
@@ -91,6 +117,7 @@ export function getToolStructuredData(tool: ToolRegistryEntry): readonly Structu
         { '@type': 'ListItem', position: 3, name: tool.name },
       ],
     },
+    ...(faq && faq.length > 0 ? [getToolFaqStructuredData(tool, faq)] : []),
   ];
 }
 
