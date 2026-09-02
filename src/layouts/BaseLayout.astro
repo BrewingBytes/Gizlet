@@ -2,6 +2,7 @@
 import SiteFooter from '../components/SiteFooter.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import ToolSearchOverlay from '../components/ToolSearchOverlay.astro';
+import { adSenseScriptBaseUrl, getAdvertisementConfiguration } from '../data/advertising';
 import { getAnalyticsConfiguration, plausibleScriptUrl } from '../data/analytics';
 import { getPageMetadata, type PageMetadata } from '../data/metadata';
 import '../styles/global.css';
@@ -28,6 +29,14 @@ const analytics = getAnalyticsConfiguration({
   isDevelopment: import.meta.env.DEV,
   enabled: import.meta.env.PUBLIC_ANALYTICS_ENABLED,
   plausibleDomain: import.meta.env.PUBLIC_PLAUSIBLE_DOMAIN,
+});
+const advertising = getAdvertisementConfiguration({
+  isDevelopment: import.meta.env.DEV,
+  enabled: import.meta.env.PUBLIC_ADS_ENABLED,
+  adSenseClient: import.meta.env.PUBLIC_ADSENSE_CLIENT,
+  bannerSlot: import.meta.env.PUBLIC_ADSENSE_BANNER_SLOT,
+  inlineSlot: import.meta.env.PUBLIC_ADSENSE_INLINE_SLOT,
+  railSlot: import.meta.env.PUBLIC_ADSENSE_RAIL_SLOT,
 });
 ---
 
@@ -72,6 +81,16 @@ const analytics = getAnalyticsConfiguration({
           </script>
           <script is:inline defer data-domain={analytics.plausibleDomain} src={plausibleScriptUrl}></script>
         </>
+      )
+    }
+    {
+      advertising.enabled && advertising.adSenseClient && (
+        <script
+          is:inline
+          async
+          src={`${adSenseScriptBaseUrl}?client=${advertising.adSenseClient}`}
+          crossorigin="anonymous"
+        ></script>
       )
     }
   </head>

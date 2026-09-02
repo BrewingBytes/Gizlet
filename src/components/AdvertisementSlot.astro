@@ -4,6 +4,7 @@ import {
   type AdvertisementRailSize,
   type AdvertisementSlotVariant,
 } from '../data/advertisement-slots';
+import { getAdvertisementConfiguration } from '../data/advertising';
 
 interface Props {
   variant: AdvertisementSlotVariant;
@@ -13,33 +14,71 @@ interface Props {
 const { variant, railSize = 'standard' } = Astro.props;
 const railSizeClass = variant === 'rail' ? `advertisement-slot--rail-${railSize}` : '';
 const reservation = getAdvertisementSlotReservation(variant, railSize);
+const advertising = getAdvertisementConfiguration({
+  isDevelopment: import.meta.env.DEV,
+  enabled: import.meta.env.PUBLIC_ADS_ENABLED,
+  adSenseClient: import.meta.env.PUBLIC_ADSENSE_CLIENT,
+  bannerSlot: import.meta.env.PUBLIC_ADSENSE_BANNER_SLOT,
+  inlineSlot: import.meta.env.PUBLIC_ADSENSE_INLINE_SLOT,
+  railSlot: import.meta.env.PUBLIC_ADSENSE_RAIL_SLOT,
+});
+const adSenseSlot = advertising.slots[variant];
+const adSenseFormat = variant === 'banner' ? 'horizontal' : variant === 'rail' ? 'vertical' : 'rectangle';
 ---
 
-<aside
-  class:list={['advertisement-slot', `advertisement-slot--${variant}`, railSizeClass]}
-  aria-label="Advertisement"
-  data-ad-slot
-  data-ad-slot-variant={variant}
-  style={`--advertisement-slot-min-height: ${reservation.minimumHeight}; --advertisement-slot-mobile-min-height: ${reservation.mobileMinimumHeight};`}
->
-  <slot>
-    <p class="metadata">Advertisement</p>
-  </slot>
-</aside>
+{
+  advertising.enabled && advertising.adSenseClient && adSenseSlot && (
+    <aside
+      class:list={['advertisement-slot', `advertisement-slot--${variant}`, railSizeClass]}
+      aria-label="Advertisement"
+      data-ad-slot
+      data-ad-slot-variant={variant}
+      style={`--advertisement-slot-min-height: ${reservation.minimumHeight}; --advertisement-slot-mobile-min-height: ${reservation.mobileMinimumHeight};`}
+    >
+      <p class="metadata" aria-hidden="true">Advertisement</p>
+      <ins
+        class="adsbygoogle advertisement-slot__unit"
+        style="display: block"
+        data-ad-client={advertising.adSenseClient}
+        data-ad-slot={adSenseSlot}
+        data-ad-format={adSenseFormat}
+        data-full-width-responsive="true"
+      ></ins>
+    </aside>
+  )
+}
+
+{
+  advertising.enabled && advertising.adSenseClient && adSenseSlot && (
+    <script is:inline>
+      {`try {
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+      } catch {
+        // An unavailable or blocked provider must never interrupt the Gizlet.
+      }`}
+    </script>
+  )
+}
 
 <style>
   .advertisement-slot {
     display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
     width: 100%;
     min-height: var(--advertisement-slot-min-height);
-    place-items: center;
     border-top: var(--border-width) solid var(--border);
     border-bottom: var(--border-width) solid var(--border);
     color: var(--text-muted);
+    overflow: hidden;
   }
 
   .advertisement-slot :global(.metadata) {
-    margin: 0;
+    margin: var(--space-1) var(--space-2) 0;
+  }
+
+  .advertisement-slot__unit {
+    width: 100%;
+    min-width: 0;
   }
 
   .advertisement-slot--banner,

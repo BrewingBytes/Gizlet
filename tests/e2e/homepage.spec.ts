@@ -26,6 +26,10 @@ test("renders the Gizlet homepage", async ({ page }) => {
   await expect(
     page.locator('script[src="https://plausible.io/js/script.js"]'),
   ).toHaveCount(0);
+  await expect(
+    page.locator('script[src*="pagead2.googlesyndication.com"]'),
+  ).toHaveCount(0);
+  await expect(page.locator('[data-ad-slot]')).toHaveCount(0);
 });
 
 test("serves public sitemap and crawler-discovery files", async ({
@@ -50,7 +54,7 @@ test("serves public sitemap and crawler-discovery files", async ({
   );
 });
 
-test("renders the reusable tool page layout with truthful status and responsive ads", async ({
+test("renders the reusable tool page layout without reserved ad space while ads are disabled", async ({
   page,
 }) => {
   await page.goto("/tools/compress-image/");
@@ -78,24 +82,13 @@ test("renders the reusable tool page layout with truthful status and responsive 
     "Your file stays on this device.",
   );
   await expect(page.getByLabel("Compress Image workspace")).toBeVisible();
-  await expect(page.locator('[data-ad-slot-variant="rail"]')).toHaveCSS(
-    "min-height",
-    "250px",
-  );
-  await expect(page.locator('[data-ad-slot-variant="inline"]')).toHaveCSS(
-    "min-height",
-    "90px",
-  );
+  await expect(page.locator('[data-ad-slot]')).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Related Gizlets" }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: /Resize Image/ })).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator('[data-ad-slot-variant="rail"]')).toHaveCSS(
-    "min-height",
-    "90px",
-  );
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -335,11 +328,7 @@ test("renders the editorial homepage content from the tool registry", async ({
     "placeholder",
     "compress a photo, merge a PDF, make JSON-LD…",
   );
-  await expect(page.getByLabel("Advertisement")).toBeVisible();
-  await expect(page.locator('[data-ad-slot-variant="banner"]')).toHaveCSS(
-    "min-height",
-    "90px",
-  );
+  await expect(page.locator('[data-ad-slot-variant="banner"]')).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Popular Gizlets" }),
   ).toBeVisible();
