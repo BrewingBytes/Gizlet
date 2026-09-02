@@ -58,6 +58,12 @@ test("serves public sitemap and crawler-discovery files", async ({
 test("links to and renders public information pages with page metadata", async ({ page }) => {
   await page.goto("/");
 
+  const primaryNavigation = page.getByRole("navigation", { name: "Primary navigation" });
+  await expect(primaryNavigation.getByRole("link", { name: "Request a Gizlet" })).toHaveAttribute(
+    "href",
+    "/request-a-gizlet/",
+  );
+
   const footer = page.getByRole("navigation", { name: "Footer navigation" });
   await expect(footer.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy/");
   await expect(footer.getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms/");
