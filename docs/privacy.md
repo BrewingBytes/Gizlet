@@ -22,11 +22,13 @@ There is nothing to configure in the repository, and no `PUBLIC_*` variable gate
 
 Automatic injection requires that responses stay rewritable at the edge. A response served with `Cache-Control: no-transform` is not modified, so the beacon would not be added and measurement would silently stop. Gizlet's pages are served without `no-transform`.
 
-To confirm a deployment is measured, check that the beacon reaches the built page:
+To confirm a deployment is measured, check that the beacon reaches the built page. The `Accept` header is required: Cloudflare only injects the beacon into responses it treats as an HTML navigation, so a request sending the `curl` default of `Accept: */*` gets an uninjected page and reports `0` even when measurement is working.
 
 ```sh
-curl -s https://gizlet.app | grep -c 'static.cloudflareinsights.com/beacon.min.js'
+curl -s -H 'Accept: text/html' https://gizlet.app | grep -c 'static.cloudflareinsights.com/beacon.min.js'
 ```
+
+The authoritative check is the Web Analytics dashboard itself: if it reports page views for gizlet.app, the site is measured regardless of what any single request returns.
 
 The injected tag is absent from `pnpm run build` output and from a local preview, because it is added by Cloudflare in front of the deployed site rather than by the build.
 
