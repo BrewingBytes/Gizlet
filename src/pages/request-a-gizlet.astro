@@ -1,0 +1,29 @@
+---
+import GizletRequestForm from '../components/GizletRequestForm.astro';
+import { getPageMetadata } from '../data/metadata';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const metadata = getPageMetadata({
+  title: 'Request a Gizlet | Gizlet',
+  description: 'Suggest the next small browser tool Gizlet should make.',
+  pathname: '/request-a-gizlet/',
+});
+---
+
+<BaseLayout metadata={metadata}>
+  <article class="request-page">
+    <header class="request-page__header">
+      <p class="metadata">Got an annoying little job?</p>
+      <h1>Request a Gizlet.</h1>
+      <p>We are building a useful collection, one small tool at a time. Tell us what would make your day easier.</p>
+    </header>
+    <GizletRequestForm />
+  </article>
+</BaseLayout>
+
+<style>
+  .request-page__header { width: min(100%, 48rem); margin-bottom: var(--space-5); }
+  .request-page__header .metadata { margin-bottom: var(--space-2); }
+  .request-page__header h1 { margin-bottom: var(--space-3); }
+  .request-page__header > p:last-child { max-width: 42rem; margin-bottom: 0; color: var(--text-muted); font-size: var(--font-size-lg); }
+</style>
