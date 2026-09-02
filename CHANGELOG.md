@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Per-Gizlet supporting content and an FAQ below every Gizlet workspace, written for that Gizlet, keyed by registry slug, and published as `FAQPage` markup from the same copy the page renders.
 - Registry-derived JSON-LD structured data: `WebSite` on the home page, `CollectionPage` on the Gizlet index, and `SoftwareApplication` with a `BreadcrumbList` on each Gizlet page.
 - An `/ads.txt` file generated from the declared AdSense publisher account, which AdSense requires before it can approve the site.
 - A browsable `/tools/` index that groups every available Gizlet by category, linked from the header, footer, and tool-page breadcrumbs.
