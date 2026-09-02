@@ -8,11 +8,11 @@ test("renders the Gizlet homepage", async ({ page }) => {
   );
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     "href",
-    "https://gizlet.com/",
+    "https://gizlet.app/",
   );
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     "content",
-    "https://gizlet.com/brand/brand-board.png",
+    "https://gizlet.app/brand/brand-board.png",
   );
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
     "content",
@@ -43,27 +43,27 @@ test("serves public sitemap and crawler-discovery files", async ({
   expect(sitemap.headers()["content-type"]).toContain("xml");
   await expect(sitemap).toBeOK();
   await expect(sitemap.text()).resolves.toContain(
-    "https://gizlet.com/tools/compress-image/",
+    "https://gizlet.app/tools/compress-image/",
   );
   await expect(sitemap.text()).resolves.toContain(
-    "https://gizlet.com/tools/json-ld-generator/",
+    "https://gizlet.app/tools/json-ld-generator/",
   );
-  await expect(sitemap.text()).resolves.toContain("https://gizlet.com/privacy/");
+  await expect(sitemap.text()).resolves.toContain("https://gizlet.app/privacy/");
 
   expect(robots.headers()["content-type"]).toContain("text/plain");
   await expect(robots).toBeOK();
   await expect(robots.text()).resolves.toContain(
-    "Sitemap: https://gizlet.com/sitemap.xml",
+    "Sitemap: https://gizlet.app/sitemap.xml",
   );
 
   expect(catalogue.headers()["content-type"]).toContain("application/json");
   await expect(catalogue).toBeOK();
   await expect(catalogue.json()).resolves.toMatchObject({
-    catalogueUrl: "https://gizlet.com/tools.json",
+    catalogueUrl: "https://gizlet.app/tools.json",
     tools: expect.arrayContaining([
       expect.objectContaining({
         slug: "compress-image",
-        route: "https://gizlet.com/tools/compress-image/",
+        route: "https://gizlet.app/tools/compress-image/",
         availability: "available",
         localProcessing: true,
       }),
@@ -73,10 +73,10 @@ test("serves public sitemap and crawler-discovery files", async ({
   expect(llms.headers()["content-type"]).toContain("text/plain");
   await expect(llms).toBeOK();
   await expect(llms.text()).resolves.toContain(
-    "[Machine-readable tool catalogue](https://gizlet.com/tools.json)",
+    "[Machine-readable tool catalogue](https://gizlet.app/tools.json)",
   );
   await expect(llms.text()).resolves.toContain(
-    "[Compress Image](https://gizlet.com/tools/compress-image/)",
+    "[Compress Image](https://gizlet.app/tools/compress-image/)",
   );
 });
 
@@ -97,7 +97,7 @@ test("links to and renders public information pages with page metadata", async (
 
   await page.goto("/privacy/");
   await expect(page).toHaveTitle("Privacy | Gizlet");
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://gizlet.com/privacy/");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://gizlet.app/privacy/");
   await expect(page.locator('meta[name="description"]')).toHaveAttribute(
     "content",
     "How Gizlet handles local tool processing, analytics, and advertising.",
@@ -153,11 +153,11 @@ test("renders the reusable tool page layout without reserved ad space while ads 
   );
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     "href",
-    "https://gizlet.com/tools/compress-image/",
+    "https://gizlet.app/tools/compress-image/",
   );
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
     "content",
-    "https://gizlet.com/tools/compress-image/",
+    "https://gizlet.app/tools/compress-image/",
   );
   await expect(
     page.getByRole("navigation", { name: "Breadcrumb" }),

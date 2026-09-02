@@ -12,8 +12,8 @@ describe('getPageMetadata', () => {
         pathname: '/tools/resize-image',
       }),
     ).toMatchObject({
-      canonicalUrl: 'https://gizlet.com/tools/resize-image/',
-      socialImageUrl: 'https://gizlet.com/brand/brand-board.png',
+      canonicalUrl: 'https://gizlet.app/tools/resize-image/',
+      socialImageUrl: 'https://gizlet.app/brand/brand-board.png',
       robots: 'index, follow',
     });
   });
@@ -22,8 +22,8 @@ describe('getPageMetadata', () => {
     expect(getPageMetadata({ title: ' ', description: '', image: ' ', robots: '  ' })).toEqual({
       title: 'Gizlet',
       description: 'Small, useful browser tools from Gizlet.',
-      canonicalUrl: 'https://gizlet.com/',
-      socialImageUrl: 'https://gizlet.com/brand/brand-board.png',
+      canonicalUrl: 'https://gizlet.app/',
+      socialImageUrl: 'https://gizlet.app/brand/brand-board.png',
       robots: 'index, follow',
     });
   });
@@ -34,7 +34,7 @@ describe('getToolMetadata', () => {
     expect(getToolMetadata(toolRegistry[0])).toMatchObject({
       title: 'Compress Image | Gizlet',
       description: toolRegistry[0].description,
-      canonicalUrl: 'https://gizlet.com/tools/compress-image/',
+      canonicalUrl: 'https://gizlet.app/tools/compress-image/',
     });
 
     expect(getToolMetadata(toolRegistry[0], { title: 'Custom title', robots: 'noindex, nofollow' })).toMatchObject({

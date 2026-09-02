@@ -17,12 +17,12 @@ describe('agent-readable catalogue', () => {
     const catalogue = getAgentCatalog();
     const formatter = catalogue.tools.find((tool) => tool.slug === 'json-formatter');
 
-    expect(catalogue.catalogueUrl).toBe('https://gizlet.com/tools.json');
+    expect(catalogue.catalogueUrl).toBe('https://gizlet.app/tools.json');
     expect(catalogue.privacy).toContain('remain on-device');
     expect(formatter).toEqual({
       name: 'JSON Formatter',
       slug: 'json-formatter',
-      route: 'https://gizlet.com/tools/json-formatter/',
+      route: 'https://gizlet.app/tools/json-formatter/',
       category: 'developer',
       availability: 'available',
       localProcessing: true,
@@ -44,8 +44,8 @@ describe('agent-readable catalogue', () => {
   it('links the plain-text document to the catalogue and canonical available routes', () => {
     const llms = getLlmsTxt();
 
-    expect(llms).toContain('[Machine-readable tool catalogue](https://gizlet.com/tools.json)');
-    expect(llms).toContain('[Compress Image](https://gizlet.com/tools/compress-image/)');
+    expect(llms).toContain('[Machine-readable tool catalogue](https://gizlet.app/tools.json)');
+    expect(llms).toContain('[Compress Image](https://gizlet.app/tools/compress-image/)');
     expect(llms).toContain('Input: One JPEG, PNG, WebP, AVIF, or BMP image');
     expect(llms.endsWith('\n')).toBe(true);
   });

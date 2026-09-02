@@ -1,6 +1,6 @@
 import type { ToolRegistryEntry } from './tools';
 
-export const siteUrl = 'https://gizlet.com';
+export const siteUrl = 'https://gizlet.app';
 
 const defaultDescription = 'Small, useful browser tools from Gizlet.';
 const defaultSocialImage = '/brand/brand-board.png';
