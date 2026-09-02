@@ -1,5 +1,6 @@
 ---
 import type { AdvertisementRailSize } from '../data/advertisement-slots';
+import { getAdvertisementConfiguration } from '../data/advertising';
 import { getToolMetadata } from '../data/metadata';
 import { getToolProcessingStatus } from '../data/tool-page-status';
 import type { ToolRegistryEntry } from '../data/tools';
@@ -33,6 +34,16 @@ const {
 } = Astro.props;
 const status = getToolProcessingStatus(tool, processingStatus);
 const metadata = getToolMetadata(tool, { title, description, image, robots });
+const advertising = getAdvertisementConfiguration({
+  isDevelopment: import.meta.env.DEV,
+  enabled: import.meta.env.PUBLIC_ADS_ENABLED,
+  adSenseClient: import.meta.env.PUBLIC_ADSENSE_CLIENT,
+  bannerSlot: import.meta.env.PUBLIC_ADSENSE_BANNER_SLOT,
+  inlineSlot: import.meta.env.PUBLIC_ADSENSE_INLINE_SLOT,
+  railSlot: import.meta.env.PUBLIC_ADSENSE_RAIL_SLOT,
+});
+const shouldShowPostResultAd = showPostResultAd && advertising.enabled && advertising.slots.inline;
+const shouldShowRail = showRail && advertising.enabled && advertising.slots.rail;
 ---
 
 <BaseLayout metadata={metadata}>
@@ -63,7 +74,7 @@ const metadata = getToolMetadata(tool, { title, description, image, robots });
       }
     </header>
 
-    <div class:list={['tool-page__body', { 'tool-page__body--with-rail': showRail }]}>
+    <div class:list={['tool-page__body', { 'tool-page__body--with-rail': shouldShowRail }]}>
       <div class="tool-page__main-column">
         <section class="tool-page__workspace" aria-label={`${tool.name} workspace`}>
           <slot name="workspace" />
@@ -71,10 +82,10 @@ const metadata = getToolMetadata(tool, { title, description, image, robots });
 
         <slot name="result" />
 
-        {showPostResultAd && <AdvertisementSlot variant="inline" />}
+        {shouldShowPostResultAd && <AdvertisementSlot variant="inline" />}
       </div>
 
-      {showRail && <AdvertisementSlot variant="rail" railSize={railSize} />}
+      {shouldShowRail && <AdvertisementSlot variant="rail" railSize={railSize} />}
     </div>
 
     {

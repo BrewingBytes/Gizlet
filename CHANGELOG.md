@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Optional Google AdSense integration with centrally configured responsive banner, inline, and rail placements that stay disabled during development.
 - Local JSON Formatter Gizlet with validation, location-aware parse errors, formatting, minification, and copy actions.
 - Optional, privacy-conscious Plausible analytics with anonymous page views and minimal Gizlet usage events.
 - Local JSON-LD Generator Gizlet for Product, Organization, Article, LocalBusiness, Event, and BreadcrumbList markup with live previews, copy actions, and separate validation guidance.

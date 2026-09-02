@@ -65,12 +65,12 @@ The final public privacy policy will describe the implemented behavior—not ass
 
 - Local Gizlets will state what is processed on-device.
 - Analytics must never include file contents, JSON contents, generated passwords, or other user-entered tool payloads.
-- Advertising and analytics can be disabled during local development.
+- Advertising and analytics can be disabled during local development; advertising is globally configuration-gated for future Gizlet Pro sessions.
 - Any consent requirements introduced by selected providers will be documented before production enablement.
 
 Policy pages and the finalized disclosure are tracked in [#21](https://github.com/BrewingBytes/Gizlet/issues/21), [#22](https://github.com/BrewingBytes/Gizlet/issues/22), and [#24](https://github.com/BrewingBytes/Gizlet/issues/24).
 
-See [docs/privacy.md](docs/privacy.md) for the implemented analytics data contract and production setup.
+See [docs/privacy.md](docs/privacy.md) for the implemented analytics data contract, AdSense integration, and required production-consent setup.
 
 ## License
 
