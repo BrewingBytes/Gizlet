@@ -2,7 +2,7 @@ import { siteUrl } from './metadata';
 import { toolRegistry } from './tools';
 
 const sitemapPathname = '/sitemap.xml';
-const publicInformationPathnames = ['/privacy/', '/terms/', '/about/'] as const;
+const publicInformationPathnames = ['/privacy/', '/terms/', '/about/', '/request-a-gizlet/'] as const;
 
 /**
  * Returns every route that is ready for public search discovery.

@@ -1,0 +1,93 @@
+<section class="gizlet-request" data-gizlet-request>
+  <div class="gizlet-request__intro">
+    <p class="metadata">A small idea can be a useful Gizlet</p>
+    <h2>What should we make next?</h2>
+    <p>Tell us the annoying little job a browser tool could make easier.</p>
+  </div>
+
+  <form class="gizlet-request__form" data-gizlet-request-form novalidate>
+    <div class="gizlet-request__field">
+      <label for="gizlet-tool-idea">Tool idea <span aria-hidden="true">*</span></label>
+      <p id="gizlet-tool-idea-help" class="gizlet-request__help">A short name or description is enough.</p>
+      <textarea
+        id="gizlet-tool-idea"
+        name="toolIdea"
+        data-tool-idea
+        required
+        minlength="3"
+        aria-describedby="gizlet-tool-idea-help gizlet-tool-idea-error"
+        aria-invalid="false"
+        placeholder="For example: a tool to remove blank pages from a PDF"
+      ></textarea>
+      <p id="gizlet-tool-idea-error" class="gizlet-request__error" data-tool-idea-error role="alert" hidden></p>
+    </div>
+
+    <div class="gizlet-request__field">
+      <label for="gizlet-use-case">How would you use it? <span class="gizlet-request__optional">Optional</span></label>
+      <textarea
+        id="gizlet-use-case"
+        name="useCase"
+        data-use-case
+        placeholder="A sentence or two about the job you are trying to get done."
+      ></textarea>
+    </div>
+
+    <div class="gizlet-request__field">
+      <label for="gizlet-contact">Contact <span class="gizlet-request__optional">Optional</span></label>
+      <input
+        id="gizlet-contact"
+        name="contact"
+        type="email"
+        data-contact
+        autocomplete="email"
+        inputmode="email"
+        placeholder="you@example.com"
+      />
+      <p class="gizlet-request__help">Only add this if you are happy for us to contact you about the idea.</p>
+    </div>
+
+    <p class="gizlet-request__privacy">
+      Gizlet does not receive this form. When you continue, your text opens as a pre-filled issue on GitHub, where you can review it and choose whether to submit it. GitHub handles anything you submit under its own privacy policy.
+    </p>
+    <p class="gizlet-request__error-summary" data-request-error-summary role="alert" hidden></p>
+    <button type="submit">Prepare request</button>
+  </form>
+
+  <section class="gizlet-request__success" data-request-success tabindex="-1" role="status" aria-live="polite" hidden>
+    <h2>Your request is ready.</h2>
+    <p>Continue to GitHub to review and submit it. Gizlet has not received it yet.</p>
+    <a class="gizlet-request__continue" data-request-continue target="_blank" rel="noreferrer">Continue to GitHub</a>
+  </section>
+</section>
+
+<style>
+  .gizlet-request { width: min(100%, 48rem); border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .gizlet-request__intro, .gizlet-request__form, .gizlet-request__success { padding: var(--space-4); }
+  .gizlet-request__form, .gizlet-request__success { border-top: var(--border-width) solid var(--border); }
+  .gizlet-request__intro .metadata, .gizlet-request__intro h2 { margin-bottom: var(--space-2); }
+  .gizlet-request__intro > p:last-child { margin-bottom: 0; color: var(--text-muted); }
+  .gizlet-request__field + .gizlet-request__field { margin-top: var(--space-4); }
+  .gizlet-request label { display: block; margin-bottom: var(--space-1); font-weight: 700; }
+  .gizlet-request__optional { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase; }
+  .gizlet-request__help, .gizlet-request__privacy { color: var(--text-muted); font-size: var(--font-size-sm); }
+  .gizlet-request__help { margin-bottom: var(--space-2); }
+  .gizlet-request textarea { min-height: 8rem; }
+  .gizlet-request [aria-invalid='true'] { border: var(--border-strong-width) solid var(--color-red); }
+  .gizlet-request__error, .gizlet-request__error-summary { margin-top: var(--space-2); color: var(--color-red); font-weight: 700; }
+  .gizlet-request__privacy { margin-top: var(--space-4); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--color-green); background: var(--background); }
+  .gizlet-request__error-summary { padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--color-red); }
+  .gizlet-request__success { border-left: var(--border-strong-width) solid var(--color-green); }
+  .gizlet-request__success h2 { color: var(--color-green); }
+  .gizlet-request__success p { color: var(--text-muted); }
+  .gizlet-request__continue { display: inline-flex; min-height: 2.75rem; align-items: center; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; text-decoration: none; }
+  .gizlet-request__continue:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+  @media (max-width: 40rem) { .gizlet-request__intro, .gizlet-request__form, .gizlet-request__success { padding: var(--space-3); } }
+</style>
+
+<script>
+  import { initialiseGizletRequestForm } from '../scripts/gizlet-request';
+
+  const root = document.querySelector<HTMLElement>('[data-gizlet-request]');
+
+  if (root) initialiseGizletRequestForm(root);
+</script>
