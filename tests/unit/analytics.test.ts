@@ -9,20 +9,20 @@ describe('getAnalyticsConfiguration', () => {
       getAnalyticsConfiguration({
         isDevelopment: false,
         enabled: 'true',
-        plausibleDomain: 'GIZLET.COM ',
+        plausibleDomain: 'GIZLET.APP ',
       }),
-    ).toEqual({ enabled: true, plausibleDomain: 'gizlet.com' });
+    ).toEqual({ enabled: true, plausibleDomain: 'gizlet.app' });
   });
 
   it('always disables analytics in development and when configuration is incomplete', () => {
     expect(
-      getAnalyticsConfiguration({ isDevelopment: true, enabled: 'true', plausibleDomain: 'gizlet.com' }),
+      getAnalyticsConfiguration({ isDevelopment: true, enabled: 'true', plausibleDomain: 'gizlet.app' }),
     ).toEqual({ enabled: false, plausibleDomain: undefined });
     expect(
       getAnalyticsConfiguration({ isDevelopment: false, enabled: 'true', plausibleDomain: undefined }),
     ).toEqual({ enabled: false, plausibleDomain: undefined });
     expect(
-      getAnalyticsConfiguration({ isDevelopment: false, enabled: 'false', plausibleDomain: 'gizlet.com' }),
+      getAnalyticsConfiguration({ isDevelopment: false, enabled: 'false', plausibleDomain: 'gizlet.app' }),
     ).toEqual({ enabled: false, plausibleDomain: undefined });
   });
 });

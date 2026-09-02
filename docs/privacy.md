@@ -25,10 +25,10 @@ Analytics is disabled by default and always disabled while Astro is running in d
 
 ```sh
 PUBLIC_ANALYTICS_ENABLED=true
-PUBLIC_PLAUSIBLE_DOMAIN=gizlet.com
+PUBLIC_PLAUSIBLE_DOMAIN=gizlet.app
 ```
 
-Add `gizlet.com` as a site in Plausible and configure custom-event goals with these exact names: `tool_opened`, `tool_action_completed`, and `tool_error`. The analytics script is omitted entirely when either variable is absent or invalid.
+Add `gizlet.app` as a site in Plausible and configure custom-event goals with these exact names: `tool_opened`, `tool_action_completed`, and `tool_error`. The analytics script is omitted entirely when either variable is absent or invalid.
 
 ## Advertising
 

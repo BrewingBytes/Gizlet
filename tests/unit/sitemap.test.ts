@@ -23,16 +23,16 @@ describe("sitemap generation", () => {
     ];
 
     expect(getSitemapUrls()).toEqual(expectedUrls);
-    expect(getSitemapXml()).toContain("<loc>https://gizlet.com/</loc>");
-    expect(getSitemapXml()).toContain("<loc>https://gizlet.com/privacy/</loc>");
-    expect(getSitemapXml()).toContain("<loc>https://gizlet.com/request-a-gizlet/</loc>");
+    expect(getSitemapXml()).toContain("<loc>https://gizlet.app/</loc>");
+    expect(getSitemapXml()).toContain("<loc>https://gizlet.app/privacy/</loc>");
+    expect(getSitemapXml()).toContain("<loc>https://gizlet.app/request-a-gizlet/</loc>");
     expect(getSitemapXml()).toContain("json-ld-generator");
     expect(getSitemapXml()).toContain("json-formatter");
   });
 
   it("rejects duplicate URLs so they cannot be emitted during a build", () => {
     expect(() =>
-      assertUniqueSitemapUrls(["https://gizlet.com/", "https://gizlet.com/"]),
+      assertUniqueSitemapUrls(["https://gizlet.app/", "https://gizlet.app/"]),
     ).toThrow("Duplicate sitemap URLs generated");
   });
 });
@@ -40,7 +40,7 @@ describe("sitemap generation", () => {
 describe("robots.txt generation", () => {
   it("allows crawling and points crawlers to the production sitemap", () => {
     expect(getRobotsTxt()).toBe(
-      "User-agent: *\nAllow: /\n\nSitemap: https://gizlet.com/sitemap.xml\n",
+      "User-agent: *\nAllow: /\n\nSitemap: https://gizlet.app/sitemap.xml\n",
     );
   });
 });

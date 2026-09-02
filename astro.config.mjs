@@ -3,6 +3,6 @@ import { defineConfig } from 'astro/config';
 
 export default defineConfig({
   output: 'static',
-  site: 'https://gizlet.com',
+  site: 'https://gizlet.app',
   trailingSlash: 'always',
 });
