@@ -1,9 +1,10 @@
+import { fallbackSocialImagePath, getToolSocialImagePath } from './social-images';
 import type { ToolRegistryEntry } from './tools';
 
 export const siteUrl = 'https://gizlet.app';
 
 const defaultDescription = 'Small, useful browser tools from Gizlet.';
-const defaultSocialImage = '/brand/brand-board.png';
+const defaultSocialImage = fallbackSocialImagePath;
 const defaultRobots = 'index, follow';
 
 export interface MetadataOptions {
@@ -61,6 +62,7 @@ export function getToolMetadata(
     ...overrides,
     title: valueOrFallback(overrides.title, `${tool.name} | Gizlet`),
     description: valueOrFallback(overrides.description, tool.description),
+    image: valueOrFallback(overrides.image, getToolSocialImagePath(tool)),
     pathname: tool.path,
   });
 }

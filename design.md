@@ -524,6 +524,13 @@ Brand files:
 - `gizlet-512.png`
 - `brand-board.png`
 
+Social preview cards, 1200x630, drawn by `scripts/generate-social-images.mjs` from the tool registry:
+
+- `social/<gizlet-slug>.png` — one per available Gizlet
+- `social/gizlets.png` — the Gizlet index
+
+A page without a card of its own previews with `brand-board.png`.
+
 Mockups:
 
 - `index.html`
