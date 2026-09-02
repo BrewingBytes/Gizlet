@@ -3,6 +3,7 @@ import ToolPageLayout from '../../components/ToolPageLayout.astro';
 import CompressImageTool from '../../components/CompressImageTool.astro';
 import ConvertImageTool from '../../components/ConvertImageTool.astro';
 import JsonLdGeneratorTool from '../../components/JsonLdGeneratorTool.astro';
+import JsonFormatterTool from '../../components/JsonFormatterTool.astro';
 import ResizeImageTool from '../../components/ResizeImageTool.astro';
 import { getRelatedTools } from '../../data/tool-page-related';
 import { toolRegistry, type ToolRegistryEntry } from '../../data/tools';
@@ -25,7 +26,13 @@ export function getStaticPaths() {
 const { tool, relatedTools } = Astro.props;
 ---
 
-<ToolPageLayout tool={tool} relatedTools={relatedTools} showRail showPostResultAd>
+<ToolPageLayout
+  tool={tool}
+  relatedTools={relatedTools}
+  processingStatus={tool.slug === 'json-formatter' ? 'Your JSON stays on this device.' : undefined}
+  showRail
+  showPostResultAd
+>
   {
     tool.slug === 'compress-image' ? (
       <div slot="workspace"><CompressImageTool /></div>
@@ -35,6 +42,8 @@ const { tool, relatedTools } = Astro.props;
       <div slot="workspace"><ConvertImageTool /></div>
     ) : tool.slug === 'json-ld-generator' ? (
       <div slot="workspace"><JsonLdGeneratorTool /></div>
+    ) : tool.slug === 'json-formatter' ? (
+      <div slot="workspace"><JsonFormatterTool /></div>
     ) : (
       <section slot="workspace" class="tool-page-placeholder" aria-labelledby="workspace-title">
         <p class="metadata">Coming soon</p>
@@ -45,7 +54,7 @@ const { tool, relatedTools } = Astro.props;
   }
 
   {
-    tool.slug !== 'compress-image' && tool.slug !== 'resize-image' && tool.slug !== 'convert-image' && tool.slug !== 'json-ld-generator' && (
+    tool.slug !== 'compress-image' && tool.slug !== 'resize-image' && tool.slug !== 'convert-image' && tool.slug !== 'json-ld-generator' && tool.slug !== 'json-formatter' && (
       <section slot="result" class="tool-page-placeholder__result" aria-label="Tool result area">
         <p class="metadata">Results will appear here</p>
       </section>

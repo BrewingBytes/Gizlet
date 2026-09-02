@@ -1,0 +1,157 @@
+---
+---
+
+<section class="json-formatter" data-json-formatter>
+  <div class="json-formatter__input">
+    <div class="json-formatter__input-heading">
+      <div>
+        <p class="metadata">Paste JSON</p>
+        <label for="json-formatter-input">JSON input</label>
+      </div>
+      <p class="json-formatter__validation" data-validation data-state="empty" role="status" aria-live="polite">Paste JSON to validate it.</p>
+    </div>
+    <textarea
+      id="json-formatter-input"
+      data-input
+      autocapitalize="off"
+      autocomplete="off"
+      autocorrect="off"
+      spellcheck="false"
+      placeholder='{"a": "small tool", "works": true}'
+    ></textarea>
+    <div class="json-formatter__actions">
+      <button type="button" data-format>Format JSON</button>
+      <button type="button" class="button-secondary" data-minify>Minify JSON</button>
+      <button type="button" class="button-secondary" data-clear>Clear</button>
+    </div>
+  </div>
+
+  <section class="json-formatter__output" aria-labelledby="json-formatter-output-title">
+    <div class="json-formatter__output-heading">
+      <div>
+        <p class="metadata">Result</p>
+        <h2 id="json-formatter-output-title">Ready to copy</h2>
+      </div>
+      <button type="button" class="button-secondary" data-copy disabled>Copy result</button>
+    </div>
+    <p class="json-formatter__copy-status" data-copy-status role="status" aria-live="polite"></p>
+    <pre tabindex="0"><code data-output>Formatted or minified JSON will appear here.</code></pre>
+  </section>
+</section>
+
+<style>
+  .json-formatter { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .json-formatter__input, .json-formatter__output { padding: var(--space-4); }
+  .json-formatter__output { border-top: var(--border-width) solid var(--border); }
+  .json-formatter__input-heading, .json-formatter__output-heading { display: flex; align-items: end; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
+  .json-formatter__input-heading .metadata, .json-formatter__input-heading label, .json-formatter__output-heading .metadata, .json-formatter__output-heading h2 { margin: 0; }
+  .json-formatter__input-heading label { display: block; font-family: var(--font-display); font-size: var(--font-size-xl); font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; }
+  .json-formatter__validation { max-width: 28rem; margin: 0; padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--border); color: var(--text-muted); text-align: right; }
+  .json-formatter__validation[data-state='valid'] { border-left-color: var(--color-green); color: var(--color-green); }
+  .json-formatter__validation[data-state='invalid'] { border-left-color: var(--color-red); color: var(--color-red); }
+  .json-formatter textarea { min-height: 20rem; font-family: var(--font-mono); font-size: var(--font-size-sm); line-height: 1.5; }
+  .json-formatter__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+  .json-formatter__copy-status { min-height: 1.5rem; margin: var(--space-2) 0; color: var(--color-green); font-weight: 700; }
+  .json-formatter pre { max-height: 32rem; margin: 0; padding: var(--space-3); overflow: auto; border: var(--border-width) solid var(--border); background: var(--color-ink); color: #fffdf7; font-family: var(--font-mono); font-size: var(--font-size-sm); line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  @media (max-width: 40rem) { .json-formatter__input, .json-formatter__output { padding: var(--space-3); } .json-formatter__input-heading, .json-formatter__output-heading { align-items: start; flex-direction: column; } .json-formatter__validation { max-width: none; text-align: left; } }
+</style>
+
+<script>
+  import { analyticsEvents } from '../data/analytics';
+  import {
+    formatJsonParseError,
+    transformJson,
+    validateJson,
+    type JsonTransformAction,
+  } from '../data/json-formatter';
+  import { trackToolEvent } from '../scripts/analytics';
+
+  const root = document.querySelector<HTMLElement>('[data-json-formatter]');
+
+  if (root) {
+    const input = root.querySelector<HTMLTextAreaElement>('[data-input]');
+    const validation = root.querySelector<HTMLElement>('[data-validation]');
+    const formatButton = root.querySelector<HTMLButtonElement>('[data-format]');
+    const minifyButton = root.querySelector<HTMLButtonElement>('[data-minify]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const output = root.querySelector<HTMLElement>('[data-output]');
+    const copyButton = root.querySelector<HTMLButtonElement>('[data-copy]');
+    const copyStatus = root.querySelector<HTMLElement>('[data-copy-status]');
+
+    if (!input || !validation || !formatButton || !minifyButton || !clearButton || !output || !copyButton || !copyStatus) {
+      throw new Error('JSON Formatter could not initialise.');
+    }
+
+    let result = '';
+    let validationFrame: number | undefined;
+
+    const renderValidation = () => {
+      const parsed = validateJson(input.value);
+      validation.dataset.state = parsed.valid ? 'valid' : input.value.trim() ? 'invalid' : 'empty';
+      validation.textContent = parsed.valid
+        ? 'Valid JSON. Ready to format or minify.'
+        : formatJsonParseError(parsed.error);
+    };
+    const scheduleValidation = () => {
+      if (validationFrame !== undefined) cancelAnimationFrame(validationFrame);
+      validationFrame = requestAnimationFrame(() => {
+        validationFrame = undefined;
+        renderValidation();
+      });
+    };
+    const copy = async (text: string) => {
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          return;
+        }
+      } catch {
+        // Some browsers expose Clipboard but deny it outside a secure context.
+      }
+      const fallback = document.createElement('textarea');
+      fallback.value = text;
+      fallback.style.position = 'fixed';
+      fallback.style.left = '-9999px';
+      document.body.append(fallback);
+      fallback.select();
+      const copied = document.execCommand('copy');
+      fallback.remove();
+      if (!copied) throw new Error('Copy is unavailable in this browser.');
+    };
+    const transform = (action: JsonTransformAction) => {
+      const transformed = transformJson(input.value, action);
+      renderValidation();
+      copyStatus.textContent = '';
+
+      if (!transformed.valid) {
+        trackToolEvent(analyticsEvents.toolError, 'json-formatter');
+        input.focus();
+        return;
+      }
+
+      result = transformed.output;
+      output.textContent = result;
+      copyButton.disabled = false;
+      trackToolEvent(analyticsEvents.toolActionCompleted, 'json-formatter');
+    };
+
+    input.addEventListener('input', scheduleValidation);
+    formatButton.addEventListener('click', () => transform('format'));
+    minifyButton.addEventListener('click', () => transform('minify'));
+    clearButton.addEventListener('click', () => {
+      if (validationFrame !== undefined) cancelAnimationFrame(validationFrame);
+      input.value = '';
+      result = '';
+      output.textContent = 'Formatted or minified JSON will appear here.';
+      copyButton.disabled = true;
+      copyStatus.textContent = '';
+      renderValidation();
+      input.focus();
+    });
+    copyButton.addEventListener('click', () => {
+      void copy(result)
+        .then(() => { copyStatus.textContent = 'Result copied to your clipboard.'; })
+        .catch(() => { copyStatus.textContent = 'Could not copy automatically. Select the result and copy it manually.'; });
+    });
+  }
+</script>
