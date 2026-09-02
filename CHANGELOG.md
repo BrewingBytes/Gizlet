@@ -38,6 +38,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Add a light and dark theme toggle that follows the system preference by default and persists an explicit choice locally.
 - Editorial homepage with an intent-led search field, labeled ad reservation, registry-driven popular Gizlets, category navigation, and a Gizlet Pro explanation.
 
+### Changed
+
+- Repository agent guidance now documents the repository map, the tool-registry workflow, the current quality gates, and the title-only commit-message rule, alongside a Claude Code specific guide.
+
 ### Fixed
 
 - Link Gizlet cards and search results to Astro’s required trailing-slash routes.
