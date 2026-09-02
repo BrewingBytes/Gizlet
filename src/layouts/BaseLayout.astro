@@ -2,7 +2,11 @@
 import SiteFooter from '../components/SiteFooter.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import ToolSearchOverlay from '../components/ToolSearchOverlay.astro';
-import { adSenseScriptBaseUrl, getAdvertisementConfiguration } from '../data/advertising';
+import {
+  adSensePublisherId,
+  adSenseScriptBaseUrl,
+  getAdvertisementConfiguration,
+} from '../data/advertising';
 import { getPageMetadata, type PageMetadata } from '../data/metadata';
 import '../styles/global.css';
 
@@ -39,7 +43,7 @@ const advertising = getAdvertisementConfiguration({
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="google-adsense-account" content="ca-pub-5739296020070844" />
+    <meta name="google-adsense-account" content={adSensePublisherId} />
     <meta name="description" content={metadata.description} />
     <meta name="generator" content={Astro.generator} />
     <meta name="robots" content={metadata.robots} />

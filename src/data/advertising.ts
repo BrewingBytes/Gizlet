@@ -2,6 +2,24 @@ import type { AdvertisementSlotVariant } from './advertisement-slots';
 
 export const adSenseScriptBaseUrl = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
 
+/**
+ * The AdSense account that owns gizlet.app. It is a public identifier, and it is
+ * declared here once so the site-verification tag and /ads.txt cannot disagree.
+ */
+export const adSensePublisherId = 'ca-pub-5739296020070844';
+
+/** Google's fixed certification-authority ID for ads.txt entries. */
+const googleCertificationAuthorityId = 'f08c47fec0942fa0';
+
+/**
+ * Authorises Gizlet's own AdSense account to sell this site's inventory.
+ * AdSense reports the file as missing until it is served from the site root,
+ * and it is required regardless of whether ads are currently enabled.
+ */
+export function getAdsTxt(): string {
+  return `google.com, ${adSensePublisherId.replace(/^ca-/, '')}, DIRECT, ${googleCertificationAuthorityId}\n`;
+}
+
 export interface AdvertisementEnvironment {
   isDevelopment: boolean;
   enabled?: string;

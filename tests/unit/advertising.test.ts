@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { getAdvertisementConfiguration } from '../../src/data/advertising';
+import {
+  adSensePublisherId,
+  getAdsTxt,
+  getAdvertisementConfiguration,
+} from '../../src/data/advertising';
 
 const productionConfiguration = {
   isDevelopment: false,
@@ -56,5 +60,17 @@ describe('getAdvertisementConfiguration', () => {
         railSlot: undefined,
       }),
     ).toEqual({ enabled: false, slots: {} });
+  });
+});
+
+describe('getAdsTxt', () => {
+  it('authorises the declared AdSense account to sell this inventory', () => {
+    expect(getAdsTxt()).toBe(
+      'google.com, pub-5739296020070844, DIRECT, f08c47fec0942fa0\n',
+    );
+  });
+
+  it('uses the same publisher account as the site verification tag', () => {
+    expect(getAdsTxt()).toContain(adSensePublisherId.replace(/^ca-/, ''));
   });
 });

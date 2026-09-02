@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- An `/ads.txt` file generated from the declared AdSense publisher account, which AdSense requires before it can approve the site.
 - A browsable `/tools/` index that groups every available Gizlet by category, linked from the header, footer, and tool-page breadcrumbs.
 - A page for unknown addresses that lists every working Gizlet and links back to the home page, replacing an empty response.
 - A recorded pre-launch accessibility, performance, search-visibility, and UX audit of the production site in [docs/launch-audit.md](docs/launch-audit.md).
