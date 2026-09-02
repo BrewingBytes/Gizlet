@@ -1,0 +1,135 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getPageMetadata } from '../../data/metadata';
+import { getToolIndexStructuredData } from '../../data/structured-data';
+import { getToolCategoryGroups } from '../../data/tools';
+
+const metadata = getPageMetadata({
+  title: 'All Gizlets | Gizlet',
+  description: 'Every Gizlet available today, grouped by the kind of job it does.',
+  pathname: '/tools/',
+});
+const categoryGroups = getToolCategoryGroups();
+---
+
+<BaseLayout metadata={metadata} structuredData={getToolIndexStructuredData()}>
+  <section class="tool-catalogue" aria-labelledby="tool-catalogue-title">
+    <p class="metadata">Every Gizlet</p>
+    <h1 id="tool-catalogue-title">All the Gizlets, by kind of job.</h1>
+    <p class="tool-catalogue__copy">
+      Each one runs in this browser, needs no account, and does a single job. Categories appear here
+      once a Gizlet exists for them.
+    </p>
+
+    <nav class="tool-catalogue__jump" aria-label="Jump to a category">
+      <ul>
+        {
+          categoryGroups.map((group) => (
+            <li><a href={group.path}>{group.label}</a></li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    {
+      categoryGroups.map((group) => (
+        <section
+          class="tool-catalogue__group"
+          id={group.category}
+          aria-labelledby={`${group.category}-title`}
+        >
+          <h2 id={`${group.category}-title`}>{group.label}</h2>
+          <ol class="tool-catalogue__list">
+            {group.tools.map((tool) => (
+              <li>
+                <a href={tool.path}>
+                  <span>
+                    <strong>{tool.name}</strong>
+                    <span>{tool.description}</span>
+                  </span>
+                  {tool.processesLocally && <span class="status-local">Local</span>}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))
+    }
+  </section>
+</BaseLayout>
+
+<style>
+  .tool-catalogue {
+    max-width: 60rem;
+  }
+
+  .tool-catalogue__copy {
+    max-width: 38rem;
+    color: var(--text-muted);
+    font-size: var(--font-size-lg);
+  }
+
+  .tool-catalogue__jump ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    margin: var(--space-5) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tool-catalogue__jump a {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    font-weight: 700;
+  }
+
+  .tool-catalogue__group {
+    margin-top: var(--space-6);
+  }
+
+  .tool-catalogue__group h2 {
+    padding-bottom: var(--space-2);
+    border-bottom: var(--border-strong-width) solid var(--text);
+  }
+
+  .tool-catalogue__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tool-catalogue__list li {
+    border-bottom: var(--border-width) solid var(--border);
+  }
+
+  .tool-catalogue__list a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: 3.5rem;
+    padding: var(--space-2);
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .tool-catalogue__list a:hover {
+    background: var(--surface);
+  }
+
+  .tool-catalogue__list a > span:first-child {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .tool-catalogue__list strong {
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+  }
+
+  .tool-catalogue__list a > span:first-child span {
+    color: var(--text-muted);
+  }
+</style>

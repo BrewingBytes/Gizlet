@@ -1,6 +1,7 @@
 ---
 import {
   getAdvertisementSlotReservation,
+  railCollapseWidth,
   type AdvertisementRailSize,
   type AdvertisementSlotVariant,
 } from '../data/advertisement-slots';
@@ -50,12 +51,15 @@ const adSenseFormat = variant === 'banner' ? 'horizontal' : variant === 'rail' ?
 
 {
   advertising.enabled && advertising.adSenseClient && adSenseSlot && (
-    <script is:inline>
-      {`try {
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
+    <script is:inline define:vars={{ collapseWidth: variant === 'rail' ? railCollapseWidth : null }}>
+      try {
+        // A collapsed rail is hidden, so requesting an advertisement for it would be a fill nobody sees.
+        if (!collapseWidth || !window.matchMedia('(max-width: ' + collapseWidth + ')').matches) {
+          (window.adsbygoogle = window.adsbygoogle || []).push({});
+        }
       } catch {
         // An unavailable or blocked provider must never interrupt the Gizlet.
-      }`}
+      }
     </script>
   )
 }
@@ -103,9 +107,12 @@ const adSenseFormat = variant === 'banner' ? 'horizontal' : variant === 'rail' ?
     .advertisement-slot {
       min-height: var(--advertisement-slot-mobile-min-height);
     }
+  }
 
+  /* Matches railCollapseWidth: below it the tool page has no rail to fill. */
+  @media (max-width: 56rem) {
     .advertisement-slot--rail {
-      max-width: none;
+      display: none;
     }
   }
 </style>

@@ -120,3 +120,50 @@ export const toolRegistry = [
     },
   },
 ] as const satisfies readonly ToolRegistryEntry[];
+
+export const toolsIndexPath = '/tools/';
+
+/** Display names for the registry's categories. */
+export const toolCategoryLabels = {
+  images: 'Images',
+  seo: 'SEO',
+  developer: 'Developer',
+} as const satisfies Record<ToolCategory, string>;
+
+export interface ToolCategoryGroup {
+  readonly category: ToolCategory;
+  readonly label: string;
+  /** Anchor on the Gizlet index, so a category link always lands on real Gizlets. */
+  readonly path: `${typeof toolsIndexPath}#${ToolCategory}`;
+  readonly tools: readonly ToolRegistryEntry[];
+}
+
+/** Every Gizlet that is published, in registry order. */
+export function getAvailableTools(): readonly ToolRegistryEntry[] {
+  return toolRegistry.filter((tool) => tool.launchStatus === 'available');
+}
+
+/**
+ * Groups published Gizlets by category. Navigation derives its categories from
+ * this, so a category with no available Gizlet is never advertised.
+ */
+export function getToolCategoryGroups(): readonly ToolCategoryGroup[] {
+  const groups = new Map<ToolCategory, ToolRegistryEntry[]>();
+
+  for (const tool of getAvailableTools()) {
+    const group = groups.get(tool.category);
+
+    if (group) {
+      group.push(tool);
+    } else {
+      groups.set(tool.category, [tool]);
+    }
+  }
+
+  return [...groups].map(([category, tools]) => ({
+    category,
+    label: toolCategoryLabels[category],
+    path: `${toolsIndexPath}#${category}`,
+    tools,
+  }));
+}

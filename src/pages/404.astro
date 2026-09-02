@@ -1,0 +1,79 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getPageMetadata } from '../data/metadata';
+import { toolRegistry } from '../data/tools';
+
+const metadata = getPageMetadata({
+  title: 'Page not found | Gizlet',
+  description: 'That Gizlet page does not exist. Here is the way back to the tools.',
+  pathname: '/404/',
+  robots: 'noindex, follow',
+});
+const availableTools = toolRegistry.filter((tool) => tool.launchStatus === 'available');
+---
+
+<BaseLayout metadata={metadata}>
+  <section class="not-found" aria-labelledby="not-found-title">
+    <p class="metadata">Error 404</p>
+    <h1 id="not-found-title">That page is not here.</h1>
+    <p class="not-found__copy">
+      The address may be mistyped, or the Gizlet may have moved. Every working Gizlet is listed
+      below, and search is always a keystroke away.
+    </p>
+
+    <ol class="not-found__list">
+      {
+        availableTools.map((tool) => (
+          <li>
+            <a href={tool.path}>
+              <strong>{tool.name}</strong>
+              <span>{tool.description}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+
+    <p><a href="/">Back to the Gizlet home page</a></p>
+  </section>
+</BaseLayout>
+
+<style>
+  .not-found {
+    max-width: 48rem;
+  }
+
+  .not-found__copy {
+    max-width: 38rem;
+    color: var(--text-muted);
+    font-size: var(--font-size-lg);
+  }
+
+  .not-found__list {
+    margin: var(--space-5) 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .not-found__list li + li {
+    border-top: var(--border-width) solid var(--border);
+  }
+
+  .not-found__list a {
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-3) 0;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .not-found__list a:hover strong {
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+  }
+
+  .not-found__list span {
+    color: var(--text-muted);
+  }
+</style>

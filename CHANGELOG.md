@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Registry-derived JSON-LD structured data: `WebSite` on the home page, `CollectionPage` on the Gizlet index, and `SoftwareApplication` with a `BreadcrumbList` on each Gizlet page.
+- An `/ads.txt` file generated from the declared AdSense publisher account, which AdSense requires before it can approve the site.
+- A browsable `/tools/` index that groups every available Gizlet by category, linked from the header, footer, and tool-page breadcrumbs.
+- A page for unknown addresses that lists every working Gizlet and links back to the home page, replacing an empty response.
+- A recorded pre-launch accessibility, performance, search-visibility, and UX audit of the production site in [docs/launch-audit.md](docs/launch-audit.md).
 - Local Gizlet Flows for chaining compatible image Gizlets in a configurable, reorderable browser-only pipeline with one final download.
 - Clear Google CMP consent disclosures for advertising, including accept, refuse, and manage-options choices for EEA, UK, and Swiss visitors when ads are enabled.
 - A browser-validated Gizlet request form that prepares a visitor-reviewed GitHub Issue without adding a Gizlet backend or form service.
@@ -44,6 +49,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- Build the homepage category strip from the registry, so it can no longer advertise a category with no Gizlet behind it, and give each category link a full-size tap target.
+- Raise the dark-theme contrast of local-processing and success copy to meet WCAG AA.
+- Keep the theme toggle's label out of the toggle script, so the header no longer resizes after load and shifts the page on narrow screens.
 - Link Gizlet cards and search results to Astro’s required trailing-slash routes.
 - Keep the Gizlet wordmark visible on dark theme backgrounds.
 

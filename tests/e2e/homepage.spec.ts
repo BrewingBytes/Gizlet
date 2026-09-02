@@ -693,3 +693,134 @@ test("persists an explicitly selected theme across reloads", async ({
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 });
+
+test("labels the theme toggle without shifting the page after load", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    (window as unknown as { __layoutShift: number }).__layoutShift = 0;
+    new PerformanceObserver((entries) => {
+      for (const entry of entries.getEntries() as (PerformanceEntry & {
+        value: number;
+        hadRecentInput: boolean;
+      })[]) {
+        if (!entry.hadRecentInput) {
+          (window as unknown as { __layoutShift: number }).__layoutShift +=
+            entry.value;
+        }
+      }
+    }).observe({ type: "layout-shift", buffered: true });
+  });
+  await page.goto("/");
+
+  const toggle = page.getByRole("button", { name: "Switch to dark theme" });
+  await expect(toggle).toHaveText("Dark", { useInnerText: true });
+
+  const shift = await page.evaluate(
+    () => (window as unknown as { __layoutShift: number }).__layoutShift,
+  );
+  expect(shift).toBeLessThan(0.05);
+});
+
+test("offers a way back from an unknown address", async ({ page }) => {
+  await page.goto("/404.html");
+
+  await expect(page).toHaveTitle("Page not found | Gizlet");
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+    "content",
+    "noindex, follow",
+  );
+  await expect(
+    page.getByRole("heading", { name: "That page is not here." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("main").getByRole("link", { name: /Compress Image/ }),
+  ).toHaveAttribute("href", "/tools/compress-image/");
+  await expect(
+    page.getByRole("link", { name: "Back to the Gizlet home page" }),
+  ).toBeVisible();
+  await expect(page.getByRole("banner")).toBeVisible();
+});
+
+test("lists every available Gizlet on a browsable index", async ({ page }) => {
+  await page.goto("/tools/");
+
+  await expect(page).toHaveTitle("All Gizlets | Gizlet");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    "https://gizlet.app/tools/",
+  );
+  await expect(
+    page.getByRole("heading", { name: "All the Gizlets, by kind of job." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Images" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("main").getByRole("link", { name: /JSON Formatter/ }),
+  ).toHaveAttribute("href", "/tools/json-formatter/");
+});
+
+test("offers only categories that have a Gizlet behind them", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const categories = page.getByRole("navigation", {
+    name: "Browse tool categories",
+  });
+  await expect(categories.getByRole("link", { name: /Images/ })).toHaveAttribute(
+    "href",
+    "/tools/#images",
+  );
+  await expect(
+    categories.getByRole("link", { name: "All Gizlets" }),
+  ).toHaveAttribute("href", "/tools/");
+  await expect(categories.getByRole("link", { name: "PDF" })).toHaveCount(0);
+  await expect(categories.getByRole("link", { name: "Video" })).toHaveCount(0);
+});
+
+test("applies a stored theme before the first paint", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.addInitScript(() => {
+    window.localStorage.setItem("gizlet-theme", "light");
+    (window as unknown as { __themeAtParse: (string | null)[] }).__themeAtParse =
+      [];
+    document.addEventListener("readystatechange", () => {
+      (
+        window as unknown as { __themeAtParse: (string | null)[] }
+      ).__themeAtParse.push(document.documentElement.dataset.theme ?? null);
+    });
+  });
+  await page.goto("/");
+
+  const themeAtParse = await page.evaluate(
+    () =>
+      (window as unknown as { __themeAtParse: (string | null)[] })
+        .__themeAtParse,
+  );
+  expect(themeAtParse[0]).toBe("light");
+});
+
+test("publishes structured data search engines can read", async ({ page }) => {
+  await page.goto("/tools/compress-image/");
+
+  const toolMarkup = JSON.parse(
+    (await page
+      .locator('script[type="application/ld+json"]')
+      .textContent()) as string,
+  );
+  expect(toolMarkup[0]["@type"]).toBe("SoftwareApplication");
+  expect(toolMarkup[0].name).toBe("Compress Image");
+  expect(toolMarkup[0].url).toBe("https://gizlet.app/tools/compress-image/");
+  expect(toolMarkup[1]["@type"]).toBe("BreadcrumbList");
+
+  await page.goto("/");
+  const siteMarkup = JSON.parse(
+    (await page
+      .locator('script[type="application/ld+json"]')
+      .textContent()) as string,
+  );
+  expect(siteMarkup["@type"]).toBe("WebSite");
+});
