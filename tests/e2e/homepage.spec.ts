@@ -103,8 +103,10 @@ test("links to and renders public information pages with page metadata", async (
     "How Gizlet handles local tool processing, analytics, and advertising.",
   );
   await expect(page.getByRole("heading", { name: "Local Gizlets" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Advertising consent choices" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Plausible Analytics" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Google AdSense" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Google Consent Management Platform" })).toBeVisible();
 
   await page.goto("/terms/");
   await expect(page).toHaveTitle("Terms | Gizlet");

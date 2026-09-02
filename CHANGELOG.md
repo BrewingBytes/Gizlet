@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Clear Google CMP consent disclosures for advertising, including accept, refuse, and manage-options choices for EEA, UK, and Swiss visitors when ads are enabled.
 - A browser-validated Gizlet request form that prepares a visitor-reviewed GitHub Issue without adding a Gizlet backend or form service.
 - Static, registry-derived `/tools.json` and `/llms.txt` discovery documents for AI agents, search systems, and developers, with available Gizlet routes, usage guidance, and local-processing privacy details.
 - Privacy, terms, and about pages with scoped local-processing disclosures and configurable provider information.

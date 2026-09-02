@@ -36,13 +36,19 @@ Gizlet's first advertising provider is [Google AdSense](https://adsense.google.c
 
 The Gizlet integration sends AdSense only its public publisher ID and the public ID of the requested ad unit. It never places file contents, filenames, JSON, generated passwords, tool results, error messages, or other Gizlet payloads into ad tags. As with any third-party advertising service, enabling it allows the provider to process the page request and information necessary to serve and measure advertising; the production privacy and cookie notice must accurately describe that processing and the providers selected in AdSense.
 
+### Consent management
+
+For EEA, UK, and Swiss visitors, Gizlet uses the Google-certified CMP configured in AdSense Privacy & messaging. The selected message must offer accept, refuse, and manage-options choices before ads that require consent are served. It must explain the applicable advertising purposes, providers, and any cookie or local-storage use. The published privacy page describes the boundary: Gizlet tool inputs and outputs are never included in advertising or consent payloads.
+
+Configuring or publishing a consent message in AdSense does not enable advertisements in the site. Ads remain disabled until the production environment sets `PUBLIC_ADS_ENABLED=true` and provides valid ad-unit IDs.
+
 ### Production enablement checklist
 
 Do not set `PUBLIC_ADS_ENABLED=true` until all of the following are complete:
 
 1. The Gizlet site is approved in the AdSense publisher account and responsive ad units have been created for the desired placements.
 2. A legally reviewed privacy and cookie notice is published, including the advertising provider, relevant data uses, and a way for visitors to revisit their choices where required.
-3. A Google-certified, IAB TCF-compatible consent management platform is configured for EEA, UK, and Swiss traffic before ads are served. Google’s own Privacy & messaging CMP is an eligible option; any alternative must remain on Google’s certified list and support the current TCF version.
+3. A Google-certified, IAB TCF-compatible consent management platform is configured for EEA, UK, and Swiss traffic before ads are served. Gizlet uses Google’s Privacy & messaging CMP with accept, refuse, and manage-options choices; any future alternative must remain on Google’s certified list and support the current TCF version.
 4. The consent flow, configured ad-technology providers, and non-personalized/declined-consent behavior are reviewed in AdSense and tested in a production-like environment.
 5. The site is checked at desktop and mobile sizes to confirm ads remain clearly labeled and separated from each Gizlet's input, primary action, and download controls.
 
