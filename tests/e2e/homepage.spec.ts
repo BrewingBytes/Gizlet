@@ -742,3 +742,41 @@ test("offers a way back from an unknown address", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByRole("banner")).toBeVisible();
 });
+
+test("lists every available Gizlet on a browsable index", async ({ page }) => {
+  await page.goto("/tools/");
+
+  await expect(page).toHaveTitle("All Gizlets | Gizlet");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    "https://gizlet.app/tools/",
+  );
+  await expect(
+    page.getByRole("heading", { name: "All the Gizlets, by kind of job." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Images" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("main").getByRole("link", { name: /JSON Formatter/ }),
+  ).toHaveAttribute("href", "/tools/json-formatter/");
+});
+
+test("offers only categories that have a Gizlet behind them", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const categories = page.getByRole("navigation", {
+    name: "Browse tool categories",
+  });
+  await expect(categories.getByRole("link", { name: /Images/ })).toHaveAttribute(
+    "href",
+    "/tools/#images",
+  );
+  await expect(
+    categories.getByRole("link", { name: "All Gizlets" }),
+  ).toHaveAttribute("href", "/tools/");
+  await expect(categories.getByRole("link", { name: "PDF" })).toHaveCount(0);
+  await expect(categories.getByRole("link", { name: "Video" })).toHaveCount(0);
+});

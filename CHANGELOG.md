@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- A browsable `/tools/` index that groups every available Gizlet by category, linked from the header, footer, and tool-page breadcrumbs.
 - A page for unknown addresses that lists every working Gizlet and links back to the home page, replacing an empty response.
 - A recorded pre-launch accessibility, performance, search-visibility, and UX audit of the production site in [docs/launch-audit.md](docs/launch-audit.md).
 - Local Gizlet Flows for chaining compatible image Gizlets in a configurable, reorderable browser-only pipeline with one final download.
@@ -46,6 +47,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- Build the homepage category strip from the registry, so it can no longer advertise a category with no Gizlet behind it, and give each category link a full-size tap target.
 - Raise the dark-theme contrast of local-processing and success copy to meet WCAG AA.
 - Keep the theme toggle's label out of the toggle script, so the header no longer resizes after load and shifts the page on narrow screens.
 - Link Gizlet cards and search results to Astro’s required trailing-slash routes.

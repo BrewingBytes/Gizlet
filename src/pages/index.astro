@@ -2,20 +2,9 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AdvertisementSlot from '../components/AdvertisementSlot.astro';
 import { getPageMetadata } from '../data/metadata';
-import { toolRegistry } from '../data/tools';
+import { getToolCategoryGroups, toolRegistry, toolsIndexPath } from '../data/tools';
 
-const categories = [
-  'Images',
-  'PDF',
-  'SEO',
-  'Developer',
-  'Text',
-  'Generators',
-  'Video',
-  'Audio',
-  'Security',
-  'Calculators',
-];
+const categoryGroups = getToolCategoryGroups();
 
 const metadata = getPageMetadata({
   title: 'Gizlet | Useful internet things, without the nonsense.',
@@ -78,10 +67,15 @@ const metadata = getPageMetadata({
     <p class="metadata">Browse by type</p>
     <ul>
       {
-        categories.map((category) => (
-          <li><a href="#tools">{category}</a></li>
+        categoryGroups.map((group) => (
+          <li>
+            <a href={group.path}>
+              {group.label} <span>{group.tools.length}</span>
+            </a>
+          </li>
         ))
       }
+      <li><a href={toolsIndexPath}>All Gizlets</a></li>
     </ul>
   </nav>
 
@@ -245,8 +239,18 @@ const metadata = getPageMetadata({
   }
 
   .category-strip a {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: var(--space-1);
     color: var(--text);
     font-weight: 700;
+  }
+
+  .category-strip a span {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
   }
 
   .pro-strip {
