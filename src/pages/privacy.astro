@@ -39,7 +39,7 @@ const metadata = getPageMetadata({
         privacyServices.map((service) => (
           <li>
             <strong>{service.category}: </strong>
-            <a href={service.url}>{service.name}</a> — {service.description}
+            <a href={service.url}>{service.name}</a>: {service.description}
           </li>
         ))
       }
