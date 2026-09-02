@@ -45,13 +45,14 @@ which the repository already depends on. The regressions worth keeping are cover
 - [x] **No ad placement resembles a tool or download button, or blocks a workflow.** With ads
       enabled, each slot is an `aside` labelled "Advertisement", sits outside every form and upload
       area, reserves its height so nothing moves, and keeps at least 24px from any button or
-      download link. The mobile stacking noted below is a density problem, not interference.
+      download link. Two findings came out of this pass and are fixed below: the mobile rail
+      stacking, and an ad-request call that never ran at all.
 - [x] **No page contains a knowingly false local-processing claim.** With a real image loaded and
       compressed, the only requests are Cloudflare's own `/cdn-cgi/` edge scripts, which fire
       identically without an upload (16,548 vs 16,550 bytes of payload) and never carry the 325 KB
       file. The privacy page's claim is correctly scoped to Gizlets marked Local.
-- [x] **No known P0/P1 launch defects left unresolved.** Two P1s were found and fixed; the 404 page
-      needs one deployment setting to take effect, tracked below.
+- [x] **No known P0/P1 launch defects left unresolved.** Three P1s were found and fixed; the 404
+      page needs one deployment setting to take effect, tracked below.
 - [x] **Performance findings and accepted tradeoffs documented.** See below.
 
 ## Findings
@@ -63,24 +64,25 @@ Severity: **P1** must be resolved before launch, **P2** should follow soon after
 | # | Severity | Finding |
 | - | -------- | ------- |
 | 1 | P1 | The homepage scored **CLS 0.2033** at 390px, over double Google's 0.1 "good" threshold. The theme toggle rendered the label `Theme`, and the toggle script rewrote it to `Dark` after hydration. The 16px width change flipped the header's flex wrap, collapsing it from 196px to 140px and pulling the whole page up 56px. The label now follows `data-theme` in CSS, so the first paint is already correct. Measured after the fix: **0.0031**. |
-| 2 | P1 | Any unknown address returned an **empty body** — no heading, no navigation, no way back. `src/pages/404.astro` now renders a registry-derived list of every working Gizlet and a link home. **This needs one deployment change to take effect:** the Cloudflare Workers asset configuration must set `not_found_handling` to serve `404.html`, which lives outside this repository. |
-| 3 | P2 | The local-processing and success green failed AA in dark theme: `#257a4e` scored **3.29:1** on `#1b1a17` and 2.96:1 on `#26231e`, against the 4.5:1 minimum. It carries the "Local" badge, the tool-page "Local processing" label, the Flows local note, and JSON valid/copy confirmations — the site's main trust signal. A `--success` token now resolves to `#46a877` in dark theme (5.9:1 and 5.3:1) and keeps `--color-green` in light theme. |
+| 2 | P1 | **Two inline scripts were being emitted as text and never ran.** Both were written as `<script is:inline>{\`…\`}</script>`, but Astro treats a script body as raw text, so each page shipped a block statement containing a template literal — valid JavaScript that does nothing, which is why no console error ever appeared. The theme bootstrap in `BaseLayout.astro` was dead, so a visitor whose stored choice differs from their system preference saw the wrong theme until the module script loaded (confirmed against production: `--background` was `#1b1a17` at `interactive` and `#f3efe6` at `complete`). The `adsbygoogle.push({})` call was dead too, which means **no AdSense unit would ever have filled** once ads were switched on. Both now execute; the ad slots push 2 requests on desktop and 1 on mobile. |
+| 3 | P1 | Any unknown address returned an **empty body** — no heading, no navigation, no way back. `src/pages/404.astro` now renders a registry-derived list of every working Gizlet and a link home. **This needs one deployment change to take effect:** the Cloudflare Workers asset configuration must set `not_found_handling` to serve `404.html`, which lives outside this repository. |
+| 4 | P2 | The local-processing and success green failed AA in dark theme: `#257a4e` scored **3.29:1** on `#1b1a17` and 2.96:1 on `#26231e`, against the 4.5:1 minimum. It carries the "Local" badge, the tool-page "Local processing" label, the Flows local note, and JSON valid/copy confirmations — the site's main trust signal. A `--success` token now resolves to `#46a877` in dark theme (5.9:1 and 5.3:1) and keeps `--color-green` in light theme. |
+| 5 | P2 | The homepage "Browse by type" strip hardcoded ten categories. Seven of them (PDF, Text, Generators, Video, Audio, Security, Calculators) had no Gizlet, the registry only defines three, and all ten linked to the same `#tools` anchor, so every one was a dead end. It also contradicted the registry-derivation rule in AGENTS.md. The strip is now built from `getToolCategoryGroups()`, shows a count per category, and links into the new index. |
+| 6 | P2 | `/tools/` returned 404. The header, footer, and tool-page breadcrumbs all pointed at `/#tools`, so the collection had no crawlable index page and a guessed URL was a dead end. There is now a registry-derived `/tools/` index grouped by category, published in the sitemap, and every "Tools" link points at it. |
+| 7 | P2 | With ads enabled at 390px, the inline and rail slots both collapsed into the main column and rendered back to back below the workspace: two labelled ad blocks and roughly 180px of ad space in a row. The rail is now hidden below the width where the layout stops having a rail, and no ad is requested for it there. |
+| 8 | P2 | No page emitted structured data — and Gizlet ships a JSON-LD generator while publishing none itself. The home page now carries `WebSite`, the index `CollectionPage` with an `ItemList`, and each Gizlet page `SoftwareApplication` plus a `BreadcrumbList`, all derived from the registry. |
+| 9 | P3 | The homepage category links were 17px tall, below the 24px minimum in WCAG 2.2 SC 2.5.8. They now use a 44px tap target. Tool-page breadcrumb links remain 14px; they are inline text in a sentence-like trail, which the success criterion exempts. |
+| 10 | P3 | The viewport meta was `width=device-width` with no `initial-scale=1`. |
+| 11 | P3 | `/ads.txt` returned 404, which is what the AdSense console reports as "not found". It is now generated from the publisher ID declared in `advertising.ts`, which the site-verification meta tag also uses, so the two cannot drift. |
+| 12 | P3 | `docs/privacy.md` documented the Cloudflare Web Analytics beacon but not the bot-detection script the zone also injects. Nothing published was inaccurate; the documentation is now complete about what the edge adds. |
 
 ### Deferred to follow-up issues
 
 | # | Severity | Finding |
 | - | -------- | ------- |
-| 4 | P2 | The homepage "Browse by type" strip hardcodes ten categories. Seven of them (PDF, Text, Generators, Video, Audio, Security, Calculators) have no Gizlet, the registry only defines three, and all ten link to the same `#tools` anchor, so every one of them is a dead end. It also contradicts the registry-derivation rule in AGENTS.md. |
-| 5 | P2 | With ads enabled at 390px, the inline and rail slots both collapse into the main column and render back to back below the workspace: two labelled ad blocks and roughly 180px of ad space in a row. The rail placement should not render below its breakpoint. |
-| 6 | P2 | No page emits structured data. `SoftwareApplication`, `BreadcrumbList`, and `FAQPage` markup are the obvious rich-result opportunities — and Gizlet ships a JSON-LD generator while publishing none itself. |
-| 7 | P2 | `/tools/` returns 404. The header's "Tools" link points at `/#tools`, so there is no crawlable index page for the collection and a guessed URL is a dead end. |
-| 8 | P2 | Tool pages carry 65–72 words of indexable copy. That is thin for the head terms these pages target, where the incumbents publish substantial supporting content. |
-| 9 | P3 | The homepage category links are 17px tall, and tool-page breadcrumb links 14px, below the 24px minimum in WCAG 2.2 SC 2.5.8. The breadcrumbs are inline text and likely exempt; the category strip is a standalone control group and is not. |
-| 10 | P3 | The viewport meta is `width=device-width` with no `initial-scale=1`. |
-| 11 | P3 | `www.gizlet.app` does not resolve at all — the name has no DNS record, so a visitor typing it gets a resolution failure rather than a redirect to the canonical host. #25 lists `www` handling in its scope. |
-| 12 | P3 | Every page shares `/brand/brand-board.png` as its Open Graph and Twitter image, so a shared tool link previews identically to the homepage. |
-| 13 | P3 | `/ads.txt` returns 404, which is what the AdSense console reports as "not found". AdSense wants `google.com, pub-…, DIRECT, f08c47fec0942fa0` for the publisher ID already declared in `BaseLayout.astro`. |
-| 14 | P3 | `docs/privacy.md` documents the Cloudflare Web Analytics beacon but not the Cloudflare bot-detection script that also runs on the zone. Nothing published is inaccurate; the documentation is simply incomplete about what the edge adds. |
+| 13 | P2 | Tool pages carry 65–72 words of indexable copy. That is thin for the head terms these pages target, where the incumbents publish substantial supporting content. Worth per-Gizlet supporting copy and an FAQ, which would also earn `FAQPage` markup on top of the structured data added here. |
+| 14 | P3 | `www.gizlet.app` does not resolve at all — the name has no DNS record, so a visitor typing it gets a resolution failure rather than a redirect to the canonical host. #25 lists `www` handling in its scope. |
+| 15 | P3 | Every page shares `/brand/brand-board.png` as its Open Graph and Twitter image, so a shared tool link previews identically to the homepage. |
 
 ### Checked and accepted
 
@@ -127,14 +129,21 @@ derived `sitemap.xml` advertised from `robots.txt`, HTTPS with an HTTP redirect,
 the canonical trailing-slash form, a real `404` status for unknown paths, and fast, script-light
 static documents.
 
-The gaps that would move rankings are findings 6, 7, 8, and 12: no structured data, no `/tools/`
-index, thin tool-page copy, and one shared social image. Findings 4 and 11 matter here too — ten
-category links that all point at the same anchor, and a `www` host that does not resolve.
+Three of the gaps found here are closed above: the site now publishes structured data, has a
+crawlable `/tools/` index in its sitemap, and no longer offers ten category links that all point at
+the same anchor. What remains is content and presentation rather than plumbing — findings 13, 14,
+and 15: thin tool-page copy against well-established competitors, a `www` host that does not
+resolve, and one shared social image for every page.
+
+The honest read is that the plumbing is now better than the content. Ranking for terms like
+"compress image" is a content and authority problem, not a markup one.
 
 ## Re-running the audit
 
 Before the next launch-shaped change, the cheap version is: `pnpm run build`, preview it, then walk
 each route at 390px and 1440px in both themes, Tab through every page, and run one Gizlet end to end
-with the network panel open. The two regressions this audit found are guarded by
-`tests/e2e/homepage.spec.ts`, which asserts the homepage stays under 0.05 layout shift at 390px and
-that the 404 page keeps its way back.
+with the network panel open. The regressions this audit found are guarded by
+`tests/e2e/homepage.spec.ts`, which asserts that the homepage stays under 0.05 layout shift at
+390px, that the stored theme is applied before the first paint, that the 404 page keeps its way
+back, that the category strip only offers categories with Gizlets behind them, and that the
+structured data parses.
