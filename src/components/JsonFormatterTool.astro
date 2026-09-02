@@ -57,14 +57,12 @@
 </style>
 
 <script>
-  import { analyticsEvents } from '../data/analytics';
   import {
     formatJsonParseError,
     transformJson,
     validateJson,
     type JsonTransformAction,
   } from '../data/json-formatter';
-  import { trackToolEvent } from '../scripts/analytics';
 
   const root = document.querySelector<HTMLElement>('[data-json-formatter]');
 
@@ -112,7 +110,6 @@
       copyStatus.textContent = '';
 
       if (!transformed.valid) {
-        trackToolEvent(analyticsEvents.toolError, 'json-formatter');
         input.focus();
         return;
       }
@@ -120,7 +117,6 @@
       result = transformed.output;
       output.textContent = result;
       copyButton.disabled = false;
-      trackToolEvent(analyticsEvents.toolActionCompleted, 'json-formatter');
     };
 
     input.addEventListener('input', scheduleValidation);

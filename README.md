@@ -33,7 +33,7 @@ pnpm exec playwright install chromium
 ## Product principles
 
 - **Useful by default.** Each Gizlet should solve one clear task without an account, a tutorial, or unnecessary setup.
-- **Local processing where practical.** File and text inputs stay on the device for tools explicitly marked as local. This claim is scoped per tool; analytics and advertising requests are separate from tool processing.
+- **Local processing where practical.** File and text inputs stay on the device for tools explicitly marked as local. This claim is scoped per tool; aggregate analytics and advertising requests are separate from tool processing.
 - **Fast and static-first.** The initial site does not require a long-running application server.
 - **Accessible and clear.** Keyboard navigation, visible focus states, semantic controls, readable contrast, and responsive layouts are launch requirements.
 - **Respectful monetization.** The free site may include clearly labeled advertisements, but ads must not resemble primary actions or interfere with workflows. A future Gizlet Pro tier removes ads without changing the available tools.
@@ -64,13 +64,13 @@ Gizlet uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Conv
 The final public privacy policy will describe the implemented behavior—not assumptions. In particular:
 
 - Local Gizlets will state what is processed on-device.
-- Analytics must never include file contents, JSON contents, generated passwords, or other user-entered tool payloads.
-- Advertising and analytics can be disabled during local development; advertising is globally configuration-gated for future Gizlet Pro sessions.
+- Analytics must never include file contents, JSON contents, generated passwords, or other user-entered tool payloads. Gizlet sends no analytics events of its own; aggregate measurement comes from Cloudflare Web Analytics at the edge.
+- Advertising is absent during local development and globally configuration-gated for future Gizlet Pro sessions.
 - Any consent requirements introduced by selected providers will be documented before production enablement.
 
 Policy pages and the finalized disclosure are tracked in [#21](https://github.com/BrewingBytes/Gizlet/issues/21), [#22](https://github.com/BrewingBytes/Gizlet/issues/22), and [#24](https://github.com/BrewingBytes/Gizlet/issues/24).
 
-See [docs/privacy.md](docs/privacy.md) for the implemented analytics data contract, AdSense integration, and required production-consent setup.
+See [docs/privacy.md](docs/privacy.md) for the implemented analytics data contract, the Cloudflare Web Analytics setup, the AdSense integration, and the required production-consent setup.
 
 ## License
 

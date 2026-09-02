@@ -23,8 +23,9 @@ test("renders the Gizlet homepage", async ({ page }) => {
       name: "Useful internet things, without the nonsense.",
     }),
   ).toBeVisible();
+  await expect(page.locator('script[src*="plausible.io"]')).toHaveCount(0);
   await expect(
-    page.locator('script[src="https://plausible.io/js/script.js"]'),
+    page.locator('script[src*="static.cloudflareinsights.com"]'),
   ).toHaveCount(0);
   await expect(
     page.locator('script[src*="pagead2.googlesyndication.com"]'),
@@ -176,7 +177,9 @@ test("links to and renders public information pages with page metadata", async (
   );
   await expect(page.getByRole("heading", { name: "Local Gizlets" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Advertising consent choices" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Plausible Analytics" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Cloudflare Web Analytics" }),
+  ).toBeVisible();
   await expect(page.getByRole("link", { name: "Google AdSense" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Google Consent Management Platform" })).toBeVisible();
 

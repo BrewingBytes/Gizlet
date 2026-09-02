@@ -30,9 +30,10 @@ const metadata = getPageMetadata({
 
     <h2>Analytics and advertising</h2>
     <p>
-      Analytics and advertising are separate from Gizlet processing. They are disabled during development and
-      only added to a production build when their public configuration is enabled. The current provider details
-      are listed below so they can stay in step with the services Gizlet uses.
+      Analytics and advertising are separate from Gizlet processing. Analytics is measured for gizlet.app by
+      Cloudflare, which adds its measurement script at the edge rather than from this site’s code. Advertising is
+      disabled during development and only added to a production build when its public configuration is enabled.
+      The current provider details are listed below so they can stay in step with the services Gizlet uses.
     </p>
     <ul>
       {
@@ -45,10 +46,11 @@ const metadata = getPageMetadata({
       }
     </ul>
     <p>
-      Plausible may receive page URL, referrer, browser, operating system, device type, and country for
-      aggregate reporting. When advertising is enabled, Google and its advertising partners may process a page
-      request and information needed to serve and measure ads, including cookies or other local storage where
-      applicable.
+      Cloudflare Web Analytics may receive the page path, referrer, browser, operating system, device type,
+      country, and page-performance timings for aggregate reporting. It does not log URL query strings and uses
+      no cookies or other client-side state. When advertising is enabled, Google and its advertising partners may
+      process a page request and information needed to serve and measure ads, including cookies or other local
+      storage where applicable.
     </p>
 
     <h2>Advertising consent choices</h2>
@@ -66,8 +68,9 @@ const metadata = getPageMetadata({
     <h2>What Gizlet does not send as analytics</h2>
     <p>
       Gizlet does not send file contents, filenames, file sizes, dimensions, formats, JSON contents, generated
-      passwords, tool results, error messages, or other entered or generated tool payloads in its analytics
-      events. Gizlet’s defined tool events contain only a static tool slug.
+      passwords, tool results, error messages, or other entered or generated tool payloads to analytics. Gizlet
+      sends no analytics events of its own at all: measurement is limited to the aggregate page and performance
+      data Cloudflare collects for a page load.
     </p>
 
     <h2>Gizlet requests</h2>

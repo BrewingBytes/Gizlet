@@ -3,7 +3,6 @@ import SiteFooter from '../components/SiteFooter.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import ToolSearchOverlay from '../components/ToolSearchOverlay.astro';
 import { adSenseScriptBaseUrl, getAdvertisementConfiguration } from '../data/advertising';
-import { getAnalyticsConfiguration, plausibleScriptUrl } from '../data/analytics';
 import { getPageMetadata, type PageMetadata } from '../data/metadata';
 import '../styles/global.css';
 
@@ -25,11 +24,6 @@ const {
   title,
 } = Astro.props;
 const metadata = suppliedMetadata ?? getPageMetadata({ title, description, pathname, image, robots });
-const analytics = getAnalyticsConfiguration({
-  isDevelopment: import.meta.env.DEV,
-  enabled: import.meta.env.PUBLIC_ANALYTICS_ENABLED,
-  plausibleDomain: import.meta.env.PUBLIC_PLAUSIBLE_DOMAIN,
-});
 const advertising = getAdvertisementConfiguration({
   isDevelopment: import.meta.env.DEV,
   enabled: import.meta.env.PUBLIC_ADS_ENABLED,
@@ -73,18 +67,6 @@ const advertising = getAdvertisementConfiguration({
       })()`}
     </script>
     {
-      analytics.enabled && analytics.plausibleDomain && (
-        <>
-          <script is:inline>
-            {`window.plausible = window.plausible || function () {
-              (window.plausible.q = window.plausible.q || []).push(arguments);
-            };`}
-          </script>
-          <script is:inline defer data-domain={analytics.plausibleDomain} src={plausibleScriptUrl}></script>
-        </>
-      )
-    }
-    {
       advertising.enabled && advertising.adSenseClient && (
         <script
           is:inline
@@ -111,9 +93,7 @@ const advertising = getAdvertisementConfiguration({
 </html>
 
 <script>
-  import { initialiseAnalytics } from '../scripts/analytics';
   import { initialiseToolSearch } from '../scripts/tool-search';
 
-  initialiseAnalytics();
   initialiseToolSearch();
 </script>

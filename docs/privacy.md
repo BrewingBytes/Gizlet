@@ -1,34 +1,34 @@
 # Privacy, analytics, and advertising
 
-Gizlet uses [Plausible Analytics](https://plausible.io/) for aggregate usage measurement when analytics is explicitly enabled for a production build. Plausible was selected because its standard tracker is lightweight, does not use cookies, and is designed for aggregate rather than user-level analytics.
+Gizlet uses [Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/) for aggregate traffic and page-performance measurement. It was selected because it is free at any traffic level, needs no script or configuration in this repository, and is designed for aggregate rather than user-level reporting: Cloudflare states that it "does not use any client-side state, such as cookies or localStorage, to collect usage metrics" and does not fingerprint individuals.
 
 ## What Gizlet sends
 
-When enabled, the Plausible tracker records page views and the following centrally-defined custom events:
+Nothing. Gizlet ships no analytics module, no provider script tag, and no client event calls. Cloudflare injects its beacon at the edge for the proxied `gizlet.app` zone, so the only analytics data collected is what that beacon reports for a page load: the page path, referrer, browser, operating system, device type, country, and page-performance timings.
 
-| Event | When it is sent | Custom data sent by Gizlet |
-| --- | --- | --- |
-| `pageview` | A page loads | None |
-| `tool_opened` | A typed-registry Gizlet page opens | The static Gizlet slug, such as `compress-image` |
-| `tool_action_completed` | A Gizlet produces a result | The static Gizlet slug |
-| `tool_error` | A Gizlet shows an error | The static Gizlet slug |
+Because Gizlet defines no events, there is no code path that could put a file's contents, filename, size, dimensions, or format, JSON contents, a generated password, a tool result, or an error message into analytics. Cloudflare Web Analytics also does not log URL query strings, so a value that reached a URL could not be collected either.
 
-Gizlet does **not** send file contents, filenames, file sizes, dimensions, formats, JSON contents, generated passwords, result URLs, error messages, or any other entered/generated tool payload in analytics events. The event API only accepts a known registry slug, so arbitrary tool values cannot be sent through it.
+Cloudflare Web Analytics does not currently support custom events, so the previous `tool_opened`, `tool_action_completed`, and `tool_error` events are gone. Per-Gizlet usage is still visible because every Gizlet is its own route, such as `/tools/compress-image/`; completion and error rates are not. Retention is limited to roughly 30 days.
 
-Plausible receives the page URL, referrer, browser, operating system, device type, and country for aggregate reporting. Its standard tracker strips URL query parameters except marketing parameters (`ref`, `source`, and `utm_*`). Gizlet does not enable Plausible’s optional outbound-link, file-download, form-submission, custom-property, session-recording, or heatmap measurements.
-
-For details of Plausible’s visitor-data handling, see its [data policy](https://plausible.io/data-policy) and [privacy policy](https://plausible.io/privacy).
+For Cloudflare's handling of this data, see its [privacy policy](https://www.cloudflare.com/privacypolicy/) and the [Web Analytics documentation](https://developers.cloudflare.com/web-analytics/).
 
 ## Configuration
 
-Analytics is disabled by default and always disabled while Astro is running in development mode. To enable it for a production build, set both variables from [.env.example](../.env.example):
+There is nothing to configure in the repository, and no `PUBLIC_*` variable gates analytics. Cloudflare Web Analytics is enabled per zone in the Cloudflare dashboard:
+
+1. Open the Cloudflare dashboard for the `gizlet.app` zone and go to **Analytics & Logs → Web Analytics**.
+2. Keep the automatic setup for the proxied zone so Cloudflare injects `beacon.min.js` itself. Enabling the beacon manually would put a site token in this repository, which is why the automatic path is used.
+3. Read the same dashboard section for reporting. Maintainers need Cloudflare access to the zone to see it; there is no public dashboard and no separate analytics account.
+
+Automatic injection requires that responses stay rewritable at the edge. A response served with `Cache-Control: no-transform` is not modified, so the beacon would not be added and measurement would silently stop. Gizlet's pages are served without `no-transform`.
+
+To confirm a deployment is measured, check that the beacon reaches the built page:
 
 ```sh
-PUBLIC_ANALYTICS_ENABLED=true
-PUBLIC_PLAUSIBLE_DOMAIN=gizlet.app
+curl -s https://gizlet.app | grep -c 'static.cloudflareinsights.com/beacon.min.js'
 ```
 
-Add `gizlet.app` as a site in Plausible and configure custom-event goals with these exact names: `tool_opened`, `tool_action_completed`, and `tool_error`. The analytics script is omitted entirely when either variable is absent or invalid.
+The injected tag is absent from `pnpm run build` output and from a local preview, because it is added by Cloudflare in front of the deployed site rather than by the build.
 
 ## Advertising
 
