@@ -780,3 +780,25 @@ test("offers only categories that have a Gizlet behind them", async ({
   await expect(categories.getByRole("link", { name: "PDF" })).toHaveCount(0);
   await expect(categories.getByRole("link", { name: "Video" })).toHaveCount(0);
 });
+
+test("applies a stored theme before the first paint", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.addInitScript(() => {
+    window.localStorage.setItem("gizlet-theme", "light");
+    (window as unknown as { __themeAtParse: (string | null)[] }).__themeAtParse =
+      [];
+    document.addEventListener("readystatechange", () => {
+      (
+        window as unknown as { __themeAtParse: (string | null)[] }
+      ).__themeAtParse.push(document.documentElement.dataset.theme ?? null);
+    });
+  });
+  await page.goto("/");
+
+  const themeAtParse = await page.evaluate(
+    () =>
+      (window as unknown as { __themeAtParse: (string | null)[] })
+        .__themeAtParse,
+  );
+  expect(themeAtParse[0]).toBe("light");
+});
