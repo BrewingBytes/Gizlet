@@ -8,10 +8,10 @@ Read [docs/architecture.md](docs/architecture.md) before changing the applicatio
 
 ## Repository map
 
-- `src/data/` — pure, dependency-free TypeScript modules: the tool registry, per-tool logic, metadata, flows, analytics/advertising configuration, legal copy. These are the units under test and must not touch `window`, `document`, or `import.meta.env` directly.
-- `src/scripts/` — browser-only modules (`theme`, `analytics`, `image-processing`, `tool-search`, `gizlet-request`). Imported from component `<script>` blocks, never from Astro frontmatter.
+- `src/data/` — pure, dependency-free TypeScript modules: the tool registry, per-tool logic, metadata, flows, advertising configuration, legal copy. These are the units under test and must not touch `window`, `document`, or `import.meta.env` directly.
+- `src/scripts/` — browser-only modules (`theme`, `image-processing`, `tool-search`, `gizlet-request`). Imported from component `<script>` blocks, never from Astro frontmatter.
 - `src/components/` — one Astro component per Gizlet workspace plus the shared shell (`SiteHeader`, `SiteFooter`, `ToolPageLayout`, `AdvertisementSlot`, `ToolSearchOverlay`, `FlowBuilder`). Each keeps its own markup, scoped CSS, and `<script>` module.
-- `src/layouts/BaseLayout.astro` — document shell, metadata, theme bootstrap, and the env-gated analytics/ads tags.
+- `src/layouts/BaseLayout.astro` — document shell, metadata, theme bootstrap, and the env-gated ads tag.
 - `src/pages/` — static routes, including `tools/[slug].astro` (generated from the registry) and the generated `sitemap.xml`, `robots.txt`, `tools.json`, and `llms.txt`.
 - `tests/unit/` — Vitest, one file per `src/data` module. `tests/e2e/` — Playwright smoke coverage.
 - `docs/` — architecture baseline, privacy data contract, request-form behavior.
@@ -39,9 +39,9 @@ Adding or changing a Gizlet:
 
 ## Privacy and UX
 
-- Never send user file contents, JSON contents, generated passwords, or other tool payloads to analytics or third parties.
+- Never send user file contents, JSON contents, generated passwords, or other tool payloads to analytics or third parties. Gizlet ships no analytics script or client event calls at all: aggregate measurement is Cloudflare Web Analytics, injected at the edge. Do not reintroduce a provider script or a tracking API without an issue that requires it.
 - Do not claim a tool is local unless its implementation actually processes its input on-device. Tool-page processing copy must come from `getToolProcessingStatus`, which reads the registry.
-- Analytics and advertising are opt-in through `PUBLIC_*` environment variables, stay disabled in development, and treat malformed configuration as disabled. Do not enable them by default, and keep [docs/privacy.md](docs/privacy.md) accurate when their behavior changes.
+- Advertising is opt-in through `PUBLIC_*` environment variables, stays disabled in development, and treats malformed configuration as disabled. Do not enable it by default, and keep [docs/privacy.md](docs/privacy.md) accurate when advertising or analytics behavior changes.
 - Preserve keyboard access, visible focus states, semantic controls, sufficient contrast, and responsive layouts.
 - Advertisements must be clearly labeled and must not appear in a form/upload area or resemble a primary or download action.
 

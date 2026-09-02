@@ -14,10 +14,10 @@ export interface PrivacyService {
 export const privacyServices: readonly PrivacyService[] = [
   {
     category: 'Analytics',
-    name: 'Plausible Analytics',
-    url: 'https://plausible.io/privacy',
+    name: 'Cloudflare Web Analytics',
+    url: 'https://www.cloudflare.com/privacypolicy/',
     description:
-      'When enabled for a production build, it measures aggregate page use and the static Gizlet slug for defined tool events. Gizlet does not send entered or generated tool payloads in these events.',
+      'Enabled for gizlet.app at the Cloudflare edge, it measures aggregate page views and page performance. It uses no cookies or other client-side state and does not log URL query strings. Gizlet sends it no tool events, so entered or generated tool payloads cannot reach it.',
   },
   {
     category: 'Advertising',

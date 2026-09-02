@@ -71,4 +71,4 @@ Before adding a dependency:
 
 ## Deferred decisions
 
-Hosting, analytics, advertising, consent requirements, user accounts, billing, and server-side processing are not part of this baseline. They require separate product and implementation decisions when their roadmap issues are reached.
+Hosting, advertising, consent requirements, user accounts, billing, and server-side processing are not part of this baseline. They require separate product and implementation decisions when their roadmap issues are reached. Analytics is decided: see [privacy.md](privacy.md).

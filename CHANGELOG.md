@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Privacy, terms, and about pages with scoped local-processing disclosures and configurable provider information.
 - Optional Google AdSense integration with centrally configured responsive banner, inline, and rail placements that stay disabled during development.
 - Local JSON Formatter Gizlet with validation, location-aware parse errors, formatting, minification, and copy actions.
-- Optional, privacy-conscious Plausible analytics with anonymous page views and minimal Gizlet usage events.
+- Privacy-conscious aggregate analytics through Cloudflare Web Analytics, measured at the Cloudflare edge with no analytics script, configuration, or event calls in the site itself.
 - Local JSON-LD Generator Gizlet for Product, Organization, Article, LocalBusiness, Event, and BreadcrumbList markup with live previews, copy actions, and separate validation guidance.
 - Static sitemap.xml and robots.txt generated from the launch-ready Gizlet registry routes.
 - Local Convert Image Gizlet with drag/drop, source-format detection, JPEG/PNG/WebP output, transparency-loss warnings, and verified downloads.
