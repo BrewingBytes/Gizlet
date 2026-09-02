@@ -1,0 +1,47 @@
+---
+import LegalPageLayout from '../components/LegalPageLayout.astro';
+import { legalPageLastUpdated } from '../data/legal';
+import { getPageMetadata } from '../data/metadata';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const metadata = getPageMetadata({
+  title: 'Terms | Gizlet',
+  description: 'The terms for using Gizlet’s small browser tools.',
+  pathname: '/terms/',
+});
+---
+
+<BaseLayout metadata={metadata}>
+  <LegalPageLayout
+    eyebrow="Gizlet policy"
+    title="Terms"
+    introduction="The plain-language rules for using Gizlet."
+  >
+    <h2>Using Gizlet</h2>
+    <p>
+      Gizlet provides small browser utilities for lawful, personal, and professional use. You are responsible for
+      the content you choose to process and for ensuring you have the rights and permissions to use it.
+    </p>
+
+    <h2>Availability and results</h2>
+    <p>
+      Gizlet is provided as available. We work to keep the tools useful and accurate, but do not promise that a
+      tool will always be available, error-free, or suitable for a particular purpose. Check important output
+      before relying on it.
+    </p>
+
+    <h2>Respectful use</h2>
+    <p>
+      Do not use Gizlet in a way that breaks the site, interferes with other visitors, violates applicable law,
+      or infringes another person’s rights. Do not attempt to bypass site controls or use the service to distribute
+      harmful material.
+    </p>
+
+    <h2>Changes</h2>
+    <p>
+      Gizlet may add, change, or retire tools and may update these terms as the product develops. Continuing to
+      use Gizlet after an update means you accept the revised terms.
+    </p>
+    <p class="metadata">Last updated {legalPageLastUpdated}</p>
+  </LegalPageLayout>
+</BaseLayout>

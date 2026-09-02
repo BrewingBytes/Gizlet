@@ -2,6 +2,7 @@ import { siteUrl } from './metadata';
 import { toolRegistry } from './tools';
 
 const sitemapPathname = '/sitemap.xml';
+const publicInformationPathnames = ['/privacy/', '/terms/', '/about/'] as const;
 
 /**
  * Returns every route that is ready for public search discovery.
@@ -10,7 +11,10 @@ const sitemapPathname = '/sitemap.xml';
  * be listed in the sitemap before its launch status is marked available.
  */
 export function getSitemapUrls(): readonly string[] {
-  const urls = [new URL('/', siteUrl).toString()];
+  const urls = [
+    new URL('/', siteUrl).toString(),
+    ...publicInformationPathnames.map((pathname) => new URL(pathname, siteUrl).toString()),
+  ];
 
   for (const tool of toolRegistry) {
     if (tool.launchStatus === 'available') {

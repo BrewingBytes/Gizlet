@@ -1,0 +1,70 @@
+---
+interface Props {
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly introduction: string;
+}
+
+const { eyebrow, title, introduction } = Astro.props;
+---
+
+<article class="legal-page">
+  <header class="legal-page__header">
+    <p class="metadata">{eyebrow}</p>
+    <h1>{title}</h1>
+    <p class="legal-page__introduction">{introduction}</p>
+  </header>
+  <div class="legal-page__content">
+    <slot />
+  </div>
+</article>
+
+<style>
+  .legal-page {
+    width: min(100%, 48rem);
+  }
+
+  .legal-page__header {
+    padding-bottom: var(--space-5);
+    border-bottom: var(--border-width) solid var(--border);
+  }
+
+  .legal-page__header .metadata {
+    margin-bottom: var(--space-2);
+  }
+
+  .legal-page__header h1 {
+    margin-bottom: var(--space-4);
+  }
+
+  .legal-page__introduction {
+    max-width: 42rem;
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--font-size-lg);
+  }
+
+  .legal-page__content {
+    padding-top: var(--space-5);
+  }
+
+  .legal-page__content :global(h2) {
+    margin-top: var(--space-6);
+  }
+
+  .legal-page__content :global(h2:first-child) {
+    margin-top: 0;
+  }
+
+  .legal-page__content :global(ul) {
+    padding-left: var(--space-4);
+  }
+
+  .legal-page__content :global(li + li) {
+    margin-top: var(--space-2);
+  }
+
+  .legal-page__content :global(.metadata) {
+    margin-top: var(--space-5);
+  }
+</style>

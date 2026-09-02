@@ -46,12 +46,41 @@ test("serves public sitemap and crawler-discovery files", async ({
   await expect(sitemap.text()).resolves.toContain(
     "https://gizlet.com/tools/json-ld-generator/",
   );
+  await expect(sitemap.text()).resolves.toContain("https://gizlet.com/privacy/");
 
   expect(robots.headers()["content-type"]).toContain("text/plain");
   await expect(robots).toBeOK();
   await expect(robots.text()).resolves.toContain(
     "Sitemap: https://gizlet.com/sitemap.xml",
   );
+});
+
+test("links to and renders public information pages with page metadata", async ({ page }) => {
+  await page.goto("/");
+
+  const footer = page.getByRole("navigation", { name: "Footer navigation" });
+  await expect(footer.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy/");
+  await expect(footer.getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms/");
+  await expect(footer.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about/");
+
+  await page.goto("/privacy/");
+  await expect(page).toHaveTitle("Privacy | Gizlet");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://gizlet.com/privacy/");
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    "content",
+    "How Gizlet handles local tool processing, analytics, and advertising.",
+  );
+  await expect(page.getByRole("heading", { name: "Local Gizlets" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Plausible Analytics" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Google AdSense" })).toBeVisible();
+
+  await page.goto("/terms/");
+  await expect(page).toHaveTitle("Terms | Gizlet");
+  await expect(page.getByRole("heading", { name: "Using Gizlet" })).toBeVisible();
+
+  await page.goto("/about/");
+  await expect(page).toHaveTitle("About | Gizlet");
+  await expect(page.getByText("Gizlet is a BrewingBytes product")).toBeVisible();
 });
 
 test("renders the reusable tool page layout without reserved ad space while ads are disabled", async ({
