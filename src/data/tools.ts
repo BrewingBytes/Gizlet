@@ -86,6 +86,6 @@ export const toolRegistry = [
     description: "Format, validate, and read JSON with a clearer structure.",
     keywords: ["json", "format json", "json beautifier", "json validator"],
     processesLocally: true,
-    launchStatus: "planned",
+    launchStatus: "available",
   },
 ] as const satisfies readonly ToolRegistryEntry[];

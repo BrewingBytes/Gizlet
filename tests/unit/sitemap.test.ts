@@ -21,7 +21,7 @@ describe("sitemap generation", () => {
     expect(getSitemapUrls()).toEqual(expectedUrls);
     expect(getSitemapXml()).toContain("<loc>https://gizlet.com/</loc>");
     expect(getSitemapXml()).toContain("json-ld-generator");
-    expect(getSitemapXml()).not.toContain("json-formatter");
+    expect(getSitemapXml()).toContain("json-formatter");
   });
 
   it("rejects duplicate URLs so they cannot be emitted during a build", () => {
