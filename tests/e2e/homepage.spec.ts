@@ -38,6 +38,7 @@ test("builds and runs a local image flow", async ({ page }) => {
   await expect(page).toHaveTitle("Gizlet Flows | Gizlet");
   await expect(page.getByRole("heading", { name: "Make a little assembly line." })).toBeVisible();
   await expect(page.getByLabel("Flow category")).toHaveValue("images");
+  await expect(page.locator("[data-result]")).toBeHidden();
 
   const image = Buffer.from(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLZywAAAABJRU5ErkJggg==",
@@ -67,6 +68,7 @@ test("builds and runs a local image flow", async ({ page }) => {
   await page.getByRole("button", { name: "Run flow" }).click();
 
   await expect(page.locator("[data-status]")).toContainText("final image is ready");
+  await expect(page.locator("[data-result]")).toBeVisible();
   await expect(page.getByAltText("Final flow result")).toBeVisible();
   await expect(page.getByAltText("Final flow result")).toHaveJSProperty("naturalWidth", 500);
   await expect(page.getByRole("link", { name: "Download image" })).toHaveAttribute(
