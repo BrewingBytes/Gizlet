@@ -68,12 +68,20 @@
 
     <div class="flow-builder__run">
       <p>One download at the end. Intermediate files stay in this browser tab.</p>
+      <label class="flow-builder__final-format" for="flow-final-format">
+        <span>Final output format</span>
+        <select id="flow-final-format" data-final-format aria-label="Final output format">
+          <option value="image/jpeg">JPEG</option>
+          <option value="image/png">PNG</option>
+          <option value="image/webp" selected>WebP</option>
+        </select>
+      </label>
       <button type="button" data-run-flow disabled>Run flow</button>
     </div>
   </div>
 </section>
 
-<style>
+<style is:global>
   .flow-builder { max-width: 56rem; }
   .flow-builder__intro { display: flex; align-items: end; justify-content: space-between; gap: var(--space-5); margin-bottom: var(--space-6); }
   .flow-builder__intro > div { max-width: 44rem; }
@@ -126,9 +134,12 @@
   .flow-builder__result img { display: block; max-width: 100%; max-height: 24rem; margin: 0 auto; border: var(--border-width) solid var(--border); }
   .flow-builder__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
   .flow-builder__result-actions a { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
-  .flow-builder__run { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-5); padding-top: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .flow-builder__run { display: grid; grid-template-columns: minmax(0, 1fr) minmax(10rem, 13rem) auto; align-items: end; gap: var(--space-3); margin-top: var(--space-5); padding-top: var(--space-4); border-top: var(--border-width) solid var(--border); }
   .flow-builder__run p { max-width: 32rem; margin: 0; color: var(--text-muted); font-size: var(--font-size-sm); }
-  @media (max-width: 42rem) { .flow-builder__intro { display: block; } .flow-builder__local-note { margin-top: var(--space-3); } .flow-builder__workspace { padding: var(--space-3); } .flow-builder__category { display: grid; align-items: start; } .flow-builder__source { align-items: start; flex-wrap: wrap; } .flow-builder__source button:first-of-type { margin-left: 0; } .flow-block { grid-template-columns: auto minmax(0, 1fr); } .flow-block__actions { grid-column: 2; justify-content: start; } .flow-block__remove { width: auto; } .flow-block__settings { grid-template-columns: 1fr; gap: var(--space-1); } .flow-builder__add-step > div:last-child { grid-template-columns: 1fr; } .flow-builder__add-step .metadata { grid-row: auto; } .flow-builder__add-controls, .flow-builder__run { align-items: stretch; flex-direction: column; } }
+  .flow-builder__final-format { display: grid; gap: var(--space-1); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
+  .flow-builder__final-format select { min-height: 2.5rem; font-family: var(--font-body); font-size: var(--font-size-sm); text-transform: none; }
+  .flow-block__format-note { margin: var(--space-2) 0 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  @media (max-width: 42rem) { .flow-builder__intro { display: block; } .flow-builder__local-note { margin-top: var(--space-3); } .flow-builder__workspace { padding: var(--space-3); } .flow-builder__category { display: grid; align-items: start; } .flow-builder__source { align-items: start; flex-wrap: wrap; } .flow-builder__source button:first-of-type { margin-left: 0; } .flow-block { grid-template-columns: 1rem minmax(0, 1fr); } .flow-block__grip { grid-row: 1 / span 3; } .flow-block__number, .flow-block__content, .flow-block__actions { grid-column: 2; } .flow-block__actions { justify-content: start; } .flow-block__remove { width: auto; } .flow-block__settings { grid-template-columns: 1fr; gap: var(--space-1); } .flow-builder__add-step > div:last-child { grid-template-columns: 1fr; } .flow-builder__add-step .metadata { grid-row: auto; } .flow-builder__add-controls { align-items: stretch; flex-direction: column; } .flow-builder__run { grid-template-columns: 1fr; align-items: stretch; } }
 </style>
 
 <script>
@@ -144,7 +155,6 @@
     getFormatLabel,
     getInputImageFormat,
     getPreferredOutputFormat,
-    isImageOutputFormat,
     isSupportedImageFile,
     type ImageOutputFormat,
   } from '../data/image-compression';
@@ -159,7 +169,6 @@
   interface FlowStep {
     readonly id: number;
     readonly toolSlug: ImageFlowToolSlug;
-    outputFormat: ImageOutputFormat;
     width?: number;
     height?: number;
     quality?: number;
@@ -177,6 +186,7 @@
     const stepList = root.querySelector<HTMLOListElement>('[data-step-list]');
     const addSelect = root.querySelector<HTMLSelectElement>('[data-add-select]');
     const addStepButton = root.querySelector<HTMLButtonElement>('[data-add-step]');
+    const finalFormat = root.querySelector<HTMLSelectElement>('[data-final-format]');
     const runButton = root.querySelector<HTMLButtonElement>('[data-run-flow]');
     const result = root.querySelector<HTMLElement>('[data-result]');
     const resultDetails = root.querySelector<HTMLElement>('[data-result-details]');
@@ -184,7 +194,7 @@
     const download = root.querySelector<HTMLAnchorElement>('[data-download]');
     const resultClear = root.querySelector<HTMLButtonElement>('[data-result-clear]');
 
-    if (!sourceInput || !sourceSelect || !sourceClear || !sourceDetails || !error || !status || !stepList || !addSelect || !addStepButton || !runButton || !result || !resultDetails || !resultImage || !download || !resultClear) {
+    if (!sourceInput || !sourceSelect || !sourceClear || !sourceDetails || !error || !status || !stepList || !addSelect || !addStepButton || !finalFormat || !runButton || !result || !resultDetails || !resultImage || !download || !resultClear) {
       throw new Error('Flow builder could not initialise.');
     }
 
@@ -198,6 +208,7 @@
     let nextStepId = 1;
     let resultUrl: string | undefined;
     let isRunning = false;
+    let outputFormat: ImageOutputFormat = 'image/webp';
 
     const toolBySlug = (toolSlug: ImageFlowToolSlug) => {
       const tool = toolRegistry.find((candidate) => candidate.slug === toolSlug);
@@ -205,9 +216,6 @@
       return tool;
     };
     const escapeHtml = (value: string | number) => String(value).replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character] ?? character);
-    const formatOptions = (selected: ImageOutputFormat) => ['image/jpeg', 'image/png', 'image/webp']
-      .map((format) => `<option value="${format}"${format === selected ? ' selected' : ''}>${getFormatLabel(format as ImageOutputFormat)}</option>`)
-      .join('');
     const clearError = () => { error.hidden = true; error.textContent = ''; };
     const showError = (message: string) => { error.textContent = message; error.hidden = false; };
     const clearStatus = () => { status.hidden = true; status.textContent = ''; };
@@ -229,16 +237,9 @@
         .map((candidate) => candidate.toolSlug)
         .filter((toolSlug): toolSlug is ImageFlowToolSlug => imageToolSlugs.includes(toolSlug as ImageFlowToolSlug));
     };
-    const defaultFormat = (toolSlug: ImageFlowToolSlug): ImageOutputFormat => {
-      if (toolSlug === 'convert-image') return 'image/png';
-      if (toolSlug === 'compress-image') return 'image/webp';
-      const previousStep = steps.at(-1);
-      return previousStep?.outputFormat ?? getPreferredOutputFormat(selectedFile ? getInputImageFormat(selectedFile) : undefined);
-    };
     const defaultStep = (toolSlug: ImageFlowToolSlug): FlowStep => ({
       id: nextStepId++,
       toolSlug,
-      outputFormat: defaultFormat(toolSlug),
       ...(toolSlug === 'resize-image' ? { width: 500, height: 500 } : {}),
       ...(toolSlug === 'compress-image' ? { quality: 80 } : {}),
     });
@@ -253,18 +254,18 @@
     const settingsMarkup = (step: FlowStep): string => {
       const name = toolBySlug(step.toolSlug).name;
       if (step.toolSlug === 'resize-image') {
-        return `<div class="flow-block__settings"><span>Dimensions</span><div class="flow-block__dimensions"><input data-step-setting="width" data-step-id="${step.id}" aria-label="${name} width" type="number" min="1" value="${escapeHtml(step.width ?? 500)}" /><span>×</span><input data-step-setting="height" data-step-id="${step.id}" aria-label="${name} height" type="number" min="1" value="${escapeHtml(step.height ?? 500)}" /><span>px</span></div></div><div class="flow-block__settings"><label for="step-format-${step.id}">Output format</label><select id="step-format-${step.id}" data-step-setting="outputFormat" data-step-id="${step.id}" aria-label="${name} output format">${formatOptions(step.outputFormat)}</select></div>`;
+        return `<div class="flow-block__settings"><span>Dimensions</span><div class="flow-block__dimensions"><input data-step-setting="width" data-step-id="${step.id}" aria-label="${name} width" type="number" min="1" value="${escapeHtml(step.width ?? 500)}" /><span>×</span><input data-step-setting="height" data-step-id="${step.id}" aria-label="${name} height" type="number" min="1" value="${escapeHtml(step.height ?? 500)}" /><span>px</span></div></div>`;
       }
       if (step.toolSlug === 'compress-image') {
-        return `<div class="flow-block__settings"><label for="step-format-${step.id}">Output format</label><select id="step-format-${step.id}" data-step-setting="outputFormat" data-step-id="${step.id}" aria-label="${name} output format">${formatOptions(step.outputFormat)}</select></div><div class="flow-block__settings"><label for="step-quality-${step.id}">Quality</label><div class="flow-block__quality"><input id="step-quality-${step.id}" data-step-setting="quality" data-step-id="${step.id}" aria-label="${name} quality" type="range" min="40" max="100" value="${escapeHtml(step.quality ?? 80)}" ${step.outputFormat === 'image/png' ? 'disabled' : ''} /><output data-quality-output="${step.id}">${escapeHtml(step.quality ?? 80)}%</output></div></div>`;
+        return `<div class="flow-block__settings"><label for="step-quality-${step.id}">Quality</label><div class="flow-block__quality"><input id="step-quality-${step.id}" data-step-setting="quality" data-step-id="${step.id}" aria-label="${name} quality" type="range" min="40" max="100" value="${escapeHtml(step.quality ?? 80)}" ${outputFormat === 'image/png' ? 'disabled' : ''} /><output data-quality-output="${step.id}">${escapeHtml(step.quality ?? 80)}%</output></div></div>${outputFormat === 'image/png' ? '<p class="flow-block__format-note">PNG does not use a quality setting.</p>' : ''}`;
       }
-      return `<div class="flow-block__settings"><label for="step-format-${step.id}">Output format</label><select id="step-format-${step.id}" data-step-setting="outputFormat" data-step-id="${step.id}" aria-label="${name} output format">${formatOptions(step.outputFormat)}</select></div>`;
+      return '';
     };
     const renderSteps = () => {
       stepList.innerHTML = steps.map((step, index) => {
         const tool = toolBySlug(step.toolSlug);
         const prior = index > 0 ? toolBySlug(steps[index - 1].toolSlug).name : 'Your image';
-        return `<li><div class="flow-builder__connector" aria-hidden="true"><span>↓</span></div><article class="flow-block"><div class="flow-block__grip" aria-hidden="true">⠿</div><div class="flow-block__number">${String(index + 1).padStart(2, '0')}</div><div><div class="flow-block__heading"><div><h2>${tool.name}</h2><p>${prior} result → image result</p></div><span class="status-local">Local</span></div>${settingsMarkup(step)}</div><div class="flow-block__actions" aria-label="${tool.name} controls"><button type="button" class="flow-block__icon-button" data-step-action="up" data-step-id="${step.id}" aria-label="Move ${tool.name} up" ${index === 0 || !canReorder(index, index - 1) || isRunning ? 'disabled' : ''}>↑</button><button type="button" class="flow-block__icon-button" data-step-action="down" data-step-id="${step.id}" aria-label="Move ${tool.name} down" ${index === steps.length - 1 || !canReorder(index, index + 1) || isRunning ? 'disabled' : ''}>↓</button><button type="button" class="flow-block__remove" data-step-action="remove" data-step-id="${step.id}" ${isRunning ? 'disabled' : ''}>Remove</button></div></article></li>`;
+        return `<li><div class="flow-builder__connector" aria-hidden="true"><span>↓</span></div><article class="flow-block"><div class="flow-block__grip" aria-hidden="true">⠿</div><div class="flow-block__number">${String(index + 1).padStart(2, '0')}</div><div class="flow-block__content"><div class="flow-block__heading"><div><h2>${tool.name}</h2><p>${prior} result → image result</p></div><span class="status-local">Local</span></div>${settingsMarkup(step)}</div><div class="flow-block__actions" aria-label="${tool.name} controls"><button type="button" class="flow-block__icon-button" data-step-action="up" data-step-id="${step.id}" aria-label="Move ${tool.name} up" ${index === 0 || !canReorder(index, index - 1) || isRunning ? 'disabled' : ''}>↑</button><button type="button" class="flow-block__icon-button" data-step-action="down" data-step-id="${step.id}" aria-label="Move ${tool.name} down" ${index === steps.length - 1 || !canReorder(index, index + 1) || isRunning ? 'disabled' : ''}>↓</button><button type="button" class="flow-block__remove" data-step-action="remove" data-step-id="${step.id}" ${isRunning ? 'disabled' : ''}>Remove</button></div></article></li>`;
       }).join('');
       renderAddOptions();
       runButton.disabled = !selectedFile || steps.length === 0 || isRunning;
@@ -279,6 +280,8 @@
         return;
       }
       selectedFile = file;
+      outputFormat = getPreferredOutputFormat(getInputImageFormat(file));
+      finalFormat.value = outputFormat;
       sourceDetails.textContent = `${file.name} · ${formatFileSize(file.size)} · stays on this device`;
       sourceClear.hidden = false;
       renderSteps();
@@ -297,7 +300,6 @@
       const step = steps.find((candidate) => candidate.id === id);
       const setting = target.dataset.stepSetting;
       if (!step || !setting) return;
-      if (setting === 'outputFormat' && isImageOutputFormat(target.value)) step.outputFormat = target.value;
       if (setting === 'width') step.width = Number(target.value);
       if (setting === 'height') step.height = Number(target.value);
       if (setting === 'quality') {
@@ -306,7 +308,6 @@
         if (output) output.textContent = `${step.quality}%`;
       }
       resetResult();
-      if (setting === 'outputFormat' && step.toolSlug === 'compress-image') renderSteps();
     };
     const runFlow = async () => {
       if (!selectedFile || steps.length === 0 || isRunning) return;
@@ -331,18 +332,18 @@
             const validation = validateResizeDimensions(dimensions);
             if (validation) throw new Error(`Resize Image: ${validation}`);
           }
-          const blob = await encodeBrowserImage(image, dimensions, step.outputFormat, step.toolSlug === 'compress-image' ? (step.quality ?? 80) / 100 : undefined);
+          const blob = await encodeBrowserImage(image, dimensions, outputFormat, step.toolSlug === 'compress-image' ? (step.quality ?? 80) / 100 : undefined);
           const filename = step.toolSlug === 'convert-image'
-            ? getConversionOutputFilename(outputFile.name, step.outputFormat)
+            ? getConversionOutputFilename(outputFile.name, outputFormat)
             : step.toolSlug === 'resize-image'
-              ? getResizeOutputFilename(outputFile.name, step.outputFormat)
-              : getOutputFilename(outputFile.name, step.outputFormat);
+              ? getResizeOutputFilename(outputFile.name, outputFormat)
+              : getOutputFilename(outputFile.name, outputFormat);
           outputFile = new File([blob], filename, { type: blob.type });
           outputDimensions = dimensions;
         }
         resultUrl = URL.createObjectURL(outputFile);
         resultImage.src = resultUrl;
-        resultDetails.textContent = `${getFormatLabel(steps.at(-1)?.outputFormat ?? 'image/webp')} · ${outputDimensions?.width} × ${outputDimensions?.height} px · ${formatFileSize(outputFile.size)}`;
+        resultDetails.textContent = `${getFormatLabel(outputFormat)} · ${outputDimensions?.width} × ${outputDimensions?.height} px · ${formatFileSize(outputFile.size)}`;
         download.href = resultUrl;
         download.download = outputFile.name;
         result.hidden = false;
@@ -360,6 +361,11 @@
     sourceSelect.addEventListener('click', () => sourceInput.click());
     sourceInput.addEventListener('change', () => selectSource(sourceInput.files?.[0]));
     sourceClear.addEventListener('click', clearSource);
+    finalFormat.addEventListener('change', () => {
+      outputFormat = finalFormat.value as ImageOutputFormat;
+      resetResult();
+      renderSteps();
+    });
     addStepButton.addEventListener('click', () => {
       const toolSlug = addSelect.value as ImageFlowToolSlug;
       if (!imageToolSlugs.includes(toolSlug) || !availableStepSlugs().includes(toolSlug)) return;

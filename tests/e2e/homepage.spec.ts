@@ -54,7 +54,7 @@ test("builds and runs a local image flow", async ({ page }) => {
   await nextTool.selectOption("convert-image");
   await page.getByRole("button", { name: "Add step" }).click();
   await expect(page.getByRole("heading", { name: "Convert Image" })).toBeVisible();
-  await expect(page.getByLabel("Convert Image output format")).toHaveValue("image/png");
+  await expect(page.getByLabel("Final output format")).toHaveValue("image/webp");
 
   await nextTool.selectOption("resize-image");
   await page.getByRole("button", { name: "Add step" }).click();
@@ -68,6 +68,7 @@ test("builds and runs a local image flow", async ({ page }) => {
 
   await expect(page.locator("[data-status]")).toContainText("final image is ready");
   await expect(page.getByAltText("Final flow result")).toBeVisible();
+  await expect(page.getByAltText("Final flow result")).toHaveJSProperty("naturalWidth", 500);
   await expect(page.getByRole("link", { name: "Download image" })).toHaveAttribute(
     "download",
     "tiny-converted-resized-compressed.webp",
