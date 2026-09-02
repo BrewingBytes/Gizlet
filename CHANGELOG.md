@@ -44,6 +44,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- Raise the dark-theme contrast of local-processing and success copy to meet WCAG AA.
 - Keep the theme toggle's label out of the toggle script, so the header no longer resizes after load and shifts the page on narrow screens.
 - Link Gizlet cards and search results to Astro’s required trailing-slash routes.
 - Keep the Gizlet wordmark visible on dark theme backgrounds.

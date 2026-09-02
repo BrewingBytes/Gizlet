@@ -46,6 +46,7 @@
   --text-muted: var(--color-slate);
   --border: var(--color-soft);
   --link: var(--color-blue);
+  --success: var(--color-green);
   --control-background: var(--color-surface);
   --control-text: var(--color-ink);
   --button-background: var(--color-ink);
@@ -54,6 +55,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    /* Lighter than --color-green so local and success copy keeps AA contrast on dark surfaces. */
+    --success: #46a877;
     --background: #1b1a17;
     --surface: #26231e;
     --text: #fffdf7;
@@ -75,6 +78,7 @@
   --text-muted: var(--color-slate);
   --border: var(--color-soft);
   --link: var(--color-blue);
+  --success: var(--color-green);
   --control-background: var(--color-surface);
   --control-text: var(--color-ink);
   --button-background: var(--color-ink);
@@ -83,6 +87,7 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
+  --success: #46a877;
   --background: #1b1a17;
   --surface: #26231e;
   --text: #fffdf7;
@@ -292,7 +297,7 @@ ol {
 }
 
 .status-local {
-  color: var(--color-green);
+  color: var(--success);
   font-family: var(--font-mono);
   font-size: var(--font-size-xs);
   font-weight: 700;
