@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AdvertisementSlot from '../components/AdvertisementSlot.astro';
 import { getPageMetadata } from '../data/metadata';
+import { getSiteStructuredData } from '../data/structured-data';
 import { getToolCategoryGroups, toolRegistry, toolsIndexPath } from '../data/tools';
 
 const categoryGroups = getToolCategoryGroups();
@@ -13,7 +14,7 @@ const metadata = getPageMetadata({
 });
 ---
 
-<BaseLayout metadata={metadata}>
+<BaseLayout metadata={metadata} structuredData={getSiteStructuredData()}>
   <section class="homepage-intro" aria-labelledby="homepage-title">
     <p class="metadata">Small browser tools, made properly</p>
     <h1 id="homepage-title">Useful internet things, without the nonsense.</h1>

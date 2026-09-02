@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getPageMetadata } from '../../data/metadata';
+import { getToolIndexStructuredData } from '../../data/structured-data';
 import { getToolCategoryGroups } from '../../data/tools';
 
 const metadata = getPageMetadata({
@@ -11,7 +12,7 @@ const metadata = getPageMetadata({
 const categoryGroups = getToolCategoryGroups();
 ---
 
-<BaseLayout metadata={metadata}>
+<BaseLayout metadata={metadata} structuredData={getToolIndexStructuredData()}>
   <section class="tool-catalogue" aria-labelledby="tool-catalogue-title">
     <p class="metadata">Every Gizlet</p>
     <h1 id="tool-catalogue-title">All the Gizlets, by kind of job.</h1>

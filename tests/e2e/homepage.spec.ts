@@ -802,3 +802,25 @@ test("applies a stored theme before the first paint", async ({ page }) => {
   );
   expect(themeAtParse[0]).toBe("light");
 });
+
+test("publishes structured data search engines can read", async ({ page }) => {
+  await page.goto("/tools/compress-image/");
+
+  const toolMarkup = JSON.parse(
+    (await page
+      .locator('script[type="application/ld+json"]')
+      .textContent()) as string,
+  );
+  expect(toolMarkup[0]["@type"]).toBe("SoftwareApplication");
+  expect(toolMarkup[0].name).toBe("Compress Image");
+  expect(toolMarkup[0].url).toBe("https://gizlet.app/tools/compress-image/");
+  expect(toolMarkup[1]["@type"]).toBe("BreadcrumbList");
+
+  await page.goto("/");
+  const siteMarkup = JSON.parse(
+    (await page
+      .locator('script[type="application/ld+json"]')
+      .textContent()) as string,
+  );
+  expect(siteMarkup["@type"]).toBe("WebSite");
+});

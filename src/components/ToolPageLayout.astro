@@ -3,6 +3,7 @@ import type { AdvertisementRailSize } from '../data/advertisement-slots';
 import { getAdvertisementConfiguration } from '../data/advertising';
 import { getToolMetadata } from '../data/metadata';
 import { getToolProcessingStatus } from '../data/tool-page-status';
+import { getToolStructuredData } from '../data/structured-data';
 import type { ToolRegistryEntry } from '../data/tools';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AdvertisementSlot from './AdvertisementSlot.astro';
@@ -46,7 +47,7 @@ const shouldShowPostResultAd = showPostResultAd && advertising.enabled && advert
 const shouldShowRail = showRail && advertising.enabled && advertising.slots.rail;
 ---
 
-<BaseLayout metadata={metadata}>
+<BaseLayout metadata={metadata} structuredData={getToolStructuredData(tool)}>
   <article class="tool-page">
     <nav class="tool-page__breadcrumb" aria-label="Breadcrumb">
       <ol>

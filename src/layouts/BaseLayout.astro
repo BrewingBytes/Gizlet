@@ -8,6 +8,10 @@ import {
   getAdvertisementConfiguration,
 } from '../data/advertising';
 import { getPageMetadata, type PageMetadata } from '../data/metadata';
+import {
+  serialiseStructuredData,
+  type StructuredDataItem,
+} from '../data/structured-data';
 import '../styles/global.css';
 
 interface Props {
@@ -16,6 +20,7 @@ interface Props {
   metadata?: PageMetadata;
   pathname?: string;
   robots?: string;
+  structuredData?: readonly StructuredDataItem[];
   title?: string;
 }
 
@@ -25,6 +30,7 @@ const {
   metadata: suppliedMetadata,
   pathname = Astro.url.pathname,
   robots,
+  structuredData,
   title,
 } = Astro.props;
 const metadata = suppliedMetadata ?? getPageMetadata({ title, description, pathname, image, robots });
@@ -61,6 +67,15 @@ const advertising = getAdvertisementConfiguration({
     <link rel="icon" href="/brand/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/brand/icons/gizlet-180.png" />
     <title>{metadata.title}</title>
+    {
+      structuredData && structuredData.length > 0 && (
+        <script
+          is:inline
+          type="application/ld+json"
+          set:html={serialiseStructuredData(structuredData)}
+        />
+      )
+    }
     <script is:inline>
       (() => {
         const preference = localStorage.getItem('gizlet-theme');
