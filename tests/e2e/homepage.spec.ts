@@ -722,3 +722,23 @@ test("labels the theme toggle without shifting the page after load", async ({
   );
   expect(shift).toBeLessThan(0.05);
 });
+
+test("offers a way back from an unknown address", async ({ page }) => {
+  await page.goto("/404.html");
+
+  await expect(page).toHaveTitle("Page not found | Gizlet");
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+    "content",
+    "noindex, follow",
+  );
+  await expect(
+    page.getByRole("heading", { name: "That page is not here." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("main").getByRole("link", { name: /Compress Image/ }),
+  ).toHaveAttribute("href", "/tools/compress-image/");
+  await expect(
+    page.getByRole("link", { name: "Back to the Gizlet home page" }),
+  ).toBeVisible();
+  await expect(page.getByRole("banner")).toBeVisible();
+});
