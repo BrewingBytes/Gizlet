@@ -109,9 +109,9 @@
     getPreferredOutputFormat,
     isImageOutputFormat,
     isSupportedImageFile,
-    type ImageOutputFormat,
   } from '../data/image-compression';
   import { trackToolEvent } from '../scripts/analytics';
+  import { encodeBrowserImage, imageHasTransparency, loadBrowserImage } from '../scripts/image-processing';
 
   const root = document.querySelector<HTMLElement>('[data-convert-image-tool]');
 
@@ -186,28 +186,6 @@
       transparencyWarning.hidden = !losesTransparency(sourceHasTransparency, format);
     };
 
-    const loadImage = (file: File): Promise<HTMLImageElement> => {
-      const sourceUrl = URL.createObjectURL(file);
-      const image = new Image();
-      return new Promise((resolve, reject) => {
-        image.onload = () => { URL.revokeObjectURL(sourceUrl); resolve(image); };
-        image.onerror = () => { URL.revokeObjectURL(sourceUrl); reject(new Error('This image could not be read.')); };
-        image.src = sourceUrl;
-      });
-    };
-
-    const imageHasTransparency = (image: HTMLImageElement): boolean => {
-      const canvas = document.createElement('canvas');
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      const context = canvas.getContext('2d', { willReadFrequently: true });
-      if (!context) throw new Error('Your browser cannot inspect this image.');
-      context.drawImage(image, 0, 0);
-      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
-      for (let index = 3; index < pixels.length; index += 4) if (pixels[index] < 255) return true;
-      return false;
-    };
-
     const selectFile = async (file: File | undefined) => {
       resetTool();
       if (!file) return;
@@ -227,7 +205,7 @@
       showStatus('Reading image locally…');
       await nextPaint();
       try {
-        sourceImage = await loadImage(file);
+        sourceImage = await loadBrowserImage(file);
         if (!sourceImage.naturalWidth || !sourceImage.naturalHeight) throw new Error('This image has no usable dimensions.');
         sourceHasTransparency = imageHasTransparency(sourceImage);
         previewUrl = URL.createObjectURL(file);
@@ -248,9 +226,6 @@
       }
     };
 
-    const canvasToBlob = (canvas: HTMLCanvasElement, format: ImageOutputFormat) =>
-      new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, format));
-
     const convertImage = async () => {
       if (!selectedFile || !sourceImage || !isImageOutputFormat(outputFormat.value)) return;
       clearError();
@@ -260,15 +235,12 @@
       showStatus('Converting locally…');
       await nextPaint();
       try {
-        const canvas = document.createElement('canvas');
-        canvas.width = sourceImage.naturalWidth;
-        canvas.height = sourceImage.naturalHeight;
-        const context = canvas.getContext('2d');
-        if (!context) throw new Error('Your browser cannot prepare this image.');
-        context.drawImage(sourceImage, 0, 0);
         const format = outputFormat.value;
-        const output = await canvasToBlob(canvas, format);
-        if (!output || output.type !== format) throw new Error(`Your browser cannot create ${getOutputFormatLabel(format)} images.`);
+        const output = await encodeBrowserImage(
+          sourceImage,
+          { width: sourceImage.naturalWidth, height: sourceImage.naturalHeight },
+          format,
+        );
         resultUrl = URL.createObjectURL(output);
         resultImage.src = resultUrl;
         resultCaption.textContent = `${getOutputFormatLabel(format)} · ${sourceImage.naturalWidth} × ${sourceImage.naturalHeight} px`;

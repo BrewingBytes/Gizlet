@@ -1,0 +1,15 @@
+---
+import FlowBuilder from '../components/FlowBuilder.astro';
+import { getPageMetadata } from '../data/metadata';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const metadata = getPageMetadata({
+  title: 'Gizlet Flows | Gizlet',
+  description: 'Preview a browser-local Gizlet flow built from small, connected tool blocks.',
+  pathname: '/flows/',
+});
+---
+
+<BaseLayout metadata={metadata}>
+  <FlowBuilder />
+</BaseLayout>
