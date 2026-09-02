@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - A page for unknown addresses that lists every working Gizlet and links back to the home page, replacing an empty response.
+- A recorded pre-launch accessibility, performance, search-visibility, and UX audit of the production site in [docs/launch-audit.md](docs/launch-audit.md).
 - Local Gizlet Flows for chaining compatible image Gizlets in a configurable, reorderable browser-only pipeline with one final download.
 - Clear Google CMP consent disclosures for advertising, including accept, refuse, and manage-options choices for EEA, UK, and Swiss visitors when ads are enabled.
 - A browser-validated Gizlet request form that prepares a visitor-reviewed GitHub Issue without adding a Gizlet backend or form service.
