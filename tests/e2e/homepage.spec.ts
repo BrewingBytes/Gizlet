@@ -37,6 +37,8 @@ test("serves public sitemap and crawler-discovery files", async ({
 }) => {
   const sitemap = await request.get("/sitemap.xml");
   const robots = await request.get("/robots.txt");
+  const catalogue = await request.get("/tools.json");
+  const llms = await request.get("/llms.txt");
 
   expect(sitemap.headers()["content-type"]).toContain("xml");
   await expect(sitemap).toBeOK();
@@ -52,6 +54,29 @@ test("serves public sitemap and crawler-discovery files", async ({
   await expect(robots).toBeOK();
   await expect(robots.text()).resolves.toContain(
     "Sitemap: https://gizlet.com/sitemap.xml",
+  );
+
+  expect(catalogue.headers()["content-type"]).toContain("application/json");
+  await expect(catalogue).toBeOK();
+  await expect(catalogue.json()).resolves.toMatchObject({
+    catalogueUrl: "https://gizlet.com/tools.json",
+    tools: expect.arrayContaining([
+      expect.objectContaining({
+        slug: "compress-image",
+        route: "https://gizlet.com/tools/compress-image/",
+        availability: "available",
+        localProcessing: true,
+      }),
+    ]),
+  });
+
+  expect(llms.headers()["content-type"]).toContain("text/plain");
+  await expect(llms).toBeOK();
+  await expect(llms.text()).resolves.toContain(
+    "[Machine-readable tool catalogue](https://gizlet.com/tools.json)",
+  );
+  await expect(llms.text()).resolves.toContain(
+    "[Compress Image](https://gizlet.com/tools/compress-image/)",
   );
 });
 
