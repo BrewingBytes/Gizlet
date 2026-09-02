@@ -1,0 +1,68 @@
+---
+import LegalPageLayout from '../components/LegalPageLayout.astro';
+import { legalPageLastUpdated, privacyServices } from '../data/legal';
+import { getPageMetadata } from '../data/metadata';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const metadata = getPageMetadata({
+  title: 'Privacy | Gizlet',
+  description: 'How Gizlet handles local tool processing, analytics, and advertising.',
+  pathname: '/privacy/',
+});
+---
+
+<BaseLayout metadata={metadata}>
+  <LegalPageLayout
+    eyebrow="Gizlet policy"
+    title="Privacy"
+    introduction="A clear account of what Gizlet processes in your browser and what separately configured services may receive."
+  >
+    <h2>Local Gizlets</h2>
+    <p>
+      When a Gizlet is marked <strong>Local</strong> on its tool page, the file or text you provide to that
+      Gizlet is processed in your browser on this device. Gizlet does not upload that marked tool input to a
+      Gizlet server for the tool to do its job.
+    </p>
+    <p>
+      This promise is specific to Gizlets marked Local. It is not a blanket claim about every current or future
+      Gizlet, and it does not prevent separate analytics or advertising requests described below.
+    </p>
+
+    <h2>Analytics and advertising</h2>
+    <p>
+      Analytics and advertising are separate from Gizlet processing. They are disabled during development and
+      only added to a production build when their public configuration is enabled. The current provider details
+      are listed below so they can stay in step with the services Gizlet uses.
+    </p>
+    <ul>
+      {
+        privacyServices.map((service) => (
+          <li>
+            <strong>{service.category}: </strong>
+            <a href={service.url}>{service.name}</a>: {service.description}
+          </li>
+        ))
+      }
+    </ul>
+    <p>
+      Plausible may receive page URL, referrer, browser, operating system, device type, and country for
+      aggregate reporting. Google and its advertising partners may process a page request and information needed
+      to serve and measure ads. Where required, Gizlet will provide the relevant consent choices before serving
+      advertising.
+    </p>
+
+    <h2>What Gizlet does not send as analytics</h2>
+    <p>
+      Gizlet does not send file contents, filenames, file sizes, dimensions, formats, JSON contents, generated
+      passwords, tool results, error messages, or other entered or generated tool payloads in its analytics
+      events. Gizlet’s defined tool events contain only a static tool slug.
+    </p>
+
+    <h2>Changes to this notice</h2>
+    <p>
+      We may update this page when Gizlet’s tools or configured providers change. The current provider list and
+      descriptions above will be updated with the service change.
+    </p>
+    <p class="metadata">Last updated {legalPageLastUpdated}</p>
+  </LegalPageLayout>
+</BaseLayout>

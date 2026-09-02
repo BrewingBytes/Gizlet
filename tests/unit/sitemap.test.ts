@@ -10,9 +10,12 @@ import { siteUrl } from "../../src/data/metadata";
 import { toolRegistry } from "../../src/data/tools";
 
 describe("sitemap generation", () => {
-  it("contains the homepage and only available registry tools", () => {
+  it("contains the homepage, public information pages, and available registry tools", () => {
     const expectedUrls = [
       new URL("/", siteUrl).toString(),
+      new URL("/privacy/", siteUrl).toString(),
+      new URL("/terms/", siteUrl).toString(),
+      new URL("/about/", siteUrl).toString(),
       ...toolRegistry
         .filter((tool) => tool.launchStatus === "available")
         .map((tool) => new URL(tool.path, siteUrl).toString()),
@@ -20,6 +23,7 @@ describe("sitemap generation", () => {
 
     expect(getSitemapUrls()).toEqual(expectedUrls);
     expect(getSitemapXml()).toContain("<loc>https://gizlet.com/</loc>");
+    expect(getSitemapXml()).toContain("<loc>https://gizlet.com/privacy/</loc>");
     expect(getSitemapXml()).toContain("json-ld-generator");
     expect(getSitemapXml()).toContain("json-formatter");
   });

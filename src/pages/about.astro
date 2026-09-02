@@ -1,0 +1,38 @@
+---
+import LegalPageLayout from '../components/LegalPageLayout.astro';
+import { getPageMetadata } from '../data/metadata';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const metadata = getPageMetadata({
+  title: 'About | Gizlet',
+  description: 'Gizlet is a BrewingBytes product: small browser tools for everyday tasks.',
+  pathname: '/about/',
+});
+---
+
+<BaseLayout metadata={metadata}>
+  <LegalPageLayout
+    eyebrow="About Gizlet"
+    title="Small tools. Properly made."
+    introduction="Gizlet is a BrewingBytes product for the fiddly little jobs that should not require a giant app."
+  >
+    <h2>What we make</h2>
+    <p>
+      Gizlet is a growing collection of focused browser utilities. Each Gizlet should do one useful thing clearly,
+      quickly, and without making you jump through hoops.
+    </p>
+
+    <h2>How we think about tools</h2>
+    <p>
+      We prefer simple, accessible interfaces and browser-native technology. When a tool can do its work on your
+      device, we mark that clearly. We keep the tool in front of the marketing copy, and advertisements, where
+      enabled, are labelled and kept out of the way.
+    </p>
+
+    <h2>Made by BrewingBytes</h2>
+    <p>
+      Gizlet is made by <strong>BrewingBytes</strong>, an independent product studio that cares about useful
+      software, considerate details, and fewer unnecessary steps.
+    </p>
+  </LegalPageLayout>
+</BaseLayout>

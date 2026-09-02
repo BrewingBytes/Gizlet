@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Privacy, terms, and about pages with scoped local-processing disclosures and configurable provider information.
 - Optional Google AdSense integration with centrally configured responsive banner, inline, and rail placements that stay disabled during development.
 - Local JSON Formatter Gizlet with validation, location-aware parse errors, formatting, minification, and copy actions.
 - Optional, privacy-conscious Plausible analytics with anonymous page views and minimal Gizlet usage events.
