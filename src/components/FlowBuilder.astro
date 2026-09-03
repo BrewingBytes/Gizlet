@@ -67,7 +67,13 @@
     </section>
 
     <div class="flow-builder__run">
-      <p>One download at the end. Intermediate files stay in this browser tab.</p>
+      <div class="flow-builder__run-copy">
+        <p>One download at the end. Intermediate files stay in this browser tab.</p>
+        <p class="flow-builder__share">
+          <button type="button" class="flow-builder__text-button" data-copy-recipe hidden>Copy recipe link</button>
+          <span data-recipe-status role="status" aria-live="polite"></span>
+        </p>
+      </div>
       <label class="flow-builder__final-format" for="flow-final-format">
         <span>Final output format</span>
         <select id="flow-final-format" data-final-format aria-label="Final output format">
@@ -137,6 +143,9 @@
   .flow-builder__result-actions a { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
   .flow-builder__run { display: grid; grid-template-columns: minmax(0, 1fr) minmax(10rem, 13rem) auto; align-items: end; gap: var(--space-3); margin-top: var(--space-5); padding-top: var(--space-4); border-top: var(--border-width) solid var(--border); }
   .flow-builder__run p { max-width: 32rem; margin: 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .flow-builder__run-copy { display: grid; gap: var(--space-1); }
+  .flow-builder__share { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); }
+  .flow-builder__share span { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
   .flow-builder__final-format { display: grid; gap: var(--space-1); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
   .flow-builder__final-format select { min-height: 2.5rem; font-family: var(--font-body); font-size: var(--font-size-sm); text-transform: none; }
   .flow-block__format-note { margin: var(--space-2) 0 0; color: var(--text-muted); font-size: var(--font-size-sm); }
@@ -160,6 +169,7 @@
     type ImageOutputFormat,
   } from '../data/image-compression';
   import { getConversionOutputFilename } from '../data/image-conversion';
+  import { decodeRecipe, encodeRecipe, type Recipe } from '../data/recipes';
   import { getResizeOutputFilename, validateResizeDimensions } from '../data/image-resize';
   import { getOutputFilename } from '../data/image-compression';
   import { toolRegistry, type RegisteredTool } from '../data/tools';
@@ -199,8 +209,10 @@
     const resultImage = root.querySelector<HTMLImageElement>('[data-result-image]');
     const download = root.querySelector<HTMLAnchorElement>('[data-download]');
     const resultClear = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+    const copyRecipe = root.querySelector<HTMLButtonElement>('[data-copy-recipe]');
+    const recipeStatus = root.querySelector<HTMLElement>('[data-recipe-status]');
 
-    if (!sourceInput || !sourceSelect || !sourceClear || !sourceDetails || !error || !status || !stepList || !addSelect || !addStepButton || !finalFormat || !runButton || !result || !resultDetails || !resultImage || !download || !resultClear) {
+    if (!sourceInput || !sourceSelect || !sourceClear || !sourceDetails || !error || !status || !stepList || !addSelect || !addStepButton || !finalFormat || !runButton || !result || !resultDetails || !resultImage || !download || !resultClear || !copyRecipe || !recipeStatus) {
       throw new Error('Flow builder could not initialise.');
     }
 
@@ -215,6 +227,9 @@
     let resultUrl: string | undefined;
     let isRunning = false;
     let outputFormat: ImageOutputFormat = 'image/webp';
+    // A recipe's chosen format outlives the source file, which would otherwise
+    // reset it to the format preferred for that input.
+    let outputFormatFromRecipe = false;
 
     const toolBySlug = (toolSlug: ImageFlowToolSlug) => {
       const tool = toolRegistry.find((candidate) => candidate.slug === toolSlug);
@@ -275,6 +290,7 @@
       }).join('');
       renderAddOptions();
       runButton.disabled = !selectedFile || steps.length === 0 || isRunning;
+      copyRecipe.hidden = steps.length === 0;
     };
     const selectSource = (file: File | undefined) => {
       resetResult();
@@ -286,8 +302,10 @@
         return;
       }
       selectedFile = file;
-      outputFormat = getPreferredOutputFormat(getInputImageFormat(file));
-      finalFormat.value = outputFormat;
+      if (!outputFormatFromRecipe) {
+        outputFormat = getPreferredOutputFormat(getInputImageFormat(file));
+        finalFormat.value = outputFormat;
+      }
       sourceDetails.textContent = `${file.name} · ${formatFileSize(file.size)} · stays on this device`;
       sourceClear.hidden = false;
       renderSteps();
@@ -400,8 +418,60 @@
       resetResult();
       renderSteps();
     });
+    const currentRecipe = (): Recipe => ({
+      outputFormat,
+      steps: steps.map((step) => ({
+        toolSlug: step.toolSlug,
+        ...(step.toolSlug === 'resize-image' ? { width: step.width, height: step.height } : {}),
+        ...(step.toolSlug === 'compress-image' ? { quality: step.quality } : {}),
+      })),
+    });
+    const applyRecipe = (recipe: Recipe) => {
+      // Defaults come from defaultStep, so a step whose settings the recipe
+      // omits behaves exactly like one added by hand.
+      steps = recipe.steps.map((step) => ({
+        ...defaultStep(step.toolSlug),
+        ...(step.width !== undefined ? { width: step.width } : {}),
+        ...(step.height !== undefined ? { height: step.height } : {}),
+        ...(step.quality !== undefined ? { quality: step.quality } : {}),
+      }));
+      if (recipe.outputFormat) {
+        outputFormat = recipe.outputFormat;
+        outputFormatFromRecipe = true;
+        finalFormat.value = outputFormat;
+      }
+    };
+    const copyRecipeLink = () => {
+      const encoded = encodeRecipe(currentRecipe());
+
+      if (!encoded) {
+        recipeStatus.textContent = 'This flow is too long to share as a link.';
+        return;
+      }
+
+      const link = `${window.location.origin}${window.location.pathname}${encoded}`;
+      window.history.replaceState(null, '', encoded);
+
+      if (!navigator.clipboard?.writeText) {
+        recipeStatus.textContent = 'Copy is unavailable in this browser. The link is in the address bar.';
+        return;
+      }
+
+      navigator.clipboard
+        .writeText(link)
+        .then(() => { recipeStatus.textContent = 'Recipe link copied. It carries these settings only, never your image.'; })
+        .catch(() => { recipeStatus.textContent = 'Could not copy automatically. The link is in the address bar.'; });
+    };
+
     resultClear.addEventListener('click', resetResult);
     runButton.addEventListener('click', () => void runFlow());
+    copyRecipe.addEventListener('click', copyRecipeLink);
+
+    // An unreadable recipe is ignored whole: the builder renders its default
+    // state rather than a chain the visitor cannot tell is incomplete.
+    const openedRecipe = decodeRecipe(window.location.hash);
+    if (openedRecipe) applyRecipe(openedRecipe);
+
     renderSteps();
   }
 </script>
