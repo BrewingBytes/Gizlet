@@ -14,6 +14,8 @@ Cloudflare Web Analytics does not currently support custom events, so the previo
 
 For Cloudflare's handling of this data, see its [privacy policy](https://www.cloudflare.com/privacypolicy/) and the [Web Analytics documentation](https://developers.cloudflare.com/web-analytics/).
 
+For what these limits mean when planning — which signals a Gizlet feature may rely on, and which it may not — see [signals.md](signals.md).
+
 ## Configuration
 
 There is nothing to configure in the repository, and no `PUBLIC_*` variable gates analytics. Cloudflare Web Analytics is enabled per zone in the Cloudflare dashboard:
