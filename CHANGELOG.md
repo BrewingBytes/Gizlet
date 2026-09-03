@@ -6,22 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-### Fixed
+## [0.1.1] - 2026-09-03
 
-- The Gizlet Flows page is now listed in `sitemap.xml`. It was linked from the header but absent from the sitemap, so the page that chains Gizlets together was invisible to crawlers and answer engines.
+### Added
+
+- A `TODOS.md` recording deferred work with the condition that would revisit it.
 
 ### Changed
 
 - Gizlet pages now choose their workspace from a registry-derived slug map and decide on launch status before the slug, so a planned Gizlet reaches the placeholder by rule rather than by falling off the end of a chain of conditions. Adding a Gizlet without a workspace, or without a related-Gizlet entry, now fails `pnpm run check` instead of crashing the production build.
 - The JSON Formatter's processing sentence moved from the tool page into `src/data/tool-page-status.ts`, so the copy comes from the data layer like every other registry-backed claim.
 
-### Added
-
-- A `TODOS.md` recording deferred work with the condition that would revisit it.
-
 ### Removed
 
 - The Gizlet Pro strip on the home page, and the "Pro" links to it in the header and footer. Gizlet Pro does not exist, and the strip described it in the present tense — the same class of untruth as an inaccurate local-processing claim. It returns when there is something to return to.
+
+### Fixed
+
+- The Gizlet Flows page is now listed in `sitemap.xml`. It was linked from the header but absent from the sitemap, so the page that chains Gizlets together was invisible to crawlers and answer engines.
 
 ## [0.1.0] - 2026-09-03
 
