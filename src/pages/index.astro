@@ -79,17 +79,6 @@ const metadata = getPageMetadata({
       <li><a href={toolsIndexPath}>All Gizlets</a></li>
     </ul>
   </nav>
-
-  <section id="pro" class="pro-strip" aria-labelledby="pro-title">
-    <div>
-      <p class="metadata">Gizlet Pro</p>
-      <h2 id="pro-title">Same Gizlets. No ads.</h2>
-    </div>
-    <p>
-      Gizlet Pro removes advertisements while keeping every tool just as useful. Nothing is
-      locked behind it.
-    </p>
-  </section>
 </BaseLayout>
 
 <style>
@@ -254,30 +243,6 @@ const metadata = getPageMetadata({
     font-size: var(--font-size-xs);
   }
 
-  .pro-strip {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.8fr);
-    gap: var(--space-5);
-    align-items: end;
-    margin-top: var(--space-7);
-    padding: var(--space-5);
-    border: var(--border-strong-width) solid var(--color-amber);
-    background: var(--surface);
-  }
-
-  .pro-strip .metadata {
-    margin-bottom: var(--space-1);
-  }
-
-  .pro-strip h2,
-  .pro-strip p:last-child {
-    margin: 0;
-  }
-
-  .pro-strip p:last-child {
-    color: var(--text-muted);
-  }
-
   @media (prefers-reduced-motion: no-preference) {
     .tool-index__item a {
       transition: background 120ms ease, padding-left 120ms ease;
@@ -301,12 +266,6 @@ const metadata = getPageMetadata({
 
     .tool-index__item .status-local {
       margin-top: var(--space-1);
-    }
-
-    .pro-strip {
-      grid-template-columns: 1fr;
-      gap: var(--space-3);
-      padding: var(--space-4);
     }
   }
 </style>

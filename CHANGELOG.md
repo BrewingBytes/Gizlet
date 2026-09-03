@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - A `TODOS.md` recording deferred work with the condition that would revisit it.
 
+### Removed
+
+- The Gizlet Pro strip on the home page, and the "Pro" links to it in the header and footer. Gizlet Pro does not exist, and the strip described it in the present tense — the same class of untruth as an inaccurate local-processing claim. It returns when there is something to return to.
+
 ## [0.1.0] - 2026-09-03
 
 ### Added
