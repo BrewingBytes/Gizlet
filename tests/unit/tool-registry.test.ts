@@ -2,10 +2,14 @@ import { expect, test } from 'vitest';
 
 import {
   getAvailableTools,
+  isAvailableTool,
   getToolCategoryGroups,
   toolCategoryLabels,
   toolRegistry,
+  type ToolRegistryEntry,
 } from '../../src/data/tools';
+
+const plannedTool: ToolRegistryEntry = { ...toolRegistry[0], launchStatus: 'planned' };
 
 test('each Gizlet has a unique stable id and slug', () => {
   const ids = toolRegistry.map((tool) => tool.id);
@@ -17,6 +21,11 @@ test('each Gizlet has a unique stable id and slug', () => {
 
 test('each Gizlet path uses Astro’s canonical trailing-slash route', () => {
   expect(toolRegistry.every((tool) => tool.path.endsWith('/'))).toBe(true);
+});
+
+test('decides on launch status rather than on a list of slugs', () => {
+  expect(toolRegistry.every(isAvailableTool)).toBe(true);
+  expect(isAvailableTool(plannedTool)).toBe(false);
 });
 
 test('publishes only Gizlets that are available', () => {

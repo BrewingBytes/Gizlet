@@ -162,10 +162,15 @@
   import { getConversionOutputFilename } from '../data/image-conversion';
   import { getResizeOutputFilename, validateResizeDimensions } from '../data/image-resize';
   import { getOutputFilename } from '../data/image-compression';
-  import { toolRegistry } from '../data/tools';
+  import { toolRegistry, type RegisteredTool } from '../data/tools';
   import { encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
 
-  type ImageFlowToolSlug = 'convert-image' | 'resize-image' | 'compress-image';
+  // Derived from the registry: the flow builder runs image chains only, so a new
+  // image Gizlet joins this union without the list being restated here.
+  type ImageFlowToolSlug = Extract<
+    RegisteredTool,
+    { readonly category: 'images'; readonly launchStatus: 'available' }
+  >['slug'];
 
   interface FlowStep {
     readonly id: number;

@@ -121,6 +121,26 @@ export const toolRegistry = [
   },
 ] as const satisfies readonly ToolRegistryEntry[];
 
+/**
+ * The registry's own entries, with their literal values preserved. `satisfies`
+ * checks the shape without widening it, so slug-keyed maps can be derived from
+ * here instead of repeating a hand-maintained slug list.
+ */
+export type RegisteredTool = (typeof toolRegistry)[number];
+
+/** Every slug in the registry. */
+export type ToolSlug = RegisteredTool['slug'];
+
+/** A registry entry known to be published. */
+export type AvailableTool = Extract<RegisteredTool, { readonly launchStatus: 'available' }>;
+
+/**
+ * The slugs of published Gizlets. A workspace map keyed by this covers exactly
+ * the Gizlets that have a workspace, so promoting a planned Gizlet without
+ * wiring one is a type error rather than a blank page.
+ */
+export type AvailableToolSlug = AvailableTool['slug'];
+
 export const toolsIndexPath = '/tools/';
 
 /** Display names for the registry's categories. */
@@ -138,9 +158,20 @@ export interface ToolCategoryGroup {
   readonly tools: readonly ToolRegistryEntry[];
 }
 
+/**
+ * Narrows a registry entry to a published Gizlet. Tool pages branch on this
+ * before choosing a workspace, so a planned Gizlet reaches the placeholder
+ * because of its launch status rather than by falling off a list of slugs.
+ */
+export function isAvailableTool(
+  tool: ToolRegistryEntry,
+): tool is ToolRegistryEntry & { readonly launchStatus: 'available' } {
+  return tool.launchStatus === 'available';
+}
+
 /** Every Gizlet that is published, in registry order. */
-export function getAvailableTools(): readonly ToolRegistryEntry[] {
-  return toolRegistry.filter((tool) => tool.launchStatus === 'available');
+export function getAvailableTools(): readonly AvailableTool[] {
+  return toolRegistry.filter(isAvailableTool);
 }
 
 /**

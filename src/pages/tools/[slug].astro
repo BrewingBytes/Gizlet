@@ -6,10 +6,17 @@ import JsonLdGeneratorTool from '../../components/JsonLdGeneratorTool.astro';
 import JsonFormatterTool from '../../components/JsonFormatterTool.astro';
 import ResizeImageTool from '../../components/ResizeImageTool.astro';
 import { getRelatedTools } from '../../data/tool-page-related';
-import { toolRegistry, type ToolRegistryEntry } from '../../data/tools';
+import { getToolProcessingDescription } from '../../data/tool-page-status';
+import {
+  isAvailableTool,
+  toolRegistry,
+  type AvailableToolSlug,
+  type RegisteredTool,
+  type ToolRegistryEntry,
+} from '../../data/tools';
 
 interface Props {
-  tool: ToolRegistryEntry;
+  tool: RegisteredTool;
   relatedTools: readonly ToolRegistryEntry[];
 }
 
@@ -23,27 +30,34 @@ export function getStaticPaths() {
   }));
 }
 
+/**
+ * One workspace per published Gizlet. The map is total over the registry's
+ * available slugs, so a new Gizlet cannot reach production without one.
+ */
+const toolWorkspaces = {
+  'compress-image': CompressImageTool,
+  'resize-image': ResizeImageTool,
+  'convert-image': ConvertImageTool,
+  'json-ld-generator': JsonLdGeneratorTool,
+  'json-formatter': JsonFormatterTool,
+} as const satisfies Record<AvailableToolSlug, unknown>;
+
 const { tool, relatedTools } = Astro.props;
+// Launch status decides whether there is a workspace at all; the slug only
+// decides which one.
+const Workspace = isAvailableTool(tool) ? toolWorkspaces[tool.slug] : undefined;
 ---
 
 <ToolPageLayout
   tool={tool}
   relatedTools={relatedTools}
-  processingStatus={tool.slug === 'json-formatter' ? 'Your JSON stays on this device.' : undefined}
+  processingStatus={getToolProcessingDescription(tool.slug)}
   showRail
   showPostResultAd
 >
   {
-    tool.slug === 'compress-image' ? (
-      <div slot="workspace"><CompressImageTool /></div>
-    ) : tool.slug === 'resize-image' ? (
-      <div slot="workspace"><ResizeImageTool /></div>
-    ) : tool.slug === 'convert-image' ? (
-      <div slot="workspace"><ConvertImageTool /></div>
-    ) : tool.slug === 'json-ld-generator' ? (
-      <div slot="workspace"><JsonLdGeneratorTool /></div>
-    ) : tool.slug === 'json-formatter' ? (
-      <div slot="workspace"><JsonFormatterTool /></div>
+    Workspace ? (
+      <div slot="workspace"><Workspace /></div>
     ) : (
       <section slot="workspace" class="tool-page-placeholder" aria-labelledby="workspace-title">
         <p class="metadata">Coming soon</p>
@@ -54,7 +68,7 @@ const { tool, relatedTools } = Astro.props;
   }
 
   {
-    tool.slug !== 'compress-image' && tool.slug !== 'resize-image' && tool.slug !== 'convert-image' && tool.slug !== 'json-ld-generator' && tool.slug !== 'json-formatter' && (
+    !Workspace && (
       <section slot="result" class="tool-page-placeholder__result" aria-label="Tool result area">
         <p class="metadata">Results will appear here</p>
       </section>
