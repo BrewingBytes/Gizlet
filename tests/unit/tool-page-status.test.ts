@@ -47,6 +47,10 @@ describe('getToolProcessingDescription', () => {
   it('leaves the default file wording in place for Gizlets that take a file', () => {
     expect(getToolProcessingDescription('compress-image')).toBeUndefined();
   });
+
+  it('says images rather than file for the Gizlet that takes several', () => {
+    expect(getToolProcessingDescription('jpg-to-pdf')).toBe('Your images stay on this device.');
+  });
 });
 
 describe('getRelatedTools', () => {
@@ -54,6 +58,7 @@ describe('getRelatedTools', () => {
     expect(getRelatedTools(toolRegistry[0]).map((tool) => tool.slug)).toEqual([
       'resize-image',
       'convert-image',
+      'jpg-to-pdf',
     ]);
   });
 

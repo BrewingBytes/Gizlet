@@ -4,7 +4,7 @@
  * UI features should derive their navigation, search, category, and related-tool
  * data from this module instead of maintaining their own tool lists.
  */
-export type ToolCategory = "images" | "seo" | "developer";
+export type ToolCategory = "images" | "pdf" | "seo" | "developer";
 
 export type ToolLaunchStatus = "planned" | "available";
 
@@ -119,6 +119,27 @@ export const toolRegistry = [
       output: "Formatted or minified JSON text ready to copy.",
     },
   },
+  {
+    id: 6,
+    name: "JPG to PDF",
+    slug: "jpg-to-pdf",
+    path: "/tools/jpg-to-pdf/",
+    category: "pdf",
+    description: "Put images into one PDF, in the order you choose.",
+    keywords: [
+      "jpg to pdf",
+      "image to pdf",
+      "images to pdf",
+      "photo to pdf",
+      "combine images into a pdf",
+    ],
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "One or more JPEG, PNG, WebP, AVIF, or BMP images, in the page order you set; choose A4, US Letter, US Legal, or a page fitted to each image, plus an orientation.",
+      output: "A single PDF, one image per page, ready to download.",
+    },
+  },
 ] as const satisfies readonly ToolRegistryEntry[];
 
 /**
@@ -146,6 +167,7 @@ export const toolsIndexPath = '/tools/';
 /** Display names for the registry's categories. */
 export const toolCategoryLabels = {
   images: 'Images',
+  pdf: 'PDF',
   seo: 'SEO',
   developer: 'Developer',
 } as const satisfies Record<ToolCategory, string>;

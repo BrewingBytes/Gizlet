@@ -6,11 +6,12 @@ import { toolRegistry, type RegisteredTool, type ToolRegistryEntry, type ToolSlu
  * build inside `getStaticPaths`.
  */
 const relatedToolSlugs: Record<ToolSlug, readonly ToolSlug[]> = {
-  'compress-image': ['resize-image', 'convert-image'],
-  'resize-image': ['compress-image', 'convert-image'],
-  'convert-image': ['compress-image', 'resize-image'],
+  'compress-image': ['resize-image', 'convert-image', 'jpg-to-pdf'],
+  'resize-image': ['compress-image', 'convert-image', 'jpg-to-pdf'],
+  'convert-image': ['compress-image', 'resize-image', 'jpg-to-pdf'],
   'json-ld-generator': ['json-formatter'],
   'json-formatter': ['json-ld-generator'],
+  'jpg-to-pdf': ['convert-image', 'compress-image', 'resize-image'],
 };
 
 function getToolBySlug(slug: ToolSlug): ToolRegistryEntry {

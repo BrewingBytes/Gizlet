@@ -505,6 +505,7 @@ test("renders the editorial homepage content from the tool registry", async ({
     "Convert Image",
     "JSON-LD Generator",
     "JSON Formatter",
+    "JPG to PDF",
   ]) {
     await expect(
       page.getByRole("link", { name: new RegExp(toolName) }),
@@ -761,6 +762,9 @@ test("lists every available Gizlet on a browsable index", async ({ page }) => {
     page.getByRole("heading", { level: 2, name: "Images" }),
   ).toBeVisible();
   await expect(
+    page.getByRole("heading", { level: 2, name: "PDF" }),
+  ).toBeVisible();
+  await expect(
     page.getByRole("main").getByRole("link", { name: /JSON Formatter/ }),
   ).toHaveAttribute("href", "/tools/json-formatter/");
 });
@@ -780,8 +784,12 @@ test("offers only categories that have a Gizlet behind them", async ({
   await expect(
     categories.getByRole("link", { name: "All Gizlets" }),
   ).toHaveAttribute("href", "/tools/");
-  await expect(categories.getByRole("link", { name: "PDF" })).toHaveCount(0);
-  await expect(categories.getByRole("link", { name: "Video" })).toHaveCount(0);
+  await expect(categories.getByRole("link", { name: /PDF/ })).toHaveAttribute(
+    "href",
+    "/tools/#pdf",
+  );
+  await expect(categories.getByRole("link", { name: /Video/ })).toHaveCount(0);
+  await expect(categories.getByRole("link", { name: /Audio/ })).toHaveCount(0);
 });
 
 test("applies a stored theme before the first paint", async ({ page }) => {
