@@ -1,0 +1,26 @@
+# Cloudflare Workers configuration for the gizlet.app production deployment.
+#
+# The build itself runs in Cloudflare Workers Builds, connected to this
+# repository, but its asset behavior is committed here so it is reviewable in
+# Git rather than only visible in the dashboard. See docs/releasing.md for the
+# dashboard settings this file does not cover, including the production branch
+# that gates when a deployment happens.
+name = "gizlet"
+compatibility_date = "2026-09-02"
+
+# Wrangler reports anonymous usage telemetry by default. The project sends no
+# telemetry of its own, so the deploy tooling does not either.
+send_metrics = false
+
+[assets]
+directory = "./dist/"
+
+# Astro emits dist/404.html. Workers default this to "none", which is why
+# production answered unknown addresses with a 404 and an empty body;
+# "404-page" serves that page and keeps the 404 status.
+not_found_handling = "404-page"
+
+# The site is built with trailingSlash: 'always', so dist/<route>/index.html is
+# served at /<route>/. This is Workers' default, set explicitly because the
+# routes depend on it.
+html_handling = "auto-trailing-slash"

@@ -6,8 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-03
+
 ### Added
 
+- Tag-gated production deployments: gizlet.app deploys from a `v*` version tag that has passed the full validation suite, and no longer from a merge to `main`.
+- A documented release procedure in [docs/releasing.md](docs/releasing.md), covering the ordered steps, the rule that a tag never disagrees with the changelog and the version, and what to do when a release has to be re-cut.
+- A `pnpm run changelog:draft` script that drafts changelog entries from the Conventional Commit titles since the previous tag, previewing by default and only ever appending beneath hand-written entries.
+- A committed [wrangler.toml](wrangler.toml), so the production asset behavior is reviewable in Git rather than only visible in the Cloudflare dashboard.
 - A social preview card for every available Gizlet and for the Gizlet index, selected from the registry so a shared tool link previews as that tool instead of the home page, with the brand board still covering every other page.
 - Per-Gizlet supporting content and an FAQ below every Gizlet workspace, written for that Gizlet, keyed by registry slug, and published as `FAQPage` markup from the same copy the page renders.
 - Registry-derived JSON-LD structured data: `WebSite` on the home page, `CollectionPage` on the Gizlet index, and `SoftwareApplication` with a `BreadcrumbList` on each Gizlet page.
@@ -51,6 +57,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- Serve the built not-found page for unknown addresses, with its `404` status, instead of the empty body production returned.
 - Build the homepage category strip from the registry, so it can no longer advertise a category with no Gizlet behind it, and give each category link a full-size tap target.
 - Raise the dark-theme contrast of local-processing and success copy to meet WCAG AA.
 - Keep the theme toggle's label out of the toggle script, so the header no longer resizes after load and shifts the page on narrow screens.
