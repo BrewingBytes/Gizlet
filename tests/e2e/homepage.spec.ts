@@ -121,6 +121,7 @@ test("serves public sitemap and crawler-discovery files", async ({
   await expect(sitemap.text()).resolves.toContain(
     "https://gizlet.app/tools/json-ld-generator/",
   );
+  await expect(sitemap.text()).resolves.toContain("https://gizlet.app/flows/");
   await expect(sitemap.text()).resolves.toContain("https://gizlet.app/privacy/");
 
   expect(robots.headers()["content-type"]).toContain("text/plain");

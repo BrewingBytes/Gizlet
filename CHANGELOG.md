@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- The Gizlet Flows page is now listed in `sitemap.xml`. It was linked from the header but absent from the sitemap, so the page that chains Gizlets together was invisible to crawlers and answer engines.
+
 ### Changed
 
 - Gizlet pages now choose their workspace from a registry-derived slug map and decide on launch status before the slug, so a planned Gizlet reaches the placeholder by rule rather than by falling off the end of a chain of conditions. Adding a Gizlet without a workspace, or without a related-Gizlet entry, now fails `pnpm run check` instead of crashing the production build.
