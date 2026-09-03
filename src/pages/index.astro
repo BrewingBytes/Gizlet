@@ -1,7 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AdvertisementSlot from '../components/AdvertisementSlot.astro';
+import { homePageDescription, homePageTitle } from '../data/home-page';
 import { getPageMetadata } from '../data/metadata';
+import { homeSocialImagePath } from '../data/social-images';
 import { getSiteStructuredData } from '../data/structured-data';
 import { toolSearchPlaceholder } from '../data/tool-search-examples';
 import { getToolCategoryGroups, toolRegistry, toolsIndexPath } from '../data/tools';
@@ -9,9 +11,10 @@ import { getToolCategoryGroups, toolRegistry, toolsIndexPath } from '../data/too
 const categoryGroups = getToolCategoryGroups();
 
 const metadata = getPageMetadata({
-  title: 'Gizlet | Useful internet things, without the nonsense.',
-  description: 'Useful internet things, without the nonsense. Small browser tools from Gizlet.',
+  title: homePageTitle,
+  description: homePageDescription,
   pathname: '/',
+  image: homeSocialImagePath,
 });
 ---
 

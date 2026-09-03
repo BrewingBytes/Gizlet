@@ -19,6 +19,13 @@ export const fallbackSocialImagePath = '/brand/brand-board.png';
 export const toolIndexSocialImagePath = `${socialImageDirectory}gizlets.png`;
 
 /**
+ * The home page's own card. It is the site's most-shared link, so it does not
+ * fall back to the brand board: a collage of screenshots reads as noise at the
+ * size a search result or a chat unfurl actually renders it.
+ */
+export const homeSocialImagePath = `${socialImageDirectory}home.png`;
+
+/**
  * Registry slugs with a committed image. This list is deliberately explicit:
  * a new registry entry falls back to the brand board until its image exists,
  * instead of advertising a file that was never drawn. The Vitest coverage
