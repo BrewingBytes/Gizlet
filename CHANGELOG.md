@@ -6,14 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-### Fixed
-
-- The home page's search field no longer suggests searches that find nothing. Two of its three examples returned no Gizlet — one named a tool that does not exist, and one was phrased in a way the search cannot match — and the examples now live in `src/data` with a test asserting each returns an available Gizlet, so they cannot drift as the catalogue changes.
+## [0.2.0] - 2026-09-03
 
 ### Added
 
 - A Gizlet Flow can now be shared as a recipe link: `Copy recipe link` writes the chain, its order, and each step's settings into the page's URL fragment, and opening that link rebuilds the same flow. Settings travel in the fragment rather than a query string, so they are never transmitted to a server at all, and only whitelisted setting keys exist — no key can carry file content, a filename, or a URL. A link that does not parse and validate is ignored whole rather than partly applied.
 - [docs/signals.md](docs/signals.md), recording which signals Gizlet can measure and which it cannot. Cloudflare Web Analytics supports no custom events and does not log query strings, so completions, error rates, downloads, and click-through are unobservable, and a plan that needs those numbers has to restate its criteria or change the data contract first. Linked from `AGENTS.md` and [docs/privacy.md](docs/privacy.md).
+
+### Fixed
+
+- The home page's search field no longer suggests searches that find nothing. Two of its three examples returned no Gizlet — one named a tool that does not exist, and one was phrased in a way the search cannot match — and the examples now live in `src/data` with a test asserting each returns an available Gizlet, so they cannot drift as the catalogue changes.
 
 ## [0.1.1] - 2026-09-03
 
