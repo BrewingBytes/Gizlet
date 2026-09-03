@@ -16,6 +16,7 @@ const workspaceSignatures = {
   "json-ld-generator": "Schema type",
   "json-formatter": "JSON input",
   "jpg-to-pdf": "Select images to put in a PDF",
+  "pdf-viewer": "Select a PDF to open",
 } as const satisfies Record<AvailableToolSlug, string>;
 
 for (const tool of getAvailableTools()) {

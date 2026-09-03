@@ -34,6 +34,11 @@ export interface ToolFlowDefinition {
    * it, so a chain containing one takes several starting payloads.
    */
   readonly combinesInputs?: boolean;
+  /**
+   * An inspection step: it shows the payload and hands it on untouched. A flow
+   * runs it for the visitor's benefit and carries the same payload forward.
+   */
+  readonly passesInputThrough?: boolean;
 }
 
 /** The payload an image flow starts from. Exported so no UI restates it. */
@@ -48,7 +53,7 @@ const imageOutput = {
   producedFormats: ['image/jpeg', 'image/png', 'image/webp'],
 } as const satisfies FlowPayloadContract;
 
-const pdfOutput = { kind: 'pdf-file' } as const satisfies FlowPayloadContract;
+const pdfPayload = { kind: 'pdf-file' } as const satisfies FlowPayloadContract;
 
 const jsonText = { kind: 'json-text' } as const satisfies FlowPayloadContract;
 
@@ -84,8 +89,14 @@ export const toolFlowRegistry = [
   {
     toolSlug: 'jpg-to-pdf',
     input: imageFlowInput,
-    output: pdfOutput,
+    output: pdfPayload,
     combinesInputs: true,
+  },
+  {
+    toolSlug: 'pdf-viewer',
+    input: pdfPayload,
+    output: pdfPayload,
+    passesInputThrough: true,
   },
 ] as const satisfies readonly ToolFlowDefinition[];
 

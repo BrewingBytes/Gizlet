@@ -63,12 +63,22 @@ describe('Gizlet flow registry', () => {
     }
   });
 
-  test('offers nothing after a PDF because no Gizlet reads one yet, not because it is a dead end', () => {
+  test('offers the PDF reader after JPG to PDF, because a Gizlet now declares it reads one', () => {
     expect(getFlowTool('jpg-to-pdf').output).toEqual({ kind: 'pdf-file' });
-    // The reason is the absence of a reader, and this is what will change.
-    expect(getFlowToolsForInput('pdf-file')).toEqual([]);
-    expect(getNextFlowTools('jpg-to-pdf')).toEqual([]);
+    expect(getFlowToolsForInput('pdf-file').map((tool) => tool.toolSlug)).toEqual(['pdf-viewer']);
+    expect(getNextFlowTools('jpg-to-pdf').map((tool) => tool.toolSlug)).toEqual(['pdf-viewer']);
+    expect(canFlowTo('jpg-to-pdf', 'pdf-viewer')).toBe(true);
+    // A PDF still cannot go back to an image Gizlet: nothing converts one yet.
     expect(canFlowTo('jpg-to-pdf', 'compress-image')).toBe(false);
+  });
+
+  test('carries the payload through an inspection step untouched', () => {
+    const viewer = getFlowTool('pdf-viewer');
+
+    expect(viewer.passesInputThrough).toBe(true);
+    expect(viewer.input).toEqual(viewer.output);
+    expect(getFlowTool('jpg-to-pdf').passesInputThrough).toBeUndefined();
+    expect(isValidFlowSequence(imageInput, ['resize-image', 'jpg-to-pdf', 'pdf-viewer'])).toBe(true);
   });
 
   test('knows which chains turn several starting payloads into one', () => {
@@ -122,8 +132,9 @@ describe('the compatibility rule, against contracts that do not exist yet', () =
   };
   const definitions: readonly ToolFlowDefinition[] = [...toolFlowRegistry, pdfToJpg, compressPdf];
 
-  test('offers a PDF reader after JPG to PDF as soon as one declares itself', () => {
+  test('offers a further PDF Gizlet after JPG to PDF as soon as one declares itself', () => {
     expect(getNextFlowTools('jpg-to-pdf', definitions).map((tool) => tool.toolSlug)).toEqual([
+      'pdf-viewer',
       'pdf-to-jpg',
       'compress-pdf',
     ]);
@@ -137,6 +148,11 @@ describe('the compatibility rule, against contracts that do not exist yet', () =
       'resize-image',
       'convert-image',
       'jpg-to-pdf',
+    ]);
+    expect(getNextFlowTools('compress-pdf', definitions).map((tool) => tool.toolSlug)).toEqual([
+      'pdf-viewer',
+      'pdf-to-jpg',
+      'compress-pdf',
     ]);
     expect(canFlowTo('pdf-to-jpg', 'resize-image', definitions)).toBe(true);
   });

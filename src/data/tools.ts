@@ -140,6 +140,27 @@ export const toolRegistry = [
       output: "A single PDF, one image per page, ready to download.",
     },
   },
+  {
+    id: 7,
+    name: "PDF Viewer",
+    slug: "pdf-viewer",
+    path: "/tools/pdf-viewer/",
+    category: "pdf",
+    description: "Read a PDF page by page without uploading it.",
+    keywords: [
+      "pdf viewer",
+      "open pdf",
+      "read pdf",
+      "view pdf online",
+      "pdf reader",
+    ],
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "One PDF file.",
+      output: "The document rendered page by page on screen, with page thumbnails and zoom. Nothing is written to a file.",
+    },
+  },
 ] as const satisfies readonly ToolRegistryEntry[];
 
 /**
