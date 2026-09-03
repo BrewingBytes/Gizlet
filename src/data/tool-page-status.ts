@@ -1,4 +1,4 @@
-import type { ToolRegistryEntry } from './tools';
+import type { ToolRegistryEntry, ToolSlug } from './tools';
 
 export interface ToolProcessingStatus {
   readonly description: string;
@@ -33,4 +33,17 @@ export function getToolProcessingStatus(
   }
 
   return undefined;
+}
+
+/**
+ * Per-Gizlet processing sentences, for the Gizlets whose input is not a file
+ * and would be described inaccurately by the default wording.
+ */
+const toolProcessingDescriptions: Partial<Record<ToolSlug, string>> = {
+  'json-formatter': 'Your JSON stays on this device.',
+};
+
+/** The tailored processing sentence for a Gizlet, where it has one. */
+export function getToolProcessingDescription(slug: ToolSlug): string | undefined {
+  return toolProcessingDescriptions[slug];
 }

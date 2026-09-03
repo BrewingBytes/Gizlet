@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- Gizlet pages now choose their workspace from a registry-derived slug map and decide on launch status before the slug, so a planned Gizlet reaches the placeholder by rule rather than by falling off the end of a chain of conditions. Adding a Gizlet without a workspace, or without a related-Gizlet entry, now fails `pnpm run check` instead of crashing the production build.
+- The JSON Formatter's processing sentence moved from the tool page into `src/data/tool-page-status.ts`, so the copy comes from the data layer like every other registry-backed claim.
+
+### Added
+
+- A `TODOS.md` recording deferred work with the condition that would revisit it.
+
 ## [0.1.0] - 2026-09-03
 
 ### Added

@@ -1,6 +1,11 @@
-import { toolRegistry, type ToolRegistryEntry } from './tools';
+import { toolRegistry, type RegisteredTool, type ToolRegistryEntry, type ToolSlug } from './tools';
 
-const relatedToolSlugs: Record<ToolRegistryEntry['slug'], readonly ToolRegistryEntry['slug'][]> = {
+/**
+ * Keyed by the registry's own slugs rather than by `string`, so a Gizlet added
+ * without a related-tools entry fails `astro check` instead of crashing the
+ * build inside `getStaticPaths`.
+ */
+const relatedToolSlugs: Record<ToolSlug, readonly ToolSlug[]> = {
   'compress-image': ['resize-image', 'convert-image'],
   'resize-image': ['compress-image', 'convert-image'],
   'convert-image': ['compress-image', 'resize-image'],
@@ -8,7 +13,7 @@ const relatedToolSlugs: Record<ToolRegistryEntry['slug'], readonly ToolRegistryE
   'json-formatter': ['json-ld-generator'],
 };
 
-function getToolBySlug(slug: ToolRegistryEntry['slug']): ToolRegistryEntry {
+function getToolBySlug(slug: ToolSlug): ToolRegistryEntry {
   const tool = toolRegistry.find((candidate) => candidate.slug === slug);
 
   if (!tool) {
@@ -22,6 +27,6 @@ function getToolBySlug(slug: ToolRegistryEntry['slug']): ToolRegistryEntry {
  * Returns the editorially selected related Gizlets for a registry entry.
  * This is deliberately explicit rather than an automatic recommendation rule.
  */
-export function getRelatedTools(tool: ToolRegistryEntry): readonly ToolRegistryEntry[] {
+export function getRelatedTools(tool: RegisteredTool): readonly ToolRegistryEntry[] {
   return relatedToolSlugs[tool.slug].map(getToolBySlug);
 }
