@@ -513,9 +513,7 @@ test("renders the editorial homepage content from the tool registry", async ({
   await expect(
     page.getByRole("navigation", { name: "Browse tool categories" }),
   ).toContainText("Images");
-  await expect(
-    page.getByRole("heading", { name: "Same Gizlets. No ads." }),
-  ).toBeVisible();
+  await expect(page.getByText("Gizlet Pro")).toHaveCount(0);
 });
 
 test("links Gizlet cards to canonical trailing-slash routes", async ({
@@ -614,7 +612,7 @@ test("provides accessible shared navigation", async ({ page }) => {
   await expect(
     header.getByRole("navigation", { name: "Primary navigation" }),
   ).toContainText("Tools");
-  await expect(header.getByRole("link", { name: "Pro" })).toBeVisible();
+  await expect(header.getByRole("link", { name: "Flows" })).toBeVisible();
   await expect(
     header.getByRole("button", { name: "Search Gizlet" }),
   ).toBeVisible();
@@ -631,6 +629,9 @@ test("provides accessible shared navigation", async ({ page }) => {
   await expect(page.getByRole("contentinfo")).toContainText(
     "A little tool for everything.",
   );
+
+  // Gizlet Pro does not exist, so neither the shell nor any page may link to it.
+  await expect(page.locator('a[href*="#pro"]')).toHaveCount(0);
 });
 
 test("keeps the shared shell usable on mobile widths", async ({ page }) => {
