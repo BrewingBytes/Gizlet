@@ -18,8 +18,14 @@ import { fileURLToPath } from 'node:url';
 
 import { chromium } from '@playwright/test';
 
+import { homePageDescription } from '../src/data/home-page.ts';
 import { getBespokeSocialImageSlugs, getSocialImageFileName } from '../src/data/social-images.ts';
-import { getAvailableTools, toolCategoryLabels, toolRegistry } from '../src/data/tools.ts';
+import {
+  getAvailableTools,
+  getToolCategoryGroups,
+  toolCategoryLabels,
+  toolRegistry,
+} from '../src/data/tools.ts';
 
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outputDirectory = join(repositoryRoot, 'public', 'brand', 'social');
@@ -86,6 +92,8 @@ function card({ stamp, body, footer, bodyClass = '' }) {
   h1.is-long { font-size: 76px; }
   .body.is-index { padding: 24px 0 0; }
   .is-index h1 { font-size: 58px; }
+  .is-home h1 { font-size: 78px; }
+  .is-home .lede { max-width: 940px; }
   .lede { max-width: 900px; margin-top: 28px; font-size: 34px; line-height: 1.35; color: ${palette.slate}; }
   .rows { margin-top: 24px; display: grid; gap: 0; max-width: 940px; }
   .rows div {
@@ -141,6 +149,25 @@ function toolCard(tool) {
   });
 }
 
+/**
+ * The home page's card. Its stamp is the live category list, so it can never
+ * advertise a kind of Gizlet the registry does not have.
+ */
+function homeCard(tools) {
+  const categories = getToolCategoryGroups()
+    .map((group) => escapeHtml(group.label))
+    .join(' &middot; ');
+
+  return card({
+    stamp: categories,
+    bodyClass: ' is-home',
+    body: `<h1>Useful internet things,<br />without the nonsense.</h1><p class="lede">${escapeHtml(homePageDescription)}</p>`,
+    footer: `<span>gizlet.app</span>${
+      tools.every((tool) => tool.processesLocally) ? '<span class="local">Local processing</span>' : ''
+    }`,
+  });
+}
+
 function indexCard(tools) {
   const rows = tools
     .map(
@@ -175,6 +202,7 @@ const page = await browser.newPage({ viewport: { width, height }, deviceScaleFac
 const cards = [
   ...tools.map((tool) => ({ fileName: getSocialImageFileName(tool.slug), html: toolCard(tool) })),
   { fileName: 'gizlets.png', html: indexCard(getAvailableTools()) },
+  { fileName: 'home.png', html: homeCard(getAvailableTools()) },
 ];
 
 for (const { fileName, html } of cards) {

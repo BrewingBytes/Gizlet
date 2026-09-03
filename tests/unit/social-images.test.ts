@@ -7,6 +7,7 @@ import {
   fallbackSocialImagePath,
   getBespokeSocialImageSlugs,
   getToolSocialImagePath,
+  homeSocialImagePath,
   socialImageDirectory,
   toolIndexSocialImagePath,
 } from '../../src/data/social-images';
@@ -57,10 +58,11 @@ describe('the committed social images', () => {
     );
   });
 
-  it('ships a 1200x630 PNG for every Gizlet page and for the Gizlet index', () => {
+  it('ships a 1200x630 PNG for every Gizlet page, the Gizlet index, and the home page', () => {
     const paths = [
       ...getAvailableTools().map((tool) => getToolSocialImagePath(tool)),
       toolIndexSocialImagePath,
+      homeSocialImagePath,
       fallbackSocialImagePath,
     ];
 

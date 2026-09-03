@@ -12,7 +12,13 @@ test("renders the Gizlet homepage", async ({ page }) => {
   );
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     "content",
-    "https://gizlet.app/brand/brand-board.png",
+    "https://gizlet.app/brand/social/home.png",
+  );
+  // The description has to say what the Gizlets do, or a search engine writes
+  // its own snippet out of whatever text the page happens to show.
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    "content",
+    /Compress an image, resize a photo/,
   );
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
     "content",

@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- The home page now has its own 1200x630 preview card instead of falling back to the brand board. The brand board is 1536x1024, 1.79 MB, and a collage of small screenshots, so a Google result or a chat unfurl for the site's most important URL rendered as noise. The new card is drawn by the same script as the Gizlet cards, and its category line comes from the registry so it cannot advertise a kind of Gizlet that does not exist. The brand board stays the fallback for pages that have no card yet.
+- The home page's meta description no longer repeats its own title. It opened with the title verbatim, so Google discarded it and assembled a snippet from the page's visible text — the eyebrow, the heading, and the intro paragraph, read as three stitched fragments. The description now names what the Gizlets actually do. Both title and description moved into `src/data/home-page.ts` with tests asserting they share no phrase, that the description fits the length a result shows, and that its local-processing claim holds only while every published Gizlet is local.
+
 ### Added
 
 - A JPG to PDF Gizlet, and with it a PDF category: choose JPEG, PNG, WebP, AVIF, or BMP images, put them in the page order you want, pick A4, US Letter, US Legal, or a page fitted to each image, and download one PDF with one image per page. It assembles the document in the browser, so the passports, bank statements, and signed contracts people turn into PDFs are never uploaded. A JPEG or PNG page is embedded byte for byte; a WebP, AVIF, or BMP page is re-encoded as a high-quality JPEG first, because that is what a PDF can carry. One document holds up to 100 pages, each image is held to the pixel ceiling the Resize Image Gizlet already enforces, and past 20 pages the Gizlet says it is building a big document rather than looking stalled.
