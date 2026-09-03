@@ -14,7 +14,7 @@ Read [docs/architecture.md](docs/architecture.md) before changing the applicatio
 - `src/layouts/BaseLayout.astro` — document shell, metadata, theme bootstrap, and the env-gated ads tag.
 - `src/pages/` — static routes, including `tools/[slug].astro` (generated from the registry) and the generated `sitemap.xml`, `robots.txt`, `tools.json`, and `llms.txt`.
 - `tests/unit/` — Vitest, one file per `src/data` module. `tests/e2e/` — Playwright smoke coverage.
-- `docs/` — architecture baseline, privacy data contract, request-form behavior, release procedure.
+- `docs/` — architecture baseline, privacy data contract, measurement constraints, request-form behavior, release procedure.
 
 ## Architecture constraints
 
@@ -40,6 +40,7 @@ Adding or changing a Gizlet:
 ## Privacy and UX
 
 - Never send user file contents, JSON contents, generated passwords, or other tool payloads to analytics or third parties. Gizlet ships no analytics script or client event calls at all: aggregate measurement is Cloudflare Web Analytics, injected at the edge. Do not reintroduce a provider script or a tracking API without an issue that requires it.
+- Before writing a success signal or a kill criterion into a plan, read [docs/signals.md](docs/signals.md). Cloudflare Web Analytics supports no custom events and does not log query strings, so completions, error rates, downloads, and click-through are not observable; a criterion that needs them has to be restated.
 - Do not claim a tool is local unless its implementation actually processes its input on-device. Tool-page processing copy must come from `getToolProcessingStatus`, which reads the registry.
 - Advertising is opt-in through `PUBLIC_*` environment variables, stays disabled in development, and treats malformed configuration as disabled. Do not enable it by default, and keep [docs/privacy.md](docs/privacy.md) accurate when advertising or analytics behavior changes.
 - Preserve keyboard access, visible focus states, semantic controls, sufficient contrast, and responsive layouts.

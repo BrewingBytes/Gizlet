@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- [docs/signals.md](docs/signals.md), recording which signals Gizlet can measure and which it cannot. Cloudflare Web Analytics supports no custom events and does not log query strings, so completions, error rates, downloads, and click-through are unobservable, and a plan that needs those numbers has to restate its criteria or change the data contract first. Linked from `AGENTS.md` and [docs/privacy.md](docs/privacy.md).
+
 ## [0.1.1] - 2026-09-03
 
 ### Added
