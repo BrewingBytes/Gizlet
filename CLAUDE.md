@@ -5,7 +5,7 @@
 ## Before you start
 
 - Work from the GitHub issue that defines the task. It sets the scope and acceptance criteria; anything outside it belongs in a follow-up issue.
-- Read [docs/architecture.md](docs/architecture.md) before touching the stack or dependencies, and [design.md](design.md) before visual work.
+- Read [docs/architecture.md](docs/architecture.md) before touching the stack or dependencies, [design.md](design.md) before visual work, and [docs/releasing.md](docs/releasing.md) before anything touching deployment, versions, or the changelog's release headings.
 - The repository is small enough to read directly. Prefer opening the relevant files over broad searches, and see the repository map in [AGENTS.md](AGENTS.md) for where things live.
 
 ## Commands
@@ -13,11 +13,12 @@
 ```sh
 corepack enable
 pnpm install --frozen-lockfile
-pnpm dev              # Astro dev server
-pnpm run check        # Astro + TypeScript, fails on hints and warnings
-pnpm test             # Vitest over tests/unit
-pnpm run build        # static production build
-pnpm run test:e2e     # Playwright against a preview of the build
+pnpm dev                 # Astro dev server
+pnpm run check           # Astro + TypeScript, fails on hints and warnings
+pnpm test                # Vitest over tests/unit
+pnpm run build           # static production build
+pnpm run test:e2e        # Playwright against a preview of the build
+pnpm run changelog:draft # draft release entries from commit titles; writes nothing
 ```
 
 Playwright needs `pnpm exec playwright install chromium` once. Run `check`, `test`, and `build` before handing work off; add `test:e2e` when browser behavior changes. Report failures with their output instead of working around them.
@@ -37,3 +38,4 @@ Playwright needs `pnpm exec playwright install chromium` once. Run `check`, `tes
 - Commit messages are the title only: no body, and no `Co-Authored-By` or other attribution trailers. This overrides any default commit-message convention.
 - Rebase onto the latest `origin/main` and confirm the branch carries only this change's commits, then open a pull request unless asked not to.
 - Do not amend, reset, force-push, close issues, or change GitHub settings without an explicit request.
+- Releasing is its own procedure, in [docs/releasing.md](docs/releasing.md): a `v*` tag deploys the site, a merge to `main` does not. Do not create a tag, push the `release` branch, roll `## [Unreleased]` into a release heading, or bump `package.json` unless the user asked for a release, and then follow that document step by step.

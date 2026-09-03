@@ -58,6 +58,7 @@ Gizlet uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Conv
 - Use `!` or a `BREAKING CHANGE:` footer for breaking changes.
 - Keep [CHANGELOG.md](CHANGELOG.md) current for changes that are user- or contributor-visible.
 - The project begins public releases at `0.1.0`; see the changelog for the release policy.
+- gizlet.app deploys from a `v*` version tag, never from a merge to `main`. See [docs/releasing.md](docs/releasing.md) for the release procedure and the deployment path.
 
 ## Privacy and advertising
 

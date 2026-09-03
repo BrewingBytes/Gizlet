@@ -1,6 +1,6 @@
 {
   "name": "gizlet",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.28.0",
@@ -13,7 +13,9 @@
     "preview": "astro preview",
     "check": "astro check --minimumFailingSeverity hint",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "changelog:draft": "node scripts/draft-changelog.mjs",
+    "deploy": "wrangler deploy"
   },
   "dependencies": {
     "astro": "^7.2.9"
@@ -24,6 +26,7 @@
     "@types/node": "^26.4.0",
     "typescript": "^6.0.3",
     "vite": "^8.2.2",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "wrangler": "^4.128.0"
   }
 }
