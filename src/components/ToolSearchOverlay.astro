@@ -1,3 +1,7 @@
+---
+import { toolSearchPlaceholder } from '../data/tool-search-examples';
+---
+
 <dialog
   id="tool-search-overlay"
   class="search-overlay"
@@ -19,7 +23,7 @@
     <input
       id="global-tool-search"
       type="search"
-      placeholder="compress a photo, make JSON-LD…"
+      placeholder={toolSearchPlaceholder}
       autocomplete="off"
       data-tool-search-input
     />
