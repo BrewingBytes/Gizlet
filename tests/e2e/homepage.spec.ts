@@ -45,7 +45,7 @@ test("builds and runs a local image flow", async ({ page }) => {
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLZywAAAABJRU5ErkJggg==",
     "base64",
   );
-  await page.getByLabel("Choose an image for this flow").setInputFiles({
+  await page.getByLabel("Choose images for this flow").setInputFiles({
     name: "tiny.webp",
     mimeType: "image/webp",
     buffer: image,
@@ -81,10 +81,10 @@ test("builds and runs a local image flow", async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
-test("explains unsupported and unreadable flow inputs", async ({ page }) => {
+test("explains unsupported and unreadable flow inputs when they are chosen", async ({ page }) => {
   await page.goto("/flows/");
 
-  const input = page.getByLabel("Choose an image for this flow");
+  const input = page.getByLabel("Choose images for this flow");
   await input.setInputFiles({
     name: "notes.txt",
     mimeType: "text/plain",
@@ -94,15 +94,18 @@ test("explains unsupported and unreadable flow inputs", async ({ page }) => {
     "Choose a JPEG, PNG, WebP, AVIF, or BMP image to start this flow.",
   );
 
+  // The source is decoded when it is chosen, so an unreadable file is refused
+  // before a chain is built on top of it rather than at the end of a run.
   await input.setInputFiles({
     name: "broken.png",
     mimeType: "image/png",
     buffer: Buffer.from("not an image"),
   });
+  await expect(page.getByRole("alert")).toHaveText("This image could not be read.");
+
   await page.getByLabel("Next compatible Gizlet").selectOption("convert-image");
   await page.getByRole("button", { name: "Add step" }).click();
-  await page.getByRole("button", { name: "Run flow" }).click();
-  await expect(page.getByRole("alert")).toHaveText("This image could not be read.");
+  await expect(page.getByRole("button", { name: "Run flow" })).toBeDisabled();
 });
 
 test("serves public sitemap and crawler-discovery files", async ({

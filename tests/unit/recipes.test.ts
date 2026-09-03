@@ -100,6 +100,63 @@ describe('decodeRecipe', () => {
   });
 });
 
+describe('a PDF flow in a recipe', () => {
+  const pdfRecipe: Recipe = {
+    outputFormat: 'image/jpeg',
+    steps: [
+      { toolSlug: 'resize-image', width: 1200, height: 1200 },
+      { toolSlug: 'jpg-to-pdf', pageSize: 'letter', orientation: 'landscape' },
+    ],
+  };
+
+  it('round-trips the page size and orientation', () => {
+    const encoded = encodeRecipe(pdfRecipe);
+
+    expect(encoded).toBe('#r=v1;f=jpeg;resize-image:w=1200,h=1200;jpg-to-pdf:p=letter,o=landscape');
+    expect(decodeRecipe(encoded ?? '')).toEqual(pdfRecipe);
+  });
+
+  it('writes the defaults rather than a step the builder would rebuild differently', () => {
+    expect(encodeRecipe({ steps: [{ toolSlug: 'jpg-to-pdf' }] })).toBe(
+      '#r=v1;jpg-to-pdf:p=a4,o=auto',
+    );
+  });
+
+  it('accepts a bare PDF step, which the builder fills with its own defaults', () => {
+    expect(decodeRecipe('#r=v1;jpg-to-pdf')).toEqual({
+      outputFormat: undefined,
+      steps: [{ toolSlug: 'jpg-to-pdf' }],
+    });
+  });
+
+  it('rejects a page size or orientation outside its closed list', () => {
+    expect(decodeRecipe('#r=v1;jpg-to-pdf:p=a3,o=auto')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;jpg-to-pdf:p=a4,o=sideways')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;jpg-to-pdf:p=A4,o=auto')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;jpg-to-pdf:p=,o=auto')).toBeUndefined();
+  });
+
+  it('rejects a key the PDF Gizlet does not accept, and a number where a name belongs', () => {
+    expect(decodeRecipe('#r=v1;jpg-to-pdf:q=80')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;jpg-to-pdf:p=1,o=auto')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;resize-image:p=a4,h=10')).toBeUndefined();
+  });
+
+  it('rejects half the page layout, for the same reason it rejects half a resize', () => {
+    expect(decodeRecipe('#r=v1;jpg-to-pdf:p=letter')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;jpg-to-pdf:o=portrait')).toBeUndefined();
+  });
+
+  it('rejects a chain that continues past the PDF, which nothing can read yet', () => {
+    expect(decodeRecipe('#r=v1;jpg-to-pdf;compress-image')).toBeUndefined();
+    expect(
+      encodeRecipe({
+        steps: [{ toolSlug: 'jpg-to-pdf' }, { toolSlug: 'compress-image' }],
+      }),
+    ).toBeUndefined();
+  });
+});
+
 describe('encodeRecipe', () => {
   it('round-trips a recipe through its own format', () => {
     const encoded = encodeRecipe(fullRecipe);
@@ -135,6 +192,7 @@ describe('the settings-only guarantee', () => {
       fullRecipe,
       { outputFormat: 'image/jpeg', steps: [{ toolSlug: 'resize-image', width: 16384, height: 1 }] },
       { outputFormat: 'image/png', steps: [{ toolSlug: 'compress-image', quality: 40 }] },
+      { steps: [{ toolSlug: 'jpg-to-pdf', pageSize: 'legal', orientation: 'portrait' }] },
     ];
 
     for (const recipe of recipes) {
@@ -160,5 +218,8 @@ describe('the settings-only guarantee', () => {
     expect(decodeRecipe('#r=v1;convert-image:name=holiday.jpg')).toBeUndefined();
     expect(decodeRecipe('#r=v1;convert-image:src=https://example.com/a.jpg')).toBeUndefined();
     expect(decodeRecipe('#r=v1;convert-image:data=AAAA')).toBeUndefined();
+    // The enum keys are whitelists of exact names, not free text.
+    expect(decodeRecipe('#r=v1;jpg-to-pdf:p=holiday.jpg,o=auto')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;jpg-to-pdf:p=https://example.com,o=auto')).toBeUndefined();
   });
 });

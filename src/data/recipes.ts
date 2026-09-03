@@ -1,7 +1,18 @@
 import { type ImageOutputFormat } from './image-compression';
 import { validateResizeDimensions } from './image-resize';
-import { getFlowTool, isValidFlowSequence } from './tool-flows';
-import { getAvailableTools, type RegisteredTool } from './tools';
+import {
+  defaultPdfOrientation,
+  defaultPdfPageSize,
+  pdfOrientationNames,
+  pdfPageSizeNames,
+  type PdfOrientation,
+  type PdfPageSizeName,
+} from './jpg-to-pdf';
+import {
+  getFlowTool,
+  isValidFlowSequence,
+  type AvailableImageFlowToolSlug,
+} from './tool-flows';
 
 /**
  * A Gizlet Flow encoded as a shareable link.
@@ -9,26 +20,26 @@ import { getAvailableTools, type RegisteredTool } from './tools';
  * Settings travel in the URL fragment and never in the query string. A query
  * string is transmitted to the server on every request and merely not logged;
  * a fragment is never sent at all. Nothing here can carry file content, a
- * filename, or a URL, because only setting-shaped keys exist — the privacy
- * contract is the shape of this module rather than a promise about it.
+ * filename, or a URL, because every whitelisted value is either a whole number
+ * or one of a closed list of names — the privacy contract is the shape of this
+ * module rather than a promise about it.
  */
 
-/** Slugs a recipe may name: published Gizlets that run in the image flow. */
-export type RecipeToolSlug = Extract<
-  RegisteredTool,
-  { readonly category: 'images'; readonly launchStatus: 'available' }
->['slug'];
+/** Slugs a recipe may name: published Gizlets the image flow builder can chain. */
+export type RecipeToolSlug = AvailableImageFlowToolSlug;
 
 export interface RecipeStep {
   readonly toolSlug: RecipeToolSlug;
   readonly width?: number;
   readonly height?: number;
   readonly quality?: number;
+  readonly pageSize?: PdfPageSizeName;
+  readonly orientation?: PdfOrientation;
 }
 
 export interface Recipe {
   readonly steps: readonly RecipeStep[];
-  /** The flow's single final output format, which the builder applies to every step. */
+  /** The flow's single image output format, which the builder applies to every step. */
   readonly outputFormat?: ImageOutputFormat;
 }
 
@@ -50,14 +61,28 @@ const recipeFormatNames = {
 
 type RecipeFormatName = keyof typeof recipeFormatNames;
 
-const recipeStepKeys = {
-  'resize-image': ['w', 'h'],
-  'compress-image': ['q'],
-  'convert-image': [],
-} as const satisfies Record<RecipeToolSlug, readonly string[]>;
+/**
+ * The setting keys each Gizlet may carry, and the shape each value takes.
+ *
+ * `'number'` means a whole number checked by that Gizlet's own validator. An
+ * array is a closed list of accepted names. There is deliberately no free-text
+ * shape: a key that could hold arbitrary characters is what would let a link
+ * carry a filename or a URL, so the format has none.
+ */
+const recipeStepSettings = {
+  'resize-image': { w: 'number', h: 'number' },
+  'compress-image': { q: 'number' },
+  'convert-image': {},
+  'jpg-to-pdf': { p: pdfPageSizeNames, o: pdfOrientationNames },
+} as const satisfies Record<RecipeToolSlug, Readonly<Record<string, 'number' | readonly string[]>>>;
+
+const recipeToolSlugs = Object.keys(recipeStepSettings) as readonly RecipeToolSlug[];
+
+/** A parsed setting: a whole number, or one of a key's accepted names. */
+type RecipeSettingValue = number | string;
 
 function isRecipeToolSlug(value: string): value is RecipeToolSlug {
-  return getAvailableTools().some((tool) => tool.category === 'images' && tool.slug === value);
+  return recipeToolSlugs.includes(value as RecipeToolSlug);
 }
 
 function isRecipeFormatName(value: string): value is RecipeFormatName {
@@ -72,11 +97,11 @@ function parseWholeNumber(value: string): number | undefined {
 function parseStepSettings(
   toolSlug: RecipeToolSlug,
   settings: string,
-): Record<string, number> | undefined {
+): Record<string, RecipeSettingValue> | undefined {
   if (settings === '') return {};
 
-  const allowedKeys: readonly string[] = recipeStepKeys[toolSlug];
-  const parsed: Record<string, number> = {};
+  const allowed: Readonly<Record<string, 'number' | readonly string[]>> = recipeStepSettings[toolSlug];
+  const parsed: Record<string, RecipeSettingValue> = {};
 
   for (const pair of settings.split(',')) {
     const separatorIndex = pair.indexOf('=');
@@ -86,20 +111,34 @@ function parseStepSettings(
     const key = pair.slice(0, separatorIndex);
     const rawValue = pair.slice(separatorIndex + 1);
 
-    if (!allowedKeys.includes(key) || Object.hasOwn(parsed, key)) return undefined;
+    if (!Object.hasOwn(allowed, key) || Object.hasOwn(parsed, key)) return undefined;
     if (rawValue.includes('=')) return undefined;
 
-    const value = parseWholeNumber(rawValue);
+    const shape = allowed[key];
 
-    if (value === undefined) return undefined;
+    if (shape === 'number') {
+      const value = parseWholeNumber(rawValue);
 
-    parsed[key] = value;
+      if (value === undefined) return undefined;
+
+      parsed[key] = value;
+      continue;
+    }
+
+    // A name outside the closed list is rejected rather than defaulted, so an
+    // unreadable link never silently becomes a different flow.
+    if (!shape.includes(rawValue)) return undefined;
+
+    parsed[key] = rawValue;
   }
 
   return parsed;
 }
 
-function buildStep(toolSlug: RecipeToolSlug, settings: Record<string, number>): RecipeStep | undefined {
+function buildStep(
+  toolSlug: RecipeToolSlug,
+  settings: Record<string, RecipeSettingValue>,
+): RecipeStep | undefined {
   if (toolSlug === 'resize-image') {
     const hasWidth = Object.hasOwn(settings, 'w');
     const hasHeight = Object.hasOwn(settings, 'h');
@@ -108,7 +147,7 @@ function buildStep(toolSlug: RecipeToolSlug, settings: Record<string, number>): 
     if (hasWidth !== hasHeight) return undefined;
     if (!hasWidth) return { toolSlug };
 
-    const dimensions = { width: settings.w, height: settings.h };
+    const dimensions = { width: Number(settings.w), height: Number(settings.h) };
 
     if (validateResizeDimensions(dimensions)) return undefined;
 
@@ -117,9 +156,28 @@ function buildStep(toolSlug: RecipeToolSlug, settings: Record<string, number>): 
 
   if (toolSlug === 'compress-image') {
     if (!Object.hasOwn(settings, 'q')) return { toolSlug };
-    if (settings.q < minimumRecipeQuality || settings.q > maximumRecipeQuality) return undefined;
 
-    return { toolSlug, quality: settings.q };
+    const quality = Number(settings.q);
+
+    if (quality < minimumRecipeQuality || quality > maximumRecipeQuality) return undefined;
+
+    return { toolSlug, quality };
+  }
+
+  if (toolSlug === 'jpg-to-pdf') {
+    const hasPageSize = Object.hasOwn(settings, 'p');
+    const hasOrientation = Object.hasOwn(settings, 'o');
+
+    // Page size and orientation are one setting in two halves: half of them
+    // would rebuild a document laid out differently from the one shared.
+    if (hasPageSize !== hasOrientation) return undefined;
+    if (!hasPageSize) return { toolSlug };
+
+    return {
+      toolSlug,
+      pageSize: settings.p as PdfPageSizeName,
+      orientation: settings.o as PdfOrientation,
+    };
   }
 
   return { toolSlug };
@@ -227,6 +285,16 @@ export function encodeRecipe(recipe: Recipe): string | undefined {
       if (!Number.isInteger(step.quality)) return undefined;
 
       settings.push(`q=${step.quality}`);
+    }
+
+    if (step.toolSlug === 'jpg-to-pdf') {
+      const pageSize = step.pageSize ?? defaultPdfPageSize;
+      const orientation = step.orientation ?? defaultPdfOrientation;
+
+      if (!pdfPageSizeNames.includes(pageSize)) return undefined;
+      if (!pdfOrientationNames.includes(orientation)) return undefined;
+
+      settings.push(`p=${pageSize}`, `o=${orientation}`);
     }
 
     segments.push(settings.length === 0 ? step.toolSlug : `${step.toolSlug}:${settings.join(',')}`);
