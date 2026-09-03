@@ -28,9 +28,28 @@ describe('Gizlet flow registry', () => {
       'convert-image',
       'resize-image',
       'compress-image',
+      'jpg-to-pdf',
     ]);
     expect(canFlowTo('convert-image', 'resize-image')).toBe(true);
     expect(canFlowTo('convert-image', 'json-formatter')).toBe(false);
+  });
+
+  test('puts every image Gizlet upstream of the PDF Gizlet', () => {
+    expect(getFlowToolsForInput({
+      kind: 'image-file',
+      acceptedFormats: ['image/jpeg'],
+    }).map((tool) => tool.toolSlug)).toContain('jpg-to-pdf');
+
+    for (const toolSlug of ['compress-image', 'resize-image', 'convert-image'] as const) {
+      expect(canFlowTo(toolSlug, 'jpg-to-pdf'), toolSlug).toBe(true);
+    }
+  });
+
+  test('treats a PDF as a terminal payload no Gizlet reads back in', () => {
+    expect(getFlowTool('jpg-to-pdf').output).toEqual({ kind: 'pdf-file' });
+    expect(getFlowToolsForInput({ kind: 'pdf-file' })).toEqual([]);
+    expect(getNextFlowTools('jpg-to-pdf')).toEqual([]);
+    expect(canFlowTo('jpg-to-pdf', 'compress-image')).toBe(false);
   });
 
   test('represents text payloads without image-specific fields', () => {
@@ -49,6 +68,8 @@ describe('Gizlet flow registry', () => {
     const imageSequence = ['convert-image', 'resize-image', 'compress-image'] as const;
 
     expect(isValidFlowSequence(imageInput, imageSequence)).toBe(true);
+    expect(isValidFlowSequence(imageInput, [...imageSequence, 'jpg-to-pdf'])).toBe(true);
+    expect(isValidFlowSequence(imageInput, ['jpg-to-pdf', 'compress-image'])).toBe(false);
     expect(isValidFlowSequence(imageInput, ['convert-image', 'json-formatter'])).toBe(false);
     expect(canReorderFlowStep(imageInput, imageSequence, 2, 0)).toBe(true);
     expect(canReorderFlowStep(imageInput, imageSequence, 3, 0)).toBe(false);

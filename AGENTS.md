@@ -9,7 +9,7 @@ Read [docs/architecture.md](docs/architecture.md) before changing the applicatio
 ## Repository map
 
 - `src/data/` — pure, dependency-free TypeScript modules: the tool registry, per-tool logic, metadata, flows, advertising configuration, legal copy. These are the units under test and must not touch `window`, `document`, or `import.meta.env` directly.
-- `src/scripts/` — browser-only modules (`theme`, `image-processing`, `tool-search`, `gizlet-request`). Imported from component `<script>` blocks, never from Astro frontmatter.
+- `src/scripts/` — browser-only modules (`theme`, `image-processing`, `pdf-generation`, `tool-search`, `gizlet-request`). Imported from component `<script>` blocks, never from Astro frontmatter.
 - `src/components/` — one Astro component per Gizlet workspace plus the shared shell (`SiteHeader`, `SiteFooter`, `ToolPageLayout`, `AdvertisementSlot`, `ToolSearchOverlay`, `FlowBuilder`). Each keeps its own markup, scoped CSS, and `<script>` module.
 - `src/layouts/BaseLayout.astro` — document shell, metadata, theme bootstrap, and the env-gated ads tag.
 - `src/pages/` — static routes, including `tools/[slug].astro` (generated from the registry) and the generated `sitemap.xml`, `robots.txt`, `tools.json`, and `llms.txt`.

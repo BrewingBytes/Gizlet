@@ -30,6 +30,7 @@ const bespokeSocialImageSlugs: readonly string[] = [
   'convert-image',
   'json-ld-generator',
   'json-formatter',
+  'jpg-to-pdf',
 ];
 
 /** The image file name a slug's bespoke card is committed under. */

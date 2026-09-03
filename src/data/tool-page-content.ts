@@ -417,6 +417,87 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'jpg-to-pdf': {
+    what: {
+      heading: 'What JPG to PDF does',
+      paragraphs: [
+        'JPG to PDF takes the images you choose and writes them into a single PDF, one image per page, in the order you put them in. Your browser decodes each picture, works out where it sits on the page, and assembles the document here on this device.',
+        'Drop in one photograph or a hundred, move the pages into the order you want, pick a paper size, and download one file. Nothing is added to the pages: no header, no page number, no watermark.',
+      ],
+    },
+    when: {
+      heading: 'When a PDF is the right container',
+      paragraphs: [
+        'Use it when something wants one document rather than a folder of pictures: a set of receipts for an expense claim, photographs of a signed contract, a scan taken with a phone camera, a portfolio sent as a single attachment.',
+        'A PDF also fixes the order and the page size, which a zip of images does not. That is the whole reason a form asks for one — the reader sees the pages in the sequence you chose, at the size you chose, in a viewer everyone already has.',
+      ],
+    },
+    options: {
+      heading: 'What the page controls do',
+      paragraphs: ['Two settings decide the shape of every page in the document.'],
+      details: [
+        {
+          term: 'Page size',
+          description:
+            'A4, US Letter, and US Legal give every page the same fixed box, and each image is scaled to fit inside a small margin and centred. Fit each image instead makes the page exactly the size of the picture, with no border and no scaling, which suits a document meant to be looked at rather than printed.',
+        },
+        {
+          term: 'Orientation',
+          description:
+            'Auto turns each page on its side when the image is wider than it is tall, so a landscape photograph fills the sheet instead of sitting in a letterbox. Portrait and landscape force every page the same way. It has nothing to do when the page is fitted to the image, so the control is switched off there.',
+        },
+        {
+          term: 'Page order',
+          description:
+            'The list is the document. Move a page up or down, or remove it, until the order is the one you want; the numbers beside the thumbnails are the page numbers you will get.',
+        },
+        {
+          term: 'Limits',
+          description:
+            'One document holds up to 100 pages, and each image is held to the same ceiling the Resize Image Gizlet uses: 16,384 pixels on a side and 40 million pixels in total. A fitted page also stops at 14,400 points a side, the largest page PDF readers will open, so a colossal image is drawn smaller on the page while keeping all of its pixels. Past 20 pages the Gizlet says it is building a big document rather than looking like it has stalled.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'The PDF is written in this browser',
+      paragraphs: [
+        'Every page is assembled by this page, in this browser, and the finished PDF goes straight to your downloads. There is no upload endpoint behind this Gizlet and no server that ever sees the pictures, which matters more here than usual: the things people turn into PDFs are passports, bank statements, and signed contracts.',
+        'A JPEG or a PNG is embedded exactly as it arrived, byte for byte, so those pages keep the original quality. A WebP, AVIF, or BMP has to be re-encoded as a JPEG first, because that is what a PDF can carry, and a re-encoded page arrives without the metadata its source file held.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Are my images uploaded to make the PDF?',
+        answer:
+          'No. The document is built by this browser using a PDF library that runs on this page, and the result is handed to your downloads. Gizlet is a static site with no endpoint that could receive a file.',
+      },
+      {
+        question: 'Can I put more than one image in the PDF?',
+        answer:
+          'Yes, that is the point of it. Choose as many as you like, up to 100 pages, then move them up or down until the page order is right. Each image becomes one page.',
+      },
+      {
+        question: 'Does it accept PNG and other formats, or only JPG?',
+        answer:
+          'It accepts JPEG, PNG, WebP, AVIF, and BMP. JPEG and PNG are embedded as they are; the others are re-encoded as JPEG on the way in, because a PDF cannot carry them directly.',
+      },
+      {
+        question: 'Which page size should I choose?',
+        answer:
+          'A4 or US Letter if the document will be printed or submitted to a form, since both give every page a consistent printable box. Fit each image if the PDF is only going to be read on a screen and you want the pictures at their own proportions with no border.',
+      },
+      {
+        question: 'Does making a PDF lose image quality?',
+        answer:
+          'A JPEG or PNG page does not: those bytes are copied into the document untouched. A WebP, AVIF, or BMP page is re-encoded as a high-quality JPEG, which loses a little detail. Scaling to a fixed page size changes how large the image is drawn, not the pixels stored.',
+      },
+      {
+        question: 'Why is my PDF so large?',
+        answer:
+          'Because it contains the images at full resolution, and a PDF adds almost nothing on top of them. Ten phone photographs make a PDF about the size of ten phone photographs. Run them through Resize Image or Compress Image first if the file has to be smaller.',
+      },
+    ],
+  },
 };
 
 /** The supporting content for a Gizlet page, if it has any yet. */

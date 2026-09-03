@@ -9,7 +9,8 @@ export type FlowPayloadContract =
       readonly producedFormats?: readonly ImageOutputFormat[];
     }
   | { readonly kind: 'json-text' }
-  | { readonly kind: 'json-ld-form' };
+  | { readonly kind: 'json-ld-form' }
+  | { readonly kind: 'pdf-file' };
 
 /**
  * This is an executable compatibility contract, deliberately independent from
@@ -33,24 +34,27 @@ const imageOutput: FlowPayloadContract = {
   producedFormats: ['image/jpeg', 'image/png', 'image/webp'],
 };
 
+/** A PDF is a terminal payload: no Gizlet reads one back in yet. */
+const pdfOutput: FlowPayloadContract = { kind: 'pdf-file' };
+
 export const toolFlowRegistry = [
   {
     toolSlug: 'compress-image',
     input: imageInput,
     output: imageOutput,
-    nextToolSlugs: ['convert-image', 'resize-image', 'compress-image'],
+    nextToolSlugs: ['convert-image', 'resize-image', 'compress-image', 'jpg-to-pdf'],
   },
   {
     toolSlug: 'resize-image',
     input: imageInput,
     output: imageOutput,
-    nextToolSlugs: ['convert-image', 'resize-image', 'compress-image'],
+    nextToolSlugs: ['convert-image', 'resize-image', 'compress-image', 'jpg-to-pdf'],
   },
   {
     toolSlug: 'convert-image',
     input: imageInput,
     output: imageOutput,
-    nextToolSlugs: ['convert-image', 'resize-image', 'compress-image'],
+    nextToolSlugs: ['convert-image', 'resize-image', 'compress-image', 'jpg-to-pdf'],
   },
   {
     toolSlug: 'json-ld-generator',
@@ -63,6 +67,12 @@ export const toolFlowRegistry = [
     input: { kind: 'json-text' },
     output: { kind: 'json-text' },
     nextToolSlugs: ['json-formatter'],
+  },
+  {
+    toolSlug: 'jpg-to-pdf',
+    input: imageInput,
+    output: pdfOutput,
+    nextToolSlugs: [],
   },
 ] as const satisfies readonly ToolFlowDefinition[];
 

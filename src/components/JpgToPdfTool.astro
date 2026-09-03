@@ -1,0 +1,416 @@
+---
+import { getPdfPageSizeOptions } from '../data/jpg-to-pdf';
+
+const pageSizeOptions = getPdfPageSizeOptions();
+---
+
+<section class="jpg-to-pdf-tool" data-jpg-to-pdf-tool>
+  <div class="jpg-to-pdf-tool__picker" data-drop-zone>
+    <input
+      id="jpg-to-pdf-files"
+      class="jpg-to-pdf-tool__file-input"
+      type="file"
+      multiple
+      accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp"
+      aria-label="Select images to put in a PDF"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">One image per page</p>
+    <h2>Drop your images here</h2>
+    <p>JPEG, PNG, WebP, AVIF, or BMP. Nothing leaves this device.</p>
+    <button type="button" class="button-secondary" data-select-files>Choose images</button>
+  </div>
+
+  <p class="jpg-to-pdf-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="jpg-to-pdf-tool__error" data-error role="alert" hidden></p>
+
+  <div class="jpg-to-pdf-tool__editor" data-editor hidden>
+    <div class="jpg-to-pdf-tool__pages">
+      <div class="jpg-to-pdf-tool__pages-heading">
+        <p class="metadata">Page order</p>
+        <p data-page-summary></p>
+      </div>
+      <ol class="jpg-to-pdf-tool__page-list" aria-label="Pages in the PDF" data-page-list></ol>
+    </div>
+
+    <!--
+      One page row, cloned by the script for each selected image. Keeping the
+      markup here rather than building it in JavaScript means the rows carry
+      Astro's style scope and no filename is ever handled as markup.
+    -->
+    <template data-page-template>
+      <li class="jpg-to-pdf-tool__page">
+        <span class="jpg-to-pdf-tool__page-number" data-page-number></span>
+        <img class="jpg-to-pdf-tool__page-thumbnail" alt="" data-page-thumbnail />
+        <span class="jpg-to-pdf-tool__page-details">
+          <strong data-page-name></strong>
+          <span data-page-dimensions></span>
+        </span>
+        <span class="jpg-to-pdf-tool__page-actions">
+          <button type="button" class="jpg-to-pdf-tool__icon-button" data-page-action="up">↑</button>
+          <button type="button" class="jpg-to-pdf-tool__icon-button" data-page-action="down">↓</button>
+          <button type="button" class="jpg-to-pdf-tool__remove" data-page-action="remove">Remove</button>
+        </span>
+      </li>
+    </template>
+
+    <div class="jpg-to-pdf-tool__controls">
+      <div class="jpg-to-pdf-tool__control">
+        <label for="jpg-to-pdf-page-size">Page size</label>
+        <select id="jpg-to-pdf-page-size" data-page-size aria-label="Page size">
+          {pageSizeOptions.map((option) => <option value={option.value}>{option.label}</option>)}
+        </select>
+      </div>
+
+      <div class="jpg-to-pdf-tool__control">
+        <label for="jpg-to-pdf-orientation">Orientation</label>
+        <select id="jpg-to-pdf-orientation" data-orientation aria-label="Orientation">
+          <option value="auto">Auto, per image</option>
+          <option value="portrait">Portrait</option>
+          <option value="landscape">Landscape</option>
+        </select>
+      </div>
+
+      <p class="jpg-to-pdf-tool__note" data-fit-note role="status" hidden>
+        A page fitted to the image already has the image’s own orientation, so there is nothing to rotate.
+      </p>
+    </div>
+
+    <div class="jpg-to-pdf-tool__actions">
+      <button type="button" data-build>Make the PDF</button>
+      <button type="button" class="button-secondary" data-clear>Start over</button>
+    </div>
+  </div>
+
+  <section class="jpg-to-pdf-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2>Your PDF is ready.</h2>
+    <p class="jpg-to-pdf-tool__result-details" data-result-details></p>
+    <div class="jpg-to-pdf-tool__result-actions">
+      <a class="jpg-to-pdf-tool__download" data-download>Download PDF</a>
+      <button type="button" class="button-secondary" data-result-clear>Start over</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .jpg-to-pdf-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .jpg-to-pdf-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .jpg-to-pdf-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .jpg-to-pdf-tool__editor[hidden], .jpg-to-pdf-tool__result[hidden], .jpg-to-pdf-tool__note[hidden] { display: none; }
+  .jpg-to-pdf-tool__picker h2 { margin-bottom: var(--space-2); }
+  .jpg-to-pdf-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .jpg-to-pdf-tool__status, .jpg-to-pdf-tool__error, .jpg-to-pdf-tool__note { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .jpg-to-pdf-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .jpg-to-pdf-tool__note { margin: 0; border-left-color: var(--color-warning); color: var(--color-warning); }
+  .jpg-to-pdf-tool__editor, .jpg-to-pdf-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .jpg-to-pdf-tool__editor { display: grid; gap: var(--space-4); }
+  .jpg-to-pdf-tool__pages-heading { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); }
+  .jpg-to-pdf-tool__pages-heading p:not(.metadata) { margin: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .jpg-to-pdf-tool__page-list { margin: var(--space-2) 0 0; padding: 0; list-style: none; }
+  .jpg-to-pdf-tool__page { display: grid; grid-template-columns: 2.5rem 4rem minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-top: var(--border-width) solid var(--border); }
+  .jpg-to-pdf-tool__page:last-child { border-bottom: var(--border-width) solid var(--border); }
+  .jpg-to-pdf-tool__page-number { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-sm); }
+  .jpg-to-pdf-tool__page-thumbnail { display: block; width: 4rem; height: 4rem; border: var(--border-width) solid var(--border); object-fit: contain; background: var(--background); }
+  .jpg-to-pdf-tool__page-details { display: grid; gap: var(--space-1); min-width: 0; }
+  .jpg-to-pdf-tool__page-details strong { overflow-wrap: anywhere; }
+  .jpg-to-pdf-tool__page-details span { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .jpg-to-pdf-tool__page-actions { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+  .jpg-to-pdf-tool__icon-button { min-width: 2.75rem; min-height: 2.75rem; padding: 0; border: var(--border-width) solid var(--border); background: transparent; color: var(--text); font-weight: 700; }
+  .jpg-to-pdf-tool__icon-button:disabled { color: var(--text-muted); opacity: 0.5; }
+  .jpg-to-pdf-tool__remove { min-height: 2.75rem; padding: 0 var(--space-2); border: var(--border-width) solid var(--border); background: transparent; color: var(--text); }
+  .jpg-to-pdf-tool__controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-3); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .jpg-to-pdf-tool__note { grid-column: 1 / -1; }
+  .jpg-to-pdf-tool__control label { display: block; margin-bottom: var(--space-1); font-weight: 700; }
+  .jpg-to-pdf-tool__actions, .jpg-to-pdf-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .jpg-to-pdf-tool__result h2 { margin-bottom: var(--space-2); }
+  .jpg-to-pdf-tool__result-details { margin-bottom: var(--space-4); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .jpg-to-pdf-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .jpg-to-pdf-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+  @media (max-width: 36rem) {
+    .jpg-to-pdf-tool__picker, .jpg-to-pdf-tool__editor, .jpg-to-pdf-tool__result { padding: var(--space-3); }
+    .jpg-to-pdf-tool__page { grid-template-columns: 2rem 3rem minmax(0, 1fr); }
+    .jpg-to-pdf-tool__page-thumbnail { width: 3rem; height: 3rem; }
+    .jpg-to-pdf-tool__page-actions { grid-column: 2 / -1; }
+  }
+</style>
+
+<script>
+  import { formatFileSize } from '../data/image-compression';
+  import {
+    defaultPdfPageSize,
+    describePdfPageCount,
+    getPdfOutputFilename,
+    getPdfPageSizeLabel,
+    isLargePdfWorkload,
+    isPdfOrientation,
+    isPdfPageSizeName,
+    maximumPdfPages,
+    reorderPdfImages,
+    usesFixedPageSize,
+    validatePdfImage,
+    validatePdfSelection,
+    type PdfOrientation,
+    type PdfPageSizeName,
+  } from '../data/jpg-to-pdf';
+  import { loadBrowserImage } from '../scripts/image-processing';
+  import { createImagePdf } from '../scripts/pdf-generation';
+
+  interface PdfPage {
+    readonly id: number;
+    readonly file: File;
+    readonly width: number;
+    readonly height: number;
+    readonly previewUrl: string;
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-jpg-to-pdf-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFilesButton = root.querySelector<HTMLButtonElement>('[data-select-files]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const editor = root.querySelector<HTMLElement>('[data-editor]');
+    const pageList = root.querySelector<HTMLOListElement>('[data-page-list]');
+    const pageTemplate = root.querySelector<HTMLTemplateElement>('[data-page-template]');
+    const pageSummary = root.querySelector<HTMLElement>('[data-page-summary]');
+    const pageSize = root.querySelector<HTMLSelectElement>('[data-page-size]');
+    const orientation = root.querySelector<HTMLSelectElement>('[data-orientation]');
+    const fitNote = root.querySelector<HTMLElement>('[data-fit-note]');
+    const buildButton = root.querySelector<HTMLButtonElement>('[data-build]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultDetails = root.querySelector<HTMLElement>('[data-result-details]');
+    const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+
+    if (!fileInput || !selectFilesButton || !dropZone || !status || !error || !editor || !pageList || !pageTemplate || !pageSummary || !pageSize || !orientation || !fitNote || !buildButton || !clearButton || !result || !resultDetails || !download || !resultClearButton) {
+      throw new Error('JPG to PDF tool could not initialise.');
+    }
+
+    let pages: readonly PdfPage[] = [];
+    let nextPageId = 1;
+    let resultUrl: string | undefined;
+    let isBuilding = false;
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+
+    const currentPageSize = (): PdfPageSizeName =>
+      isPdfPageSizeName(pageSize.value) ? pageSize.value : defaultPdfPageSize;
+    const currentOrientation = (): PdfOrientation =>
+      isPdfOrientation(orientation.value) ? orientation.value : 'auto';
+
+    const resetResult = () => {
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      resultUrl = undefined;
+      result.hidden = true;
+      resultDetails.textContent = '';
+      download.removeAttribute('href');
+      download.removeAttribute('download');
+    };
+
+    const resetTool = () => {
+      for (const page of pages) URL.revokeObjectURL(page.previewUrl);
+      pages = [];
+      fileInput.value = '';
+      resetResult();
+      clearError();
+      clearStatus();
+      render();
+    };
+
+    /** One row of the page list, cloned from the template in the markup. */
+    const renderPage = (page: PdfPage, index: number): HTMLLIElement => {
+      const item = pageTemplate.content.firstElementChild?.cloneNode(true);
+
+      if (!(item instanceof HTMLLIElement)) throw new Error('The page row template is missing.');
+
+      const thumbnail = item.querySelector<HTMLImageElement>('[data-page-thumbnail]');
+      const number = item.querySelector<HTMLElement>('[data-page-number]');
+      const name = item.querySelector<HTMLElement>('[data-page-name]');
+      const dimensions = item.querySelector<HTMLElement>('[data-page-dimensions]');
+
+      if (!thumbnail || !number || !name || !dimensions) {
+        throw new Error('The page row template is incomplete.');
+      }
+
+      number.textContent = String(index + 1).padStart(2, '0');
+      thumbnail.src = page.previewUrl;
+      thumbnail.alt = `Page ${index + 1}: ${page.file.name}`;
+      name.textContent = page.file.name;
+      dimensions.textContent = `${page.width} × ${page.height} px · ${formatFileSize(page.file.size)}`;
+
+      for (const button of item.querySelectorAll<HTMLButtonElement>('[data-page-action]')) {
+        const action = button.dataset.pageAction;
+
+        button.dataset.pageId = String(page.id);
+        button.setAttribute(
+          'aria-label',
+          action === 'remove'
+            ? `Remove ${page.file.name}`
+            : `Move ${page.file.name} ${action === 'up' ? 'up' : 'down'}`,
+        );
+        button.disabled =
+          isBuilding ||
+          (action === 'up' && index === 0) ||
+          (action === 'down' && index === pages.length - 1);
+      }
+
+      return item;
+    };
+
+    const render = () => {
+      pageList.replaceChildren(...pages.map(renderPage));
+      pageSummary.textContent = pages.length === 0
+        ? ''
+        : `${describePdfPageCount(pages.length)} · up to ${maximumPdfPages}`;
+      editor.hidden = pages.length === 0;
+      buildButton.disabled = pages.length === 0 || isBuilding;
+      clearButton.disabled = isBuilding;
+      fitNote.hidden = usesFixedPageSize(currentPageSize());
+      orientation.disabled = !usesFixedPageSize(currentPageSize()) || isBuilding;
+      pageSize.disabled = isBuilding;
+    };
+
+    const addFiles = async (selected: readonly File[]) => {
+      fileInput.value = '';
+      if (selected.length === 0) return;
+
+      clearError();
+      resetResult();
+
+      const problem = validatePdfSelection([...pages.map((page) => page.file), ...selected]);
+      if (problem) {
+        showError(problem);
+        return;
+      }
+
+      showStatus('Reading images locally…');
+      await nextPaint();
+
+      const added: PdfPage[] = [];
+
+      try {
+        for (const file of selected) {
+          const image = await loadBrowserImage(file);
+          const dimensions = { width: image.naturalWidth, height: image.naturalHeight };
+          const imageProblem = validatePdfImage(file.name, dimensions);
+
+          if (imageProblem) throw new Error(imageProblem);
+
+          added.push({
+            id: nextPageId++,
+            file,
+            width: dimensions.width,
+            height: dimensions.height,
+            previewUrl: URL.createObjectURL(file),
+          });
+        }
+
+        pages = [...pages, ...added];
+        clearStatus();
+      } catch (caughtError) {
+        for (const page of added) URL.revokeObjectURL(page.previewUrl);
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : 'These images could not be read.');
+      }
+
+      render();
+    };
+
+    const buildPdf = async () => {
+      if (pages.length === 0 || isBuilding) return;
+
+      isBuilding = true;
+      clearError();
+      resetResult();
+      buildButton.textContent = 'Making it…';
+      render();
+
+      const total = pages.length;
+      const isLarge = isLargePdfWorkload(pages);
+
+      try {
+        const pdf = await createImagePdf(pages, {
+          pageSize: currentPageSize(),
+          orientation: currentOrientation(),
+          onPage: async (pageNumber) => {
+            showStatus(
+              isLarge
+                ? `Large document: writing page ${pageNumber} of ${total} locally…`
+                : `Writing page ${pageNumber} of ${total} locally…`,
+            );
+            await nextPaint();
+          },
+        });
+
+        resultUrl = URL.createObjectURL(pdf);
+        resultDetails.textContent = `${describePdfPageCount(total)} · ${getPdfPageSizeLabel(currentPageSize())} · ${formatFileSize(pdf.size)}`;
+        download.href = resultUrl;
+        download.download = getPdfOutputFilename(pages[0].file.name, total);
+        result.hidden = false;
+        clearStatus();
+      } catch (caughtError) {
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : 'This PDF could not be made.');
+      } finally {
+        isBuilding = false;
+        buildButton.textContent = 'Make the PDF';
+        render();
+      }
+    };
+
+    const movePage = (id: number, offset: number) => {
+      const index = pages.findIndex((page) => page.id === id);
+      if (index === -1) return;
+      pages = reorderPdfImages(pages, index, index + offset);
+    };
+
+    const removePage = (id: number) => {
+      const page = pages.find((candidate) => candidate.id === id);
+      if (!page) return;
+      URL.revokeObjectURL(page.previewUrl);
+      pages = pages.filter((candidate) => candidate.id !== id);
+    };
+
+    selectFilesButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void addFiles([...(fileInput.files ?? [])]));
+    clearButton.addEventListener('click', resetTool);
+    resultClearButton.addEventListener('click', resetTool);
+    buildButton.addEventListener('click', () => void buildPdf());
+    pageSize.addEventListener('change', () => { resetResult(); render(); });
+    orientation.addEventListener('change', () => { resetResult(); render(); });
+
+    pageList.addEventListener('click', (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-page-action]');
+      if (!button || isBuilding) return;
+
+      const id = Number(button.dataset.pageId);
+
+      if (button.dataset.pageAction === 'up') movePage(id, -1);
+      if (button.dataset.pageAction === 'down') movePage(id, 1);
+      if (button.dataset.pageAction === 'remove') removePage(id);
+
+      resetResult();
+      clearError();
+      render();
+    });
+
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    }
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    }
+    dropZone.addEventListener('drop', (event) => void addFiles([...(event.dataTransfer?.files ?? [])]));
+
+    render();
+  }
+</script>

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- A JPG to PDF Gizlet, and with it a PDF category: choose JPEG, PNG, WebP, AVIF, or BMP images, put them in the page order you want, pick A4, US Letter, US Legal, or a page fitted to each image, and download one PDF with one image per page. It assembles the document in the browser, so the passports, bank statements, and signed contracts people turn into PDFs are never uploaded. A JPEG or PNG page is embedded byte for byte; a WebP, AVIF, or BMP page is re-encoded as a high-quality JPEG first, because that is what a PDF can carry. One document holds up to 100 pages, each image is held to the pixel ceiling the Resize Image Gizlet already enforces, and past 20 pages the Gizlet says it is building a big document rather than looking stalled.
+- `pdf-lib` as the project's first runtime dependency besides `astro`. There is no browser API for programmatic PDF creation — no platform equivalent of writing a page tree and embedding an image — so condition 1 of the dependency policy in [docs/architecture.md](docs/architecture.md) is genuinely met rather than asserted. It is pure JavaScript with no worker and no WASM, is imported only from `src/scripts/pdf-generation.ts`, and ships only on the JPG to PDF page.
+- A `pdf-file` payload kind in the flow contract, declared as terminal because no Gizlet reads a PDF back in yet. Every image Gizlet now declares JPG to PDF as a compatible next step, and each links to it from its related Gizlets. The flow builder itself still runs image-only chains; running a PDF step inside a flow is separate work.
+
 ## [0.2.0] - 2026-09-03
 
 ### Added
