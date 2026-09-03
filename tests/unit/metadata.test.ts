@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { getPageMetadata, getToolMetadata } from '../../src/data/metadata';
-import { toolRegistry } from '../../src/data/tools';
+import { getToolSocialImagePath } from '../../src/data/social-images';
+import { getAvailableTools, toolRegistry } from '../../src/data/tools';
 
 describe('getPageMetadata', () => {
   it('builds deterministic canonical and social URLs for a page', () => {
@@ -40,6 +41,21 @@ describe('getToolMetadata', () => {
     expect(getToolMetadata(toolRegistry[0], { title: 'Custom title', robots: 'noindex, nofollow' })).toMatchObject({
       title: 'Custom title',
       robots: 'noindex, nofollow',
+    });
+  });
+
+  it('previews each Gizlet with its own social image, at an absolute URL', () => {
+    const socialImageUrls = getAvailableTools().map((tool) => getToolMetadata(tool).socialImageUrl);
+
+    expect(socialImageUrls).toEqual(
+      getAvailableTools().map((tool) => `https://gizlet.app${getToolSocialImagePath(tool)}`),
+    );
+    expect(new Set(socialImageUrls)).toHaveLength(socialImageUrls.length);
+  });
+
+  it('respects a social image a page supplies for itself', () => {
+    expect(getToolMetadata(toolRegistry[0], { image: '/brand/brand-board.png' })).toMatchObject({
+      socialImageUrl: 'https://gizlet.app/brand/brand-board.png',
     });
   });
 

@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getPageMetadata } from '../../data/metadata';
+import { toolIndexSocialImagePath } from '../../data/social-images';
 import { getToolIndexStructuredData } from '../../data/structured-data';
 import { getToolCategoryGroups } from '../../data/tools';
 
@@ -8,6 +9,7 @@ const metadata = getPageMetadata({
   title: 'All Gizlets | Gizlet',
   description: 'Every Gizlet available today, grouped by the kind of job it does.',
   pathname: '/tools/',
+  image: toolIndexSocialImagePath,
 });
 const categoryGroups = getToolCategoryGroups();
 ---

@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- A social preview card for every available Gizlet and for the Gizlet index, selected from the registry so a shared tool link previews as that tool instead of the home page, with the brand board still covering every other page.
 - Per-Gizlet supporting content and an FAQ below every Gizlet workspace, written for that Gizlet, keyed by registry slug, and published as `FAQPage` markup from the same copy the page renders.
 - Registry-derived JSON-LD structured data: `WebSite` on the home page, `CollectionPage` on the Gizlet index, and `SoftwareApplication` with a `BreadcrumbList` on each Gizlet page.
 - An `/ads.txt` file generated from the declared AdSense publisher account, which AdSense requires before it can approve the site.
