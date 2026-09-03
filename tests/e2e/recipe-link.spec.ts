@@ -21,7 +21,7 @@ test("shares a flow as a settings-only recipe link and reopens it", async ({
 
   await page.getByRole("button", { name: "Copy recipe link" }).click();
   await expect(page.locator("[data-recipe-status]")).toContainText(
-    "carries these settings only, never your image",
+    "carries these settings only, never your files",
   );
 
   const recipe = "#r=v1;f=jpeg;resize-image:w=800,h=600;compress-image:q=80";

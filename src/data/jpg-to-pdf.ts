@@ -71,10 +71,29 @@ const fitPageSizeLabel = 'Fit each image';
 
 export type PdfOrientation = 'auto' | 'portrait' | 'landscape';
 
+export const pdfOrientationNames = [
+  'auto',
+  'portrait',
+  'landscape',
+] as const satisfies readonly PdfOrientation[];
+
+export const defaultPdfOrientation: PdfOrientation = 'auto';
+
 export interface PdfPageSizeOption {
   readonly value: PdfPageSizeName;
   readonly label: string;
 }
+
+export interface PdfOrientationOption {
+  readonly value: PdfOrientation;
+  readonly label: string;
+}
+
+const pdfOrientationLabels = {
+  auto: 'Auto, per image',
+  portrait: 'Portrait',
+  landscape: 'Landscape',
+} as const satisfies Record<PdfOrientation, string>;
 
 /** Where an image sits on its page, in points, with the page box it needs. */
 export interface PdfPageLayout {
@@ -98,7 +117,7 @@ export function isPdfPageSizeName(value: string): value is PdfPageSizeName {
 }
 
 export function isPdfOrientation(value: string): value is PdfOrientation {
-  return value === 'auto' || value === 'portrait' || value === 'landscape';
+  return pdfOrientationNames.includes(value as PdfOrientation);
 }
 
 /** A fitted page has no fixed box, so orientation has nothing to rotate. */
@@ -113,6 +132,15 @@ export function getPdfPageSizeLabel(pageSize: PdfPageSizeName): string {
 /** The page-size choices, so the control is built from this module. */
 export function getPdfPageSizeOptions(): readonly PdfPageSizeOption[] {
   return pdfPageSizeNames.map((value) => ({ value, label: getPdfPageSizeLabel(value) }));
+}
+
+export function getPdfOrientationLabel(orientation: PdfOrientation): string {
+  return pdfOrientationLabels[orientation];
+}
+
+/** The orientation choices, so both workspaces build the control from here. */
+export function getPdfOrientationOptions(): readonly PdfOrientationOption[] {
+  return pdfOrientationNames.map((value) => ({ value, label: pdfOrientationLabels[value] }));
 }
 
 export function getPdfEmbedStrategy(format: ImageInputFormat | undefined): PdfEmbedStrategy {

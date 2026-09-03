@@ -19,20 +19,39 @@
           <option value="images">Images</option>
         </select>
       </label>
-      <p>Image Gizlets can pass a file to one another today. More local categories will join the line later.</p>
+      <p>Image Gizlets pass a file to one another, and can end by making a PDF. A block is offered when it accepts what the block before it produces.</p>
     </div>
 
     <section class="flow-builder__source" aria-labelledby="flow-source-title" data-source>
       <div class="flow-builder__source-icon" aria-hidden="true">↥</div>
       <div>
         <p class="metadata">Starting input</p>
-        <h2 id="flow-source-title">Your image</h2>
+        <h2 id="flow-source-title" data-source-title>Your image</h2>
         <p data-source-details>JPEG, PNG, WebP, AVIF, or BMP.</p>
       </div>
-      <input data-source-input type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp" aria-label="Choose an image for this flow" hidden />
-      <button type="button" class="button-secondary" data-source-select>Choose image</button>
+      <input data-source-input type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp" aria-label="Choose images for this flow" hidden />
+      <button type="button" class="button-secondary" data-source-select>Choose images</button>
       <button type="button" class="flow-builder__text-button" data-source-clear hidden>Remove</button>
     </section>
+
+    <ol class="flow-builder__source-list" aria-label="Starting images" data-source-list hidden></ol>
+
+    <!-- One starting image, cloned per selected file. -->
+    <template data-source-template>
+      <li class="flow-source">
+        <span class="flow-source__number" data-source-number></span>
+        <img class="flow-source__thumbnail" alt="" data-source-thumbnail />
+        <span class="flow-source__details">
+          <strong data-source-name></strong>
+          <span data-source-meta></span>
+        </span>
+        <span class="flow-source__actions">
+          <button type="button" class="flow-source__icon-button" data-source-action="up">↑</button>
+          <button type="button" class="flow-source__icon-button" data-source-action="down">↓</button>
+          <button type="button" class="flow-source__remove" data-source-action="remove">Remove</button>
+        </span>
+      </li>
+    </template>
 
     <p class="flow-builder__error" data-error role="alert" hidden></p>
     <p class="flow-builder__status" data-status role="status" aria-live="polite" hidden></p>
@@ -54,12 +73,15 @@
     <section class="flow-builder__result" aria-labelledby="flow-result-title" data-result hidden>
       <div>
         <p class="metadata">Final result</p>
-        <h2 id="flow-result-title">Your image is ready.</h2>
+        <h2 id="flow-result-title" data-result-title>Your image is ready.</h2>
         <p data-result-details></p>
       </div>
-      <figure>
+      <figure data-result-figure>
         <img data-result-image alt="Final flow result" />
       </figure>
+      <p class="flow-builder__result-document" data-result-document hidden>
+        <span aria-hidden="true">▤</span> One PDF, ready to open anywhere.
+      </p>
       <div class="flow-builder__result-actions">
         <a data-download>Download image</a>
         <button type="button" class="button-secondary" data-result-clear>Clear result</button>
@@ -74,8 +96,8 @@
           <span data-recipe-status role="status" aria-live="polite"></span>
         </p>
       </div>
-      <label class="flow-builder__final-format" for="flow-final-format">
-        <span>Final output format</span>
+      <label class="flow-builder__final-format" for="flow-final-format" data-final-format-label hidden>
+        <span data-final-format-text>Final output format</span>
         <select id="flow-final-format" data-final-format aria-label="Final output format">
           <option value="image/jpeg">JPEG</option>
           <option value="image/png">PNG</option>
@@ -149,6 +171,27 @@
   .flow-builder__final-format { display: grid; gap: var(--space-1); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
   .flow-builder__final-format select { min-height: 2.5rem; font-family: var(--font-body); font-size: var(--font-size-sm); text-transform: none; }
   .flow-block__format-note { margin: var(--space-2) 0 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .flow-block__settings--pdf { grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); align-items: end; }
+  .flow-block__settings--pdf label { display: grid; gap: var(--space-1); }
+  .flow-block__settings--pdf select { min-height: 2.5rem; font-family: var(--font-body); font-size: var(--font-size-sm); text-transform: none; }
+  .flow-builder__source-list { margin: 0 0 var(--space-4); padding: 0; list-style: none; }
+  .flow-builder__source-list[hidden] { display: none; }
+  .flow-source { display: grid; grid-template-columns: 2.5rem 3.5rem minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: var(--border-width) solid var(--border); }
+  .flow-source__number { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-sm); }
+  .flow-source__thumbnail { display: block; width: 3.5rem; height: 3.5rem; border: var(--border-width) solid var(--border); object-fit: contain; background: var(--background); }
+  .flow-source__details { display: grid; gap: var(--space-1); min-width: 0; }
+  .flow-source__details strong { overflow-wrap: anywhere; }
+  .flow-source__details span { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .flow-source__actions { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+  .flow-source__icon-button { min-width: 2.75rem; min-height: 2.75rem; padding: 0; border: var(--border-width) solid var(--border); background: transparent; color: var(--text); font-weight: 700; }
+  .flow-source__icon-button:disabled { color: var(--text-muted); opacity: 0.5; }
+  .flow-source__remove { min-height: 2.75rem; padding: 0 var(--space-2); border: var(--border-width) solid var(--border); background: transparent; color: var(--text); }
+  .flow-builder__result-document { margin: 0; padding: var(--space-3); border: var(--border-width) solid var(--border); background: var(--background); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-sm); }
+  .flow-builder__result-document[hidden], .flow-builder__result figure[hidden], .flow-builder__final-format[hidden] { display: none; }
+  @media (max-width: 36rem) {
+    .flow-source { grid-template-columns: 2rem 3rem minmax(0, 1fr); }
+    .flow-source__actions { grid-column: 2 / -1; }
+  }
   @media (max-width: 42rem) { .flow-builder__intro { display: block; } .flow-builder__local-note { margin-top: var(--space-3); } .flow-builder__workspace { padding: var(--space-3); } .flow-builder__category { display: grid; align-items: start; } .flow-builder__source { align-items: start; flex-wrap: wrap; } .flow-builder__source button:first-of-type { margin-left: 0; } .flow-block { grid-template-columns: 1rem minmax(0, 1fr); } .flow-block__grip { grid-row: 1 / span 3; } .flow-block__number, .flow-block__content, .flow-block__actions { grid-column: 2; } .flow-block__actions { justify-content: start; } .flow-block__remove { width: auto; } .flow-block__settings { grid-template-columns: 1fr; gap: var(--space-1); } .flow-builder__add-step > div:last-child { grid-template-columns: 1fr; } .flow-builder__add-step .metadata { grid-row: auto; } .flow-builder__add-controls { align-items: stretch; flex-direction: column; } .flow-builder__run { grid-template-columns: 1fr; align-items: stretch; } }
 </style>
 
@@ -156,14 +199,19 @@
   import {
     canFlowTo,
     canReorderFlowStep,
+    combinesFlowInputs,
+    getFlowTool,
     getFlowToolsForInput,
     getNextFlowTools,
-    type FlowPayloadContract,
+    imageFlowInput,
+    isAvailableImageFlowToolSlug,
+    type AvailableImageFlowToolSlug,
   } from '../data/tool-flows';
   import {
     formatFileSize,
     getFormatLabel,
     getInputImageFormat,
+    getOutputFilename,
     getPreferredOutputFormat,
     isSupportedImageFile,
     type ImageOutputFormat,
@@ -171,23 +219,57 @@
   import { getConversionOutputFilename } from '../data/image-conversion';
   import { decodeRecipe, encodeRecipe, type Recipe } from '../data/recipes';
   import { getResizeOutputFilename, validateResizeDimensions } from '../data/image-resize';
-  import { getOutputFilename } from '../data/image-compression';
-  import { toolRegistry, type RegisteredTool } from '../data/tools';
+  import {
+    defaultPdfOrientation,
+    defaultPdfPageSize,
+    describePdfPageCount,
+    getPdfOrientationOptions,
+    getPdfOutputFilename,
+    getPdfPageSizeLabel,
+    getPdfPageSizeOptions,
+    isLargePdfWorkload,
+    isPdfOrientation,
+    isPdfPageSizeName,
+    maximumPdfPages,
+    reorderPdfImages,
+    usesFixedPageSize,
+    validatePdfImage,
+    validatePdfSelection,
+    type PdfOrientation,
+    type PdfPageSizeName,
+  } from '../data/jpg-to-pdf';
+  import { toolRegistry } from '../data/tools';
   import { encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
+  import { createImagePdf } from '../scripts/pdf-generation';
 
-  // Derived from the registry: the flow builder runs image chains only, so a new
-  // image Gizlet joins this union without the list being restated here.
-  type ImageFlowToolSlug = Extract<
-    RegisteredTool,
-    { readonly category: 'images'; readonly launchStatus: 'available' }
-  >['slug'];
+  // Chainable, published, and derived: adding a Gizlet with an image or PDF
+  // contract joins the builder without a list here being edited.
+  type FlowToolSlug = AvailableImageFlowToolSlug;
 
   interface FlowStep {
     readonly id: number;
-    readonly toolSlug: ImageFlowToolSlug;
+    readonly toolSlug: FlowToolSlug;
     width?: number;
     height?: number;
     quality?: number;
+    pageSize?: PdfPageSizeName;
+    orientation?: PdfOrientation;
+  }
+
+  /** A chosen starting image, decoded so its page can be measured up front. */
+  interface FlowSource {
+    readonly id: number;
+    readonly file: File;
+    readonly width: number;
+    readonly height: number;
+    readonly previewUrl: string;
+  }
+
+  /** What travels between steps. A combining step turns many into one. */
+  interface FlowPayload {
+    readonly file: File;
+    readonly width: number;
+    readonly height: number;
   }
 
   const root = document.querySelector<HTMLElement>('[data-flow-builder]');
@@ -196,33 +278,37 @@
     const sourceInput = root.querySelector<HTMLInputElement>('[data-source-input]');
     const sourceSelect = root.querySelector<HTMLButtonElement>('[data-source-select]');
     const sourceClear = root.querySelector<HTMLButtonElement>('[data-source-clear]');
+    const sourceTitle = root.querySelector<HTMLElement>('[data-source-title]');
     const sourceDetails = root.querySelector<HTMLElement>('[data-source-details]');
+    const sourceList = root.querySelector<HTMLOListElement>('[data-source-list]');
+    const sourceTemplate = root.querySelector<HTMLTemplateElement>('[data-source-template]');
     const error = root.querySelector<HTMLElement>('[data-error]');
     const status = root.querySelector<HTMLElement>('[data-status]');
     const stepList = root.querySelector<HTMLOListElement>('[data-step-list]');
     const addSelect = root.querySelector<HTMLSelectElement>('[data-add-select]');
     const addStepButton = root.querySelector<HTMLButtonElement>('[data-add-step]');
     const finalFormat = root.querySelector<HTMLSelectElement>('[data-final-format]');
+    const finalFormatLabel = root.querySelector<HTMLElement>('[data-final-format-label]');
+    const finalFormatText = root.querySelector<HTMLElement>('[data-final-format-text]');
     const runButton = root.querySelector<HTMLButtonElement>('[data-run-flow]');
     const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultTitle = root.querySelector<HTMLElement>('[data-result-title]');
     const resultDetails = root.querySelector<HTMLElement>('[data-result-details]');
+    const resultFigure = root.querySelector<HTMLElement>('[data-result-figure]');
+    const resultDocument = root.querySelector<HTMLElement>('[data-result-document]');
     const resultImage = root.querySelector<HTMLImageElement>('[data-result-image]');
     const download = root.querySelector<HTMLAnchorElement>('[data-download]');
     const resultClear = root.querySelector<HTMLButtonElement>('[data-result-clear]');
     const copyRecipe = root.querySelector<HTMLButtonElement>('[data-copy-recipe]');
     const recipeStatus = root.querySelector<HTMLElement>('[data-recipe-status]');
 
-    if (!sourceInput || !sourceSelect || !sourceClear || !sourceDetails || !error || !status || !stepList || !addSelect || !addStepButton || !finalFormat || !runButton || !result || !resultDetails || !resultImage || !download || !resultClear || !copyRecipe || !recipeStatus) {
+    if (!sourceInput || !sourceSelect || !sourceClear || !sourceTitle || !sourceDetails || !sourceList || !sourceTemplate || !error || !status || !stepList || !addSelect || !addStepButton || !finalFormat || !finalFormatLabel || !finalFormatText || !runButton || !result || !resultTitle || !resultDetails || !resultFigure || !resultDocument || !resultImage || !download || !resultClear || !copyRecipe || !recipeStatus) {
       throw new Error('Flow builder could not initialise.');
     }
 
-    const imageInput: FlowPayloadContract = {
-      kind: 'image-file',
-      acceptedFormats: ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/bmp'],
-    };
-    const imageToolSlugs: readonly ImageFlowToolSlug[] = ['convert-image', 'resize-image', 'compress-image'];
-    let selectedFile: File | undefined;
+    let sources: readonly FlowSource[] = [];
     let steps: FlowStep[] = [];
+    let nextSourceId = 1;
     let nextStepId = 1;
     let resultUrl: string | undefined;
     let isRunning = false;
@@ -231,47 +317,78 @@
     // reset it to the format preferred for that input.
     let outputFormatFromRecipe = false;
 
-    const toolBySlug = (toolSlug: ImageFlowToolSlug) => {
+    const toolBySlug = (toolSlug: FlowToolSlug) => {
       const tool = toolRegistry.find((candidate) => candidate.slug === toolSlug);
       if (!tool) throw new Error(`Missing Gizlet: ${toolSlug}`);
       return tool;
     };
     const escapeHtml = (value: string | number) => String(value).replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character] ?? character);
+    const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const clearError = () => { error.hidden = true; error.textContent = ''; };
     const showError = (message: string) => { error.textContent = message; error.hidden = false; };
     const clearStatus = () => { status.hidden = true; status.textContent = ''; };
     const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+
+    const stepSlugs = (): readonly FlowToolSlug[] => steps.map((step) => step.toolSlug);
+    /** A chain with a combining step makes one file out of several images. */
+    const combines = () => combinesFlowInputs(stepSlugs());
+    /** Only a chain that re-encodes an image has an image format to choose. */
+    const producesImage = () => steps.some((step) => getFlowTool(step.toolSlug).output.kind === 'image-file');
+
     const revokeResult = () => { if (resultUrl) URL.revokeObjectURL(resultUrl); resultUrl = undefined; };
     const resetResult = () => {
       revokeResult();
       result.hidden = true;
       resultImage.removeAttribute('src');
+      resultFigure.hidden = false;
+      resultDocument.hidden = true;
+      resultTitle.textContent = 'Your image is ready.';
+      download.textContent = 'Download image';
       download.removeAttribute('href');
       download.removeAttribute('download');
       resultDetails.textContent = '';
     };
-    const availableStepSlugs = (): readonly ImageFlowToolSlug[] => {
-      const candidates = steps.length === 0
-        ? getFlowToolsForInput(imageInput)
-        : getNextFlowTools(steps.at(-1)?.toolSlug ?? 'convert-image');
+
+    const availableStepSlugs = (): readonly FlowToolSlug[] => {
+      const last = steps.at(-1);
+      const candidates = last ? getNextFlowTools(last.toolSlug) : getFlowToolsForInput(imageFlowInput);
+
       return candidates
         .map((candidate) => candidate.toolSlug)
-        .filter((toolSlug): toolSlug is ImageFlowToolSlug => imageToolSlugs.includes(toolSlug as ImageFlowToolSlug));
+        .filter(isAvailableImageFlowToolSlug);
     };
-    const defaultStep = (toolSlug: ImageFlowToolSlug): FlowStep => ({
+    const defaultStep = (toolSlug: FlowToolSlug): FlowStep => ({
       id: nextStepId++,
       toolSlug,
       ...(toolSlug === 'resize-image' ? { width: 500, height: 500 } : {}),
       ...(toolSlug === 'compress-image' ? { quality: 80 } : {}),
+      ...(toolSlug === 'jpg-to-pdf' ? { pageSize: defaultPdfPageSize, orientation: defaultPdfOrientation } : {}),
     });
     const canReorder = (fromIndex: number, toIndex: number): boolean => {
-      return canReorderFlowStep(imageInput, steps.map((step) => step.toolSlug), fromIndex, toIndex);
+      return canReorderFlowStep(imageFlowInput, stepSlugs(), fromIndex, toIndex);
     };
     const renderAddOptions = () => {
       const candidates = availableStepSlugs();
+      // Reading the source is asynchronous, so a redraw can land between the
+      // visitor choosing the next Gizlet and pressing Add step. Rebuilding the
+      // options must not throw that choice away.
+      const pending = addSelect.value;
+
       addSelect.innerHTML = `<option value="">Choose the next Gizlet</option>${candidates.map((toolSlug) => `<option value="${toolSlug}">${toolBySlug(toolSlug).name}</option>`).join('')}`;
+
+      if (isAvailableImageFlowToolSlug(pending) && candidates.includes(pending)) {
+        addSelect.value = pending;
+      }
+
       addStepButton.disabled = candidates.length === 0 || isRunning;
     };
+    const optionsMarkup = <Value extends string>(
+      options: readonly { readonly value: Value; readonly label: string }[],
+      selected: Value,
+    ): string =>
+      options
+        .map((option) => `<option value="${option.value}"${option.value === selected ? ' selected' : ''}>${escapeHtml(option.label)}</option>`)
+        .join('');
     const settingsMarkup = (step: FlowStep): string => {
       const name = toolBySlug(step.toolSlug).name;
       if (step.toolSlug === 'resize-image') {
@@ -280,43 +397,184 @@
       if (step.toolSlug === 'compress-image') {
         return `<div class="flow-block__settings"><label for="step-quality-${step.id}">Quality</label><div class="flow-block__quality"><input id="step-quality-${step.id}" data-step-setting="quality" data-step-id="${step.id}" aria-label="${name} quality" type="range" min="40" max="100" value="${escapeHtml(step.quality ?? 80)}" ${outputFormat === 'image/png' ? 'disabled' : ''} /><output data-quality-output="${step.id}">${escapeHtml(step.quality ?? 80)}%</output></div></div>${outputFormat === 'image/png' ? '<p class="flow-block__format-note">PNG does not use a quality setting.</p>' : ''}`;
       }
+      if (step.toolSlug === 'jpg-to-pdf') {
+        const pageSize = step.pageSize ?? defaultPdfPageSize;
+        const orientation = step.orientation ?? defaultPdfOrientation;
+        const fixed = usesFixedPageSize(pageSize);
+        return `<div class="flow-block__settings flow-block__settings--pdf"><label for="step-page-size-${step.id}"><span>Page size</span><select id="step-page-size-${step.id}" data-step-setting="pageSize" data-step-id="${step.id}" aria-label="${name} page size">${optionsMarkup(getPdfPageSizeOptions(), pageSize)}</select></label><label for="step-orientation-${step.id}"><span>Orientation</span><select id="step-orientation-${step.id}" data-step-setting="orientation" data-step-id="${step.id}" aria-label="${name} orientation" ${fixed ? '' : 'disabled'}>${optionsMarkup(getPdfOrientationOptions(), orientation)}</select></label></div>${fixed ? '' : '<p class="flow-block__format-note">A fitted page already has the image’s own orientation.</p>'}`;
+      }
       return '';
+    };
+    const renderSources = () => {
+      const showList = combines() && sources.length > 0;
+      sourceList.hidden = !showList;
+      sourceList.replaceChildren(...(showList ? sources.map(renderSource) : []));
+
+      sourceTitle.textContent = combines() ? 'Your images' : 'Your image';
+      sourceInput.multiple = combines();
+
+      if (sources.length === 0) {
+        sourceDetails.textContent = combines()
+          ? `JPEG, PNG, WebP, AVIF, or BMP. Up to ${maximumPdfPages} pages.`
+          : 'JPEG, PNG, WebP, AVIF, or BMP.';
+      } else if (combines()) {
+        sourceDetails.textContent = `${describePdfPageCount(sources.length)} · stays on this device`;
+      } else {
+        sourceDetails.textContent = `${sources[0].file.name} · ${formatFileSize(sources[0].file.size)} · stays on this device`;
+      }
+
+      sourceSelect.textContent = sources.length === 0
+        ? (combines() ? 'Choose images' : 'Choose image')
+        : (combines() ? 'Add images' : 'Choose another image');
+      sourceSelect.disabled = isRunning;
+      sourceClear.hidden = sources.length === 0;
+      sourceClear.textContent = sources.length > 1 ? 'Remove all' : 'Remove';
+      sourceClear.disabled = isRunning;
+    };
+    /** One starting image, cloned from the template so a filename is never markup. */
+    const renderSource = (source: FlowSource, index: number): HTMLLIElement => {
+      const item = sourceTemplate.content.firstElementChild?.cloneNode(true);
+      if (!(item instanceof HTMLLIElement)) throw new Error('The starting-image template is missing.');
+
+      const number = item.querySelector<HTMLElement>('[data-source-number]');
+      const thumbnail = item.querySelector<HTMLImageElement>('[data-source-thumbnail]');
+      const name = item.querySelector<HTMLElement>('[data-source-name]');
+      const meta = item.querySelector<HTMLElement>('[data-source-meta]');
+
+      if (!number || !thumbnail || !name || !meta) throw new Error('The starting-image template is incomplete.');
+
+      number.textContent = String(index + 1).padStart(2, '0');
+      thumbnail.src = source.previewUrl;
+      thumbnail.alt = `Page ${index + 1}: ${source.file.name}`;
+      name.textContent = source.file.name;
+      meta.textContent = `${source.width} × ${source.height} px · ${formatFileSize(source.file.size)}`;
+
+      for (const button of item.querySelectorAll<HTMLButtonElement>('[data-source-action]')) {
+        const action = button.dataset.sourceAction;
+
+        button.dataset.sourceId = String(source.id);
+        button.setAttribute(
+          'aria-label',
+          action === 'remove'
+            ? `Remove ${source.file.name}`
+            : `Move ${source.file.name} ${action === 'up' ? 'up' : 'down'}`,
+        );
+        button.disabled =
+          isRunning ||
+          (action === 'up' && index === 0) ||
+          (action === 'down' && index === sources.length - 1);
+      }
+
+      return item;
     };
     const renderSteps = () => {
       stepList.innerHTML = steps.map((step, index) => {
         const tool = toolBySlug(step.toolSlug);
-        const prior = index > 0 ? toolBySlug(steps[index - 1].toolSlug).name : 'Your image';
-        return `<li><div class="flow-builder__connector" aria-hidden="true"><span>↓</span></div><article class="flow-block"><div class="flow-block__grip" aria-hidden="true">⠿</div><div class="flow-block__number">${String(index + 1).padStart(2, '0')}</div><div class="flow-block__content"><div class="flow-block__heading"><div><h2>${tool.name}</h2><p>${prior} result → image result</p></div><span class="status-local">Local</span></div>${settingsMarkup(step)}</div><div class="flow-block__actions" aria-label="${tool.name} controls"><button type="button" class="flow-block__icon-button" data-step-action="up" data-step-id="${step.id}" aria-label="Move ${tool.name} up" ${index === 0 || !canReorder(index, index - 1) || isRunning ? 'disabled' : ''}>↑</button><button type="button" class="flow-block__icon-button" data-step-action="down" data-step-id="${step.id}" aria-label="Move ${tool.name} down" ${index === steps.length - 1 || !canReorder(index, index + 1) || isRunning ? 'disabled' : ''}>↓</button><button type="button" class="flow-block__remove" data-step-action="remove" data-step-id="${step.id}" ${isRunning ? 'disabled' : ''}>Remove</button></div></article></li>`;
+        const prior = index > 0
+          ? `${toolBySlug(steps[index - 1].toolSlug).name} result`
+          : (combines() ? 'Your images' : 'Your image');
+        const produces = getFlowTool(step.toolSlug).combinesInputs === true ? 'one PDF' : 'image result';
+        return `<li><div class="flow-builder__connector" aria-hidden="true"><span>↓</span></div><article class="flow-block"><div class="flow-block__grip" aria-hidden="true">⠿</div><div class="flow-block__number">${String(index + 1).padStart(2, '0')}</div><div class="flow-block__content"><div class="flow-block__heading"><div><h2>${tool.name}</h2><p>${prior} → ${produces}</p></div><span class="status-local">Local</span></div>${settingsMarkup(step)}</div><div class="flow-block__actions" aria-label="${tool.name} controls"><button type="button" class="flow-block__icon-button" data-step-action="up" data-step-id="${step.id}" aria-label="Move ${tool.name} up" ${index === 0 || !canReorder(index, index - 1) || isRunning ? 'disabled' : ''}>↑</button><button type="button" class="flow-block__icon-button" data-step-action="down" data-step-id="${step.id}" aria-label="Move ${tool.name} down" ${index === steps.length - 1 || !canReorder(index, index + 1) || isRunning ? 'disabled' : ''}>↓</button><button type="button" class="flow-block__remove" data-step-action="remove" data-step-id="${step.id}" ${isRunning ? 'disabled' : ''}>Remove</button></div></article></li>`;
       }).join('');
       renderAddOptions();
-      runButton.disabled = !selectedFile || steps.length === 0 || isRunning;
+
+      const formatLabel = combines() ? 'Page image format' : 'Final output format';
+      finalFormatLabel.hidden = !producesImage();
+      finalFormatText.textContent = formatLabel;
+      finalFormat.setAttribute('aria-label', formatLabel);
+      finalFormat.disabled = isRunning;
+
+      renderSources();
+      runButton.disabled = sources.length === 0 || steps.length === 0 || isRunning;
       copyRecipe.hidden = steps.length === 0;
     };
-    const selectSource = (file: File | undefined) => {
-      resetResult();
+    /**
+     * A chain without a combining step makes one file, so it carries one image.
+     * Dropping the combining step therefore has to resolve the extra pages, and
+     * say which one it kept rather than losing them quietly.
+     */
+    const applySourceLimit = () => {
+      const limit = combines() ? maximumPdfPages : 1;
+
+      if (sources.length <= limit) return;
+
+      const dropped = sources.slice(limit);
+      for (const source of dropped) URL.revokeObjectURL(source.previewUrl);
+      sources = sources.slice(0, limit);
+      showStatus(`This flow makes one file, so it kept ${sources[0].file.name} and removed ${dropped.length} other image${dropped.length === 1 ? '' : 's'}.`);
+    };
+    const addSources = async (selected: readonly File[]) => {
+      sourceInput.value = '';
+      if (selected.length === 0) return;
+
       clearError();
-      if (!file) return;
-      if (!isSupportedImageFile(file)) {
-        sourceInput.value = '';
+      resetResult();
+
+      const multiple = combines();
+      const incoming = multiple ? selected : selected.slice(0, 1);
+
+      if (multiple) {
+        const problem = validatePdfSelection([...sources.map((source) => source.file), ...incoming]);
+        if (problem) { showError(problem); return; }
+      } else if (!isSupportedImageFile(incoming[0])) {
         showError('Choose a JPEG, PNG, WebP, AVIF, or BMP image to start this flow.');
         return;
       }
-      selectedFile = file;
+
+      showStatus(incoming.length === 1 ? 'Reading the image locally…' : 'Reading images locally…');
+      await nextFrame();
+
+      const added: FlowSource[] = [];
+
+      try {
+        for (const file of incoming) {
+          const image = await loadBrowserImage(file);
+          const dimensions = { width: image.naturalWidth, height: image.naturalHeight };
+          const problem = multiple
+            ? validatePdfImage(file.name, dimensions)
+            : (!dimensions.width || !dimensions.height ? 'This image could not be read.' : undefined);
+
+          if (problem) throw new Error(problem);
+
+          added.push({
+            id: nextSourceId++,
+            file,
+            width: dimensions.width,
+            height: dimensions.height,
+            previewUrl: URL.createObjectURL(file),
+          });
+        }
+      } catch (caughtError) {
+        for (const source of added) URL.revokeObjectURL(source.previewUrl);
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be read.');
+        renderSteps();
+        return;
+      }
+
+      // A single-source flow replaces rather than appends: it has room for one.
+      if (!multiple) {
+        for (const source of sources) URL.revokeObjectURL(source.previewUrl);
+        sources = [];
+      }
+
+      sources = [...sources, ...added];
+
       if (!outputFormatFromRecipe) {
-        outputFormat = getPreferredOutputFormat(getInputImageFormat(file));
+        outputFormat = getPreferredOutputFormat(getInputImageFormat(sources[0].file));
         finalFormat.value = outputFormat;
       }
-      sourceDetails.textContent = `${file.name} · ${formatFileSize(file.size)} · stays on this device`;
-      sourceClear.hidden = false;
+
+      clearStatus();
       renderSteps();
     };
-    const clearSource = () => {
-      selectedFile = undefined;
+    const clearSources = () => {
+      for (const source of sources) URL.revokeObjectURL(source.previewUrl);
+      sources = [];
       sourceInput.value = '';
-      sourceDetails.textContent = 'JPEG, PNG, WebP, AVIF, or BMP.';
-      sourceClear.hidden = true;
       resetResult();
       clearError();
+      clearStatus();
       renderSteps();
     };
     const updateStepSetting = (target: HTMLInputElement | HTMLSelectElement) => {
@@ -324,6 +582,17 @@
       const step = steps.find((candidate) => candidate.id === id);
       const setting = target.dataset.stepSetting;
       if (!step || !setting) return;
+
+      // A page size decides whether orientation applies at all, so this one
+      // redraws the block instead of only recording the value.
+      if (setting === 'pageSize' && isPdfPageSizeName(target.value) && step.pageSize !== target.value) {
+        step.pageSize = target.value;
+        resetResult();
+        renderSteps();
+        return;
+      }
+
+      if (setting === 'orientation' && isPdfOrientation(target.value)) step.orientation = target.value;
       if (setting === 'width') step.width = Number(target.value);
       if (setting === 'height') step.height = Number(target.value);
       if (setting === 'quality') {
@@ -333,45 +602,99 @@
       }
       resetResult();
     };
+    /** One image through one image step, keeping the dimensions it came out at. */
+    const runImageStep = async (step: FlowStep, payload: FlowPayload): Promise<FlowPayload> => {
+      const image = await loadBrowserImage(payload.file);
+      const sourceDimensions = { width: image.naturalWidth, height: image.naturalHeight };
+      if (!sourceDimensions.width || !sourceDimensions.height) throw new Error('This image has no usable dimensions.');
+
+      let dimensions = sourceDimensions;
+      if (step.toolSlug === 'resize-image') {
+        dimensions = { width: Math.round(step.width ?? 0), height: Math.round(step.height ?? 0) };
+        const validation = validateResizeDimensions(dimensions);
+        if (validation) throw new Error(`Resize Image: ${validation}`);
+      }
+
+      const blob = await encodeBrowserImage(image, dimensions, outputFormat, step.toolSlug === 'compress-image' ? (step.quality ?? 80) / 100 : undefined);
+      const filename = step.toolSlug === 'convert-image'
+        ? getConversionOutputFilename(payload.file.name, outputFormat)
+        : step.toolSlug === 'resize-image'
+          ? getResizeOutputFilename(payload.file.name, outputFormat)
+          : getOutputFilename(payload.file.name, outputFormat);
+
+      return { file: new File([blob], filename, { type: blob.type }), ...dimensions };
+    };
     const runFlow = async () => {
-      if (!selectedFile || steps.length === 0 || isRunning) return;
+      if (sources.length === 0 || steps.length === 0 || isRunning) return;
       isRunning = true;
       clearError();
       resetResult();
       renderSteps();
       runButton.textContent = 'Running…';
-      let outputFile = selectedFile;
-      let outputDimensions: { width: number; height: number } | undefined;
+
+      let payloads: readonly FlowPayload[] = sources.map((source) => ({
+        file: source.file,
+        width: source.width,
+        height: source.height,
+      }));
+      let pdfResult: { readonly blob: Blob; readonly pages: number; readonly pageSize: PdfPageSizeName; readonly name: string } | undefined;
+
       try {
         for (const [index, step] of steps.entries()) {
           const tool = toolBySlug(step.toolSlug);
-          showStatus(`Running ${index + 1} of ${steps.length}: ${tool.name} locally…`);
-          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-          const image = await loadBrowserImage(outputFile);
-          const sourceDimensions = { width: image.naturalWidth, height: image.naturalHeight };
-          if (!sourceDimensions.width || !sourceDimensions.height) throw new Error('This image has no usable dimensions.');
-          let dimensions = sourceDimensions;
-          if (step.toolSlug === 'resize-image') {
-            dimensions = { width: Math.round(step.width ?? 0), height: Math.round(step.height ?? 0) };
-            const validation = validateResizeDimensions(dimensions);
-            if (validation) throw new Error(`Resize Image: ${validation}`);
+          const position = `${index + 1} of ${steps.length}`;
+
+          if (step.toolSlug === 'jpg-to-pdf') {
+            const pageSize = step.pageSize ?? defaultPdfPageSize;
+            const isLarge = isLargePdfWorkload(payloads);
+            const pages = payloads.length;
+            const name = getPdfOutputFilename(payloads[0].file.name, pages);
+            const blob = await createImagePdf(payloads, {
+              pageSize,
+              orientation: step.orientation ?? defaultPdfOrientation,
+              onPage: async (pageNumber, pageCount) => {
+                showStatus(`Running ${position}: ${tool.name}${isLarge ? ', large document' : ''}, page ${pageNumber} of ${pageCount} locally…`);
+                await nextFrame();
+              },
+            });
+
+            pdfResult = { blob, pages, pageSize, name };
+            payloads = [];
+            continue;
           }
-          const blob = await encodeBrowserImage(image, dimensions, outputFormat, step.toolSlug === 'compress-image' ? (step.quality ?? 80) / 100 : undefined);
-          const filename = step.toolSlug === 'convert-image'
-            ? getConversionOutputFilename(outputFile.name, outputFormat)
-            : step.toolSlug === 'resize-image'
-              ? getResizeOutputFilename(outputFile.name, outputFormat)
-              : getOutputFilename(outputFile.name, outputFormat);
-          outputFile = new File([blob], filename, { type: blob.type });
-          outputDimensions = dimensions;
+
+          const processed: FlowPayload[] = [];
+          for (const [payloadIndex, payload] of payloads.entries()) {
+            showStatus(payloads.length === 1
+              ? `Running ${position}: ${tool.name} locally…`
+              : `Running ${position}: ${tool.name} on image ${payloadIndex + 1} of ${payloads.length} locally…`);
+            await nextFrame();
+            processed.push(await runImageStep(step, payload));
+          }
+          payloads = processed;
         }
-        resultUrl = URL.createObjectURL(outputFile);
-        resultImage.src = resultUrl;
-        resultDetails.textContent = `${getFormatLabel(outputFormat)} · ${outputDimensions?.width} × ${outputDimensions?.height} px · ${formatFileSize(outputFile.size)}`;
-        download.href = resultUrl;
-        download.download = outputFile.name;
-        result.hidden = false;
-        showStatus('Done. Your final image is ready to download.');
+
+        if (pdfResult) {
+          resultUrl = URL.createObjectURL(pdfResult.blob);
+          resultTitle.textContent = 'Your PDF is ready.';
+          resultDetails.textContent = `${describePdfPageCount(pdfResult.pages)} · ${getPdfPageSizeLabel(pdfResult.pageSize)} · ${formatFileSize(pdfResult.blob.size)}`;
+          resultFigure.hidden = true;
+          resultDocument.hidden = false;
+          download.textContent = 'Download PDF';
+          download.href = resultUrl;
+          download.download = pdfResult.name;
+          result.hidden = false;
+          showStatus('Done. Your PDF is ready to download.');
+        } else {
+          const [output] = payloads;
+          resultUrl = URL.createObjectURL(output.file);
+          resultImage.src = resultUrl;
+          resultDetails.textContent = `${getFormatLabel(outputFormat)} · ${output.width} × ${output.height} px · ${formatFileSize(output.file.size)}`;
+          download.href = resultUrl;
+          download.download = output.file.name;
+          result.hidden = false;
+          showStatus('Done. Your final image is ready to download.');
+        }
       } catch (caughtError) {
         showError(caughtError instanceof Error ? caughtError.message : 'This flow could not be processed. Try another image or adjust the step settings.');
         clearStatus();
@@ -383,19 +706,39 @@
     };
 
     sourceSelect.addEventListener('click', () => sourceInput.click());
-    sourceInput.addEventListener('change', () => selectSource(sourceInput.files?.[0]));
-    sourceClear.addEventListener('click', clearSource);
+    sourceInput.addEventListener('change', () => void addSources([...(sourceInput.files ?? [])]));
+    sourceClear.addEventListener('click', clearSources);
+    sourceList.addEventListener('click', (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-source-action]');
+      if (!button || isRunning) return;
+
+      const id = Number(button.dataset.sourceId);
+      const index = sources.findIndex((source) => source.id === id);
+      if (index === -1) return;
+
+      if (button.dataset.sourceAction === 'up') sources = reorderPdfImages(sources, index, index - 1);
+      if (button.dataset.sourceAction === 'down') sources = reorderPdfImages(sources, index, index + 1);
+      if (button.dataset.sourceAction === 'remove') {
+        URL.revokeObjectURL(sources[index].previewUrl);
+        sources = sources.filter((source) => source.id !== id);
+      }
+
+      resetResult();
+      clearError();
+      renderSteps();
+    });
     finalFormat.addEventListener('change', () => {
       outputFormat = finalFormat.value as ImageOutputFormat;
       resetResult();
       renderSteps();
     });
     addStepButton.addEventListener('click', () => {
-      const toolSlug = addSelect.value as ImageFlowToolSlug;
-      if (!imageToolSlugs.includes(toolSlug) || !availableStepSlugs().includes(toolSlug)) return;
+      const toolSlug = addSelect.value;
+      if (!isAvailableImageFlowToolSlug(toolSlug) || !availableStepSlugs().includes(toolSlug)) return;
       if (steps.length > 0 && !canFlowTo(steps.at(-1)?.toolSlug ?? toolSlug, toolSlug)) return;
       steps.push(defaultStep(toolSlug));
       resetResult();
+      clearStatus();
       renderSteps();
     });
     stepList.addEventListener('input', (event) => {
@@ -416,6 +759,8 @@
       if (button.dataset.stepAction === 'up' && index > 0 && canReorder(index, index - 1)) [steps[index - 1], steps[index]] = [steps[index], steps[index - 1]];
       if (button.dataset.stepAction === 'down' && index < steps.length - 1 && canReorder(index, index + 1)) [steps[index], steps[index + 1]] = [steps[index + 1], steps[index]];
       resetResult();
+      clearStatus();
+      applySourceLimit();
       renderSteps();
     });
     const currentRecipe = (): Recipe => ({
@@ -424,6 +769,7 @@
         toolSlug: step.toolSlug,
         ...(step.toolSlug === 'resize-image' ? { width: step.width, height: step.height } : {}),
         ...(step.toolSlug === 'compress-image' ? { quality: step.quality } : {}),
+        ...(step.toolSlug === 'jpg-to-pdf' ? { pageSize: step.pageSize, orientation: step.orientation } : {}),
       })),
     });
     const applyRecipe = (recipe: Recipe) => {
@@ -434,6 +780,8 @@
         ...(step.width !== undefined ? { width: step.width } : {}),
         ...(step.height !== undefined ? { height: step.height } : {}),
         ...(step.quality !== undefined ? { quality: step.quality } : {}),
+        ...(step.pageSize !== undefined ? { pageSize: step.pageSize } : {}),
+        ...(step.orientation !== undefined ? { orientation: step.orientation } : {}),
       }));
       if (recipe.outputFormat) {
         outputFormat = recipe.outputFormat;
@@ -459,7 +807,7 @@
 
       navigator.clipboard
         .writeText(link)
-        .then(() => { recipeStatus.textContent = 'Recipe link copied. It carries these settings only, never your image.'; })
+        .then(() => { recipeStatus.textContent = 'Recipe link copied. It carries these settings only, never your files.'; })
         .catch(() => { recipeStatus.textContent = 'Could not copy automatically. The link is in the address bar.'; });
     };
 
