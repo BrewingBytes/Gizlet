@@ -492,7 +492,7 @@ test("renders the editorial homepage content from the tool registry", async ({
     page.getByRole("search").getByLabel("I need to…"),
   ).toHaveAttribute(
     "placeholder",
-    "compress a photo, merge a PDF, make JSON-LD…",
+    "compress a photo, resize an image, format JSON…",
   );
   await expect(page.locator('[data-ad-slot-variant="banner"]')).toHaveCount(0);
   await expect(
