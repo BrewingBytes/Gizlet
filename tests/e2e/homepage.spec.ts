@@ -515,6 +515,7 @@ test("renders the editorial homepage content from the tool registry", async ({
     "JSON-LD Generator",
     "JSON Formatter",
     "JPG to PDF",
+    "PDF Viewer",
   ]) {
     await expect(
       page.getByRole("link", { name: new RegExp(toolName) }),

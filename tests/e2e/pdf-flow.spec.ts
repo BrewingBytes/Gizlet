@@ -49,9 +49,14 @@ test("offers a block only when it accepts what the block before it produces", as
 
   await addStep(page, "jpg-to-pdf");
 
-  // Nothing follows a PDF yet, because no Gizlet declares that it reads one.
-  await expect(options).toHaveText(["Choose the next Gizlet"]);
-  await expect(page.getByRole("button", { name: "Add step" })).toBeDisabled();
+  // A PDF is followed by exactly the Gizlets that declare they read one.
+  await expect(options).toHaveText(["Choose the next Gizlet", "PDF Viewer"]);
+
+  await addStep(page, "pdf-viewer");
+
+  // And nothing follows the viewer, because it also hands on a PDF and no
+  // other Gizlet reads one yet.
+  await expect(options).toHaveText(["Choose the next Gizlet", "PDF Viewer"]);
 });
 
 test("turns several local images into one PDF in the order shown", async ({

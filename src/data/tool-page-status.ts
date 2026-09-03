@@ -42,6 +42,7 @@ export function getToolProcessingStatus(
 const toolProcessingDescriptions: Partial<Record<ToolSlug, string>> = {
   'json-formatter': 'Your JSON stays on this device.',
   'jpg-to-pdf': 'Your images stay on this device.',
+  'pdf-viewer': 'Your PDF stays on this device.',
 };
 
 /** The tailored processing sentence for a Gizlet, where it has one. */

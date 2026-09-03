@@ -11,7 +11,8 @@ const relatedToolSlugs: Record<ToolSlug, readonly ToolSlug[]> = {
   'convert-image': ['compress-image', 'resize-image', 'jpg-to-pdf'],
   'json-ld-generator': ['json-formatter'],
   'json-formatter': ['json-ld-generator'],
-  'jpg-to-pdf': ['convert-image', 'compress-image', 'resize-image'],
+  'jpg-to-pdf': ['pdf-viewer', 'convert-image', 'compress-image'],
+  'pdf-viewer': ['jpg-to-pdf', 'convert-image', 'compress-image'],
 };
 
 function getToolBySlug(slug: ToolSlug): ToolRegistryEntry {

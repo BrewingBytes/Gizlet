@@ -644,6 +644,14 @@
           const tool = toolBySlug(step.toolSlug);
           const position = `${index + 1} of ${steps.length}`;
 
+          // An inspection block shows the payload and changes nothing, so the
+          // run reports it and carries the same payload forward.
+          if (getFlowTool(step.toolSlug).passesInputThrough) {
+            showStatus(`Running ${position}: ${tool.name} locally…`);
+            await nextFrame();
+            continue;
+          }
+
           if (step.toolSlug === 'jpg-to-pdf') {
             const pageSize = step.pageSize ?? defaultPdfPageSize;
             const isLarge = isLargePdfWorkload(payloads);

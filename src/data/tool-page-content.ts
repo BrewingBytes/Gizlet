@@ -498,6 +498,87 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'pdf-viewer': {
+    what: {
+      heading: 'What the PDF Viewer does',
+      paragraphs: [
+        'The PDF Viewer opens a PDF and draws it, one page at a time, using a PDF engine that runs inside this page. A strip of page thumbnails sits beside the page you are reading, so you can see the shape of the document and jump straight to the part you want.',
+        'Every page is drawn onto a canvas by your own browser, which is why it works the same on a phone as on a laptop. Nothing is added, nothing is changed, and no file is written: this Gizlet reads.',
+      ],
+    },
+    when: {
+      heading: 'When to open a PDF here instead',
+      paragraphs: [
+        'On a phone, most browsers refuse to show a PDF inside the page and download it instead, which leaves you hunting through a downloads folder to read one document. This draws it in place.',
+        'The other reason is the obvious one. The alternative to a local viewer is one of the many sites that ask you to upload a PDF first, and the documents people most need to open — a payslip, a tenancy agreement, a medical letter, a passport scan — are exactly the ones that should not be uploaded to read them.',
+      ],
+    },
+    options: {
+      heading: 'What the reading controls do',
+      paragraphs: [],
+      details: [
+        {
+          term: 'Page thumbnails',
+          description:
+            'Every page is drawn small down the side, or across the top on a narrow screen. Select one to jump to it. The page you are on is outlined.',
+        },
+        {
+          term: 'Page navigation',
+          description:
+            'Arrows step one page at a time, and the page box takes a number to jump. A number that is not a page in this document is refused and the box goes back to where you were, rather than jumping somewhere you did not ask for.',
+        },
+        {
+          term: 'Zoom',
+          description:
+            'A page opens fitted to the space available, then zooms from 50% to 300% in fixed steps. Each press redraws the page at the new size rather than scaling a picture of it, so text stays sharp at every level.',
+        },
+        {
+          term: 'Limits',
+          description:
+            'Up to 500 pages. Past 25 the Gizlet says it is drawing a large document rather than looking like it has stalled. A password-protected PDF is refused with an explanation, because unlocking one needs the password it is protected with.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'The document never leaves this device',
+      paragraphs: [
+        'The PDF is read and drawn entirely in this browser. Gizlet is a static site with no upload endpoint, so there is no server that could receive the file, and nothing is kept once you close the tab.',
+        'The PDF engine runs in a Web Worker, which is a background thread inside this same page rather than anything remote. It is loaded from this site along with the rest of the page, so no part of reading your document involves another company.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Is my PDF uploaded to read it?',
+        answer:
+          'No. The document is parsed and drawn by this browser, on this device. There is no upload endpoint behind this page and no copy is kept after you leave.',
+      },
+      {
+        question: 'Can it open a password-protected PDF?',
+        answer:
+          'No. A protected PDF cannot be decoded without its password, and this Gizlet does not ask for one. Open it in an application that can, then save an unlocked copy and read that here.',
+      },
+      {
+        question: 'Can I select or search the text?',
+        answer:
+          'Not yet. Pages are drawn as pictures, so there is no text to select or search. That needs a text layer over the page, which is worth doing properly rather than partly.',
+      },
+      {
+        question: 'How many pages can it open?',
+        answer:
+          'Up to 500. Beyond that the Gizlet explains the limit instead of attempting it. Very large documents are also bound by your own device memory, and a long one takes a moment to draw all of its thumbnails.',
+      },
+      {
+        question: 'Why does one page fail to draw when the rest are fine?',
+        answer:
+          'Some PDFs contain a page the engine cannot render, often an unusual font or a broken image. That page says so instead of showing you a blank sheet, and the rest of the document stays readable.',
+      },
+      {
+        question: 'Does it work on a phone?',
+        answer:
+          'Yes, and that is much of the point. Pages are drawn onto a canvas rather than handed to the browser’s own PDF support, which most mobile browsers do not have, so the document appears in the page instead of being downloaded.',
+      },
+    ],
+  },
 };
 
 /** The supporting content for a Gizlet page, if it has any yet. */

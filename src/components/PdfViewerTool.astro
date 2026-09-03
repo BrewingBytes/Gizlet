@@ -1,0 +1,353 @@
+---
+---
+
+<section class="pdf-viewer-tool" data-pdf-viewer-tool>
+  <div class="pdf-viewer-tool__picker" data-drop-zone>
+    <input
+      id="pdf-viewer-file"
+      class="pdf-viewer-tool__file-input"
+      type="file"
+      accept="application/pdf,.pdf"
+      aria-label="Select a PDF to open"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">One PDF at a time</p>
+    <h2>Drop a PDF here</h2>
+    <p>It is read and drawn by this browser. Nothing is uploaded.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose a PDF</button>
+  </div>
+
+  <p class="pdf-viewer-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="pdf-viewer-tool__error" data-error role="alert" hidden></p>
+
+  <div class="pdf-viewer-tool__reader" data-reader hidden>
+    <div class="pdf-viewer-tool__bar">
+      <p class="pdf-viewer-tool__document" data-document-name></p>
+      <div class="pdf-viewer-tool__actions">
+        <button type="button" class="button-secondary" data-clear>Open another PDF</button>
+      </div>
+    </div>
+
+    <div class="pdf-viewer-tool__body">
+      <nav class="pdf-viewer-tool__thumbnails" aria-label="Pages" data-thumbnails></nav>
+
+      <!-- One page thumbnail, cloned per page. -->
+      <template data-thumbnail-template>
+        <button type="button" class="pdf-thumbnail" data-thumbnail>
+          <canvas data-thumbnail-canvas></canvas>
+          <span data-thumbnail-number></span>
+        </button>
+      </template>
+
+      <div class="pdf-viewer-tool__page" data-page-area>
+        <canvas data-page-canvas aria-label="Current PDF page"></canvas>
+        <p class="pdf-viewer-tool__page-error" data-page-error role="alert" hidden></p>
+      </div>
+    </div>
+
+    <div class="pdf-viewer-tool__controls">
+      <div class="pdf-viewer-tool__pager">
+        <button type="button" class="pdf-viewer-tool__icon-button" data-previous aria-label="Previous page">←</button>
+        <label class="pdf-viewer-tool__page-field" for="pdf-viewer-page">
+          <span>Page</span>
+          <input id="pdf-viewer-page" type="text" inputmode="numeric" autocomplete="off" data-page-input aria-label="Go to page" />
+          <span data-page-total></span>
+        </label>
+        <button type="button" class="pdf-viewer-tool__icon-button" data-next aria-label="Next page">→</button>
+      </div>
+
+      <div class="pdf-viewer-tool__zoom">
+        <button type="button" class="pdf-viewer-tool__icon-button" data-zoom-out aria-label="Zoom out">−</button>
+        <output data-zoom-level></output>
+        <button type="button" class="pdf-viewer-tool__icon-button" data-zoom-in aria-label="Zoom in">+</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pdf-viewer-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .pdf-viewer-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .pdf-viewer-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .pdf-viewer-tool__picker[hidden], .pdf-viewer-tool__reader[hidden], .pdf-viewer-tool__page-error[hidden] { display: none; }
+  .pdf-viewer-tool__picker h2 { margin-bottom: var(--space-2); }
+  .pdf-viewer-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .pdf-viewer-tool__status, .pdf-viewer-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .pdf-viewer-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .pdf-viewer-tool__reader { display: grid; gap: var(--space-3); padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .pdf-viewer-tool__bar { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
+  .pdf-viewer-tool__document { margin: 0; overflow-wrap: anywhere; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .pdf-viewer-tool__body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); align-items: start; }
+  .pdf-viewer-tool__thumbnails { display: flex; flex-direction: column; gap: var(--space-2); max-height: 32rem; overflow-y: auto; padding-right: var(--space-1); }
+  .pdf-thumbnail { display: grid; gap: var(--space-1); justify-items: center; padding: var(--space-1); border: var(--border-width) solid var(--border); background: var(--background); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .pdf-thumbnail[aria-current='true'] { border-color: var(--text); border-width: var(--border-strong-width); color: var(--text); }
+  .pdf-thumbnail canvas { display: block; width: 4rem; height: auto; background: #fff; }
+  .pdf-viewer-tool__page { display: grid; justify-items: center; gap: var(--space-2); min-width: 0; padding: var(--space-3); border: var(--border-width) solid var(--border); background: var(--background); overflow: auto; }
+  .pdf-viewer-tool__page canvas { display: block; max-width: 100%; height: auto; background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 18%); }
+  .pdf-viewer-tool__page-error { margin: 0; color: var(--color-red); font-size: var(--font-size-sm); }
+  .pdf-viewer-tool__controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .pdf-viewer-tool__pager, .pdf-viewer-tool__zoom { display: flex; align-items: center; gap: var(--space-2); }
+  .pdf-viewer-tool__page-field { display: flex; align-items: center; gap: var(--space-2); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; color: var(--text-muted); }
+  .pdf-viewer-tool__page-field input { width: 4rem; min-height: 2.75rem; text-align: center; font-family: var(--font-mono); }
+  .pdf-viewer-tool__icon-button { min-width: 2.75rem; min-height: 2.75rem; padding: 0; border: var(--border-width) solid var(--border); background: transparent; color: var(--text); font-weight: 700; }
+  .pdf-viewer-tool__icon-button:disabled { color: var(--text-muted); opacity: 0.5; }
+  .pdf-viewer-tool__zoom output { min-width: 3.5rem; text-align: center; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  @media (max-width: 48rem) {
+    .pdf-viewer-tool__body { grid-template-columns: minmax(0, 1fr); }
+    .pdf-viewer-tool__thumbnails { flex-direction: row; max-height: none; overflow-x: auto; padding-bottom: var(--space-1); }
+  }
+  @media (max-width: 36rem) {
+    .pdf-viewer-tool__picker, .pdf-viewer-tool__reader { padding: var(--space-3); }
+    .pdf-viewer-tool__controls { justify-content: center; }
+  }
+</style>
+
+<script>
+  import { formatFileSize } from '../data/image-compression';
+  import {
+    canZoomPdf,
+    clampPdfPage,
+    defaultPdfZoom,
+    describePdfPagePosition,
+    describePdfZoom,
+    getNextPdfZoom,
+    getPdfPageErrorMessage,
+    getPdfRenderScale,
+    isLargePdfViewerDocument,
+    parsePdfPageInput,
+    pdfThumbnailWidth,
+    validatePdfFileSelection,
+    validatePdfPageCount,
+    type PdfZoom,
+  } from '../data/pdf-viewer';
+  import { openLocalPdf, type LocalPdfDocument } from '../scripts/pdf-rendering';
+
+  const root = document.querySelector<HTMLElement>('[data-pdf-viewer-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const reader = root.querySelector<HTMLElement>('[data-reader]');
+    const documentName = root.querySelector<HTMLElement>('[data-document-name]');
+    const thumbnails = root.querySelector<HTMLElement>('[data-thumbnails]');
+    const thumbnailTemplate = root.querySelector<HTMLTemplateElement>('[data-thumbnail-template]');
+    const pageArea = root.querySelector<HTMLElement>('[data-page-area]');
+    const pageCanvas = root.querySelector<HTMLCanvasElement>('[data-page-canvas]');
+    const pageError = root.querySelector<HTMLElement>('[data-page-error]');
+    const previousButton = root.querySelector<HTMLButtonElement>('[data-previous]');
+    const nextButton = root.querySelector<HTMLButtonElement>('[data-next]');
+    const pageInput = root.querySelector<HTMLInputElement>('[data-page-input]');
+    const pageTotal = root.querySelector<HTMLElement>('[data-page-total]');
+    const zoomOutButton = root.querySelector<HTMLButtonElement>('[data-zoom-out]');
+    const zoomInButton = root.querySelector<HTMLButtonElement>('[data-zoom-in]');
+    const zoomLevel = root.querySelector<HTMLOutputElement>('[data-zoom-level]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !reader || !documentName || !thumbnails || !thumbnailTemplate || !pageArea || !pageCanvas || !pageError || !previousButton || !nextButton || !pageInput || !pageTotal || !zoomOutButton || !zoomInButton || !zoomLevel || !clearButton) {
+      throw new Error('PDF Viewer tool could not initialise.');
+    }
+
+    let openDocument: LocalPdfDocument | undefined;
+    let pageCount = 0;
+    let currentPage = 1;
+    let zoom: PdfZoom = defaultPdfZoom;
+    // Renders are asynchronous, so a later one must be able to discard an
+    // earlier one's result rather than painting a page the visitor left.
+    let renderToken = 0;
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+
+    const resetTool = () => {
+      renderToken += 1;
+      void openDocument?.close().catch(() => undefined);
+      openDocument = undefined;
+      pageCount = 0;
+      currentPage = 1;
+      zoom = defaultPdfZoom;
+      fileInput.value = '';
+      thumbnails.replaceChildren();
+      pageCanvas.removeAttribute('width');
+      pageCanvas.removeAttribute('height');
+      pageError.hidden = true;
+      reader.hidden = true;
+      dropZone.hidden = false;
+      clearError();
+      clearStatus();
+    };
+
+    const updateControls = () => {
+      pageInput.value = String(currentPage);
+      pageTotal.textContent = `of ${pageCount}`;
+      pageCanvas.setAttribute('aria-label', describePdfPagePosition(currentPage, pageCount));
+      previousButton.disabled = currentPage <= 1;
+      nextButton.disabled = currentPage >= pageCount;
+      zoomLevel.textContent = describePdfZoom(zoom);
+      zoomOutButton.disabled = !canZoomPdf(zoom, 'out');
+      zoomInButton.disabled = !canZoomPdf(zoom, 'in');
+
+      for (const button of thumbnails.querySelectorAll<HTMLButtonElement>('[data-thumbnail]')) {
+        button.setAttribute('aria-current', String(Number(button.dataset.page) === currentPage));
+      }
+    };
+
+    /** The width a page has to fit into, so it opens readable. */
+    const availableWidth = () => {
+      const styles = window.getComputedStyle(pageArea);
+      const padding = Number.parseFloat(styles.paddingLeft) + Number.parseFloat(styles.paddingRight);
+
+      return Math.max(1, pageArea.clientWidth - padding);
+    };
+
+    const renderCurrentPage = async () => {
+      if (!openDocument) return;
+
+      const token = ++renderToken;
+      pageError.hidden = true;
+
+      try {
+        const { width } = await openDocument.getPageSize(currentPage);
+        if (token !== renderToken) return;
+
+        const scale = getPdfRenderScale(width, availableWidth(), zoom);
+        await openDocument.renderPage(currentPage, pageCanvas, scale);
+      } catch {
+        if (token !== renderToken) return;
+        // One unreadable page must say so rather than leave a blank canvas.
+        pageError.textContent = getPdfPageErrorMessage(currentPage);
+        pageError.hidden = false;
+      }
+    };
+
+    const goToPage = (pageNumber: number) => {
+      const target = clampPdfPage(pageNumber, pageCount);
+      if (target === currentPage) return;
+
+      currentPage = target;
+      updateControls();
+      void renderCurrentPage();
+    };
+
+    /** Thumbnails are drawn after the first page, so reading starts sooner. */
+    const renderThumbnails = async (token: number) => {
+      if (!openDocument) return;
+
+      for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
+        if (token !== renderToken) return;
+
+        const item = thumbnailTemplate.content.firstElementChild?.cloneNode(true);
+        if (!(item instanceof HTMLButtonElement)) return;
+
+        const canvas = item.querySelector<HTMLCanvasElement>('[data-thumbnail-canvas]');
+        const number = item.querySelector<HTMLElement>('[data-thumbnail-number]');
+        if (!canvas || !number) return;
+
+        item.dataset.page = String(pageNumber);
+        item.setAttribute('aria-label', describePdfPagePosition(pageNumber, pageCount));
+        item.setAttribute('aria-current', String(pageNumber === currentPage));
+        number.textContent = String(pageNumber);
+        thumbnails.append(item);
+
+        try {
+          await openDocument.renderPageToWidth(pageNumber, canvas, pdfThumbnailWidth);
+        } catch {
+          // A thumbnail that will not draw is not worth an error of its own;
+          // the page itself reports the problem when the visitor opens it.
+          number.textContent = `${pageNumber} ⚠`;
+        }
+      }
+    };
+
+    const openFile = async (file: File | undefined) => {
+      resetTool();
+      if (!file) return;
+
+      const problem = validatePdfFileSelection([file]);
+      if (problem) {
+        showError(problem);
+        return;
+      }
+
+      dropZone.hidden = true;
+      showStatus('Reading the PDF locally…');
+      await nextPaint();
+
+      try {
+        const opened = await openLocalPdf(file);
+        const countProblem = validatePdfPageCount(opened.pageCount);
+
+        if (countProblem) {
+          await opened.close().catch(() => undefined);
+          throw new Error(countProblem);
+        }
+
+        openDocument = opened;
+        pageCount = opened.pageCount;
+        currentPage = 1;
+        documentName.textContent = `${file.name} · ${formatFileSize(file.size)} · ${pageCount} ${pageCount === 1 ? 'page' : 'pages'}`;
+        reader.hidden = false;
+        updateControls();
+
+        if (isLargePdfViewerDocument(pageCount)) {
+          showStatus(`Large document: drawing ${pageCount} page thumbnails locally…`);
+        } else {
+          clearStatus();
+        }
+
+        await renderCurrentPage();
+        const token = renderToken;
+        await renderThumbnails(token);
+        if (token === renderToken) clearStatus();
+      } catch (caughtError) {
+        openDocument = undefined;
+        reader.hidden = true;
+        dropZone.hidden = false;
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : 'This PDF could not be opened.');
+      }
+    };
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void openFile(fileInput.files?.[0]));
+    clearButton.addEventListener('click', resetTool);
+    previousButton.addEventListener('click', () => goToPage(currentPage - 1));
+    nextButton.addEventListener('click', () => goToPage(currentPage + 1));
+    pageInput.addEventListener('change', () => {
+      const parsed = parsePdfPageInput(pageInput.value, pageCount);
+      // A page that is not in this document restores the field rather than
+      // jumping somewhere the visitor did not ask for.
+      if (parsed === undefined) {
+        pageInput.value = String(currentPage);
+        return;
+      }
+      goToPage(parsed);
+    });
+    for (const [button, direction] of [[zoomOutButton, 'out'], [zoomInButton, 'in']] as const) {
+      button.addEventListener('click', () => {
+        const next = getNextPdfZoom(zoom, direction);
+        if (next === zoom) return;
+        zoom = next;
+        updateControls();
+        void renderCurrentPage();
+      });
+    }
+    thumbnails.addEventListener('click', (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-thumbnail]');
+      if (button?.dataset.page) goToPage(Number(button.dataset.page));
+    });
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    }
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    }
+    dropZone.addEventListener('drop', (event) => void openFile(event.dataTransfer?.files[0]));
+  }
+</script>
