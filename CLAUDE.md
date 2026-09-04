@@ -20,6 +20,7 @@ pnpm run build             # static production build
 pnpm run test:e2e          # Playwright against a preview of the build
 pnpm run changelog:draft   # draft changelog entries from commit titles; writes nothing
 pnpm run changelog:collect # assemble changelog.d/ into a release section; writes nothing
+pnpm run pr:assets         # push a pull request's screenshots to pr-assets, print their markdown
 ```
 
 Playwright needs `pnpm exec playwright install chromium` once. Run `check`, `test`, and `build` before handing work off; add `test:e2e` when browser behavior changes. Report failures with their output instead of working around them.
