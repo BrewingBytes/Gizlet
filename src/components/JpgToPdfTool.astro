@@ -188,7 +188,7 @@ const pageSizeOptions = getPdfPageSizeOptions();
     const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
 
     if (!fileInput || !selectFilesButton || !dropZone || !status || !error || !editor || !pageList || !pageTemplate || !pageSummary || !pageSize || !orientation || !fitNote || !buildButton || !clearButton || !result || !resultDetails || !download || !resultClearButton) {
-      throw new Error('JPG to PDF tool could not initialise.');
+      throw new Error('Image to PDF tool could not initialise.');
     }
 
     let pages: readonly PdfPage[] = [];

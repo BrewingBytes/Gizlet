@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- The JPG to PDF Gizlet is now called Image to PDF, accurately reflecting that it accepts JPEG, PNG, WebP, AVIF, and BMP images. Its `jpg-to-pdf` URL and recipe-link slug remain unchanged, so existing links continue to work.
+
 ## [0.3.0] - 2026-09-03
 
 ### Added

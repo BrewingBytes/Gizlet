@@ -20,7 +20,7 @@ export type FlowPayloadKind = FlowPayloadContract['kind'];
  *
  * Compatibility is not listed anywhere: a block may follow another when the
  * earlier one's `output.kind` is the later one's `input.kind`. Declare a Gizlet
- * that reads a PDF and it becomes available after JPG to PDF; declare one that
+ * that reads a PDF and it becomes available after Image to PDF; declare one that
  * turns a PDF back into images and the image Gizlets become available after
  * that, with no edit to the graph. A hand-written adjacency list would only
  * restate these kinds and could then disagree with them.

@@ -2,7 +2,7 @@ import { isSupportedImageFile, type ImageInputFormat } from './image-compression
 import { maximumImagePixels, validateResizeDimensions, type ImageDimensions } from './image-resize';
 
 /**
- * Deterministic logic for the JPG to PDF Gizlet: which files it accepts, how
+ * Deterministic logic for the Image to PDF Gizlet: which files it accepts, how
  * many pages it will build, where an image sits on a page, and what the finished
  * file is called.
  *

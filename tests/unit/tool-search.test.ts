@@ -10,6 +10,19 @@ describe('searchTools', () => {
     expect(searchTools('schema').map((tool) => tool.name)).toEqual(['JSON-LD Generator']);
   });
 
+  it('finds Image to PDF by its old name and every supported image format', () => {
+    for (const query of [
+      'jpg to pdf',
+      'image to pdf',
+      'png to pdf',
+      'webp to pdf',
+      'avif to pdf',
+      'bmp to pdf',
+    ]) {
+      expect(searchTools(query).map((tool) => tool.name)).toEqual(['Image to PDF']);
+    }
+  });
+
   it('returns no results for a blank or unmatched query', () => {
     expect(searchTools('')).toEqual([]);
     expect(searchTools('spreadsheet')).toEqual([]);

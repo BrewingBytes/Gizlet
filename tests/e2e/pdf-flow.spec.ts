@@ -6,7 +6,7 @@ import { PDFDocument } from "pdf-lib";
 import { fixedPdfPageSizes } from "../../src/data/jpg-to-pdf";
 
 /**
- * The same two tiny JPEGs the JPG to PDF workspace uses: one wider than it is
+ * The same two tiny JPEGs the Image to PDF workspace uses: one wider than it is
  * tall, one taller than it is wide, so the assembled document proves the page
  * order and the automatic orientation.
  */
@@ -44,7 +44,7 @@ test("offers a block only when it accepts what the block before it produces", as
     "Compress Image",
     "Resize Image",
     "Convert Image",
-    "JPG to PDF",
+    "Image to PDF",
   ]);
 
   await addStep(page, "jpg-to-pdf");
@@ -134,7 +134,7 @@ test("runs every image step on every page before combining them", async ({
   // The chain still re-encodes images, so the format control stays — renamed,
   // because the format is now the one used inside the document.
   await expect(page.getByLabel("Page image format")).toBeVisible();
-  await page.getByLabel("JPG to PDF page size").selectOption("letter");
+  await page.getByLabel("Image to PDF page size").selectOption("letter");
 
   await chooseImages(page).setInputFiles([
     asFile("wide.jpg", wideJpeg),
@@ -170,8 +170,8 @@ test("shares a PDF flow as a settings-only recipe link and reopens it", async ({
   await page.getByLabel("Resize Image width").fill("300");
   await page.getByLabel("Resize Image height").fill("150");
   await addStep(page, "jpg-to-pdf");
-  await page.getByLabel("JPG to PDF page size").selectOption("legal");
-  await page.getByLabel("JPG to PDF orientation").selectOption("portrait");
+  await page.getByLabel("Image to PDF page size").selectOption("legal");
+  await page.getByLabel("Image to PDF orientation").selectOption("portrait");
 
   await page.getByRole("button", { name: "Copy recipe link" }).click();
   await expect(page.locator("[data-recipe-status]")).toContainText(
@@ -185,10 +185,10 @@ test("shares a PDF flow as a settings-only recipe link and reopens it", async ({
 
   await page.goto(`/flows/${recipe}`);
   await expect(page.getByRole("heading", { name: "Resize Image" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "JPG to PDF" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Image to PDF" })).toBeVisible();
   await expect(page.getByLabel("Resize Image width")).toHaveValue("300");
-  await expect(page.getByLabel("JPG to PDF page size")).toHaveValue("legal");
-  await expect(page.getByLabel("JPG to PDF orientation")).toHaveValue("portrait");
+  await expect(page.getByLabel("Image to PDF page size")).toHaveValue("legal");
+  await expect(page.getByLabel("Image to PDF orientation")).toHaveValue("portrait");
   // The chain combines, so the reopened flow already asks for several images.
   await expect(chooseImages(page)).toHaveJSProperty("multiple", true);
 });

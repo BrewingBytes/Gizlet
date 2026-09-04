@@ -26,7 +26,7 @@ test("assembles chosen images into one local PDF in the order set on the page", 
 }) => {
   await page.goto("/tools/jpg-to-pdf/");
 
-  await expect(page).toHaveTitle("JPG to PDF | Gizlet");
+  await expect(page).toHaveTitle("Image to PDF | Gizlet");
   await expect(page.getByLabel("Local processing")).toContainText(
     "Your images stay on this device.",
   );

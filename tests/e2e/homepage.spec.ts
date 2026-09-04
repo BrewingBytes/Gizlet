@@ -514,7 +514,7 @@ test("renders the editorial homepage content from the tool registry", async ({
     "Convert Image",
     "JSON-LD Generator",
     "JSON Formatter",
-    "JPG to PDF",
+    "Image to PDF",
     "PDF Viewer",
   ]) {
     await expect(
