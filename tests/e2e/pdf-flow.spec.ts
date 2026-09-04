@@ -51,10 +51,22 @@ test("offers a block only when it accepts what the block before it produces", as
 
   await addStep(page, "jpg-to-pdf");
 
-  // A PDF is followed by exactly the Gizlets that declare they read one, and
-  // nothing does yet — so the chain ends there rather than offering a block
-  // that would only look at what the flow already shows.
-  await expect(options).toHaveText(["Choose the next Gizlet"]);
+  // A PDF is followed by exactly the Gizlets that declare they read one, which
+  // is the converter and nothing else: a block that would only look at what the
+  // result panel already shows is not offered.
+  await expect(options).toHaveText(["Choose the next Gizlet", "PDF to Image"]);
+
+  await addStep(page, "pdf-to-jpg");
+
+  // And a Gizlet that turns a PDF back into images reopens the image half of
+  // the graph, which no adjacency list was edited to allow.
+  await expect(options).toHaveText([
+    "Choose the next Gizlet",
+    "Compress Image",
+    "Resize Image",
+    "Convert Image",
+    "Image to PDF",
+  ]);
 });
 
 test("turns several local images into one PDF in the order shown", async ({
@@ -330,4 +342,79 @@ test("keeps pdf.js out of the flows page until a run has made a PDF", async ({
   await expect
     .poll(() => requested.filter((url) => url.includes("pdf.worker")).length)
     .toBeGreaterThan(0);
+});
+
+test("turns a PDF back into images and runs the rest of the chain on each", async ({
+  page,
+}) => {
+  await page.goto("/flows/");
+
+  await addStep(page, "jpg-to-pdf");
+  await addStep(page, "pdf-to-jpg");
+  await addStep(page, "compress-image");
+
+  // The chain ends with images again, so the format control is the flow's own
+  // output rather than the format used inside a document.
+  await expect(page.getByLabel("Final output format")).toBeVisible();
+  await expect(page.getByLabel("PDF to Image resolution")).toHaveValue("sharp");
+  await page.getByLabel("PDF to Image resolution").selectOption("screen");
+
+  await chooseImages(page).setInputFiles([
+    asFile("wide.jpg", wideJpeg),
+    asFile("tall.jpg", tallJpeg),
+  ]);
+  await page.getByRole("button", { name: "Run flow" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Your images are ready." }),
+  ).toBeVisible();
+  await expect(page.locator("[data-result-details]")).toContainText("2 images");
+
+  // One image per page of the document the flow built, each of which then went
+  // through the block after it.
+  const files = page.getByRole("list", { name: "Final results" });
+  await expect(files.getByRole("listitem")).toHaveCount(2);
+  await expect(files.getByRole("link").first()).toHaveAttribute(
+    "download",
+    "wide-and-1-more-page-1-compressed.jpg",
+  );
+  await expect(files.getByRole("link").last()).toHaveAttribute(
+    "download",
+    "wide-and-1-more-page-2-compressed.jpg",
+  );
+
+  // Still one download at the end: the set is packed into one archive here.
+  const archive = page.getByRole("link", { name: "Download all 2 pages" });
+  await expect(archive).toHaveAttribute("download", "wide-and-1-more-pages.zip");
+  expect(
+    await archive.evaluate(async (link) => {
+      const bytes = new Uint8Array(
+        await (await fetch((link as HTMLAnchorElement).href)).arrayBuffer(),
+      );
+      const view = new DataView(bytes.buffer);
+
+      // The number of files the archive's end record declares.
+      return view.getUint16(bytes.length - 12, true);
+    }),
+  ).toBe(2);
+});
+
+test("shares a flow that converts a PDF back to images as a recipe link", async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/flows/");
+
+  await addStep(page, "jpg-to-pdf");
+  await addStep(page, "pdf-to-jpg");
+  await page.getByLabel("PDF to Image resolution").selectOption("print");
+  await page.getByRole("button", { name: "Copy recipe link" }).click();
+
+  const recipe = await page.evaluate(() => window.location.hash);
+  expect(recipe).toBe("#r=v1;f=webp;jpg-to-pdf:p=a4,o=auto;pdf-to-jpg:r=print");
+
+  await page.goto(`/flows/${recipe}`);
+  await expect(page.getByRole("heading", { name: "PDF to Image" })).toBeVisible();
+  await expect(page.getByLabel("PDF to Image resolution")).toHaveValue("print");
 });

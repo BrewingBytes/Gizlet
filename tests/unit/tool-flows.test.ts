@@ -11,6 +11,7 @@ import {
   getNextFlowTools,
   hasCompleteFlowContracts,
   isValidFlowSequence,
+  splitsFlowInput,
   toolFlowRegistry,
   type FlowPayloadContract,
   type ToolFlowDefinition,
@@ -83,13 +84,43 @@ describe('Gizlet flow registry', () => {
     }
   });
 
-  test('hands the PDF on to the one Gizlet that reads one', () => {
+  test('hands the PDF on to both Gizlets that read one', () => {
     expect(getFlowTool('jpg-to-pdf').output).toEqual({ kind: 'pdf-file' });
-    expect(getFlowToolsForInput('pdf-file').map((tool) => tool.toolSlug)).toEqual(['merge-pdf']);
-    expect(getNextFlowTools('jpg-to-pdf').map((tool) => tool.toolSlug)).toEqual(['merge-pdf']);
+    expect(getFlowToolsForInput('pdf-file').map((tool) => tool.toolSlug)).toEqual([
+      'merge-pdf',
+      'pdf-to-jpg',
+    ]);
+    expect(getNextFlowTools('jpg-to-pdf').map((tool) => tool.toolSlug)).toEqual([
+      'merge-pdf',
+      'pdf-to-jpg',
+    ]);
     expect(canFlowTo('jpg-to-pdf', 'merge-pdf')).toBe(true);
-    // A PDF still cannot go back to an image Gizlet: nothing converts one yet.
+    // A PDF reaches an image Gizlet only through the one that converts it.
     expect(canFlowTo('jpg-to-pdf', 'compress-image')).toBe(false);
+    expect(canFlowTo('pdf-to-jpg', 'compress-image')).toBe(true);
+  });
+
+  test('closes the loop: an image can become a PDF and come back as images', () => {
+    expect(getNextFlowTools('pdf-to-jpg').map((tool) => tool.toolSlug)).toEqual([
+      'compress-image',
+      'resize-image',
+      'convert-image',
+      'jpg-to-pdf',
+    ]);
+    expect(
+      isValidFlowSequence(imageInput, ['resize-image', 'jpg-to-pdf', 'pdf-to-jpg', 'compress-image']),
+    ).toBe(true);
+  });
+
+  test('knows which chains end with a set of files rather than one', () => {
+    expect(splitsFlowInput([])).toBe(false);
+    expect(splitsFlowInput(['resize-image', 'compress-image'])).toBe(false);
+    expect(splitsFlowInput(['jpg-to-pdf'])).toBe(false);
+    expect(splitsFlowInput(['jpg-to-pdf', 'pdf-to-jpg'])).toBe(true);
+    expect(splitsFlowInput(['jpg-to-pdf', 'pdf-to-jpg', 'compress-image'])).toBe(true);
+    // The last step of either kind decides, so combining after splitting is one
+    // file again rather than a set.
+    expect(splitsFlowInput(['jpg-to-pdf', 'pdf-to-jpg', 'jpg-to-pdf'])).toBe(false);
   });
 
   test('knows which chains turn several starting payloads into one', () => {
@@ -108,10 +139,15 @@ describe('Gizlet flow registry', () => {
     expect(getFlowTool('merge-pdf').combinesInputs).toBe(true);
     expect(canFlowTo('jpg-to-pdf', 'merge-pdf')).toBe(true);
     expect(isValidFlowSequence(imageInput, ['jpg-to-pdf', 'merge-pdf'])).toBe(false);
-    // So it is never offered as the step after one: an image flow ends at the
-    // document Image to PDF made, whichever way the chain arrived there.
-    expect(getNextFlowSteps(imageInput, ['jpg-to-pdf'])).toEqual([]);
-    expect(getNextFlowSteps(imageInput, ['resize-image', 'jpg-to-pdf'])).toEqual([]);
+    // So it is never offered as the step after one, whichever way the chain
+    // arrived there — while the Gizlet that takes that document apart is,
+    // because a lone document is exactly what it wants.
+    expect(getNextFlowSteps(imageInput, ['jpg-to-pdf']).map((tool) => tool.toolSlug)).toEqual([
+      'pdf-to-jpg',
+    ]);
+    expect(
+      getNextFlowSteps(imageInput, ['resize-image', 'jpg-to-pdf']).map((tool) => tool.toolSlug),
+    ).toEqual(['pdf-to-jpg']);
   });
 
   /**
@@ -122,9 +158,14 @@ describe('Gizlet flow registry', () => {
     const pdfInput: FlowPayloadContract = { kind: 'pdf-file' };
 
     expect(isValidFlowSequence(pdfInput, ['merge-pdf'])).toBe(true);
-    expect(getNextFlowSteps(pdfInput, []).map((tool) => tool.toolSlug)).toEqual(['merge-pdf']);
+    expect(getNextFlowSteps(pdfInput, []).map((tool) => tool.toolSlug)).toEqual([
+      'merge-pdf',
+      'pdf-to-jpg',
+    ]);
     expect(isValidFlowSequence(pdfInput, ['merge-pdf', 'merge-pdf'])).toBe(false);
-    expect(getNextFlowSteps(pdfInput, ['merge-pdf'])).toEqual([]);
+    expect(getNextFlowSteps(pdfInput, ['merge-pdf']).map((tool) => tool.toolSlug)).toEqual([
+      'pdf-to-jpg',
+    ]);
   });
 
   test('offers the steps that read the starting payload to an empty chain', () => {
@@ -170,52 +211,50 @@ describe('Gizlet flow registry', () => {
  * to the graph code and no adjacency list to edit.
  */
 describe('the compatibility rule, against contracts that do not exist yet', () => {
-  const pdfToJpg: ToolFlowDefinition = {
-    toolSlug: 'pdf-to-jpg',
-    input: { kind: 'pdf-file' },
-    output: {
-      kind: 'image-file',
-      acceptedFormats: ['image/jpeg', 'image/png'],
-      producedFormats: ['image/jpeg', 'image/png'],
-    },
-  };
   const compressPdf: ToolFlowDefinition = {
     toolSlug: 'compress-pdf',
     input: { kind: 'pdf-file' },
     output: { kind: 'pdf-file' },
   };
-  const definitions: readonly ToolFlowDefinition[] = [...toolFlowRegistry, pdfToJpg, compressPdf];
+  const splitPdf: ToolFlowDefinition = {
+    toolSlug: 'split-pdf',
+    input: { kind: 'pdf-file' },
+    output: { kind: 'pdf-file' },
+    splitsInput: true,
+  };
+  const definitions: readonly ToolFlowDefinition[] = [...toolFlowRegistry, compressPdf, splitPdf];
 
   test('offers a further PDF Gizlet after Image to PDF as soon as one declares itself', () => {
     expect(getNextFlowTools('jpg-to-pdf', definitions).map((tool) => tool.toolSlug)).toEqual([
       'merge-pdf',
       'pdf-to-jpg',
       'compress-pdf',
+      'split-pdf',
     ]);
-    expect(canFlowTo('jpg-to-pdf', 'pdf-to-jpg', definitions)).toBe(true);
     expect(canFlowTo('jpg-to-pdf', 'compress-pdf', definitions)).toBe(true);
   });
 
-  test('offers the image Gizlets again after a Gizlet that turns a PDF into images', () => {
-    expect(getNextFlowTools('pdf-to-jpg', definitions).map((tool) => tool.toolSlug)).toEqual([
-      'compress-image',
-      'resize-image',
-      'convert-image',
-      'jpg-to-pdf',
-    ]);
+  test('offers the same PDF Gizlets after one that hands a PDF on', () => {
     expect(getNextFlowTools('compress-pdf', definitions).map((tool) => tool.toolSlug)).toEqual([
       'merge-pdf',
       'pdf-to-jpg',
       'compress-pdf',
+      'split-pdf',
     ]);
-    expect(canFlowTo('pdf-to-jpg', 'resize-image', definitions)).toBe(true);
+    expect(canFlowTo('compress-pdf', 'pdf-to-jpg', definitions)).toBe(true);
+  });
+
+  test('reads a splitting step that keeps its payload kind', () => {
+    expect(splitsFlowInput(['jpg-to-pdf', 'split-pdf'], definitions)).toBe(true);
+    expect(splitsFlowInput(['jpg-to-pdf', 'split-pdf', 'jpg-to-pdf'], definitions)).toBe(false);
+    expect(splitsFlowInput(['jpg-to-pdf', 'compress-pdf'], definitions)).toBe(false);
   });
 
   test('validates a whole image → PDF → image chain without a special case', () => {
     expect(
       isValidFlowSequence(
         imageInput,
-        ['resize-image', 'jpg-to-pdf', 'pdf-to-jpg', 'compress-image'],
+        ['resize-image', 'jpg-to-pdf', 'compress-pdf', 'pdf-to-jpg', 'compress-image'],
         definitions,
       ),
     ).toBe(true);
@@ -232,5 +271,6 @@ describe('the compatibility rule, against contracts that do not exist yet', () =
   test('treats a one-to-one PDF Gizlet as one-to-one, rather than guessing from its payload', () => {
     expect(combinesFlowInputs(['jpg-to-pdf', 'compress-pdf'], definitions)).toBe(true);
     expect(combinesFlowInputs(['pdf-to-jpg', 'compress-image'], definitions)).toBe(false);
+    expect(splitsFlowInput(['jpg-to-pdf', 'compress-pdf'], definitions)).toBe(false);
   });
 });

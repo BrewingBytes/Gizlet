@@ -1,0 +1,476 @@
+---
+import {
+  defaultPdfImageFormat,
+  defaultPdfImageResolution,
+  getPdfImageFormatOptions,
+  getPdfImageResolutionOptions,
+} from '../data/pdf-to-jpg';
+
+const formatOptions = getPdfImageFormatOptions();
+const resolutionOptions = getPdfImageResolutionOptions();
+---
+
+<section class="pdf-to-jpg-tool" data-pdf-to-jpg-tool>
+  <div class="pdf-to-jpg-tool__picker" data-drop-zone>
+    <input
+      id="pdf-to-jpg-file"
+      class="pdf-to-jpg-tool__file-input"
+      type="file"
+      accept="application/pdf,.pdf"
+      aria-label="Select a PDF to convert"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">One image per page</p>
+    <h2>Drop a PDF here</h2>
+    <p>Its pages are drawn and encoded by this browser. Nothing is uploaded.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose a PDF</button>
+  </div>
+
+  <p class="pdf-to-jpg-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="pdf-to-jpg-tool__error" data-error role="alert" hidden></p>
+
+  <div class="pdf-to-jpg-tool__editor" data-editor hidden>
+    <div class="pdf-to-jpg-tool__bar">
+      <p class="pdf-to-jpg-tool__document" data-document-name></p>
+      <button type="button" class="button-secondary" data-clear>Choose another PDF</button>
+    </div>
+
+    <div class="pdf-to-jpg-tool__preview">
+      <div class="pdf-to-jpg-tool__preview-page" data-page-area>
+        <canvas data-page-canvas aria-label="Current PDF page"></canvas>
+        <p class="pdf-to-jpg-tool__preview-error" data-page-error role="alert" hidden></p>
+      </div>
+      <div class="pdf-to-jpg-tool__pager">
+        <button type="button" class="pdf-to-jpg-tool__icon-button" data-previous aria-label="Previous page">←</button>
+        <label class="pdf-to-jpg-tool__page-field" for="pdf-to-jpg-preview-page">
+          <span>Page</span>
+          <input id="pdf-to-jpg-preview-page" type="text" inputmode="numeric" autocomplete="off" data-page-input aria-label="Go to page" />
+          <span data-page-total></span>
+        </label>
+        <button type="button" class="pdf-to-jpg-tool__icon-button" data-next aria-label="Next page">→</button>
+      </div>
+    </div>
+
+    <div class="pdf-to-jpg-tool__controls">
+      <div class="pdf-to-jpg-tool__control">
+        <label for="pdf-to-jpg-pages">Pages</label>
+        <input
+          id="pdf-to-jpg-pages"
+          type="text"
+          autocomplete="off"
+          placeholder="All pages"
+          data-pages
+          aria-label="Pages to convert"
+          aria-describedby="pdf-to-jpg-pages-hint"
+        />
+        <p class="pdf-to-jpg-tool__hint" id="pdf-to-jpg-pages-hint" data-pages-hint>
+          Numbers and ranges, like 1-3, 5. Empty converts every page.
+        </p>
+      </div>
+
+      <div class="pdf-to-jpg-tool__control">
+        <label for="pdf-to-jpg-format">Image format</label>
+        <select id="pdf-to-jpg-format" data-format aria-label="Image format">
+          {
+            formatOptions.map((option) => (
+              <option value={option.value} selected={option.value === defaultPdfImageFormat}>
+                {option.label}
+              </option>
+            ))
+          }
+        </select>
+      </div>
+
+      <div class="pdf-to-jpg-tool__control">
+        <label for="pdf-to-jpg-resolution">Resolution</label>
+        <select id="pdf-to-jpg-resolution" data-resolution aria-label="Resolution">
+          {
+            resolutionOptions.map((option) => (
+              <option value={option.value} selected={option.value === defaultPdfImageResolution}>
+                {option.label}
+              </option>
+            ))
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="pdf-to-jpg-tool__actions">
+      <button type="button" data-convert>Make the images</button>
+      <button type="button" class="button-secondary" data-reset>Start over</button>
+    </div>
+  </div>
+
+  <section class="pdf-to-jpg-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2 data-result-title>Your images are ready.</h2>
+    <p class="pdf-to-jpg-tool__result-details" data-result-details></p>
+
+    <ol class="pdf-to-jpg-tool__image-list" aria-label="Converted pages" data-image-list></ol>
+
+    <!-- One converted page, cloned per image, so no filename is ever markup. -->
+    <template data-image-template>
+      <li class="pdf-to-jpg-tool__image">
+        <img class="pdf-to-jpg-tool__image-thumbnail" alt="" data-image-thumbnail />
+        <span class="pdf-to-jpg-tool__image-details">
+          <strong data-image-name></strong>
+          <span data-image-meta></span>
+        </span>
+        <a class="pdf-to-jpg-tool__image-download" data-image-download>Download</a>
+      </li>
+    </template>
+
+    <div class="pdf-to-jpg-tool__result-actions">
+      <a class="pdf-to-jpg-tool__download" data-download-all hidden>Download all pages</a>
+      <button type="button" class="button-secondary" data-result-clear>Start over</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .pdf-to-jpg-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .pdf-to-jpg-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .pdf-to-jpg-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .pdf-to-jpg-tool__picker[hidden], .pdf-to-jpg-tool__editor[hidden], .pdf-to-jpg-tool__result[hidden], .pdf-to-jpg-tool__preview-error[hidden], .pdf-to-jpg-tool__download[hidden] { display: none; }
+  .pdf-to-jpg-tool__picker h2 { margin-bottom: var(--space-2); }
+  .pdf-to-jpg-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .pdf-to-jpg-tool__status, .pdf-to-jpg-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .pdf-to-jpg-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .pdf-to-jpg-tool__editor, .pdf-to-jpg-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .pdf-to-jpg-tool__editor { display: grid; gap: var(--space-4); }
+  .pdf-to-jpg-tool__bar { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
+  .pdf-to-jpg-tool__document { margin: 0; overflow-wrap: anywhere; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .pdf-to-jpg-tool__preview { display: grid; gap: var(--space-2); }
+  .pdf-to-jpg-tool__preview-page { display: grid; justify-items: center; gap: var(--space-2); min-width: 0; padding: var(--space-3); border: var(--border-width) solid var(--border); background: var(--background); overflow: auto; }
+  .pdf-to-jpg-tool__preview-page canvas { display: block; max-width: 100%; max-height: 26rem; height: auto; background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 18%); }
+  .pdf-to-jpg-tool__preview-error { margin: 0; color: var(--color-red); font-size: var(--font-size-sm); }
+  .pdf-to-jpg-tool__pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-2); }
+  .pdf-to-jpg-tool__page-field { display: flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
+  .pdf-to-jpg-tool__page-field input { width: 4rem; min-height: 2.75rem; text-align: center; font-family: var(--font-mono); }
+  .pdf-to-jpg-tool__icon-button { min-width: 2.75rem; min-height: 2.75rem; padding: 0; border: var(--border-width) solid var(--border); background: transparent; color: var(--text); font-weight: 700; }
+  .pdf-to-jpg-tool__icon-button:disabled { color: var(--text-muted); opacity: 0.5; }
+  .pdf-to-jpg-tool__controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-3); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); align-items: start; }
+  .pdf-to-jpg-tool__control label { display: block; margin-bottom: var(--space-1); font-weight: 700; }
+  .pdf-to-jpg-tool__control input, .pdf-to-jpg-tool__control select { width: 100%; }
+  .pdf-to-jpg-tool__hint { margin: var(--space-1) 0 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .pdf-to-jpg-tool__actions, .pdf-to-jpg-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .pdf-to-jpg-tool__result h2 { margin-bottom: var(--space-2); }
+  .pdf-to-jpg-tool__result-details { margin-bottom: var(--space-3); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .pdf-to-jpg-tool__image-list { margin: 0 0 var(--space-4); padding: 0; list-style: none; max-height: 30rem; overflow-y: auto; }
+  .pdf-to-jpg-tool__image { display: grid; grid-template-columns: 4rem minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-top: var(--border-width) solid var(--border); }
+  .pdf-to-jpg-tool__image:last-child { border-bottom: var(--border-width) solid var(--border); }
+  .pdf-to-jpg-tool__image-thumbnail { display: block; width: 4rem; height: 4rem; border: var(--border-width) solid var(--border); object-fit: contain; background: #fff; }
+  .pdf-to-jpg-tool__image-details { display: grid; gap: var(--space-1); min-width: 0; }
+  .pdf-to-jpg-tool__image-details strong { overflow-wrap: anywhere; }
+  .pdf-to-jpg-tool__image-details span { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .pdf-to-jpg-tool__image-download { min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-width) solid var(--border); color: var(--text); line-height: 1.25; text-decoration: none; white-space: nowrap; }
+  .pdf-to-jpg-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .pdf-to-jpg-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+  @media (max-width: 36rem) {
+    .pdf-to-jpg-tool__picker, .pdf-to-jpg-tool__editor, .pdf-to-jpg-tool__result { padding: var(--space-3); }
+    .pdf-to-jpg-tool__image { grid-template-columns: 3rem minmax(0, 1fr); }
+    .pdf-to-jpg-tool__image-thumbnail { width: 3rem; height: 3rem; }
+    .pdf-to-jpg-tool__image-download { grid-column: 2; justify-self: start; }
+  }
+</style>
+
+<script>
+  import { formatFileSize, getFormatLabel, isImageOutputFormat } from '../data/image-compression';
+  import {
+    defaultPdfImageFormat,
+    defaultPdfImageResolution,
+    describePdfImageCount,
+    describePdfPageSelection,
+    getPdfImageArchiveName,
+    getPdfImageResolutionLabel,
+    getPdfPageSelectionErrorMessage,
+    getPdfToImageErrorMessage,
+    isLargePdfToImageDocument,
+    isPdfImageResolution,
+    parsePdfPageSelection,
+    validatePdfToImagePageCount,
+    validatePdfToImageSelection,
+  } from '../data/pdf-to-jpg';
+  import { createZipArchive, zipMimeType } from '../data/zip-archive';
+  import { createPdfPageView } from '../scripts/pdf-page-view';
+  import type { LocalPdfDocument } from '../scripts/pdf-rendering';
+  import type { PdfImage } from '../scripts/pdf-to-image';
+
+  const root = document.querySelector<HTMLElement>('[data-pdf-to-jpg-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const editor = root.querySelector<HTMLElement>('[data-editor]');
+    const documentName = root.querySelector<HTMLElement>('[data-document-name]');
+    const pageArea = root.querySelector<HTMLElement>('[data-page-area]');
+    const pageCanvas = root.querySelector<HTMLCanvasElement>('[data-page-canvas]');
+    const pageError = root.querySelector<HTMLElement>('[data-page-error]');
+    const previousButton = root.querySelector<HTMLButtonElement>('[data-previous]');
+    const nextButton = root.querySelector<HTMLButtonElement>('[data-next]');
+    const pageInput = root.querySelector<HTMLInputElement>('[data-page-input]');
+    const pageTotal = root.querySelector<HTMLElement>('[data-page-total]');
+    const pagesField = root.querySelector<HTMLInputElement>('[data-pages]');
+    const formatField = root.querySelector<HTMLSelectElement>('[data-format]');
+    const resolutionField = root.querySelector<HTMLSelectElement>('[data-resolution]');
+    const convertButton = root.querySelector<HTMLButtonElement>('[data-convert]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const resetButton = root.querySelector<HTMLButtonElement>('[data-reset]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultTitle = root.querySelector<HTMLElement>('[data-result-title]');
+    const resultDetails = root.querySelector<HTMLElement>('[data-result-details]');
+    const imageList = root.querySelector<HTMLOListElement>('[data-image-list]');
+    const imageTemplate = root.querySelector<HTMLTemplateElement>('[data-image-template]');
+    const downloadAll = root.querySelector<HTMLAnchorElement>('[data-download-all]');
+    const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !documentName || !pageArea || !pageCanvas || !pageError || !previousButton || !nextButton || !pageInput || !pageTotal || !pagesField || !formatField || !resolutionField || !convertButton || !clearButton || !resetButton || !result || !resultTitle || !resultDetails || !imageList || !imageTemplate || !downloadAll || !resultClearButton) {
+      throw new Error('PDF to Image tool could not initialise.');
+    }
+
+    let openDocument: LocalPdfDocument | undefined;
+    let openFileName = '';
+    let pageCount = 0;
+    let isConverting = false;
+    /** Every object URL the result panel is holding, so none outlives it. */
+    let resultUrls: string[] = [];
+
+    /**
+     * The preview's page turning, shared with the PDF Viewer Gizlet. It is here
+     * so the pages can be seen before they are named in the Pages field, and
+     * fitted to its column rather than zoomed: what is being chosen is which
+     * page, not how large it looks.
+     */
+    const pageView = createPdfPageView({
+      pageArea,
+      canvas: pageCanvas,
+      pageError,
+      previousButton,
+      nextButton,
+      pageInput,
+      pageTotal,
+    });
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+
+    const currentFormat = () =>
+      isImageOutputFormat(formatField.value) ? formatField.value : defaultPdfImageFormat;
+    const currentResolution = () =>
+      isPdfImageResolution(resolutionField.value) ? resolutionField.value : defaultPdfImageResolution;
+
+    const resetResult = () => {
+      for (const url of resultUrls) URL.revokeObjectURL(url);
+      resultUrls = [];
+      imageList.replaceChildren();
+      result.hidden = true;
+      resultDetails.textContent = '';
+      downloadAll.hidden = true;
+      downloadAll.removeAttribute('href');
+      downloadAll.removeAttribute('download');
+    };
+
+    const resetTool = () => {
+      // The page view owns the document it was shown, and closes it here.
+      openDocument = undefined;
+      openFileName = '';
+      pageCount = 0;
+      pageView.reset();
+      fileInput.value = '';
+      pagesField.value = '';
+      editor.hidden = true;
+      dropZone.hidden = false;
+      resetResult();
+      clearError();
+      clearStatus();
+    };
+
+    const openFile = async (file: File | undefined) => {
+      resetTool();
+      if (!file) return;
+
+      const problem = validatePdfToImageSelection([file]);
+      if (problem) {
+        showError(problem);
+        return;
+      }
+
+      dropZone.hidden = true;
+      showStatus('Reading the PDF locally…');
+      await nextPaint();
+
+      try {
+        // pdf.js is reached only by dynamic import: the library and its worker
+        // are over a megabyte between them, and this page has no use for either
+        // until a PDF is actually chosen.
+        const { openLocalPdf } = await import('../scripts/pdf-rendering');
+        const opened = await openLocalPdf(file, { getErrorMessage: getPdfToImageErrorMessage });
+        const countProblem = validatePdfToImagePageCount(opened.pageCount);
+
+        if (countProblem) {
+          await opened.close().catch(() => undefined);
+          throw new Error(countProblem);
+        }
+
+        openDocument = opened;
+        openFileName = file.name;
+        pageCount = opened.pageCount;
+        documentName.textContent = `${file.name} · ${formatFileSize(file.size)} · ${pageCount} ${pageCount === 1 ? 'page' : 'pages'}`;
+        pagesField.placeholder = pageCount === 1 ? 'The only page' : `All ${pageCount} pages`;
+        editor.hidden = false;
+        clearStatus();
+
+        await pageView.show(opened);
+      } catch (caughtError) {
+        openDocument = undefined;
+        editor.hidden = true;
+        dropZone.hidden = false;
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : getPdfToImageErrorMessage(undefined));
+      }
+    };
+
+    /** One converted page, cloned from the template in the markup. */
+    const renderImage = (image: PdfImage): HTMLLIElement => {
+      const item = imageTemplate.content.firstElementChild?.cloneNode(true);
+
+      if (!(item instanceof HTMLLIElement)) throw new Error('The converted-page template is missing.');
+
+      const thumbnail = item.querySelector<HTMLImageElement>('[data-image-thumbnail]');
+      const name = item.querySelector<HTMLElement>('[data-image-name]');
+      const meta = item.querySelector<HTMLElement>('[data-image-meta]');
+      const download = item.querySelector<HTMLAnchorElement>('[data-image-download]');
+
+      if (!thumbnail || !name || !meta || !download) {
+        throw new Error('The converted-page template is incomplete.');
+      }
+
+      const url = URL.createObjectURL(image.file);
+      resultUrls.push(url);
+
+      thumbnail.src = url;
+      thumbnail.alt = `Page ${image.pageNumber}`;
+      name.textContent = image.file.name;
+      meta.textContent = `Page ${image.pageNumber} · ${image.width} × ${image.height} px · ${formatFileSize(image.file.size)}`;
+      download.href = url;
+      download.download = image.file.name;
+      download.setAttribute('aria-label', `Download ${image.file.name}`);
+
+      return item;
+    };
+
+    /**
+     * Packs the set as one archive.
+     *
+     * The images are already compressed, so the archive stores them rather than
+     * deflating them, and it is built here in the page from the same bytes the
+     * individual links point at — there is no second conversion and no server.
+     */
+    const packArchive = async (images: readonly PdfImage[]): Promise<Blob> => {
+      const entries = await Promise.all(
+        images.map(async (image) => ({
+          name: image.file.name,
+          data: new Uint8Array(await image.file.arrayBuffer()),
+        })),
+      );
+
+      return new Blob([createZipArchive(entries)], { type: zipMimeType });
+    };
+
+    const convert = async () => {
+      if (!openDocument || isConverting) return;
+
+      const selection = parsePdfPageSelection(pagesField.value, pageCount);
+
+      if (!selection) {
+        resetResult();
+        showError(getPdfPageSelectionErrorMessage(pageCount));
+        return;
+      }
+
+      isConverting = true;
+      clearError();
+      resetResult();
+      convertButton.disabled = true;
+      convertButton.textContent = 'Making them…';
+
+      const format = currentFormat();
+      const resolution = currentResolution();
+      const isLarge = isLargePdfToImageDocument(selection.length);
+
+      try {
+        const { renderPdfPagesToImages } = await import('../scripts/pdf-to-image');
+        const images = await renderPdfPagesToImages(openDocument, {
+          documentName: openFileName,
+          pageNumbers: selection,
+          pageCount,
+          format,
+          resolution,
+          onPage: async (position, total) => {
+            showStatus(
+              isLarge
+                ? `Large document: drawing page ${position} of ${total} locally…`
+                : `Drawing page ${position} of ${total} locally…`,
+            );
+            await nextPaint();
+          },
+        });
+
+        imageList.replaceChildren(...images.map(renderImage));
+        const totalBytes = images.reduce((total, image) => total + image.file.size, 0);
+
+        resultTitle.textContent = images.length === 1 ? 'Your image is ready.' : 'Your images are ready.';
+        resultDetails.textContent = `${describePdfPageSelection(selection, pageCount)} · ${getFormatLabel(format)} · ${getPdfImageResolutionLabel(resolution)} · ${formatFileSize(totalBytes)}`;
+
+        if (images.length > 1) {
+          showStatus(`Packing ${describePdfImageCount(images.length)} into one archive locally…`);
+          await nextPaint();
+
+          const archive = await packArchive(images);
+          const archiveUrl = URL.createObjectURL(archive);
+
+          resultUrls.push(archiveUrl);
+          downloadAll.href = archiveUrl;
+          downloadAll.download = getPdfImageArchiveName(openFileName);
+          downloadAll.textContent = `Download all ${images.length} pages · ${formatFileSize(archive.size)}`;
+          downloadAll.hidden = false;
+        }
+
+        result.hidden = false;
+        clearStatus();
+      } catch (caughtError) {
+        resetResult();
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : 'These pages could not be converted.');
+      } finally {
+        isConverting = false;
+        convertButton.disabled = false;
+        convertButton.textContent = 'Make the images';
+      }
+    };
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void openFile(fileInput.files?.[0]));
+    clearButton.addEventListener('click', resetTool);
+    resetButton.addEventListener('click', resetTool);
+    resultClearButton.addEventListener('click', resetTool);
+    convertButton.addEventListener('click', () => void convert());
+    for (const field of [pagesField, formatField, resolutionField]) {
+      field.addEventListener('change', () => { resetResult(); clearError(); });
+    }
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    }
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    }
+    dropZone.addEventListener('drop', (event) => void openFile(event.dataTransfer?.files[0]));
+  }
+</script>

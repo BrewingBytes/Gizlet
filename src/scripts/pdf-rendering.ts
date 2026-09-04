@@ -33,11 +33,24 @@ export interface LocalPdfDocument {
   close(): Promise<void>;
 }
 
+export interface OpenLocalPdfOptions {
+  /**
+   * Wording for a document that will not open, for a Gizlet whose job needs
+   * its own. A converter's advice about a locked file is not a reader's, and
+   * the wording is a decision like any other, so it stays in `src/data` and
+   * arrives here rather than being written twice against pdf.js error names.
+   */
+  readonly getErrorMessage?: (errorName: string | undefined) => string;
+}
+
 /** An error carrying wording the visitor can act on. */
-function toOpenError(caughtError: unknown): Error {
+function toOpenError(
+  caughtError: unknown,
+  getErrorMessage: (errorName: string | undefined) => string,
+): Error {
   const name = caughtError instanceof Error ? caughtError.name : undefined;
 
-  return new Error(getPdfOpenErrorMessage(name));
+  return new Error(getErrorMessage(name));
 }
 
 async function paint(
@@ -61,7 +74,10 @@ async function paint(
 }
 
 /** Opens a local file as a PDF, or throws a message the visitor can act on. */
-export async function openLocalPdf(file: Blob): Promise<LocalPdfDocument> {
+export async function openLocalPdf(
+  file: Blob,
+  options: OpenLocalPdfOptions = {},
+): Promise<LocalPdfDocument> {
   // A copy of the bytes: pdf.js takes ownership of the buffer it is given.
   const task = getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
   let document: PDFDocumentProxy;
@@ -71,7 +87,7 @@ export async function openLocalPdf(file: Blob): Promise<LocalPdfDocument> {
   } catch (caughtError) {
     // Releases the worker even when the document never opened.
     await task.destroy().catch(() => undefined);
-    throw toOpenError(caughtError);
+    throw toOpenError(caughtError, options.getErrorMessage ?? getPdfOpenErrorMessage);
   }
 
   return {

@@ -9,6 +9,11 @@ import {
   type PdfPageSizeName,
 } from './jpg-to-pdf';
 import {
+  defaultPdfImageResolution,
+  pdfImageResolutionNames,
+  type PdfImageResolution,
+} from './pdf-to-jpg';
+import {
   getFlowTool,
   isValidFlowSequence,
   type AvailableImageFlowToolSlug,
@@ -35,6 +40,7 @@ export interface RecipeStep {
   readonly quality?: number;
   readonly pageSize?: PdfPageSizeName;
   readonly orientation?: PdfOrientation;
+  readonly resolution?: PdfImageResolution;
 }
 
 export interface Recipe {
@@ -78,6 +84,10 @@ const recipeStepSettings = {
   // the flow made is already a single payload. The entry keeps this map total
   // over the chainable Gizlets, and the flow graph refuses the chain itself.
   'merge-pdf': {},
+  // Which pages to convert is deliberately absent. Every other value here is a
+  // whole number or one of a closed list of names, and a page range would be
+  // the one free-text key in the format; a flow converts the whole document.
+  'pdf-to-jpg': { r: pdfImageResolutionNames },
 } as const satisfies Record<RecipeToolSlug, Readonly<Record<string, 'number' | readonly string[]>>>;
 
 const recipeToolSlugs = Object.keys(recipeStepSettings) as readonly RecipeToolSlug[];
@@ -182,6 +192,12 @@ function buildStep(
       pageSize: settings.p as PdfPageSizeName,
       orientation: settings.o as PdfOrientation,
     };
+  }
+
+  if (toolSlug === 'pdf-to-jpg') {
+    if (!Object.hasOwn(settings, 'r')) return { toolSlug };
+
+    return { toolSlug, resolution: settings.r as PdfImageResolution };
   }
 
   return { toolSlug };
@@ -299,6 +315,14 @@ export function encodeRecipe(recipe: Recipe): string | undefined {
       if (!pdfOrientationNames.includes(orientation)) return undefined;
 
       settings.push(`p=${pageSize}`, `o=${orientation}`);
+    }
+
+    if (step.toolSlug === 'pdf-to-jpg') {
+      const resolution = step.resolution ?? defaultPdfImageResolution;
+
+      if (!pdfImageResolutionNames.includes(resolution)) return undefined;
+
+      settings.push(`r=${resolution}`);
     }
 
     segments.push(settings.length === 0 ? step.toolSlug : `${step.toolSlug}:${settings.join(',')}`);

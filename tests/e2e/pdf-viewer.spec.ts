@@ -1,40 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 import { pdfZoomLevels } from "../../src/data/pdf-viewer";
 import { paintedPixels } from "./support/pdf-canvas";
-
-/**
- * A real PDF, built with the library the Image to PDF Gizlet already ships, so
- * the viewer is tested against a document rather than a fixture blob. Each page
- * carries a differently sized block of colour, which is what lets a test tell
- * one rendered page from another by looking at the canvas.
- */
-async function samplePdf(pageCount: number): Promise<Buffer> {
-  const document = await PDFDocument.create();
-  const font = await document.embedFont(StandardFonts.Helvetica);
-
-  for (let index = 0; index < pageCount; index += 1) {
-    const page = document.addPage([595.28, 841.89]);
-
-    page.drawText(`Page ${index + 1}`, {
-      x: 60,
-      y: 720,
-      size: 36,
-      font,
-      color: rgb(0.06, 0.09, 0.16),
-    });
-    page.drawRectangle({
-      x: 60,
-      y: 560,
-      width: 80 + index * 90,
-      height: 80,
-      color: rgb(0.96, 0.65, 0),
-    });
-  }
-
-  return Buffer.from(await document.save());
-}
+import { samplePdf } from "./support/sample-pdf";
 
 const openPdf = async (page: Page, buffer: Buffer, name = "sample.pdf") => {
   await page.getByLabel("Select a PDF to open").setInputFiles({
