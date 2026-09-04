@@ -41,6 +41,7 @@ const bespokeSocialImageSlugs: readonly string[] = [
   'pdf-viewer',
   'merge-pdf',
   'pdf-to-jpg',
+  'split-pdf',
 ];
 
 /** The image file name a slug's bespoke card is committed under. */

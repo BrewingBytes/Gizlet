@@ -51,10 +51,15 @@ test("offers a block only when it accepts what the block before it produces", as
 
   await addStep(page, "jpg-to-pdf");
 
-  // A PDF is followed by exactly the Gizlets that declare they read one, which
-  // is the converter and nothing else: a block that would only look at what the
-  // result panel already shows is not offered.
-  await expect(options).toHaveText(["Choose the next Gizlet", "PDF to Image"]);
+  // A PDF is followed by exactly the Gizlets that declare they read one: the
+  // converter and the splitter. Merge PDF is not among them, because the one
+  // document the block before it made is already a single payload, and a block
+  // that would only look at what the result panel already shows is not offered.
+  await expect(options).toHaveText([
+    "Choose the next Gizlet",
+    "PDF to Image",
+    "Split PDF",
+  ]);
 
   await addStep(page, "pdf-to-jpg");
 
@@ -417,4 +422,79 @@ test("shares a flow that converts a PDF back to images as a recipe link", async 
   await page.goto(`/flows/${recipe}`);
   await expect(page.getByRole("heading", { name: "PDF to Image" })).toBeVisible();
   await expect(page.getByLabel("PDF to Image resolution")).toHaveValue("print");
+});
+
+test("splits the PDF a flow made, and hands every piece to the next block", async ({
+  page,
+}) => {
+  await page.goto("/flows/");
+
+  // The combining block goes in first, because that is what makes the source
+  // take more than one image.
+  await addStep(page, "jpg-to-pdf");
+  await chooseImages(page).setInputFiles([
+    asFile("wide.jpg", wideJpeg),
+    asFile("tall.jpg", tallJpeg),
+  ]);
+  await addStep(page, "split-pdf");
+
+  // The block says what it does to the payload rather than borrowing the
+  // wording of the other splitting Gizlet.
+  await expect(page.getByText("Image to PDF result → one PDF per page")).toBeVisible();
+
+  await page.getByRole("button", { name: "Run flow" }).click();
+
+  await expect(page.getByRole("heading", { name: "Your PDFs are ready." })).toBeVisible();
+  await expect(page.locator("[data-result-details]")).toContainText("2 PDFs · 2 pages");
+
+  const results = page.getByRole("list", { name: "Final results" });
+  await expect(results.getByRole("listitem")).toHaveCount(2);
+  await expect(results.getByRole("link").first()).toHaveAttribute(
+    "download",
+    "wide-and-1-more-page-1.pdf",
+  );
+
+  // Each piece is a one-page PDF another reader can open.
+  const bytes = await results
+    .getByRole("link")
+    .first()
+    .evaluate(async (link) => {
+      const response = await fetch((link as HTMLAnchorElement).href);
+      const values = new Uint8Array(await response.arrayBuffer());
+      let binary = "";
+
+      for (const value of values) binary += String.fromCharCode(value);
+
+      return btoa(binary);
+    });
+  const part = await PDFDocument.load(Buffer.from(bytes, "base64"));
+  expect(part.getPageCount()).toBe(1);
+
+  // Still one download at the end: the set of documents is packed here.
+  const archive = page.getByRole("link", { name: "Download all 2 PDFs" });
+  await expect(archive).toHaveAttribute("download", "wide-and-1-more-split.zip");
+
+  // And a converter after the splitter runs over every piece, so the flow
+  // finishes with one image per page of the document it took apart.
+  await addStep(page, "pdf-to-jpg");
+  await page.getByRole("button", { name: "Run flow" }).click();
+
+  await expect(page.getByRole("heading", { name: "Your images are ready." })).toBeVisible();
+  await expect(page.locator("[data-result-details]")).toContainText("2 images");
+  await expect(results.getByRole("listitem")).toHaveCount(2);
+});
+
+test("says what a one-page document cannot be split into", async ({ page }) => {
+  await page.goto("/flows/");
+
+  await addStep(page, "jpg-to-pdf");
+  await chooseImages(page).setInputFiles([asFile("wide.jpg", wideJpeg)]);
+  await addStep(page, "split-pdf");
+  await page.getByRole("button", { name: "Run flow" }).click();
+
+  // One image makes a one-page PDF, and a refusal that says exactly that is
+  // more use than a set of one.
+  await expect(page.getByRole("alert")).toContainText(
+    "one page, so there is nothing to split it into",
+  );
 });

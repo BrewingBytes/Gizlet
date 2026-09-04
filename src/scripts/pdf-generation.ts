@@ -14,20 +14,28 @@ import {
   getPdfMergeErrorMessage,
   type PdfMergeFailure,
 } from '../data/merge-pdf';
+import {
+  getPdfSplitErrorMessage,
+  getSplitPdfFilename,
+  getSplitPdfPartErrorMessage,
+  type PdfPageRange,
+} from '../data/split-pdf';
 import { encodeBrowserImage, loadBrowserImage } from './image-processing';
 
 /**
  * Writes PDFs on this device, without an upload: one built from local images,
- * and one joined from local PDFs.
+ * one joined from local PDFs, and a set taken back out of a local PDF.
  *
  * pdf-lib is used here rather than in a `src/data` module because it is a
  * browser-side dependency: there is no platform API that writes a PDF, but
- * every decision about *where* the image lands stays in `data/jpg-to-pdf`, and
- * every decision about what may be merged and how a refusal is worded stays in
- * `data/merge-pdf`, where both can be tested without a document.
+ * every decision about *where* the image lands stays in `data/jpg-to-pdf`,
+ * every decision about what may be merged stays in `data/merge-pdf`, and every
+ * decision about which pages come out and under what name stays in
+ * `data/split-pdf` — including how each refusal is worded, so all three can be
+ * tested without a document.
  *
- * Both jobs share this one module so the library is imported in one place and
- * the page pays for it once.
+ * The three jobs share this one module so the library is imported in one place
+ * and the page pays for it once.
  */
 
 /** One selected image, already decoded so its page can be measured. */
@@ -112,10 +120,12 @@ export interface PdfMergeOptions {
   readonly onDocument?: (documentNumber: number, documentCount: number) => Promise<void> | void;
 }
 
-/** An error carrying wording the visitor can act on, naming the file it is about. */
-function toMergeError(reason: PdfMergeFailure, file: File): Error {
-  return new Error(getPdfMergeErrorMessage(reason, file.name));
-}
+/**
+ * Why a document cannot contribute its pages. The two jobs that copy pages out
+ * of a document fail in exactly these three ways and word them differently, so
+ * the shape is shared here and the wording stays in each Gizlet's own module.
+ */
+type PdfSourceFailure = 'encrypted' | 'empty' | 'unreadable';
 
 /**
  * Opens a local PDF far enough to know whether its pages can be copied.
@@ -126,17 +136,23 @@ function toMergeError(reason: PdfMergeFailure, file: File): Error {
  * false and `name` is plain `Error` — so the flag turns that throw into the
  * `isEncrypted` property this module reads, instead of matching on a message.
  * An encrypted document is still refused: its pages would copy as ciphertext.
+ *
+ * The caller supplies the wording, because a merge names the file it is about
+ * and a split has only the one document to talk about.
  */
-export async function openLocalPdfForMerge(file: File): Promise<LocalMergeSource> {
+async function openLocalPdfSource(
+  source: Blob,
+  word: (reason: PdfSourceFailure) => Error,
+): Promise<{ readonly pageCount: number; readonly document: PDFDocument }> {
   let document: PDFDocument;
 
   try {
-    document = await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: true });
+    document = await PDFDocument.load(await source.arrayBuffer(), { ignoreEncryption: true });
   } catch {
-    throw toMergeError('unreadable', file);
+    throw word('unreadable');
   }
 
-  if (document.isEncrypted) throw toMergeError('encrypted', file);
+  if (document.isEncrypted) throw word('encrypted');
 
   let pageCount: number;
 
@@ -145,10 +161,24 @@ export async function openLocalPdfForMerge(file: File): Promise<LocalMergeSource
     // only here, so the page count is part of opening it rather than a later step.
     pageCount = document.getPageCount();
   } catch {
-    throw toMergeError('unreadable', file);
+    throw word('unreadable');
   }
 
-  if (pageCount < 1) throw toMergeError('empty', file);
+  if (pageCount < 1) throw word('empty');
+
+  return { pageCount, document };
+}
+
+/** An error carrying wording the visitor can act on, naming the file it is about. */
+function toMergeError(reason: PdfMergeFailure, file: File): Error {
+  return new Error(getPdfMergeErrorMessage(reason, file.name));
+}
+
+/** Opens one of the documents a merge was given. */
+export async function openLocalPdfForMerge(file: File): Promise<LocalMergeSource> {
+  const { pageCount, document } = await openLocalPdfSource(file, (reason) =>
+    toMergeError(reason, file),
+  );
 
   return { file, pageCount, document };
 }
@@ -182,4 +212,85 @@ export async function mergeLocalPdfs(
 
   // A copy of the bytes, so the blob does not hold a view onto pdf-lib's buffer.
   return new Blob([bytes.slice()], { type: 'application/pdf' });
+}
+
+/** A local PDF opened for splitting, parsed once and kept for the split itself. */
+export interface LocalSplitSource {
+  readonly pageCount: number;
+  /** The parsed document. Held so splitting does not re-read the same bytes. */
+  readonly document: PDFDocument;
+}
+
+/** One document a split wrote, and the pages it holds. */
+export interface SplitPdfPart {
+  readonly range: PdfPageRange;
+  readonly file: File;
+}
+
+export interface PdfSplitOptions {
+  /** The PDF's own file name, which every output file is named after. */
+  readonly documentName: string;
+  /** The source's page count, which decides the number padding. */
+  readonly pageCount: number;
+  /** Called before each output, so a long split can report its progress. */
+  readonly onPart?: (position: number, total: number) => Promise<void> | void;
+}
+
+/** Opens the document a split was given. */
+export async function openLocalPdfForSplit(source: Blob): Promise<LocalSplitSource> {
+  return openLocalPdfSource(source, (reason) => new Error(getPdfSplitErrorMessage(reason)));
+}
+
+/**
+ * Writes one local PDF per range, in the order the ranges were given.
+ *
+ * Each output is a fresh document holding copies of the pages it names, so the
+ * source is never modified and a page appearing in two ranges appears in both
+ * outputs. Copying pages is what pdf-lib is for here; which pages, in what
+ * order, and under what name all come from `data/split-pdf`.
+ */
+export async function splitLocalPdf(
+  source: LocalSplitSource,
+  ranges: readonly PdfPageRange[],
+  options: PdfSplitOptions,
+): Promise<readonly SplitPdfPart[]> {
+  if (ranges.length === 0) throw new Error('Name the pages you want split out.');
+
+  const { documentName, pageCount, onPart } = options;
+  const parts: SplitPdfPart[] = [];
+
+  for (const [index, range] of ranges.entries()) {
+    await onPart?.(index + 1, ranges.length);
+
+    let bytes: Uint8Array;
+
+    try {
+      const part = await PDFDocument.create();
+      // pdf-lib counts pages from zero; a range counts from one, as the
+      // visitor typed it.
+      const indices = Array.from(
+        { length: range.last - range.first + 1 },
+        (_, offset) => range.first - 1 + offset,
+      );
+
+      for (const page of await part.copyPages(source.document, indices)) part.addPage(page);
+
+      bytes = await part.save();
+    } catch {
+      // A range the library cannot copy is not a document that came out wrong;
+      // it is one that produced nothing, and saying which range is the only way
+      // the visitor can split the rest.
+      throw new Error(getSplitPdfPartErrorMessage(range));
+    }
+
+    parts.push({
+      range,
+      // A copy of the bytes, so the file does not hold a view onto pdf-lib's buffer.
+      file: new File([bytes.slice()], getSplitPdfFilename(documentName, range, pageCount), {
+        type: 'application/pdf',
+      }),
+    });
+  }
+
+  return parts;
 }

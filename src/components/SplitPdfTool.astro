@@ -1,0 +1,477 @@
+---
+import { defaultPdfSplitMode, getPdfSplitModeOptions } from '../data/split-pdf';
+
+const modeOptions = getPdfSplitModeOptions();
+---
+
+<section class="split-pdf-tool" data-split-pdf-tool>
+  <div class="split-pdf-tool__picker" data-drop-zone>
+    <input
+      id="split-pdf-file"
+      class="split-pdf-tool__file-input"
+      type="file"
+      accept="application/pdf,.pdf"
+      aria-label="Select a PDF to split"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">One PDF per range</p>
+    <h2>Drop a PDF here</h2>
+    <p>Its pages are copied into new documents by this browser. Nothing is uploaded.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose a PDF</button>
+  </div>
+
+  <p class="split-pdf-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="split-pdf-tool__error" data-error role="alert" hidden></p>
+
+  <div class="split-pdf-tool__editor" data-editor hidden>
+    <div class="split-pdf-tool__bar">
+      <p class="split-pdf-tool__document" data-document-name></p>
+      <button type="button" class="button-secondary" data-clear>Choose another PDF</button>
+    </div>
+
+    <div class="split-pdf-tool__preview">
+      <div class="split-pdf-tool__preview-page" data-page-area>
+        <canvas data-page-canvas aria-label="Current PDF page"></canvas>
+        <p class="split-pdf-tool__preview-error" data-page-error role="alert" hidden></p>
+      </div>
+      <div class="split-pdf-tool__pager">
+        <button type="button" class="split-pdf-tool__icon-button" data-previous aria-label="Previous page">←</button>
+        <label class="split-pdf-tool__page-field" for="split-pdf-preview-page">
+          <span>Page</span>
+          <input id="split-pdf-preview-page" type="text" inputmode="numeric" autocomplete="off" data-page-input aria-label="Go to page" />
+          <span data-page-total></span>
+        </label>
+        <button type="button" class="split-pdf-tool__icon-button" data-next aria-label="Next page">→</button>
+      </div>
+    </div>
+
+    <div class="split-pdf-tool__controls">
+      <div class="split-pdf-tool__control">
+        <label for="split-pdf-mode">Split into</label>
+        <select id="split-pdf-mode" data-mode aria-label="Split into">
+          {
+            modeOptions.map((option) => (
+              <option value={option.value} selected={option.value === defaultPdfSplitMode}>
+                {option.label}
+              </option>
+            ))
+          }
+        </select>
+      </div>
+
+      <div class="split-pdf-tool__control">
+        <label for="split-pdf-pages">Pages</label>
+        <input
+          id="split-pdf-pages"
+          type="text"
+          autocomplete="off"
+          placeholder="1-3, 5"
+          data-pages
+          aria-label="Pages to split out"
+          aria-describedby="split-pdf-pages-hint"
+        />
+        <p class="split-pdf-tool__hint" id="split-pdf-pages-hint" data-pages-hint>
+          Each range becomes one PDF, in the order you write them.
+        </p>
+      </div>
+    </div>
+
+    <div class="split-pdf-tool__actions">
+      <button type="button" data-split>Split the PDF</button>
+      <button type="button" class="button-secondary" data-reset>Start over</button>
+    </div>
+  </div>
+
+  <section class="split-pdf-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2 data-result-title>Your PDFs are ready.</h2>
+    <p class="split-pdf-tool__result-details" data-result-details></p>
+
+    <ol class="split-pdf-tool__part-list" aria-label="Split documents" data-part-list></ol>
+
+    <!-- One output document, cloned per part, so no filename is ever markup. -->
+    <template data-part-template>
+      <li class="split-pdf-tool__part">
+        <span class="split-pdf-tool__part-range" data-part-range></span>
+        <span class="split-pdf-tool__part-details">
+          <strong data-part-name></strong>
+          <span data-part-meta></span>
+        </span>
+        <a class="split-pdf-tool__part-download" data-part-download>Download</a>
+      </li>
+    </template>
+
+    <div class="split-pdf-tool__result-actions">
+      <a class="split-pdf-tool__download" data-download-all hidden>Download all</a>
+      <button type="button" class="button-secondary" data-result-clear>Start over</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .split-pdf-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .split-pdf-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .split-pdf-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .split-pdf-tool__picker[hidden], .split-pdf-tool__editor[hidden], .split-pdf-tool__result[hidden], .split-pdf-tool__preview-error[hidden], .split-pdf-tool__download[hidden] { display: none; }
+  .split-pdf-tool__picker h2 { margin-bottom: var(--space-2); }
+  .split-pdf-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .split-pdf-tool__status, .split-pdf-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .split-pdf-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .split-pdf-tool__editor, .split-pdf-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .split-pdf-tool__editor { display: grid; gap: var(--space-4); }
+  .split-pdf-tool__bar { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
+  .split-pdf-tool__document { margin: 0; overflow-wrap: anywhere; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .split-pdf-tool__preview { display: grid; gap: var(--space-2); }
+  .split-pdf-tool__preview-page { display: grid; justify-items: center; gap: var(--space-2); min-width: 0; padding: var(--space-3); border: var(--border-width) solid var(--border); background: var(--background); overflow: auto; }
+  .split-pdf-tool__preview-page canvas { display: block; max-width: 100%; max-height: 26rem; height: auto; background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 18%); }
+  .split-pdf-tool__preview-error { margin: 0; color: var(--color-red); font-size: var(--font-size-sm); }
+  .split-pdf-tool__pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-2); }
+  .split-pdf-tool__page-field { display: flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
+  .split-pdf-tool__page-field input { width: 4rem; min-height: 2.75rem; text-align: center; font-family: var(--font-mono); }
+  .split-pdf-tool__icon-button { min-width: 2.75rem; min-height: 2.75rem; padding: 0; border: var(--border-width) solid var(--border); background: transparent; color: var(--text); font-weight: 700; }
+  .split-pdf-tool__icon-button:disabled { color: var(--text-muted); opacity: 0.5; }
+  .split-pdf-tool__controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-3); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); align-items: start; }
+  .split-pdf-tool__control label { display: block; margin-bottom: var(--space-1); font-weight: 700; }
+  .split-pdf-tool__control input, .split-pdf-tool__control select { width: 100%; }
+  .split-pdf-tool__control input:disabled { color: var(--text-muted); opacity: 0.6; }
+  .split-pdf-tool__hint { margin: var(--space-1) 0 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .split-pdf-tool__actions, .split-pdf-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .split-pdf-tool__result h2 { margin-bottom: var(--space-2); }
+  .split-pdf-tool__result-details { margin-bottom: var(--space-3); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .split-pdf-tool__part-list { margin: 0 0 var(--space-4); padding: 0; list-style: none; max-height: 30rem; overflow-y: auto; }
+  .split-pdf-tool__part { display: grid; grid-template-columns: 7rem minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-top: var(--border-width) solid var(--border); }
+  .split-pdf-tool__part:last-child { border-bottom: var(--border-width) solid var(--border); }
+  .split-pdf-tool__part-range { padding: var(--space-1) var(--space-2); border: var(--border-width) solid var(--border); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-align: center; white-space: nowrap; }
+  .split-pdf-tool__part-details { display: grid; gap: var(--space-1); min-width: 0; }
+  .split-pdf-tool__part-details strong { overflow-wrap: anywhere; }
+  .split-pdf-tool__part-details span { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .split-pdf-tool__part-download { min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-width) solid var(--border); color: var(--text); line-height: 1.25; text-decoration: none; white-space: nowrap; }
+  .split-pdf-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .split-pdf-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+  @media (max-width: 36rem) {
+    .split-pdf-tool__picker, .split-pdf-tool__editor, .split-pdf-tool__result { padding: var(--space-3); }
+    .split-pdf-tool__part { grid-template-columns: 6rem minmax(0, 1fr); }
+    .split-pdf-tool__part-download { grid-column: 2; justify-self: start; }
+  }
+</style>
+
+<script>
+  import { formatFileSize } from '../data/image-compression';
+  import {
+    defaultPdfSplitMode,
+    describePdfPageRange,
+    describeSplitPdfCount,
+    describeSplitPdfPlan,
+    getPdfPageRangeErrorMessage,
+    getPdfSplitRanges,
+    getSplitPdfArchiveName,
+    getSplitPdfOpenErrorMessage,
+    isLargeSplitWorkload,
+    isPdfSplitMode,
+    usesNamedRanges,
+    validateSplitPdfPageCount,
+    validateSplitPdfSelection,
+  } from '../data/split-pdf';
+  import { createZipArchive, zipMimeType } from '../data/zip-archive';
+  import { createPdfPageView } from '../scripts/pdf-page-view';
+  import type { SplitPdfPart } from '../scripts/pdf-generation';
+  import type { LocalPdfDocument } from '../scripts/pdf-rendering';
+
+  const root = document.querySelector<HTMLElement>('[data-split-pdf-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const editor = root.querySelector<HTMLElement>('[data-editor]');
+    const documentName = root.querySelector<HTMLElement>('[data-document-name]');
+    const pageArea = root.querySelector<HTMLElement>('[data-page-area]');
+    const pageCanvas = root.querySelector<HTMLCanvasElement>('[data-page-canvas]');
+    const pageError = root.querySelector<HTMLElement>('[data-page-error]');
+    const previousButton = root.querySelector<HTMLButtonElement>('[data-previous]');
+    const nextButton = root.querySelector<HTMLButtonElement>('[data-next]');
+    const pageInput = root.querySelector<HTMLInputElement>('[data-page-input]');
+    const pageTotal = root.querySelector<HTMLElement>('[data-page-total]');
+    const modeField = root.querySelector<HTMLSelectElement>('[data-mode]');
+    const pagesField = root.querySelector<HTMLInputElement>('[data-pages]');
+    const pagesHint = root.querySelector<HTMLElement>('[data-pages-hint]');
+    const splitButton = root.querySelector<HTMLButtonElement>('[data-split]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const resetButton = root.querySelector<HTMLButtonElement>('[data-reset]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultTitle = root.querySelector<HTMLElement>('[data-result-title]');
+    const resultDetails = root.querySelector<HTMLElement>('[data-result-details]');
+    const partList = root.querySelector<HTMLOListElement>('[data-part-list]');
+    const partTemplate = root.querySelector<HTMLTemplateElement>('[data-part-template]');
+    const downloadAll = root.querySelector<HTMLAnchorElement>('[data-download-all]');
+    const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !documentName || !pageArea || !pageCanvas || !pageError || !previousButton || !nextButton || !pageInput || !pageTotal || !modeField || !pagesField || !pagesHint || !splitButton || !clearButton || !resetButton || !result || !resultTitle || !resultDetails || !partList || !partTemplate || !downloadAll || !resultClearButton) {
+      throw new Error('Split PDF tool could not initialise.');
+    }
+
+    let openFile: File | undefined;
+    let openDocument: LocalPdfDocument | undefined;
+    let pageCount = 0;
+    let isSplitting = false;
+    /** Every object URL the result panel is holding, so none outlives it. */
+    let resultUrls: string[] = [];
+
+    /**
+     * The preview's page turning, shared with the PDF Viewer Gizlet. It is here
+     * so the pages can be seen before they are named in the Pages field, and
+     * fitted to its column rather than zoomed: what is being chosen is which
+     * pages come out, not how large they look.
+     */
+    const pageView = createPdfPageView({
+      pageArea,
+      canvas: pageCanvas,
+      pageError,
+      previousButton,
+      nextButton,
+      pageInput,
+      pageTotal,
+    });
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+
+    const currentMode = () =>
+      isPdfSplitMode(modeField.value) ? modeField.value : defaultPdfSplitMode;
+
+    /**
+     * The Pages field only has a say in one of the modes, so it is disabled in
+     * the other rather than left looking like it still decides something.
+     */
+    const renderMode = () => {
+      const named = usesNamedRanges(currentMode());
+
+      pagesField.disabled = !named;
+      pagesHint.textContent = named
+        ? 'Each range becomes one PDF, in the order you write them.'
+        : pageCount > 0
+          ? `Every one of the ${pageCount} pages becomes its own PDF.`
+          : 'Every page becomes its own PDF.';
+    };
+
+    const resetResult = () => {
+      for (const url of resultUrls) URL.revokeObjectURL(url);
+      resultUrls = [];
+      partList.replaceChildren();
+      result.hidden = true;
+      resultDetails.textContent = '';
+      downloadAll.hidden = true;
+      downloadAll.removeAttribute('href');
+      downloadAll.removeAttribute('download');
+    };
+
+    const resetTool = () => {
+      // The page view owns the document it was shown, and closes it here.
+      openFile = undefined;
+      openDocument = undefined;
+      pageCount = 0;
+      pageView.reset();
+      fileInput.value = '';
+      pagesField.value = '';
+      editor.hidden = true;
+      dropZone.hidden = false;
+      renderMode();
+      resetResult();
+      clearError();
+      clearStatus();
+    };
+
+    const chooseFile = async (file: File | undefined) => {
+      resetTool();
+      if (!file) return;
+
+      const problem = validateSplitPdfSelection([file]);
+      if (problem) {
+        showError(problem);
+        return;
+      }
+
+      dropZone.hidden = true;
+      showStatus('Reading the PDF locally…');
+      await nextPaint();
+
+      try {
+        // pdf.js is reached only by dynamic import: the library and its worker
+        // are over a megabyte between them, and this page has no use for either
+        // until a PDF is actually chosen. It draws the preview only; the split
+        // itself is pdf-lib's job.
+        const { openLocalPdf } = await import('../scripts/pdf-rendering');
+        const opened = await openLocalPdf(file, { getErrorMessage: getSplitPdfOpenErrorMessage });
+        const countProblem = validateSplitPdfPageCount(opened.pageCount);
+
+        if (countProblem) {
+          await opened.close().catch(() => undefined);
+          throw new Error(countProblem);
+        }
+
+        openFile = file;
+        openDocument = opened;
+        pageCount = opened.pageCount;
+        documentName.textContent = `${file.name} · ${formatFileSize(file.size)} · ${pageCount} pages`;
+        editor.hidden = false;
+        renderMode();
+        clearStatus();
+
+        await pageView.show(opened);
+      } catch (caughtError) {
+        openFile = undefined;
+        openDocument = undefined;
+        editor.hidden = true;
+        dropZone.hidden = false;
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : getSplitPdfOpenErrorMessage(undefined));
+      }
+    };
+
+    /** One output document, cloned from the template in the markup. */
+    const renderPart = (part: SplitPdfPart): HTMLLIElement => {
+      const item = partTemplate.content.firstElementChild?.cloneNode(true);
+
+      if (!(item instanceof HTMLLIElement)) throw new Error('The split-document template is missing.');
+
+      const range = item.querySelector<HTMLElement>('[data-part-range]');
+      const name = item.querySelector<HTMLElement>('[data-part-name]');
+      const meta = item.querySelector<HTMLElement>('[data-part-meta]');
+      const download = item.querySelector<HTMLAnchorElement>('[data-part-download]');
+
+      if (!range || !name || !meta || !download) {
+        throw new Error('The split-document template is incomplete.');
+      }
+
+      const url = URL.createObjectURL(part.file);
+      resultUrls.push(url);
+
+      const pages = part.range.last - part.range.first + 1;
+
+      range.textContent = describePdfPageRange(part.range);
+      name.textContent = part.file.name;
+      meta.textContent = `${pages} ${pages === 1 ? 'page' : 'pages'} · ${formatFileSize(part.file.size)}`;
+      download.href = url;
+      download.download = part.file.name;
+      download.setAttribute('aria-label', `Download ${part.file.name}`);
+
+      return item;
+    };
+
+    /**
+     * Packs the set as one archive.
+     *
+     * A PDF is already a compressed container, so the archive stores the files
+     * rather than deflating them, and it is built here in the page from the
+     * same bytes the individual links point at — there is no second split and
+     * no server.
+     */
+    const packArchive = async (parts: readonly SplitPdfPart[]): Promise<Blob> => {
+      const entries = await Promise.all(
+        parts.map(async (part) => ({
+          name: part.file.name,
+          data: new Uint8Array(await part.file.arrayBuffer()),
+        })),
+      );
+
+      return new Blob([createZipArchive(entries)], { type: zipMimeType });
+    };
+
+    const split = async () => {
+      if (!openFile || !openDocument || isSplitting) return;
+
+      const mode = currentMode();
+      const ranges = getPdfSplitRanges(mode, pagesField.value, pageCount);
+
+      if (!ranges) {
+        resetResult();
+        showError(getPdfPageRangeErrorMessage(pageCount));
+        return;
+      }
+
+      isSplitting = true;
+      clearError();
+      resetResult();
+      splitButton.disabled = true;
+      splitButton.textContent = 'Splitting…';
+
+      const isLarge = isLargeSplitWorkload(ranges);
+      const sourceName = openFile.name;
+
+      try {
+        // pdf-lib writes the documents. It is loaded here rather than up front
+        // for the same reason pdf.js is: a visitor who only opens the page
+        // needs neither library.
+        const { openLocalPdfForSplit, splitLocalPdf } = await import('../scripts/pdf-generation');
+        const source = await openLocalPdfForSplit(openFile);
+        const parts = await splitLocalPdf(source, ranges, {
+          documentName: sourceName,
+          pageCount,
+          onPart: async (position, total) => {
+            showStatus(
+              isLarge
+                ? `Large split: writing document ${position} of ${total} locally…`
+                : `Writing document ${position} of ${total} locally…`,
+            );
+            await nextPaint();
+          },
+        });
+
+        partList.replaceChildren(...parts.map(renderPart));
+        const totalBytes = parts.reduce((total, part) => total + part.file.size, 0);
+
+        resultTitle.textContent = parts.length === 1 ? 'Your PDF is ready.' : 'Your PDFs are ready.';
+        resultDetails.textContent = `${describeSplitPdfPlan(ranges)} · from ${pageCount} pages · ${formatFileSize(totalBytes)}`;
+
+        if (parts.length > 1) {
+          showStatus(`Packing ${describeSplitPdfCount(parts.length)} into one archive locally…`);
+          await nextPaint();
+
+          const archive = await packArchive(parts);
+          const archiveUrl = URL.createObjectURL(archive);
+
+          resultUrls.push(archiveUrl);
+          downloadAll.href = archiveUrl;
+          downloadAll.download = getSplitPdfArchiveName(sourceName);
+          downloadAll.textContent = `Download all ${parts.length} PDFs · ${formatFileSize(archive.size)}`;
+          downloadAll.hidden = false;
+        }
+
+        result.hidden = false;
+        clearStatus();
+      } catch (caughtError) {
+        resetResult();
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : 'This PDF could not be split.');
+      } finally {
+        isSplitting = false;
+        splitButton.disabled = false;
+        splitButton.textContent = 'Split the PDF';
+      }
+    };
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void chooseFile(fileInput.files?.[0]));
+    clearButton.addEventListener('click', resetTool);
+    resetButton.addEventListener('click', resetTool);
+    resultClearButton.addEventListener('click', resetTool);
+    splitButton.addEventListener('click', () => void split());
+    modeField.addEventListener('change', () => { renderMode(); resetResult(); clearError(); });
+    pagesField.addEventListener('change', () => { resetResult(); clearError(); });
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    }
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    }
+    dropZone.addEventListener('drop', (event) => void chooseFile(event.dataTransfer?.files[0]));
+
+    renderMode();
+  }
+</script>

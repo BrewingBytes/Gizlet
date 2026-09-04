@@ -741,6 +741,87 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'split-pdf': {
+    what: {
+      heading: 'What Split PDF does',
+      paragraphs: [
+        'Split PDF takes one document apart into several. Name the ranges you want — 1-3, 5, 8-10 — and each one is copied into a PDF of its own, or ask for every page separately and get one document per page.',
+        'The pages are copied rather than redrawn, so what comes out is the same PDF content it went in as: the text stays selectable, the fonts stay embedded, and nothing is re-encoded. Each part arrives with its own download, and a set arrives as one archive as well.',
+      ],
+    },
+    when: {
+      heading: 'When to split a document up',
+      paragraphs: [
+        'Whenever only part of a document is the part anyone needs: one chapter out of a report, the signature page of a contract, a single invoice out of a month of them, the two pages of a scan that are actually the form. Sending the whole file when three pages were asked for is how documents end up somewhere they should not be.',
+        'Splitting is also how a long document becomes a workable one. It is the pair to Merge PDF — take a document apart, keep what matters, join it back to something else — and it feeds PDF to Image, which is easier to point at a handful of pages than at a hundred.',
+      ],
+    },
+    options: {
+      heading: 'What the split controls do',
+      paragraphs: [],
+      details: [
+        {
+          term: 'Split into',
+          description:
+            'Page ranges you name gives you one PDF per range, in the order you write them. Every page separately gives you one PDF per page, which is the quicker way to ask for the whole document broken up and needs nothing typed.',
+        },
+        {
+          term: 'Pages',
+          description:
+            'Ranges and single pages, like 1-3, 5. Order matters here, because each range becomes its own document: 1-3, 5 is two PDFs, and writing them the other way round names the files differently. A range that runs backwards, a page past the end of the document, or the same range written twice is refused rather than guessed at, and the preview beside the field is there to find the numbers with.',
+        },
+        {
+          term: 'Limits',
+          description:
+            'Documents of up to 500 pages, which is what the PDF Viewer will open, so anything this Gizlet produces can be read in the one next to it. Past 20 output documents the Gizlet says it is working through a long split rather than looking stalled. A one-page PDF is refused, because there is nothing to split it into, and a password-protected PDF is refused with an explanation.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'The document is taken apart here',
+      paragraphs: [
+        'Reading the PDF, copying the pages, writing each new document, and packing the archive all happen in this browser. Gizlet is a static site with no upload endpoint, so there is no server that could receive the file, and nothing survives closing the tab.',
+        'This is the Gizlet where that matters most. Splitting a document is usually the step before sending part of it on, which means the file on your device at that moment is a contract, a payslip, a medical letter, or a bank statement — exactly the documents that should not be handed to a site that takes the upload first and splits it afterwards.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Is the PDF uploaded to split it?',
+        answer:
+          'No. The document is parsed and the new ones are written by this browser, and they are handed straight to your downloads. There is no upload endpoint behind this page.',
+      },
+      {
+        question: 'How do I write the page ranges?',
+        answer:
+          'Numbers and ranges separated by commas, like 1-3, 5, 8-10. Each entry becomes one PDF, so that example gives you three documents: pages 1 to 3, page 5 on its own, and pages 8 to 10.',
+      },
+      {
+        question: 'Can I pull a single page out?',
+        answer:
+          'Yes. Write just that page number, like 7, and you get a one-page PDF holding it. The file is named for the page, so several single pages do not become a folder of files you cannot tell apart.',
+      },
+      {
+        question: 'How do I split every page into its own file?',
+        answer:
+          'Choose Every page separately in Split into. The Pages field is not needed then, and you get one PDF per page, numbered so they sort into reading order.',
+      },
+      {
+        question: 'Does splitting reduce the quality or lose the text?',
+        answer:
+          'No. The pages are copied, not redrawn, so the text stays selectable and the images stay exactly as they were. That is the difference between splitting a PDF and converting its pages to pictures.',
+      },
+      {
+        question: 'How do I delete pages instead of extracting them?',
+        answer:
+          'Name the ranges you want to keep and leave out the ones you do not. Splitting a ten-page document as 1-4, 6-10 gives you the document without page 5, in two parts; joining those back into one is what Merge PDF is for.',
+      },
+      {
+        question: 'Can it split a password-protected PDF?',
+        answer:
+          'No. A protected document cannot be read without its password, and this Gizlet does not ask for one. Open it in an application that can, save an unlocked copy, and split that instead.',
+      },
+    ],
+  },
 };
 
 /** The supporting content for a Gizlet page, if it has any yet. */

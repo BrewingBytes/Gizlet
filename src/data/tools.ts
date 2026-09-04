@@ -240,6 +240,30 @@ export const toolRegistry = [
       output: "One image per chosen page, downloadable individually or together as a ZIP archive.",
     },
   },
+  {
+    id: 10,
+    name: "Split PDF",
+    slug: "split-pdf",
+    path: "/tools/split-pdf/",
+    category: "pdf",
+    description: "Take a PDF apart into the pages and ranges you name.",
+    keywords: [
+      "split pdf",
+      "extract pdf pages",
+      "separate pdf pages",
+      "pdf page splitter",
+      "split pdf by page range",
+      "delete pages from pdf",
+      "pull a page out of a pdf",
+      "one pdf per page",
+    ],
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "One PDF file; either page ranges such as 1-3, 5 or a request for every page as its own document. A password-protected PDF is refused rather than split.",
+      output: "One PDF per range or page, holding copies of those pages, downloadable individually or together as a ZIP archive.",
+    },
+  },
 ] as const satisfies readonly ToolRegistryEntry[];
 
 /**

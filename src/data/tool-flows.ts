@@ -107,6 +107,12 @@ export const toolFlowRegistry = [
     output: imageOutput,
     splitsInput: true,
   },
+  {
+    toolSlug: 'split-pdf',
+    input: pdfPayload,
+    output: pdfPayload,
+    splitsInput: true,
+  },
 ] as const satisfies readonly ToolFlowDefinition[];
 
 /**

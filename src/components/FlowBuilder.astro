@@ -293,15 +293,33 @@
     validatePdfToImagePageCount,
     type PdfImageResolution,
   } from '../data/pdf-to-jpg';
+  import {
+    describeSplitPdfCount,
+    getSinglePageRanges,
+    getSplitPdfArchiveName,
+    validateSplitPdfPageCount,
+  } from '../data/split-pdf';
   import { toolRegistry } from '../data/tools';
   import { createZipArchive, zipMimeType } from '../data/zip-archive';
   import { encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
-  import { createImagePdf } from '../scripts/pdf-generation';
+  import { createImagePdf, openLocalPdfForSplit, splitLocalPdf } from '../scripts/pdf-generation';
   import { createPdfPageView } from '../scripts/pdf-page-view';
 
   // Chainable, published, and derived: adding a Gizlet with an image or PDF
   // contract joins the builder without a list here being edited.
   type FlowToolSlug = AvailableImageFlowToolSlug;
+
+  /**
+   * A PDF a flow is holding between blocks. A flow carries a set of these
+   * rather than one, because a splitting block turns the one document into
+   * several and everything after it then runs over each.
+   */
+  interface FlowPdf {
+    readonly blob: Blob;
+    readonly pages: number;
+    readonly pageSize: PdfPageSizeName;
+    readonly name: string;
+  }
 
   interface FlowStep {
     readonly id: number;
@@ -596,6 +614,34 @@
 
       return item;
     };
+    /**
+     * One PDF of a set, cloned from the same template. Its thumbnail is dropped
+     * rather than left empty: a PDF has no picture of itself to show without
+     * drawing it, and a set of documents is a list rather than a contact sheet.
+     */
+    const renderPdfResultItem = (pdf: FlowPdf): HTMLLIElement => {
+      const item = resultTemplate.content.firstElementChild?.cloneNode(true);
+      if (!(item instanceof HTMLLIElement)) throw new Error('The result template is missing.');
+
+      const thumbnail = item.querySelector<HTMLImageElement>('[data-result-thumbnail]');
+      const name = item.querySelector<HTMLElement>('[data-result-name]');
+      const meta = item.querySelector<HTMLElement>('[data-result-meta]');
+      const link = item.querySelector<HTMLAnchorElement>('[data-result-download]');
+
+      if (!thumbnail || !name || !meta || !link) throw new Error('The result template is incomplete.');
+
+      const url = URL.createObjectURL(pdf.blob);
+      resultItemUrls.push(url);
+
+      thumbnail.remove();
+      name.textContent = pdf.name;
+      meta.textContent = `${describePdfPageCount(pdf.pages)} · ${formatFileSize(pdf.blob.size)}`;
+      link.href = url;
+      link.download = pdf.name;
+      link.setAttribute('aria-label', `Download ${pdf.name}`);
+
+      return item;
+    };
     const renderSteps = () => {
       stepList.innerHTML = steps.map((step, index) => {
         const tool = toolBySlug(step.toolSlug);
@@ -606,7 +652,7 @@
         const produces = contract.combinesInputs === true
           ? 'one PDF'
           : contract.splitsInput === true
-            ? 'one image per page'
+            ? (contract.output.kind === 'pdf-file' ? 'one PDF per page' : 'one image per page')
             : 'image result';
         return `<li><div class="flow-builder__connector" aria-hidden="true"><span>↓</span></div><article class="flow-block"><div class="flow-block__grip" aria-hidden="true">⠿</div><div class="flow-block__number">${String(index + 1).padStart(2, '0')}</div><div class="flow-block__content"><div class="flow-block__heading"><div><h2>${tool.name}</h2><p>${prior} → ${produces}</p></div><span class="status-local">Local</span></div>${settingsMarkup(step)}</div><div class="flow-block__actions" aria-label="${tool.name} controls"><button type="button" class="flow-block__icon-button" data-step-action="up" data-step-id="${step.id}" aria-label="Move ${tool.name} up" ${index === 0 || !canReorder(index, index - 1) || isRunning ? 'disabled' : ''}>↑</button><button type="button" class="flow-block__icon-button" data-step-action="down" data-step-id="${step.id}" aria-label="Move ${tool.name} down" ${index === steps.length - 1 || !canReorder(index, index + 1) || isRunning ? 'disabled' : ''}>↓</button><button type="button" class="flow-block__remove" data-step-action="remove" data-step-id="${step.id}" ${isRunning ? 'disabled' : ''}>Remove</button></div></article></li>`;
       }).join('');
@@ -808,8 +854,10 @@
         width: source.width,
         height: source.height,
       }));
-      let pdfResult: { readonly blob: Blob; readonly pages: number; readonly pageSize: PdfPageSizeName; readonly name: string } | undefined;
-      // The document a set of images came out of, which names their archive.
+      let pdfResults: readonly FlowPdf[] = [];
+      // The document a set came out of, which names its archive. It is the
+      // earliest such document rather than the latest: a split followed by a
+      // conversion has taken the same original apart twice over.
       let setSourceName: string | undefined;
 
       try {
@@ -831,7 +879,7 @@
               },
             });
 
-            pdfResult = { blob, pages, pageSize, name };
+            pdfResults = [{ blob, pages, pageSize, name }];
             payloads = [];
             continue;
           }
@@ -840,7 +888,7 @@
             // Only a PDF block can precede this one, so the graph guarantees a
             // document is waiting; the check is here because a chain that
             // reached this state some other way must say so rather than throw.
-            if (!pdfResult) throw new Error(`${tool.name} needs a PDF from the block before it.`);
+            if (pdfResults.length === 0) throw new Error(`${tool.name} needs a PDF from the block before it.`);
 
             showStatus(`Running ${position}: ${tool.name}, reading the document locally…`);
             await nextFrame();
@@ -849,37 +897,82 @@
             // the page carries neither the library nor its worker until then.
             const { openLocalPdf } = await import('../scripts/pdf-rendering');
             const { renderPdfPagesToImages } = await import('../scripts/pdf-to-image');
-            const opened = await openLocalPdf(pdfResult.blob, {
-              getErrorMessage: getPdfToImageErrorMessage,
-            });
+            const converted: FlowPayload[] = [];
 
-            try {
-              const countProblem = validatePdfToImagePageCount(opened.pageCount);
+            // A splitting block before this one leaves several documents, so
+            // every one of them is drawn and their pages join one set.
+            for (const pdf of pdfResults) {
+              const opened = await openLocalPdf(pdf.blob, {
+                getErrorMessage: getPdfToImageErrorMessage,
+              });
+
+              try {
+                const countProblem = validatePdfToImagePageCount(opened.pageCount);
+                if (countProblem) throw new Error(countProblem);
+
+                const images = await renderPdfPagesToImages(opened, {
+                  documentName: pdf.name,
+                  pageNumbers: Array.from({ length: opened.pageCount }, (_, page) => page + 1),
+                  pageCount: opened.pageCount,
+                  format: outputFormat,
+                  resolution: step.resolution ?? defaultPdfImageResolution,
+                  onPage: async (pagePosition, total) => {
+                    showStatus(`Running ${position}: ${tool.name}, page ${pagePosition} of ${total} locally…`);
+                    await nextFrame();
+                  },
+                });
+
+                for (const image of images) {
+                  converted.push({ file: image.file, width: image.width, height: image.height });
+                }
+              } finally {
+                await opened.close().catch(() => undefined);
+              }
+            }
+
+            payloads = converted;
+            setSourceName ??= pdfResults[0].name;
+            pdfResults = [];
+            continue;
+          }
+
+          if (step.toolSlug === 'split-pdf') {
+            if (pdfResults.length === 0) throw new Error(`${tool.name} needs a PDF from the block before it.`);
+
+            const split: FlowPdf[] = [];
+            setSourceName ??= pdfResults[0].name;
+
+            for (const pdf of pdfResults) {
+              showStatus(`Running ${position}: ${tool.name}, reading the document locally…`);
+              await nextFrame();
+
+              const source = await openLocalPdfForSplit(pdf.blob);
+              const countProblem = validateSplitPdfPageCount(source.pageCount);
               if (countProblem) throw new Error(countProblem);
 
-              const images = await renderPdfPagesToImages(opened, {
-                documentName: pdfResult.name,
-                pageNumbers: Array.from({ length: opened.pageCount }, (_, page) => page + 1),
-                pageCount: opened.pageCount,
-                format: outputFormat,
-                resolution: step.resolution ?? defaultPdfImageResolution,
-                onPage: async (pagePosition, total) => {
-                  showStatus(`Running ${position}: ${tool.name}, page ${pagePosition} of ${total} locally…`);
+              // A flow has no field to name ranges in, so it splits the
+              // document into its pages: one page per document is the piece
+              // every block after this one can use.
+              const parts = await splitLocalPdf(source, getSinglePageRanges(source.pageCount), {
+                documentName: pdf.name,
+                pageCount: source.pageCount,
+                onPart: async (partPosition, total) => {
+                  showStatus(`Running ${position}: ${tool.name}, document ${partPosition} of ${total} locally…`);
                   await nextFrame();
                 },
               });
 
-              payloads = images.map((image) => ({
-                file: image.file,
-                width: image.width,
-                height: image.height,
-              }));
-            } finally {
-              await opened.close().catch(() => undefined);
+              for (const part of parts) {
+                split.push({
+                  blob: part.file,
+                  pages: 1,
+                  pageSize: pdf.pageSize,
+                  name: part.file.name,
+                });
+              }
             }
 
-            setSourceName = pdfResult.name;
-            pdfResult = undefined;
+            pdfResults = split;
             continue;
           }
 
@@ -894,19 +987,48 @@
           payloads = processed;
         }
 
-        if (pdfResult) {
-          resultUrl = URL.createObjectURL(pdfResult.blob);
+        if (pdfResults.length === 1) {
+          const [pdf] = pdfResults;
+
+          resultUrl = URL.createObjectURL(pdf.blob);
           resultTitle.textContent = 'Your PDF is ready.';
-          resultDetails.textContent = `${describePdfPageCount(pdfResult.pages)} · ${getPdfPageSizeLabel(pdfResult.pageSize)} · ${formatFileSize(pdfResult.blob.size)}`;
+          resultDetails.textContent = `${describePdfPageCount(pdf.pages)} · ${getPdfPageSizeLabel(pdf.pageSize)} · ${formatFileSize(pdf.blob.size)}`;
           resultFigure.hidden = true;
           download.textContent = 'Download PDF';
           download.href = resultUrl;
-          download.download = pdfResult.name;
+          download.download = pdf.name;
           result.hidden = false;
           // The panel is complete before the preview is drawn, so the download
           // is there to be used whether or not the drawing succeeds.
-          await drawPreview(pdfResult.blob);
+          await drawPreview(pdf.blob);
           showStatus('Done. Your PDF is ready to download.');
+        } else if (pdfResults.length > 1) {
+          showStatus(`Packing ${describeSplitPdfCount(pdfResults.length)} into one archive locally…`);
+          await nextFrame();
+
+          // A set of documents is one download too, packed here from the same
+          // files the individual links point at.
+          const entries = await Promise.all(
+            pdfResults.map(async (pdf) => ({
+              name: pdf.name,
+              data: new Uint8Array(await pdf.blob.arrayBuffer()),
+            })),
+          );
+          const archive = new Blob([createZipArchive(entries)], { type: zipMimeType });
+          const pages = pdfResults.reduce((total, pdf) => total + pdf.pages, 0);
+          const total = pdfResults.reduce((bytes, pdf) => bytes + pdf.blob.size, 0);
+
+          resultUrl = URL.createObjectURL(archive);
+          resultTitle.textContent = 'Your PDFs are ready.';
+          resultDetails.textContent = `${describeSplitPdfCount(pdfResults.length)} · ${describePdfPageCount(pages)} · ${formatFileSize(total)}`;
+          resultFigure.hidden = true;
+          resultList.replaceChildren(...pdfResults.map(renderPdfResultItem));
+          resultList.hidden = false;
+          download.textContent = `Download all ${pdfResults.length} PDFs`;
+          download.href = resultUrl;
+          download.download = getSplitPdfArchiveName(setSourceName ?? 'document.pdf');
+          result.hidden = false;
+          showStatus('Done. Your PDFs are ready to download.');
         } else if (payloads.length > 1) {
           showStatus(`Packing ${describePdfImageCount(payloads.length)} into one archive locally…`);
           await nextFrame();

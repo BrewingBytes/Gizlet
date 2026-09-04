@@ -13,8 +13,9 @@ const relatedToolSlugs: Record<ToolSlug, readonly ToolSlug[]> = {
   'json-formatter': ['json-ld-generator'],
   'jpg-to-pdf': ['pdf-to-jpg', 'merge-pdf', 'pdf-viewer'],
   'pdf-viewer': ['pdf-to-jpg', 'merge-pdf', 'jpg-to-pdf'],
-  'merge-pdf': ['pdf-viewer', 'jpg-to-pdf', 'compress-image'],
-  'pdf-to-jpg': ['pdf-viewer', 'jpg-to-pdf', 'compress-image'],
+  'merge-pdf': ['split-pdf', 'pdf-viewer', 'jpg-to-pdf'],
+  'pdf-to-jpg': ['split-pdf', 'pdf-viewer', 'jpg-to-pdf'],
+  'split-pdf': ['merge-pdf', 'pdf-to-jpg', 'pdf-viewer'],
 };
 
 function getToolBySlug(slug: ToolSlug): ToolRegistryEntry {
