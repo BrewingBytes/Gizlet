@@ -421,7 +421,7 @@ const toolPageContent: Record<string, ToolPageContent> = {
     what: {
       heading: 'What Image to PDF does',
       paragraphs: [
-        'Image to PDF takes the images you choose and writes them into a single PDF, one image per page, in the order you put them in. Your browser decodes each picture, works out where it sits on the page, and assembles the document here on this device. You may know it as JPG to PDF; the name changed because it never only took JPEGs.',
+        'Image to PDF takes the images you choose and writes them into a single PDF, one image per page, in the order you put them in. Your browser decodes each picture, works out where it sits on the page, and assembles the document here on this device.',
         'Drop in one photograph or a hundred, move the pages into the order you want, pick a paper size, and download one file. Nothing is added to the pages: no header, no page number, no watermark.',
       ],
     },

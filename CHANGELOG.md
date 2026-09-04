@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Fixed
 
 - Searching for an image conversion no longer sends people to Image to PDF. Its `png to pdf`, `webp to pdf`, `avif to pdf`, and `bmp to pdf` keywords made it match `jpg to png` — the keyword Convert Image declares for itself — on every term, and the connector `to` scored three times over, once for its name, once for its description, and once for its keywords. It outranked the converter on the converter's own query, and was the only result for `webp`, `avif`, and `bmp`. Connector words are now dropped from a query before it is scored, an exact keyword phrase earns the same kind of bonus an exact name match already did, and the three image Gizlets declare the formats they genuinely accept. `jpg to png` and `avif to jpg` rank Convert Image first; `png to pdf` still returns Image to PDF alone.
-- The Image to PDF page tells readers it used to be called JPG to PDF. The rename left the old name only in the client-side search index, where nothing that reads the page can see it, and its format question still asked “or only JPG?” of a page that no longer claims to be JPG-only.
+- The Image to PDF page's format question no longer asks “or only JPG?”. The Gizlet stopped claiming to be JPG-only when it was renamed, so the question raised a doubt its own page no longer invited.
 
 ## [0.3.0] - 2026-09-03
 
