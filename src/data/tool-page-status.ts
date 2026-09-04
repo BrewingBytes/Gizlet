@@ -41,6 +41,7 @@ export function getToolProcessingStatus(
  */
 const toolProcessingDescriptions: Partial<Record<ToolSlug, string>> = {
   'json-formatter': 'Your JSON stays on this device.',
+  'collage-maker': 'Your images stay on this device.',
   'jpg-to-pdf': 'Your images stay on this device.',
   'pdf-viewer': 'Your PDF stays on this device.',
   'merge-pdf': 'Your PDFs stay on this device.',

@@ -1,0 +1,550 @@
+---
+import {
+  defaultCollageBackground,
+  defaultCollageSpacing,
+  defaultCollageWidth,
+  getCollageLayoutOptions,
+  maximumCollageImages,
+  maximumCollageSpacing,
+} from '../data/image-collage';
+
+// The controls read their limits and their options from the layout module, so
+// a preset added there needs no edit here.
+const layouts = getCollageLayoutOptions();
+---
+
+<section class="collage-maker-tool" data-collage-maker-tool>
+  <div class="collage-maker-tool__picker" data-drop-zone>
+    <input
+      id="collage-images"
+      class="collage-maker-tool__file-input"
+      type="file"
+      accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp"
+      aria-label="Select images for a collage"
+      multiple
+      data-file-input
+      hidden
+    />
+    <p class="metadata">Up to {maximumCollageImages} images</p>
+    <h2>Drop your images here</h2>
+    <p>JPEG, PNG, WebP, AVIF, or BMP. Nothing leaves this device.</p>
+    <button type="button" class="button-secondary" data-select-files>Choose images</button>
+  </div>
+
+  <p class="collage-maker-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="collage-maker-tool__error" data-error role="alert" hidden></p>
+
+  <div class="collage-maker-tool__editor" data-editor hidden>
+    <div class="collage-maker-tool__sources">
+      <div class="collage-maker-tool__sources-head">
+        <p class="metadata" data-source-count></p>
+        <div class="collage-maker-tool__sources-actions">
+          <button type="button" class="button-secondary" data-add-files>Add images</button>
+          <button type="button" class="collage-maker-tool__text-button" data-clear>Remove all</button>
+        </div>
+      </div>
+      <ol class="collage-maker-tool__list" aria-label="Images in this collage" data-source-list></ol>
+
+      <!-- One chosen image, cloned per file, so no filename is ever markup. -->
+      <template data-source-template>
+        <li class="collage-source">
+          <span class="collage-source__number" data-source-number></span>
+          <img class="collage-source__thumbnail" alt="" data-source-thumbnail />
+          <span class="collage-source__details">
+            <strong data-source-name></strong>
+            <span data-source-meta></span>
+          </span>
+          <span class="collage-source__actions">
+            <button type="button" class="collage-source__icon-button" data-source-action="up">↑</button>
+            <button type="button" class="collage-source__icon-button" data-source-action="down">↓</button>
+            <button type="button" class="collage-source__remove" data-source-action="remove">Remove</button>
+          </span>
+        </li>
+      </template>
+    </div>
+
+    <figure class="collage-maker-tool__stage">
+      <canvas data-preview-canvas aria-label="Collage preview"></canvas>
+      <figcaption data-plan-summary></figcaption>
+    </figure>
+
+    <div class="collage-maker-tool__controls">
+      <div class="collage-maker-tool__field">
+        <label for="collage-layout">Layout</label>
+        <select id="collage-layout" data-layout>
+          {layouts.map((option) => <option value={option.value}>{option.label}</option>)}
+        </select>
+        <p class="utility-text" data-layout-note></p>
+      </div>
+
+      <div class="collage-maker-tool__field">
+        <label for="collage-spacing">Gap <span>px</span></label>
+        <input
+          id="collage-spacing"
+          type="number"
+          min="0"
+          max={maximumCollageSpacing}
+          step="1"
+          inputmode="numeric"
+          value={defaultCollageSpacing}
+          data-spacing
+        />
+      </div>
+
+      <div class="collage-maker-tool__field">
+        <label for="collage-width">Width <span>px</span></label>
+        <input
+          id="collage-width"
+          type="number"
+          min="64"
+          step="1"
+          inputmode="numeric"
+          value={defaultCollageWidth}
+          data-width
+        />
+      </div>
+
+      <div class="collage-maker-tool__field">
+        <label for="collage-background">Background</label>
+        <input id="collage-background" type="color" value={defaultCollageBackground} data-background />
+      </div>
+
+      <div class="collage-maker-tool__field">
+        <label for="collage-output-format">Output format</label>
+        <select id="collage-output-format" data-output-format>
+          <option value="image/jpeg">JPEG</option>
+          <option value="image/png">PNG</option>
+          <option value="image/webp" selected>WebP</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="collage-maker-tool__actions">
+      <button type="button" data-make>Make the collage</button>
+    </div>
+  </div>
+
+  <section class="collage-maker-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2>One picture out of many.</h2>
+    <figure class="collage-maker-tool__result-preview">
+      <img data-result-image alt="Finished collage preview" />
+      <figcaption>Actual collage</figcaption>
+    </figure>
+    <dl>
+      <div><dt>Images</dt><dd data-result-count></dd></div>
+      <div><dt>Collage</dt><dd data-result-dimensions></dd></div>
+      <div><dt>File size</dt><dd data-result-size></dd></div>
+    </dl>
+    <div class="collage-maker-tool__result-actions">
+      <a class="collage-maker-tool__download" data-download>Download collage</a>
+      <button type="button" class="button-secondary" data-result-back>Change the collage</button>
+      <button type="button" class="button-secondary" data-result-clear>Start again</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .collage-maker-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .collage-maker-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .collage-maker-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .collage-maker-tool__picker[hidden], .collage-maker-tool__editor[hidden], .collage-maker-tool__result[hidden] { display: none; }
+  .collage-maker-tool__picker h2 { margin-bottom: var(--space-2); }
+  .collage-maker-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .collage-maker-tool__status, .collage-maker-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .collage-maker-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .collage-maker-tool__editor, .collage-maker-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .collage-maker-tool__editor { display: grid; gap: var(--space-4); }
+  .collage-maker-tool__sources-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-2); }
+  .collage-maker-tool__sources-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .collage-maker-tool__text-button { min-height: 2.75rem; padding: 0 var(--space-2); border: 0; background: none; color: var(--text-muted); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+  .collage-maker-tool__text-button:hover { color: var(--text); }
+  .collage-maker-tool__list { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+  .collage-source { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); padding: var(--space-2); border: var(--border-width) solid var(--border); }
+  .collage-source__number { font-family: var(--font-mono); font-size: var(--font-size-xs); color: var(--text-muted); }
+  .collage-source__thumbnail { display: block; width: 3rem; height: 3rem; object-fit: cover; border: var(--border-width) solid var(--border); }
+  .collage-source__details { display: grid; gap: 2px; min-width: 0; }
+  .collage-source__details strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .collage-source__details span { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .collage-source__actions { display: flex; align-items: center; gap: var(--space-1); }
+  .collage-source__icon-button { min-width: 2.75rem; min-height: 2.75rem; border: var(--border-width) solid var(--border); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+  .collage-source__remove { min-height: 2.75rem; padding: 0 var(--space-2); border: 0; background: none; color: var(--text-muted); font: inherit; text-decoration: underline; cursor: pointer; }
+  .collage-source__icon-button:hover, .collage-source__remove:hover { color: var(--text); }
+  .collage-source__icon-button:disabled { color: var(--text-muted); cursor: not-allowed; opacity: 0.5; }
+  .collage-maker-tool__stage { margin: 0; padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .collage-maker-tool__stage canvas { display: block; max-width: 100%; max-height: 26rem; margin: 0 auto; border: var(--border-width) solid var(--border); }
+  .collage-maker-tool__stage figcaption { margin-top: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-align: center; }
+  .collage-maker-tool__controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: var(--space-3); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .collage-maker-tool__field label { display: block; margin-bottom: var(--space-1); font-weight: 700; }
+  .collage-maker-tool__field label span { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-sm); font-weight: 400; }
+  .collage-maker-tool__field input, .collage-maker-tool__field select { width: 100%; }
+  .collage-maker-tool__field input[type='color'] { min-height: 2.75rem; padding: 2px; }
+  .collage-maker-tool__field .utility-text { margin: var(--space-1) 0 0; }
+  .collage-maker-tool__actions, .collage-maker-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .collage-maker-tool__result h2 { margin-bottom: var(--space-4); }
+  .collage-maker-tool__result-preview { margin: 0 0 var(--space-4); }
+  .collage-maker-tool__result-preview img { display: block; max-width: 100%; max-height: 26rem; margin: 0 auto; border: var(--border-width) solid var(--border); }
+  .collage-maker-tool__result-preview figcaption { margin-top: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-align: center; }
+  .collage-maker-tool__result dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); margin: 0 0 var(--space-4); }
+  .collage-maker-tool__result dl div { padding: var(--space-2); border-top: var(--border-width) solid var(--border); }
+  .collage-maker-tool__result dt { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
+  .collage-maker-tool__result dd { margin: var(--space-1) 0 0; font-weight: 700; }
+  .collage-maker-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .collage-maker-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+  @media (max-width: 36rem) {
+    .collage-maker-tool__picker, .collage-maker-tool__editor, .collage-maker-tool__result { padding: var(--space-3); }
+    .collage-source { grid-template-columns: auto auto minmax(0, 1fr); }
+    .collage-source__actions { grid-column: 1 / -1; justify-content: flex-end; }
+    .collage-maker-tool__result dl { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  import {
+    formatFileSize,
+    isImageOutputFormat,
+    isSupportedImageFile,
+  } from '../data/image-compression';
+  import {
+    collageLayouts,
+    defaultCollageBackground,
+    defaultCollageLayout,
+    defaultCollageSpacing,
+    defaultCollageWidth,
+    describeCollage,
+    describeCollageImageCount,
+    getCollageOutputFilename,
+    isCollageBackground,
+    isCollageLayoutName,
+    maximumCollageImages,
+    planCollage,
+    validateCollage,
+    validateCollageSpacing,
+    validateCollageWidth,
+    type CollageItem,
+    type CollageLayoutName,
+  } from '../data/image-collage';
+  import { drawCollage, encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
+
+  interface CollageSource {
+    readonly id: number;
+    readonly file: File;
+    readonly image: HTMLImageElement;
+    readonly width: number;
+    readonly height: number;
+    readonly previewUrl: string;
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-collage-maker-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFilesButton = root.querySelector<HTMLButtonElement>('[data-select-files]');
+    const addFilesButton = root.querySelector<HTMLButtonElement>('[data-add-files]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const editor = root.querySelector<HTMLElement>('[data-editor]');
+    const sourceCount = root.querySelector<HTMLElement>('[data-source-count]');
+    const sourceList = root.querySelector<HTMLOListElement>('[data-source-list]');
+    const sourceTemplate = root.querySelector<HTMLTemplateElement>('[data-source-template]');
+    const previewCanvas = root.querySelector<HTMLCanvasElement>('[data-preview-canvas]');
+    const planSummary = root.querySelector<HTMLElement>('[data-plan-summary]');
+    const layout = root.querySelector<HTMLSelectElement>('[data-layout]');
+    const layoutNote = root.querySelector<HTMLElement>('[data-layout-note]');
+    const spacing = root.querySelector<HTMLInputElement>('[data-spacing]');
+    const width = root.querySelector<HTMLInputElement>('[data-width]');
+    const background = root.querySelector<HTMLInputElement>('[data-background]');
+    const outputFormat = root.querySelector<HTMLSelectElement>('[data-output-format]');
+    const makeButton = root.querySelector<HTMLButtonElement>('[data-make]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultImage = root.querySelector<HTMLImageElement>('[data-result-image]');
+    const resultCount = root.querySelector<HTMLElement>('[data-result-count]');
+    const resultDimensions = root.querySelector<HTMLElement>('[data-result-dimensions]');
+    const resultSize = root.querySelector<HTMLElement>('[data-result-size]');
+    const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const resultBack = root.querySelector<HTMLButtonElement>('[data-result-back]');
+    const resultClear = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+
+    if (!fileInput || !selectFilesButton || !addFilesButton || !dropZone || !status || !error || !editor || !sourceCount || !sourceList || !sourceTemplate || !previewCanvas || !planSummary || !layout || !layoutNote || !spacing || !width || !background || !outputFormat || !makeButton || !clearButton || !result || !resultImage || !resultCount || !resultDimensions || !resultSize || !download || !resultBack || !resultClear) {
+      throw new Error('Collage Maker tool could not initialise.');
+    }
+
+    let sources: CollageSource[] = [];
+    let nextSourceId = 1;
+    let resultUrl: string | undefined;
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+
+    const currentLayout = (): CollageLayoutName =>
+      isCollageLayoutName(layout.value) ? layout.value : defaultCollageLayout;
+    const currentOptions = () => ({
+      layout: currentLayout(),
+      spacing: Number(spacing.value),
+      width: Number(width.value),
+    });
+    const items = (): readonly CollageItem[] =>
+      sources.map((source) => ({ width: source.width, height: source.height }));
+    // A colour field hands back `#rrggbb`, and a canvas silently ignores
+    // anything else it is given: the guard is what keeps a background that
+    // failed to parse from being painted as black.
+    const currentBackground = () =>
+      isCollageBackground(background.value) ? background.value : defaultCollageBackground;
+
+    const resetResult = () => {
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      resultUrl = undefined;
+      result.hidden = true;
+      resultImage.removeAttribute('src');
+      download.removeAttribute('href');
+      download.removeAttribute('download');
+    };
+
+    const releaseSources = () => {
+      for (const source of sources) URL.revokeObjectURL(source.previewUrl);
+      sources = [];
+    };
+
+    const resetTool = () => {
+      releaseSources();
+      fileInput.value = '';
+      resetResult();
+      dropZone.hidden = false;
+      editor.hidden = true;
+      clearError();
+      clearStatus();
+    };
+
+    /**
+     * Draws the plan, which is also the preview: what the visitor is looking at
+     * is the collage itself, scaled down by the stylesheet rather than by a
+     * second layout that could disagree with the one that gets downloaded.
+     */
+    const renderPreview = () => {
+      const options = currentOptions();
+      const problem =
+        validateCollageSpacing(options.spacing) ??
+        validateCollageWidth(options.width);
+
+      if (problem) {
+        planSummary.textContent = problem;
+        makeButton.disabled = true;
+        return;
+      }
+
+      const plan = planCollage(items(), options);
+      const invalid = validateCollage(items(), plan);
+
+      if (invalid) {
+        planSummary.textContent = invalid;
+        makeButton.disabled = true;
+        return;
+      }
+
+      drawCollage(previewCanvas, plan, sources.map((source) => source.image), currentBackground());
+      planSummary.textContent = `${describeCollage(plan, options.layout)} · ${describeCollageImageCount(sources.length)}`;
+      makeButton.disabled = false;
+    };
+
+    const renderSources = () => {
+      sourceCount.textContent = `${describeCollageImageCount(sources.length)} · stays on this device`;
+      addFilesButton.disabled = sources.length >= maximumCollageImages;
+      sourceList.replaceChildren(
+        ...sources.map((source, index) => {
+          const item = sourceTemplate.content.firstElementChild?.cloneNode(true) as HTMLLIElement;
+
+          item.dataset.sourceId = String(source.id);
+          item.querySelector('[data-source-number]')!.textContent = String(index + 1).padStart(2, '0');
+          item.querySelector<HTMLImageElement>('[data-source-thumbnail]')!.src = source.previewUrl;
+          item.querySelector('[data-source-name]')!.textContent = source.file.name;
+          item.querySelector('[data-source-meta]')!.textContent = `${source.width} × ${source.height} px · ${formatFileSize(source.file.size)}`;
+          item.querySelector<HTMLButtonElement>('[data-source-action="up"]')!.disabled = index === 0;
+          item.querySelector<HTMLButtonElement>('[data-source-action="down"]')!.disabled = index === sources.length - 1;
+
+          return item;
+        }),
+      );
+      renderPreview();
+    };
+
+    const addFiles = async (files: readonly File[]) => {
+      if (files.length === 0) return;
+
+      clearError();
+      resetResult();
+
+      const room = maximumCollageImages - sources.length;
+      const accepted = files.filter(isSupportedImageFile);
+      const problems: string[] = [];
+
+      if (accepted.length < files.length) {
+        problems.push('Only JPEG, PNG, WebP, AVIF, and BMP images can go in a collage.');
+      }
+
+      if (accepted.length > room) {
+        problems.push(`A collage holds up to ${describeCollageImageCount(maximumCollageImages)}.`);
+      }
+
+      showStatus('Reading the images locally…');
+      await nextPaint();
+
+      for (const file of accepted.slice(0, Math.max(0, room))) {
+        try {
+          const image = await loadBrowserImage(file);
+
+          if (!image.naturalWidth || !image.naturalHeight) throw new Error('no dimensions');
+
+          sources.push({
+            id: nextSourceId++,
+            file,
+            image,
+            width: image.naturalWidth,
+            height: image.naturalHeight,
+            previewUrl: URL.createObjectURL(file),
+          });
+        } catch {
+          problems.push(`${file.name} could not be read.`);
+        }
+      }
+
+      clearStatus();
+
+      if (problems.length > 0) showError(problems.join(' '));
+      if (sources.length === 0) {
+        dropZone.hidden = false;
+        editor.hidden = true;
+        return;
+      }
+
+      dropZone.hidden = true;
+      editor.hidden = false;
+      renderSources();
+    };
+
+    const makeCollage = async () => {
+      if (sources.length === 0 || !isImageOutputFormat(outputFormat.value)) return;
+
+      const options = currentOptions();
+      const plan = planCollage(items(), options);
+      const invalid =
+        validateCollageSpacing(options.spacing) ??
+        validateCollageWidth(options.width) ??
+        validateCollage(items(), plan);
+
+      if (invalid) {
+        showError(invalid);
+        return;
+      }
+
+      clearError();
+      resetResult();
+      makeButton.disabled = true;
+      makeButton.textContent = 'Arranging…';
+      showStatus('Drawing the collage locally…');
+      await nextPaint();
+
+      try {
+        const format = outputFormat.value;
+        const canvas = document.createElement('canvas');
+
+        drawCollage(canvas, plan, sources.map((source) => source.image), currentBackground());
+
+        const output = await encodeBrowserImage(canvas, plan, format);
+
+        resultUrl = URL.createObjectURL(output);
+        resultCount.textContent = describeCollageImageCount(sources.length);
+        resultDimensions.textContent = `${plan.width} × ${plan.height} px`;
+        resultSize.textContent = formatFileSize(output.size);
+        resultImage.src = resultUrl;
+        download.href = resultUrl;
+        download.download = getCollageOutputFilename(sources[0].file.name, format);
+        editor.hidden = true;
+        result.hidden = false;
+      } catch (caughtError) {
+        showError(caughtError instanceof Error ? caughtError.message : 'This collage could not be drawn.');
+      } finally {
+        clearStatus();
+        makeButton.disabled = false;
+        makeButton.textContent = 'Make the collage';
+      }
+    };
+
+    const updateLayoutNote = () => {
+      layoutNote.textContent = collageLayouts[currentLayout()].description;
+    };
+
+    selectFilesButton.addEventListener('click', () => fileInput.click());
+    addFilesButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+      const chosen = [...(fileInput.files ?? [])];
+      fileInput.value = '';
+      void addFiles(chosen);
+    });
+    clearButton.addEventListener('click', resetTool);
+    resultClear.addEventListener('click', resetTool);
+    resultBack.addEventListener('click', () => {
+      resetResult();
+      editor.hidden = false;
+      renderPreview();
+    });
+    makeButton.addEventListener('click', () => void makeCollage());
+    layout.addEventListener('change', () => {
+      updateLayoutNote();
+      resetResult();
+      renderPreview();
+    });
+    for (const control of [spacing, width, background]) {
+      control.addEventListener('input', () => {
+        resetResult();
+        renderPreview();
+      });
+    }
+
+    sourceList.addEventListener('click', (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-source-action]');
+      const item = (event.target as HTMLElement).closest<HTMLElement>('[data-source-id]');
+
+      if (!button || !item) return;
+
+      const index = sources.findIndex((source) => source.id === Number(item.dataset.sourceId));
+
+      if (index === -1) return;
+
+      if (button.dataset.sourceAction === 'remove') {
+        URL.revokeObjectURL(sources[index].previewUrl);
+        sources.splice(index, 1);
+      }
+
+      if (button.dataset.sourceAction === 'up' && index > 0) {
+        [sources[index - 1], sources[index]] = [sources[index], sources[index - 1]];
+      }
+
+      if (button.dataset.sourceAction === 'down' && index < sources.length - 1) {
+        [sources[index], sources[index + 1]] = [sources[index + 1], sources[index]];
+      }
+
+      resetResult();
+
+      if (sources.length === 0) {
+        resetTool();
+        return;
+      }
+
+      renderSources();
+    });
+
+    for (const eventName of ['dragenter', 'dragover']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    for (const eventName of ['dragleave', 'drop']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    dropZone.addEventListener('drop', (event) => void addFiles([...(event.dataTransfer?.files ?? [])]));
+
+    spacing.value = String(defaultCollageSpacing);
+    width.value = String(defaultCollageWidth);
+    background.value = defaultCollageBackground;
+    updateLayoutNote();
+  }
+</script>

@@ -325,8 +325,12 @@ export const toolRegistry = [
       "photo collage",
       "picture layout",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "One to twelve JPEG, PNG, WebP, AVIF, or BMP images, in the order you set; choose a grid, row, column, or feature layout, the gap between them, the background colour, the output width, and JPEG, PNG, or WebP output.",
+      output: "One image holding every picture in the chosen arrangement, ready to download.",
+    },
   },
   {
     id: 13,

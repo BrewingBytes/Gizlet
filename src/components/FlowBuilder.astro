@@ -257,6 +257,7 @@ const [firstCategory] = categories;
     getFlowFormatControl,
     getFlowTool,
     getNextFlowSteps,
+    getFlowCombiningLimit,
     getUsableFlowFormat,
     isAvailableFlowToolSlug,
     isFlowCategoryId,
@@ -273,6 +274,19 @@ const [firstCategory] = categories;
     type ImageOutputFormat,
   } from '../data/image-compression';
   import { getConversionOutputFilename } from '../data/image-conversion';
+  import {
+    defaultCollageBackground,
+    defaultCollageLayout,
+    defaultCollageSpacing,
+    defaultCollageWidth,
+    describeCollageImageCount,
+    getCollageLayoutOptions,
+    getCollageOutputFilename,
+    isCollageLayoutName,
+    planCollage,
+    validateCollage,
+    type CollageLayoutName,
+  } from '../data/image-collage';
   import {
     defaultFlowCropAspectRatio,
     flowCropAspectRatioNames,
@@ -330,7 +344,7 @@ const [firstCategory] = categories;
   } from '../data/split-pdf';
   import { toolRegistry } from '../data/tools';
   import { createZipArchive, zipMimeType } from '../data/zip-archive';
-  import { cropBrowserImage, encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
+  import { cropBrowserImage, drawCollage, encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
   import { createImagePdf, openLocalPdfForSplit, splitLocalPdf } from '../scripts/pdf-generation';
   import { createPdfPageView } from '../scripts/pdf-page-view';
 
@@ -357,6 +371,7 @@ const [firstCategory] = categories;
     height?: number;
     quality?: number;
     ratio?: FlowCropAspectRatioName;
+    layout?: CollageLayoutName;
     pageSize?: PdfPageSizeName;
     orientation?: PdfOrientation;
     resolution?: PdfImageResolution;
@@ -495,8 +510,15 @@ const [firstCategory] = categories;
      * cannot be asked for a format it would re-encode away.
      */
     const formatControl = () => getFlowFormatControl(stepSlugs());
-    /** How many starting files this chain has room for. */
-    const sourceLimit = () => (combines() ? category().combiningLimit : 1);
+    /**
+     * How many starting files this chain has room for, and how to count them.
+     *
+     * The ceiling belongs to the combining step rather than to the category:
+     * an image flow that assembles pages and one that arranges a collage take
+     * different numbers of pictures, because they are different jobs.
+     */
+    const combiningLimit = () => getFlowCombiningLimit(category(), stepSlugs());
+    const sourceLimit = () => (combines() ? combiningLimit().limit : 1);
     /**
      * Why this chain cannot run yet, if it cannot.
      *
@@ -549,6 +571,7 @@ const [firstCategory] = categories;
       ...(toolSlug === 'resize-image' ? { width: 500, height: 500 } : {}),
       ...(toolSlug === 'compress-image' ? { quality: 80 } : {}),
       ...(toolSlug === 'crop-image' ? { ratio: defaultFlowCropAspectRatio } : {}),
+      ...(toolSlug === 'collage-maker' ? { layout: defaultCollageLayout } : {}),
       ...(toolSlug === 'jpg-to-pdf' ? { pageSize: defaultPdfPageSize, orientation: defaultPdfOrientation } : {}),
       ...(toolSlug === 'pdf-to-jpg' ? { resolution: defaultPdfImageResolution } : {}),
     });
@@ -589,6 +612,10 @@ const [firstCategory] = categories;
         const ratio = step.ratio ?? defaultFlowCropAspectRatio;
         return `<div class="flow-block__settings"><label for="step-ratio-${step.id}">Crop to</label><select id="step-ratio-${step.id}" data-step-setting="ratio" data-step-id="${step.id}" aria-label="${name} aspect ratio">${optionsMarkup(getCropAspectRatioOptions(flowCropAspectRatioNames), ratio)}</select></div><p class="flow-block__format-note">The largest rectangle of that shape, taken from the middle of the image.</p>`;
       }
+      if (step.toolSlug === 'collage-maker') {
+        const layout = step.layout ?? defaultCollageLayout;
+        return `<div class="flow-block__settings"><label for="step-layout-${step.id}">Layout</label><select id="step-layout-${step.id}" data-step-setting="layout" data-step-id="${step.id}" aria-label="${name} layout">${optionsMarkup(getCollageLayoutOptions(), layout)}</select></div><p class="flow-block__format-note">Every image the flow is holding goes into one picture, in the order above.</p>`;
+      }
       if (step.toolSlug === 'jpg-to-pdf') {
         const pageSize = step.pageSize ?? defaultPdfPageSize;
         const orientation = step.orientation ?? defaultPdfOrientation;
@@ -604,7 +631,8 @@ const [firstCategory] = categories;
     const renderSources = () => {
       const showList = combines() && sources.length > 0;
       const many = combines();
-      const { sourceTitle: titles, sourceDetails: details, chooseLabel, addLabel, combiningLimit, describeSourceCount } = category();
+      const { sourceTitle: titles, sourceDetails: details, chooseLabel, addLabel } = category();
+      const { limit, describeCount: describeSourceCount } = combiningLimit();
 
       sourceList.hidden = !showList;
       sourceList.replaceChildren(...(showList ? sources.map(renderSource) : []));
@@ -615,7 +643,7 @@ const [firstCategory] = categories;
       sourceInput.setAttribute('aria-label', category().chooseAriaLabel);
 
       if (sources.length === 0) {
-        sourceDetails.textContent = many ? `${details} Up to ${describeSourceCount(combiningLimit)}.` : details;
+        sourceDetails.textContent = many ? `${details} Up to ${describeSourceCount(limit)}.` : details;
       } else if (many) {
         sourceDetails.textContent = `${describeSourceCount(sources.length)} · stays on this device`;
       } else {
@@ -778,8 +806,11 @@ const [firstCategory] = categories;
           ? `${toolBySlug(steps[index - 1].toolSlug).name} result`
           : (combines() ? titles.many : titles.one);
         const contract = getFlowTool(step.toolSlug);
+        // What a block hands on comes from its contract rather than from what
+        // combining used to mean: the first combining Gizlet made a document,
+        // and the one that arranges a collage makes a picture.
         const produces = contract.combinesInputs === true
-          ? 'one PDF'
+          ? (contract.output.kind === 'pdf-file' ? 'one PDF' : 'one image')
           : contract.splitsInput === true
             ? (contract.output.kind === 'pdf-file' ? 'one PDF per page' : 'one image per page')
             : 'image result';
@@ -938,6 +969,7 @@ const [firstCategory] = categories;
       if (setting === 'orientation' && isPdfOrientation(target.value)) step.orientation = target.value;
       if (setting === 'resolution' && isPdfImageResolution(target.value)) step.resolution = target.value;
       if (setting === 'ratio' && isFlowCropAspectRatioName(target.value)) step.ratio = target.value;
+      if (setting === 'layout' && isCollageLayoutName(target.value)) step.layout = target.value;
       if (setting === 'width') step.width = Number(target.value);
       if (setting === 'height') step.height = Number(target.value);
       if (setting === 'quality') {
@@ -1050,6 +1082,44 @@ const [firstCategory] = categories;
         for (const [index, step] of steps.entries()) {
           const tool = toolBySlug(step.toolSlug);
           const position = `${index + 1} of ${steps.length}`;
+
+          if (step.toolSlug === 'collage-maker') {
+            if (payloads.length === 0) throw new Error(`${tool.name} needs the images this flow started from.`);
+
+            showStatus(`Running ${position}: ${tool.name}, arranging ${describeCollageImageCount(payloads.length)} locally…`);
+            await nextFrame();
+
+            // A flow has no canvas to arrange by hand, so the collage uses its
+            // own defaults for everything but the arrangement: the gap, the
+            // background and the width are taste rather than the shape of the
+            // chain, and a link cannot carry taste it did not ask for.
+            const collageItems = payloads.map((payload) => ({ width: payload.width, height: payload.height }));
+            const options = {
+              layout: step.layout ?? defaultCollageLayout,
+              spacing: defaultCollageSpacing,
+              width: defaultCollageWidth,
+            };
+            const plan = planCollage(collageItems, options);
+            const invalid = validateCollage(collageItems, plan);
+
+            if (invalid) throw new Error(`${tool.name}: ${invalid}`);
+
+            const images = [];
+
+            for (const payload of payloads) {
+              images.push(await loadBrowserImage(payload.file));
+            }
+
+            const canvas = drawCollage(document.createElement('canvas'), plan, images, defaultCollageBackground);
+            const blob = await encodeBrowserImage(canvas, plan, outputFormat);
+
+            payloads = [{
+              file: new File([blob], getCollageOutputFilename(payloads[0].file.name, outputFormat), { type: blob.type }),
+              width: plan.width,
+              height: plan.height,
+            }];
+            continue;
+          }
 
           if (step.toolSlug === 'jpg-to-pdf') {
             const pageSize = step.pageSize ?? defaultPdfPageSize;
@@ -1383,6 +1453,7 @@ const [firstCategory] = categories;
         ...(step.toolSlug === 'resize-image' ? { width: step.width, height: step.height } : {}),
         ...(step.toolSlug === 'compress-image' ? { quality: step.quality } : {}),
         ...(step.toolSlug === 'crop-image' ? { ratio: step.ratio } : {}),
+        ...(step.toolSlug === 'collage-maker' ? { layout: step.layout } : {}),
         ...(step.toolSlug === 'jpg-to-pdf' ? { pageSize: step.pageSize, orientation: step.orientation } : {}),
         ...(step.toolSlug === 'pdf-to-jpg' ? { resolution: step.resolution } : {}),
       })),
@@ -1404,6 +1475,7 @@ const [firstCategory] = categories;
         ...(step.height !== undefined ? { height: step.height } : {}),
         ...(step.quality !== undefined ? { quality: step.quality } : {}),
         ...(step.ratio !== undefined ? { ratio: step.ratio } : {}),
+        ...(step.layout !== undefined ? { layout: step.layout } : {}),
         ...(step.pageSize !== undefined ? { pageSize: step.pageSize } : {}),
         ...(step.orientation !== undefined ? { orientation: step.orientation } : {}),
         ...(step.resolution !== undefined ? { resolution: step.resolution } : {}),

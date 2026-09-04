@@ -226,6 +226,38 @@ describe('a crop in a recipe', () => {
   });
 });
 
+describe('a collage in a recipe', () => {
+  it('carries the arrangement and leaves the taste to the Gizlet', () => {
+    const encoded = encodeRecipe({
+      steps: [{ toolSlug: 'collage-maker', layout: 'feature' }, { toolSlug: 'compress-image', quality: 70 }],
+    });
+
+    expect(encoded).toBe('#r=v1;collage-maker:l=feature;compress-image:q=70');
+    expect(decodeRecipe(encoded ?? '')?.steps).toEqual([
+      { toolSlug: 'collage-maker', layout: 'feature' },
+      { toolSlug: 'compress-image', quality: 70 },
+    ]);
+  });
+
+  it('defaults an arrangement the link does not name', () => {
+    expect(encodeRecipe({ steps: [{ toolSlug: 'collage-maker' }] })).toBe('#r=v1;collage-maker:l=grid');
+    expect(decodeRecipe('#r=v1;collage-maker')?.steps).toEqual([{ toolSlug: 'collage-maker' }]);
+  });
+
+  it('refuses an arrangement that is not one of the offered ones', () => {
+    expect(decodeRecipe('#r=v1;collage-maker:l=mosaic')).toBeUndefined();
+    // The gap, the width and the colour are not settings a link may carry.
+    expect(decodeRecipe('#r=v1;collage-maker:l=grid,s=10')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;collage-maker:b=%23ffffff')).toBeUndefined();
+  });
+
+  it('refuses a second combining step, which would have nothing left to combine', () => {
+    expect(
+      encodeRecipe({ steps: [{ toolSlug: 'collage-maker' }, { toolSlug: 'jpg-to-pdf' }] }),
+    ).toBeUndefined();
+  });
+});
+
 describe('the settings-only guarantee', () => {
   it('cannot emit a value that would break out of its own delimiters', () => {
     // Every whitelisted value is a whole number or a closed enum, which is why
@@ -237,6 +269,7 @@ describe('the settings-only guarantee', () => {
       { outputFormat: 'image/png', steps: [{ toolSlug: 'compress-image', quality: 40 }] },
       { steps: [{ toolSlug: 'jpg-to-pdf', pageSize: 'legal', orientation: 'portrait' }] },
       { steps: [{ toolSlug: 'crop-image', ratio: '9:16' }] },
+      { steps: [{ toolSlug: 'collage-maker', layout: 'column' }] },
     ];
 
     for (const recipe of recipes) {

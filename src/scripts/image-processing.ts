@@ -1,4 +1,5 @@
 import type { ImageOutputFormat } from '../data/image-compression';
+import { getCollageSourceRectangle, type CollagePlan } from '../data/image-collage';
 import type { CropRectangle } from '../data/image-crop';
 import type { ImageDimensions } from '../data/image-resize';
 
@@ -76,6 +77,71 @@ export function cropBrowserImage(
   );
 
   return canvas;
+}
+
+/**
+ * Draws a planned collage onto a canvas, on-device.
+ *
+ * The plan decides everything about where a picture goes; this only paints the
+ * background, then draws each image into the cell it was given, filled rather
+ * than fitted. The canvas is handed back so the caller can encode it with
+ * `encodeBrowserImage`, which keeps one encode path for every image Gizlet: the
+ * workspace preview and the downloaded file come off the same drawing.
+ */
+export function drawCollage(
+  canvas: HTMLCanvasElement,
+  plan: CollagePlan,
+  images: readonly CanvasImageSource[],
+  background: string,
+): HTMLCanvasElement {
+  canvas.width = plan.width;
+  canvas.height = plan.height;
+  const context = canvas.getContext('2d');
+
+  if (!context) throw new Error('Your browser cannot prepare this collage.');
+
+  context.fillStyle = background;
+  context.fillRect(0, 0, plan.width, plan.height);
+
+  for (const cell of plan.cells) {
+    const image = images[cell.index];
+
+    if (!image) continue;
+
+    const source = getCollageSourceRectangle(
+      { width: canvasImageWidth(image), height: canvasImageHeight(image) },
+      cell,
+    );
+
+    context.drawImage(
+      image,
+      source.x,
+      source.y,
+      source.width,
+      source.height,
+      cell.x,
+      cell.y,
+      cell.width,
+      cell.height,
+    );
+  }
+
+  return canvas;
+}
+
+/** The natural size of whatever a canvas has been handed to draw. */
+function canvasImageWidth(image: CanvasImageSource): number {
+  if (image instanceof HTMLImageElement) return image.naturalWidth;
+  if (image instanceof HTMLCanvasElement) return image.width;
+  if (image instanceof HTMLVideoElement) return image.videoWidth;
+  return 'width' in image ? Number(image.width) : 0;
+}
+
+function canvasImageHeight(image: CanvasImageSource): number {
+  if (image instanceof HTMLImageElement) return image.naturalHeight;
+  if (image instanceof HTMLCanvasElement) return image.height;
+  if (image instanceof HTMLVideoElement) return image.videoHeight;
+  return 'height' in image ? Number(image.height) : 0;
 }
 
 /** Checks alpha pixels before a conversion warns that JPEG will flatten them. */

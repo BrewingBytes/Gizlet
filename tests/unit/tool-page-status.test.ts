@@ -59,6 +59,7 @@ describe('getRelatedTools', () => {
       'resize-image',
       'crop-image',
       'convert-image',
+      'collage-maker',
       'jpg-to-pdf',
     ]);
   });

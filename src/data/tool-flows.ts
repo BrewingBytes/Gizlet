@@ -1,4 +1,5 @@
 import type { ImageInputFormat, ImageOutputFormat } from './image-compression';
+import { describeCollageImageCount, maximumCollageImages } from './image-collage';
 import { describePdfPageCount, maximumPdfPages } from './jpg-to-pdf';
 import { describeMergeDocumentCount, maximumMergeDocuments } from './merge-pdf';
 import { getAvailableTools, type AvailableToolSlug, type ToolRegistryEntry } from './tools';
@@ -36,6 +37,20 @@ export interface ToolFlowDefinition {
    * it, so a chain containing one takes several starting payloads.
    */
   readonly combinesInputs?: boolean;
+  /**
+   * How many payloads this combining step takes at once, and how to count them,
+   * when its own ceiling is not the one its category names.
+   *
+   * A category's limit was the combining Gizlet's own while each category had
+   * exactly one; a second one with a different ceiling is what makes the
+   * override necessary rather than a number invented here. A chain has at most
+   * one combining step, because a combining step placed after another has
+   * nothing left to combine, so there is never a limit to reconcile.
+   */
+  readonly combining?: {
+    readonly limit: number;
+    readonly describeCount: (count: number) => string;
+  };
   /**
    * A one-to-many step: it takes one payload apart, so everything after it runs
    * once per piece and the chain ends with a set rather than a file. Declared
@@ -122,6 +137,13 @@ export const toolFlowRegistry = [
     toolSlug: 'crop-image',
     input: imageFlowInput,
     output: imageOutput,
+  },
+  {
+    toolSlug: 'collage-maker',
+    input: imageFlowInput,
+    output: imageOutput,
+    combinesInputs: true,
+    combining: { limit: maximumCollageImages, describeCount: describeCollageImageCount },
   },
 ] as const satisfies readonly ToolFlowDefinition[];
 
@@ -353,6 +375,28 @@ export function combinesFlowInputs(
   definitions: Definitions = toolFlowRegistry,
 ): boolean {
   return toolSlugs.some((toolSlug) => getFlowTool(toolSlug, definitions).combinesInputs === true);
+}
+
+/**
+ * How many starting payloads a chain takes, and how to count them.
+ *
+ * A chain with no combining step takes one payload, so this is only asked of
+ * one that has one: the step's own ceiling if it names one, and otherwise the
+ * category's, which is where the ceiling lived while each category had a single
+ * combining Gizlet.
+ */
+export function getFlowCombiningLimit(
+  category: FlowCategory,
+  toolSlugs: readonly ToolRegistryEntry['slug'][],
+  definitions: Definitions = toolFlowRegistry,
+): { readonly limit: number; readonly describeCount: (count: number) => string } {
+  const combining = toolSlugs
+    .map((toolSlug) => getFlowTool(toolSlug, definitions))
+    .find((tool) => tool.combinesInputs === true)?.combining;
+
+  return (
+    combining ?? { limit: category.combiningLimit, describeCount: category.describeSourceCount }
+  );
 }
 
 /**

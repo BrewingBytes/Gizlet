@@ -48,6 +48,7 @@ test("offers a block only when it accepts what the block before it produces", as
     "Convert Image",
     "Image to PDF",
     "Crop Image",
+    "Collage Maker",
   ]);
 
   await addStep(page, "jpg-to-pdf");
@@ -73,6 +74,7 @@ test("offers a block only when it accepts what the block before it produces", as
     "Convert Image",
     "Image to PDF",
     "Crop Image",
+    "Collage Maker",
   ]);
 });
 

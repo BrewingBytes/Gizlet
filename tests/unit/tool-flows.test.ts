@@ -9,6 +9,7 @@ import {
   getAvailableFlowCategories,
   getFlowCategory,
   getFlowCategoryStartSlugs,
+  getFlowCombiningLimit,
   getFlowFormatControl,
   getFlowTool,
   getFlowToolsForInput,
@@ -24,6 +25,10 @@ import {
   type FlowPayloadContract,
   type ToolFlowDefinition,
 } from '../../src/data/tool-flows';
+import {
+  describeCollageImageCount,
+  maximumCollageImages,
+} from '../../src/data/image-collage';
 import { getPlannedTools, toolRegistry } from '../../src/data/tools';
 
 const imageInput: FlowPayloadContract = {
@@ -83,6 +88,7 @@ describe('Gizlet flow registry', () => {
       'convert-image',
       'jpg-to-pdf',
       'crop-image',
+      'collage-maker',
     ]);
     expect(getNextFlowTools('convert-image').map((tool) => tool.toolSlug)).toEqual([
       'compress-image',
@@ -90,6 +96,7 @@ describe('Gizlet flow registry', () => {
       'convert-image',
       'jpg-to-pdf',
       'crop-image',
+      'collage-maker',
     ]);
     expect(canFlowTo('convert-image', 'resize-image')).toBe(true);
     expect(canFlowTo('convert-image', 'json-formatter')).toBe(false);
@@ -104,7 +111,7 @@ describe('Gizlet flow registry', () => {
   });
 
   test('puts every image Gizlet upstream of the PDF Gizlet', () => {
-    for (const toolSlug of ['compress-image', 'resize-image', 'convert-image', 'crop-image'] as const) {
+    for (const toolSlug of ['compress-image', 'resize-image', 'convert-image', 'crop-image', 'collage-maker'] as const) {
       expect(canFlowTo(toolSlug, 'jpg-to-pdf'), toolSlug).toBe(true);
     }
   });
@@ -141,6 +148,7 @@ describe('Gizlet flow registry', () => {
       'convert-image',
       'jpg-to-pdf',
       'crop-image',
+      'collage-maker',
     ]);
     expect(
       isValidFlowSequence(imageInput, ['resize-image', 'jpg-to-pdf', 'pdf-to-jpg', 'compress-image']),
@@ -220,6 +228,7 @@ describe('Gizlet flow registry', () => {
       'convert-image',
       'jpg-to-pdf',
       'crop-image',
+      'collage-maker',
     ]);
     expect(getNextFlowSteps(imageInput, ['convert-image']).map((tool) => tool.toolSlug)).toEqual([
       'compress-image',
@@ -227,6 +236,7 @@ describe('Gizlet flow registry', () => {
       'convert-image',
       'jpg-to-pdf',
       'crop-image',
+      'collage-maker',
     ]);
   });
 
@@ -316,6 +326,39 @@ describe('the compatibility rule, against contracts that do not exist yet', () =
   });
 });
 
+describe('how many payloads a chain takes', () => {
+  test('uses the category’s ceiling while nothing in the chain names its own', () => {
+    const images = getFlowCategory('images');
+
+    expect(getFlowCombiningLimit(images, []).limit).toBe(images.combiningLimit);
+    expect(getFlowCombiningLimit(images, ['jpg-to-pdf']).limit).toBe(images.combiningLimit);
+    expect(getFlowCombiningLimit(getFlowCategory('pdf'), ['merge-pdf']).limit).toBe(
+      getFlowCategory('pdf').combiningLimit,
+    );
+  });
+
+  test('lets a combining Gizlet with a different job name its own', () => {
+    // Assembling pages and arranging a collage are different jobs, so the
+    // ceiling belongs to the step rather than to the category holding both.
+    const { limit, describeCount } = getFlowCombiningLimit(getFlowCategory('images'), [
+      'collage-maker',
+    ]);
+
+    expect(limit).toBe(maximumCollageImages);
+    expect(limit).not.toBe(getFlowCategory('images').combiningLimit);
+    expect(describeCount(limit)).toBe(describeCollageImageCount(limit));
+  });
+
+  test('asks only the combining step, of which a valid chain has at most one', () => {
+    expect(getFlowCombiningLimit(getFlowCategory('images'), ['collage-maker', 'compress-image']).limit).toBe(
+      maximumCollageImages,
+    );
+    expect(isValidFlowSequence(getFlowCategory('images').input, ['collage-maker', 'jpg-to-pdf'])).toBe(
+      false,
+    );
+  });
+});
+
 describe('flow categories', () => {
   test('offers a category only while a published Gizlet can start it', () => {
     const offered = getAvailableFlowCategories().map((category) => category.id as FlowCategoryId);
@@ -335,6 +378,7 @@ describe('flow categories', () => {
       'convert-image',
       'jpg-to-pdf',
       'crop-image',
+      'collage-maker',
     ]);
     expect(getFlowCategoryStartSlugs('pdf')).toEqual(['merge-pdf', 'pdf-to-jpg', 'split-pdf']);
   });
