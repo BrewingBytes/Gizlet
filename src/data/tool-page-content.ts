@@ -419,9 +419,9 @@ const toolPageContent: Record<string, ToolPageContent> = {
   },
   'jpg-to-pdf': {
     what: {
-      heading: 'What JPG to PDF does',
+      heading: 'What Image to PDF does',
       paragraphs: [
-        'JPG to PDF takes the images you choose and writes them into a single PDF, one image per page, in the order you put them in. Your browser decodes each picture, works out where it sits on the page, and assembles the document here on this device.',
+        'Image to PDF takes the images you choose and writes them into a single PDF, one image per page, in the order you put them in. Your browser decodes each picture, works out where it sits on the page, and assembles the document here on this device.',
         'Drop in one photograph or a hundred, move the pages into the order you want, pick a paper size, and download one file. Nothing is added to the pages: no header, no page number, no watermark.',
       ],
     },
@@ -477,7 +477,7 @@ const toolPageContent: Record<string, ToolPageContent> = {
           'Yes, that is the point of it. Choose as many as you like, up to 100 pages, then move them up or down until the page order is right. Each image becomes one page.',
       },
       {
-        question: 'Does it accept PNG and other formats, or only JPG?',
+        question: 'Which image formats does it accept?',
         answer:
           'It accepts JPEG, PNG, WebP, AVIF, and BMP. JPEG and PNG are embedded as they are; the others are re-encoded as JPEG on the way in, because a PDF cannot carry them directly.',
       },

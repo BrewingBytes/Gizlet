@@ -13,7 +13,29 @@ const normalise = (value: string) =>
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();
 
-const queryTerms = (query: string) => normalise(query).split(' ').filter(Boolean);
+/**
+ * Words that join a query rather than name a Gizlet. "jpg to png" asks about the
+ * two formats; scoring "to" as well would rank every tool whose name or
+ * description happens to contain it above the tool the query is actually for.
+ */
+const connectorWords = new Set([
+  'a',
+  'an',
+  'and',
+  'for',
+  'in',
+  'into',
+  'my',
+  'of',
+  'or',
+  'the',
+  'to',
+]);
+
+const queryTerms = (query: string) =>
+  normalise(query)
+    .split(' ')
+    .filter((term) => term.length > 0 && !connectorWords.has(term));
 
 /**
  * Finds Gizlets locally using the catalog fields intended for discovery.
@@ -30,7 +52,7 @@ export function searchTools(
     return [];
   }
 
-  const normalisedQuery = terms.join(' ');
+  const phrase = normalise(query);
 
   return tools
     .map((tool) => {
@@ -51,8 +73,10 @@ export function searchTools(
         score += Number(inName) * 8 + Number(inDescription) * 3 + Number(inKeyword) * 5;
       }
 
-      if (name.includes(normalisedQuery)) {
+      if (name.includes(phrase)) {
         score += 12;
+      } else if (keywords.some((keyword) => keyword.includes(phrase))) {
+        score += 10;
       }
 
       return { score, tool };

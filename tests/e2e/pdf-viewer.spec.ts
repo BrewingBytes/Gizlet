@@ -4,7 +4,7 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { pdfZoomLevels } from "../../src/data/pdf-viewer";
 
 /**
- * A real PDF, built with the library the JPG to PDF Gizlet already ships, so
+ * A real PDF, built with the library the Image to PDF Gizlet already ships, so
  * the viewer is tested against a document rather than a fixture blob. Each page
  * carries a differently sized block of colour, which is what lets a test tell
  * one rendered page from another by looking at the canvas.
@@ -197,7 +197,7 @@ test("carries a PDF through a flow and hands it on unchanged", async ({ page }) 
   await nextTool.selectOption("jpg-to-pdf");
   await page.getByRole("button", { name: "Add step" }).click();
 
-  // The viewer reads a PDF, so the graph now offers it after JPG to PDF with
+  // The viewer reads a PDF, so the graph now offers it after Image to PDF with
   // no adjacency list having been edited.
   await expect(nextTool.locator("option")).toHaveText([
     "Choose the next Gizlet",

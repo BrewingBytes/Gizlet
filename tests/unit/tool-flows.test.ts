@@ -63,7 +63,7 @@ describe('Gizlet flow registry', () => {
     }
   });
 
-  test('offers the PDF reader after JPG to PDF, because a Gizlet now declares it reads one', () => {
+  test('offers the PDF reader after Image to PDF, because a Gizlet now declares it reads one', () => {
     expect(getFlowTool('jpg-to-pdf').output).toEqual({ kind: 'pdf-file' });
     expect(getFlowToolsForInput('pdf-file').map((tool) => tool.toolSlug)).toEqual(['pdf-viewer']);
     expect(getNextFlowTools('jpg-to-pdf').map((tool) => tool.toolSlug)).toEqual(['pdf-viewer']);
@@ -111,7 +111,7 @@ describe('Gizlet flow registry', () => {
  * The compatibility rule is that payload kinds line up, so it has to hold for
  * contracts the live registry does not contain yet. These run the same
  * functions over injected definitions: declaring a Gizlet that reads a PDF has
- * to make it available after JPG to PDF, and one that turns a PDF back into an
+ * to make it available after Image to PDF, and one that turns a PDF back into an
  * image has to make the image Gizlets available after itself — with no change
  * to the graph code and no adjacency list to edit.
  */
@@ -132,7 +132,7 @@ describe('the compatibility rule, against contracts that do not exist yet', () =
   };
   const definitions: readonly ToolFlowDefinition[] = [...toolFlowRegistry, pdfToJpg, compressPdf];
 
-  test('offers a further PDF Gizlet after JPG to PDF as soon as one declares itself', () => {
+  test('offers a further PDF Gizlet after Image to PDF as soon as one declares itself', () => {
     expect(getNextFlowTools('jpg-to-pdf', definitions).map((tool) => tool.toolSlug)).toEqual([
       'pdf-viewer',
       'pdf-to-jpg',
