@@ -87,6 +87,12 @@ export const toolFlowRegistry = [
     output: pdfPayload,
     combinesInputs: true,
   },
+  {
+    toolSlug: 'merge-pdf',
+    input: pdfPayload,
+    output: pdfPayload,
+    combinesInputs: true,
+  },
 ] as const satisfies readonly ToolFlowDefinition[];
 
 /**
@@ -210,6 +216,22 @@ export function combinesFlowInputs(
   return toolSlugs.some((toolSlug) => getFlowTool(toolSlug, definitions).combinesInputs === true);
 }
 
+/**
+ * Whether a chain still carries several payloads.
+ *
+ * A flow starts with as many payloads as the visitor chose, and a combining
+ * step makes a single one of them, so everything after a combining step has
+ * exactly one payload however many the flow began with. Nothing in the
+ * catalogue turns one payload back into several yet; when a Gizlet does, it
+ * belongs in this rule rather than in a list of exceptions.
+ */
+function carriesSeveralPayloads(
+  toolSlugs: readonly ToolRegistryEntry['slug'][],
+  definitions: Definitions = toolFlowRegistry,
+): boolean {
+  return !combinesFlowInputs(toolSlugs, definitions);
+}
+
 /** Validates an ordered pipeline against its initial payload and each hand-off. */
 export function isValidFlowSequence(
   input: FlowPayloadContract,
@@ -219,8 +241,35 @@ export function isValidFlowSequence(
   if (toolSlugs.length === 0) return true;
   if (getFlowTool(toolSlugs[0], definitions).input.kind !== input.kind) return false;
 
-  return toolSlugs.every(
-    (toolSlug, index) => index === 0 || canFlowTo(toolSlugs[index - 1], toolSlug, definitions),
+  return toolSlugs.every((toolSlug, index) => {
+    if (index > 0 && !canFlowTo(toolSlugs[index - 1], toolSlug, definitions)) return false;
+
+    // A combining step placed after another has nothing left to combine: the
+    // payload reaching it is already the one file the earlier step made.
+    return (
+      getFlowTool(toolSlug, definitions).combinesInputs !== true ||
+      carriesSeveralPayloads(toolSlugs.slice(0, index), definitions)
+    );
+  });
+}
+
+/**
+ * Every Gizlet that may follow a chain: the ones that read what it produces,
+ * minus any the chain itself rules out. An empty chain offers the Gizlets that
+ * read the flow's starting payload.
+ */
+export function getNextFlowSteps(
+  input: FlowPayloadContract,
+  toolSlugs: readonly ToolRegistryEntry['slug'][],
+  definitions: Definitions = toolFlowRegistry,
+): readonly ToolFlowDefinition[] {
+  const last = toolSlugs.at(-1);
+  const candidates = last
+    ? getNextFlowTools(last, definitions)
+    : getFlowToolsForInput(input, definitions);
+
+  return candidates.filter((candidate) =>
+    isValidFlowSequence(input, [...toolSlugs, candidate.toolSlug], definitions),
   );
 }
 

@@ -7,6 +7,7 @@ import {
   flowlessToolSlugs,
   getFlowTool,
   getFlowToolsForInput,
+  getNextFlowSteps,
   getNextFlowTools,
   hasCompleteFlowContracts,
   isValidFlowSequence,
@@ -82,12 +83,11 @@ describe('Gizlet flow registry', () => {
     }
   });
 
-  test('ends the image flow at the PDF, because no Gizlet reads one yet', () => {
+  test('hands the PDF on to the one Gizlet that reads one', () => {
     expect(getFlowTool('jpg-to-pdf').output).toEqual({ kind: 'pdf-file' });
-    // Empty because nothing consumes a PDF, not because the payload was
-    // declared a dead end: the injected contracts below prove the difference.
-    expect(getFlowToolsForInput('pdf-file')).toEqual([]);
-    expect(getNextFlowTools('jpg-to-pdf')).toEqual([]);
+    expect(getFlowToolsForInput('pdf-file').map((tool) => tool.toolSlug)).toEqual(['merge-pdf']);
+    expect(getNextFlowTools('jpg-to-pdf').map((tool) => tool.toolSlug)).toEqual(['merge-pdf']);
+    expect(canFlowTo('jpg-to-pdf', 'merge-pdf')).toBe(true);
     // A PDF still cannot go back to an image Gizlet: nothing converts one yet.
     expect(canFlowTo('jpg-to-pdf', 'compress-image')).toBe(false);
   });
@@ -97,6 +97,49 @@ describe('Gizlet flow registry', () => {
     expect(combinesFlowInputs(['resize-image', 'compress-image'])).toBe(false);
     expect(combinesFlowInputs(['resize-image', 'jpg-to-pdf'])).toBe(true);
     expect(combinesFlowInputs(['jpg-to-pdf'])).toBe(true);
+  });
+
+  /**
+   * Merge PDF reads a PDF, so the payload kinds line up after Image to PDF —
+   * but the payload reaching it there is the single document that step just
+   * made, and there is nothing to join a lone document to.
+   */
+  test('will not put a combining step where its payload is already one file', () => {
+    expect(getFlowTool('merge-pdf').combinesInputs).toBe(true);
+    expect(canFlowTo('jpg-to-pdf', 'merge-pdf')).toBe(true);
+    expect(isValidFlowSequence(imageInput, ['jpg-to-pdf', 'merge-pdf'])).toBe(false);
+    // So it is never offered as the step after one: an image flow ends at the
+    // document Image to PDF made, whichever way the chain arrived there.
+    expect(getNextFlowSteps(imageInput, ['jpg-to-pdf'])).toEqual([]);
+    expect(getNextFlowSteps(imageInput, ['resize-image', 'jpg-to-pdf'])).toEqual([]);
+  });
+
+  /**
+   * What the rule refuses is a merge with nothing to merge, not the Gizlet. A
+   * flow that starts from several PDFs is exactly what its contract is for.
+   */
+  test('keeps a combining step valid where the payload really is several', () => {
+    const pdfInput: FlowPayloadContract = { kind: 'pdf-file' };
+
+    expect(isValidFlowSequence(pdfInput, ['merge-pdf'])).toBe(true);
+    expect(getNextFlowSteps(pdfInput, []).map((tool) => tool.toolSlug)).toEqual(['merge-pdf']);
+    expect(isValidFlowSequence(pdfInput, ['merge-pdf', 'merge-pdf'])).toBe(false);
+    expect(getNextFlowSteps(pdfInput, ['merge-pdf'])).toEqual([]);
+  });
+
+  test('offers the steps that read the starting payload to an empty chain', () => {
+    expect(getNextFlowSteps(imageInput, []).map((tool) => tool.toolSlug)).toEqual([
+      'compress-image',
+      'resize-image',
+      'convert-image',
+      'jpg-to-pdf',
+    ]);
+    expect(getNextFlowSteps(imageInput, ['convert-image']).map((tool) => tool.toolSlug)).toEqual([
+      'compress-image',
+      'resize-image',
+      'convert-image',
+      'jpg-to-pdf',
+    ]);
   });
 
   test('validates and reorders pipeline configuration deterministically', () => {
@@ -145,6 +188,7 @@ describe('the compatibility rule, against contracts that do not exist yet', () =
 
   test('offers a further PDF Gizlet after Image to PDF as soon as one declares itself', () => {
     expect(getNextFlowTools('jpg-to-pdf', definitions).map((tool) => tool.toolSlug)).toEqual([
+      'merge-pdf',
       'pdf-to-jpg',
       'compress-pdf',
     ]);
@@ -160,6 +204,7 @@ describe('the compatibility rule, against contracts that do not exist yet', () =
       'jpg-to-pdf',
     ]);
     expect(getNextFlowTools('compress-pdf', definitions).map((tool) => tool.toolSlug)).toEqual([
+      'merge-pdf',
       'pdf-to-jpg',
       'compress-pdf',
     ]);

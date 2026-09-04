@@ -579,6 +579,87 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'merge-pdf': {
+    what: {
+      heading: 'What Merge PDF does',
+      paragraphs: [
+        'Merge PDF joins several PDFs into one document. Every page of the first file comes first, then every page of the second, and so on down the list you arranged. The pages themselves are copied across as they are: nothing is redrawn, re-encoded, or resized on the way through.',
+        'Each document is opened in your browser as you choose it, to check that it can be read and to count its pages, so the list tells you what you are about to join before you join it. The finished file is assembled on this device and handed straight to your downloads.',
+      ],
+    },
+    when: {
+      heading: 'When joining PDFs is the job',
+      paragraphs: [
+        'Whenever something has to arrive as one attachment: a scanned form and the photographs that support it, a month of receipts for an expense claim, a contract signed a page at a time, a portfolio an application asked for as a single file.',
+        'It is also what finishes the other PDF Gizlets. Make a PDF of one batch of photographs with Image to PDF, do the same for another, join the two here, and read the result in the PDF Viewer before you send it anywhere.',
+      ],
+    },
+    options: {
+      heading: 'What the document list controls',
+      paragraphs: ['There is nothing to configure here. The order is the setting.'],
+      details: [
+        {
+          term: 'Document order',
+          description:
+            'Pages come out in the order the list shows, top to bottom. The arrows move a document up or down, and the merged file is built from the list each time you press the button, so changing your mind costs nothing but the press.',
+        },
+        {
+          term: 'Removing a document',
+          description:
+            'Remove takes a document out of the merge and does nothing to the file on your device. You can add more at any point, and a file chosen twice is joined twice, which is occasionally exactly what you want.',
+        },
+        {
+          term: 'Limits',
+          description:
+            'Up to 20 documents, and 500 pages in the finished file — the same 500 pages the PDF Viewer will open, so a document made here can always be read here. Past 50 pages the Gizlet says it is joining a large document rather than looking like it has stalled.',
+        },
+        {
+          term: 'What it refuses',
+          description:
+            'A password-protected PDF is refused by name, because its pages cannot be copied without the password that protects them. So is a file that cannot be read as a PDF at all, which is usually a download that never finished or another format renamed .pdf.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'Several documents in, none of them uploaded',
+      paragraphs: [
+        'Every document is parsed and joined by this browser, on this device. Gizlet is a static site with no upload endpoint, so there is nowhere for a file to be sent, and nothing is kept once you close the tab.',
+        'This is the Gizlet where that matters most. The documents people join tend to be the private ones — an identity paper with a proof of address, a payslip with a bank statement, a medical letter with a claim form — and every one of them stays in your own browser’s memory until the merged file is saved.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Are my PDFs uploaded to merge them?',
+        answer:
+          'No. Each document is read and copied by this browser, and the merged file is written straight to a download. There is no upload endpoint behind this page, so there is nothing for a file to be sent to.',
+      },
+      {
+        question: 'Does merging change the pages?',
+        answer:
+          'No. Pages are copied from each document into the new one, so text stays text, a scan keeps its resolution, and page sizes stay as they were. A merged document can therefore hold pages of different sizes, which is normal and opens fine everywhere.',
+      },
+      {
+        question: 'Can it merge a password-protected PDF?',
+        answer:
+          'No. The pages of a protected document are encrypted, and copying them without its password would produce nonsense rather than a page. Open it in an application that can ask for the password, save an unlocked copy, and merge that instead.',
+      },
+      {
+        question: 'How many PDFs can I merge at once?',
+        answer:
+          'Up to 20 documents, as long as they come to no more than 500 pages between them. Both limits exist because the work happens in this browser, where every document and the merged one are in memory at the same time.',
+      },
+      {
+        question: 'Can I reorder or delete the pages inside a document?',
+        answer:
+          'Not here. This Gizlet arranges whole documents, not the pages within them. Splitting a PDF into parts you can rearrange is a different job, and it is worth its own Gizlet rather than a second set of controls bolted onto this one.',
+      },
+      {
+        question: 'Why does one of my files say it could not be read?',
+        answer:
+          'Because nothing in it parses as a PDF. Most often the file is a download that stopped part way, or an image or document renamed to end in .pdf. The file is named in the message so you can replace that one and keep the rest of the list.',
+      },
+    ],
+  },
 };
 
 /** The supporting content for a Gizlet page, if it has any yet. */

@@ -74,6 +74,10 @@ const recipeStepSettings = {
   'compress-image': { q: 'number' },
   'convert-image': {},
   'jpg-to-pdf': { p: pdfPageSizeNames, o: pdfOrientationNames },
+  // A merge joins several PDFs, which an image flow never holds: the one PDF
+  // the flow made is already a single payload. The entry keeps this map total
+  // over the chainable Gizlets, and the flow graph refuses the chain itself.
+  'merge-pdf': {},
 } as const satisfies Record<RecipeToolSlug, Readonly<Record<string, 'number' | readonly string[]>>>;
 
 const recipeToolSlugs = Object.keys(recipeStepSettings) as readonly RecipeToolSlug[];

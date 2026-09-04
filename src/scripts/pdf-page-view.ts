@@ -16,10 +16,11 @@ import type { LocalPdfDocument } from './pdf-rendering';
  * The page-turning half of a PDF workspace: which page is showing, how large it
  * is drawn, and the controls that move between pages.
  *
- * Two Gizlets need exactly this — the PDF Viewer, which opens a document the
- * visitor chose, and Image to PDF, which shows the one it has just built — so
- * the wiring lives here instead of being written twice. Every decision it makes
- * still comes from `data/pdf-viewer`; this module only owns the DOM.
+ * Three Gizlets need exactly this — the PDF Viewer, which opens a document the
+ * visitor chose, and Image to PDF and Merge PDF, which show the one they have
+ * just made — so the wiring lives here instead of being written three times.
+ * Every decision it makes still comes from `data/pdf-viewer`; this module only
+ * owns the DOM.
  *
  * pdf.js is not imported here, only its type, which the compiler erases. That
  * is what lets a page reach this module without shipping the library, and load
