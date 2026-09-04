@@ -1,4 +1,10 @@
 ---
+import { getAvailableFlowCategories } from '../data/tool-flows';
+
+// The chooser is derived, so a category with nothing published to start it is
+// never offered and a new starting payload needs no edit here.
+const categories = getAvailableFlowCategories();
+const [firstCategory] = categories;
 ---
 
 <section class="flow-builder" aria-labelledby="flow-builder-title" data-flow-builder>
@@ -16,27 +22,27 @@
       <label for="flow-category">
         <span class="metadata">Flow category</span>
         <select id="flow-category" data-flow-category>
-          <option value="images">Images</option>
+          {categories.map((category) => <option value={category.id}>{category.label}</option>)}
         </select>
       </label>
-      <p>Image Gizlets pass a file to one another, and can end by making a PDF. A block is offered when it accepts what the block before it produces.</p>
+      <p data-category-summary>{firstCategory.summary}</p>
     </div>
 
     <section class="flow-builder__source" aria-labelledby="flow-source-title" data-source>
       <div class="flow-builder__source-icon" aria-hidden="true">↥</div>
       <div>
         <p class="metadata">Starting input</p>
-        <h2 id="flow-source-title" data-source-title>Your image</h2>
-        <p data-source-details>JPEG, PNG, WebP, AVIF, or BMP.</p>
+        <h2 id="flow-source-title" data-source-title>{firstCategory.sourceTitle.one}</h2>
+        <p data-source-details>{firstCategory.sourceDetails}</p>
       </div>
-      <input data-source-input type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp" aria-label="Choose images for this flow" hidden />
-      <button type="button" class="button-secondary" data-source-select>Choose images</button>
+      <input data-source-input type="file" accept={firstCategory.accept} aria-label={firstCategory.chooseAriaLabel} hidden />
+      <button type="button" class="button-secondary" data-source-select>{firstCategory.chooseLabel.many}</button>
       <button type="button" class="flow-builder__text-button" data-source-clear hidden>Remove</button>
     </section>
 
-    <ol class="flow-builder__source-list" aria-label="Starting images" data-source-list hidden></ol>
+    <ol class="flow-builder__source-list" aria-label="Starting files" data-source-list hidden></ol>
 
-    <!-- One starting image, cloned per selected file. -->
+    <!-- One starting file, cloned per selected file. -->
     <template data-source-template>
       <li class="flow-source">
         <span class="flow-source__number" data-source-number></span>
@@ -125,11 +131,9 @@
       </div>
       <label class="flow-builder__final-format" for="flow-final-format" data-final-format-label hidden>
         <span data-final-format-text>Final output format</span>
-        <select id="flow-final-format" data-final-format aria-label="Final output format">
-          <option value="image/jpeg">JPEG</option>
-          <option value="image/png">PNG</option>
-          <option value="image/webp" selected>WebP</option>
-        </select>
+        <!-- Options are rebuilt from the chain: what a flow ends by producing
+             decides which formats it can honour. -->
+        <select id="flow-final-format" data-final-format aria-label="Final output format"></select>
       </label>
       <button type="button" data-run-flow disabled>Run flow</button>
     </div>
@@ -206,6 +210,8 @@
   .flow-source { display: grid; grid-template-columns: 2.5rem 3.5rem minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: var(--border-width) solid var(--border); }
   .flow-source__number { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-sm); }
   .flow-source__thumbnail { display: block; width: 3.5rem; height: 3.5rem; border: var(--border-width) solid var(--border); object-fit: contain; background: var(--background); }
+  /* A document has no thumbnail, so its row gives that column back to the name. */
+  .flow-source--document { grid-template-columns: 2.5rem minmax(0, 1fr) auto; }
   .flow-source__details { display: grid; gap: var(--space-1); min-width: 0; }
   .flow-source__details strong { overflow-wrap: anywhere; }
   .flow-source__details span { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
@@ -234,6 +240,7 @@
   .flow-result__download { min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-width) solid var(--border); color: var(--text); line-height: 1.25; text-decoration: none; white-space: nowrap; }
   @media (max-width: 36rem) {
     .flow-source { grid-template-columns: 2rem 3rem minmax(0, 1fr); }
+    .flow-source--document { grid-template-columns: 2rem minmax(0, 1fr); }
     .flow-source__actions { grid-column: 2 / -1; }
   }
   @media (max-width: 42rem) { .flow-builder__intro { display: block; } .flow-builder__local-note { margin-top: var(--space-3); } .flow-builder__workspace { padding: var(--space-3); } .flow-builder__category { display: grid; align-items: start; } .flow-builder__source { align-items: start; flex-wrap: wrap; } .flow-builder__source button:first-of-type { margin-left: 0; } .flow-block { grid-template-columns: 1rem minmax(0, 1fr); } .flow-block__grip { grid-row: 1 / span 3; } .flow-block__number, .flow-block__content, .flow-block__actions { grid-column: 2; } .flow-block__actions { justify-content: start; } .flow-block__remove { width: auto; } .flow-block__settings { grid-template-columns: 1fr; gap: var(--space-1); } .flow-builder__add-step > div:last-child { grid-template-columns: 1fr; } .flow-builder__add-step .metadata { grid-row: auto; } .flow-builder__add-controls { align-items: stretch; flex-direction: column; } .flow-builder__run { grid-template-columns: 1fr; align-items: stretch; } }
@@ -244,12 +251,17 @@
     canFlowTo,
     canReorderFlowStep,
     combinesFlowInputs,
+    defaultFlowCategoryId,
+    flowOutputImageFormats,
+    getFlowCategory,
+    getFlowFormatControl,
     getFlowTool,
     getNextFlowSteps,
-    imageFlowInput,
-    isAvailableImageFlowToolSlug,
-    splitsFlowInput,
-    type AvailableImageFlowToolSlug,
+    getUsableFlowFormat,
+    isAvailableFlowToolSlug,
+    isFlowCategoryId,
+    type AvailableFlowToolSlug,
+    type FlowCategoryId,
   } from '../data/tool-flows';
   import {
     formatFileSize,
@@ -261,7 +273,7 @@
     type ImageOutputFormat,
   } from '../data/image-compression';
   import { getConversionOutputFilename } from '../data/image-conversion';
-  import { getPdfPreviewErrorMessage } from '../data/pdf-viewer';
+  import { getPdfPreviewErrorMessage, isSupportedPdfFile } from '../data/pdf-viewer';
   import { decodeRecipe, encodeRecipe, type Recipe } from '../data/recipes';
   import { getResizeOutputFilename, validateResizeDimensions } from '../data/image-resize';
   import {
@@ -275,7 +287,6 @@
     isLargePdfWorkload,
     isPdfOrientation,
     isPdfPageSizeName,
-    maximumPdfPages,
     reorderPdfImages,
     usesFixedPageSize,
     validatePdfImage,
@@ -294,6 +305,14 @@
     type PdfImageResolution,
   } from '../data/pdf-to-jpg';
   import {
+    describeMergeDocumentCount,
+    getMergedPdfFilename,
+    getMergeReadinessMessage,
+    isLargeMergeWorkload,
+    validateMergeSelection,
+    validateMergedPageCount,
+  } from '../data/merge-pdf';
+  import {
     describeSplitPdfCount,
     getSinglePageRanges,
     getSplitPdfArchiveName,
@@ -307,7 +326,7 @@
 
   // Chainable, published, and derived: adding a Gizlet with an image or PDF
   // contract joins the builder without a list here being edited.
-  type FlowToolSlug = AvailableImageFlowToolSlug;
+  type FlowToolSlug = AvailableFlowToolSlug;
 
   /**
    * A PDF a flow is holding between blocks. A flow carries a set of these
@@ -332,14 +351,28 @@
     resolution?: PdfImageResolution;
   }
 
-  /** A chosen starting image, decoded so its page can be measured up front. */
-  interface FlowSource {
-    readonly id: number;
-    readonly file: File;
-    readonly width: number;
-    readonly height: number;
-    readonly previewUrl: string;
-  }
+  /**
+   * A chosen starting file, read up front so it can be described and refused
+   * before a chain is built on it.
+   *
+   * The two kinds are measured differently because they are different things: an
+   * image has pixels and a preview, a document has pages and neither.
+   */
+  type FlowSource =
+    | {
+        readonly kind: 'image';
+        readonly id: number;
+        readonly file: File;
+        readonly width: number;
+        readonly height: number;
+        readonly previewUrl: string;
+      }
+    | {
+        readonly kind: 'pdf';
+        readonly id: number;
+        readonly file: File;
+        readonly pages: number;
+      };
 
   /** What travels between steps. A combining step turns many into one. */
   interface FlowPayload {
@@ -363,6 +396,8 @@
     const stepList = root.querySelector<HTMLOListElement>('[data-step-list]');
     const addSelect = root.querySelector<HTMLSelectElement>('[data-add-select]');
     const addStepButton = root.querySelector<HTMLButtonElement>('[data-add-step]');
+    const categorySelect = root.querySelector<HTMLSelectElement>('[data-flow-category]');
+    const categorySummary = root.querySelector<HTMLElement>('[data-category-summary]');
     const finalFormat = root.querySelector<HTMLSelectElement>('[data-final-format]');
     const finalFormatLabel = root.querySelector<HTMLElement>('[data-final-format-label]');
     const finalFormatText = root.querySelector<HTMLElement>('[data-final-format-text]');
@@ -388,10 +423,11 @@
     const copyRecipe = root.querySelector<HTMLButtonElement>('[data-copy-recipe]');
     const recipeStatus = root.querySelector<HTMLElement>('[data-recipe-status]');
 
-    if (!sourceInput || !sourceSelect || !sourceClear || !sourceTitle || !sourceDetails || !sourceList || !sourceTemplate || !error || !status || !stepList || !addSelect || !addStepButton || !finalFormat || !finalFormatLabel || !finalFormatText || !runButton || !result || !resultTitle || !resultDetails || !resultFigure || !resultImage || !resultList || !resultTemplate || !preview || !previewError || !pageArea || !pageCanvas || !pageError || !previousButton || !nextButton || !pageInput || !pageTotal || !download || !resultClear || !copyRecipe || !recipeStatus) {
+    if (!categorySelect || !categorySummary || !sourceInput || !sourceSelect || !sourceClear || !sourceTitle || !sourceDetails || !sourceList || !sourceTemplate || !error || !status || !stepList || !addSelect || !addStepButton || !finalFormat || !finalFormatLabel || !finalFormatText || !runButton || !result || !resultTitle || !resultDetails || !resultFigure || !resultImage || !resultList || !resultTemplate || !preview || !previewError || !pageArea || !pageCanvas || !pageError || !previousButton || !nextButton || !pageInput || !pageTotal || !download || !resultClear || !copyRecipe || !recipeStatus) {
       throw new Error('Flow builder could not initialise.');
     }
 
+    let categoryId: FlowCategoryId = defaultFlowCategoryId;
     let sources: readonly FlowSource[] = [];
     let steps: FlowStep[] = [];
     let nextSourceId = 1;
@@ -435,13 +471,34 @@
     const clearStatus = () => { status.hidden = true; status.textContent = ''; };
     const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
 
+    /** The starting payload every graph question is asked against. */
+    const category = () => getFlowCategory(categoryId);
+    const flowInput = () => category().input;
+
     const stepSlugs = (): readonly FlowToolSlug[] => steps.map((step) => step.toolSlug);
-    /** A chain with a combining step makes one file out of several images. */
+    /** A chain with a combining step makes one file out of several sources. */
     const combines = () => combinesFlowInputs(stepSlugs());
-    /** A chain that ends by taking a document apart finishes with a set. */
-    const splits = () => splitsFlowInput(stepSlugs());
-    /** Only a chain that re-encodes an image has an image format to choose. */
-    const producesImage = () => steps.some((step) => getFlowTool(step.toolSlug).output.kind === 'image-file');
+    /**
+     * Whether an image format applies, what it is called, and which formats it
+     * offers — one answer from one place, so a chain that ends in a document
+     * cannot be asked for a format it would re-encode away.
+     */
+    const formatControl = () => getFlowFormatControl(stepSlugs());
+    /** How many starting files this chain has room for. */
+    const sourceLimit = () => (combines() ? category().combiningLimit : 1);
+    /**
+     * Why this chain cannot run yet, if it cannot.
+     *
+     * A merge is the one step with a floor as well as a ceiling: one document
+     * is not a merge. Saying so beside the sources is the alternative to a
+     * disabled button that explains nothing.
+     */
+    const startReadiness = () =>
+      stepSlugs().includes('merge-pdf') ? getMergeReadinessMessage(sources.length) : undefined;
+    /** Only an image source holds an object URL, so only one has to give it back. */
+    const releaseSource = (source: FlowSource) => {
+      if (source.kind === 'image') URL.revokeObjectURL(source.previewUrl);
+    };
 
     const revokeResult = () => {
       if (resultUrl) URL.revokeObjectURL(resultUrl);
@@ -471,9 +528,9 @@
     };
 
     const availableStepSlugs = (): readonly FlowToolSlug[] => {
-      return getNextFlowSteps(imageFlowInput, stepSlugs())
+      return getNextFlowSteps(flowInput(), stepSlugs())
         .map((candidate) => candidate.toolSlug)
-        .filter(isAvailableImageFlowToolSlug);
+        .filter(isAvailableFlowToolSlug);
     };
     const defaultStep = (toolSlug: FlowToolSlug): FlowStep => ({
       id: nextStepId++,
@@ -484,7 +541,7 @@
       ...(toolSlug === 'pdf-to-jpg' ? { resolution: defaultPdfImageResolution } : {}),
     });
     const canReorder = (fromIndex: number, toIndex: number): boolean => {
-      return canReorderFlowStep(imageFlowInput, stepSlugs(), fromIndex, toIndex);
+      return canReorderFlowStep(flowInput(), stepSlugs(), fromIndex, toIndex);
     };
     const renderAddOptions = () => {
       const candidates = availableStepSlugs();
@@ -495,7 +552,7 @@
 
       addSelect.innerHTML = `<option value="">Choose the next Gizlet</option>${candidates.map((toolSlug) => `<option value="${toolSlug}">${toolBySlug(toolSlug).name}</option>`).join('')}`;
 
-      if (isAvailableImageFlowToolSlug(pending) && candidates.includes(pending)) {
+      if (isAvailableFlowToolSlug(pending) && candidates.includes(pending)) {
         addSelect.value = pending;
       }
 
@@ -530,47 +587,64 @@
     };
     const renderSources = () => {
       const showList = combines() && sources.length > 0;
+      const many = combines();
+      const { sourceTitle: titles, sourceDetails: details, chooseLabel, addLabel, combiningLimit, describeSourceCount } = category();
+
       sourceList.hidden = !showList;
       sourceList.replaceChildren(...(showList ? sources.map(renderSource) : []));
 
-      sourceTitle.textContent = combines() ? 'Your images' : 'Your image';
-      sourceInput.multiple = combines();
+      sourceTitle.textContent = many ? titles.many : titles.one;
+      sourceInput.multiple = many;
+      sourceInput.accept = category().accept;
+      sourceInput.setAttribute('aria-label', category().chooseAriaLabel);
 
       if (sources.length === 0) {
-        sourceDetails.textContent = combines()
-          ? `JPEG, PNG, WebP, AVIF, or BMP. Up to ${maximumPdfPages} pages.`
-          : 'JPEG, PNG, WebP, AVIF, or BMP.';
-      } else if (combines()) {
-        sourceDetails.textContent = `${describePdfPageCount(sources.length)} · stays on this device`;
+        sourceDetails.textContent = many ? `${details} Up to ${describeSourceCount(combiningLimit)}.` : details;
+      } else if (many) {
+        sourceDetails.textContent = `${describeSourceCount(sources.length)} · stays on this device`;
       } else {
         sourceDetails.textContent = `${sources[0].file.name} · ${formatFileSize(sources[0].file.size)} · stays on this device`;
       }
 
+      const readiness = startReadiness();
+
+      if (readiness) sourceDetails.textContent = readiness;
+
       sourceSelect.textContent = sources.length === 0
-        ? (combines() ? 'Choose images' : 'Choose image')
-        : (combines() ? 'Add images' : 'Choose another image');
+        ? (many ? chooseLabel.many : chooseLabel.one)
+        : (many ? addLabel.many : addLabel.one);
       sourceSelect.disabled = isRunning;
       sourceClear.hidden = sources.length === 0;
       sourceClear.textContent = sources.length > 1 ? 'Remove all' : 'Remove';
       sourceClear.disabled = isRunning;
     };
-    /** One starting image, cloned from the template so a filename is never markup. */
+    /** One starting file, cloned from the template so a filename is never markup. */
     const renderSource = (source: FlowSource, index: number): HTMLLIElement => {
       const item = sourceTemplate.content.firstElementChild?.cloneNode(true);
-      if (!(item instanceof HTMLLIElement)) throw new Error('The starting-image template is missing.');
+      if (!(item instanceof HTMLLIElement)) throw new Error('The starting-file template is missing.');
 
       const number = item.querySelector<HTMLElement>('[data-source-number]');
       const thumbnail = item.querySelector<HTMLImageElement>('[data-source-thumbnail]');
       const name = item.querySelector<HTMLElement>('[data-source-name]');
       const meta = item.querySelector<HTMLElement>('[data-source-meta]');
 
-      if (!number || !thumbnail || !name || !meta) throw new Error('The starting-image template is incomplete.');
+      if (!number || !thumbnail || !name || !meta) throw new Error('The starting-file template is incomplete.');
 
       number.textContent = String(index + 1).padStart(2, '0');
-      thumbnail.src = source.previewUrl;
-      thumbnail.alt = `Page ${index + 1}: ${source.file.name}`;
+
+      if (source.kind === 'image') {
+        thumbnail.src = source.previewUrl;
+        thumbnail.alt = `Page ${index + 1}: ${source.file.name}`;
+        meta.textContent = `${source.width} × ${source.height} px · ${formatFileSize(source.file.size)}`;
+      } else {
+        // A document has no single picture to stand for it, and a blank frame
+        // beside every row would only say so repeatedly.
+        thumbnail.remove();
+        item.classList.add('flow-source--document');
+        meta.textContent = `${describePdfPageCount(source.pages)} · ${formatFileSize(source.file.size)}`;
+      }
+
       name.textContent = source.file.name;
-      meta.textContent = `${source.width} × ${source.height} px · ${formatFileSize(source.file.size)}`;
 
       for (const button of item.querySelectorAll<HTMLButtonElement>('[data-source-action]')) {
         const action = button.dataset.sourceAction;
@@ -642,12 +716,51 @@
 
       return item;
     };
+    /**
+     * Draws the format control the chain actually has.
+     *
+     * The options are rebuilt rather than merely relabelled, because a chain
+     * that ends in a document cannot honour every format an image chain can,
+     * and a select still offering one would be a setting the run ignores.
+     */
+    const renderFormatControl = () => {
+      const control = formatControl();
+      const usable = getUsableFlowFormat(control, outputFormat);
+
+      if (usable && usable !== outputFormat) {
+        outputFormat = usable;
+        // A format the chain dropped was chosen for a chain that no longer
+        // exists, so it stops counting as the visitor's own choice.
+        outputFormatFromRecipe = false;
+      }
+
+      finalFormatLabel.hidden = control.kind === 'none';
+
+      if (control.kind !== 'none') {
+        finalFormatText.textContent = control.label;
+        finalFormat.setAttribute('aria-label', control.label);
+      }
+
+      // A hidden control still holds a format: an empty chain is one step away
+      // from needing one, and this select is where that choice lives.
+      const formats = control.kind === 'none' ? flowOutputImageFormats : control.formats;
+
+      finalFormat.disabled = isRunning;
+      finalFormat.replaceChildren(...formats.map((format) => {
+        const option = document.createElement('option');
+        option.value = format;
+        option.textContent = getFormatLabel(format);
+        return option;
+      }));
+      finalFormat.value = outputFormat;
+    };
     const renderSteps = () => {
       stepList.innerHTML = steps.map((step, index) => {
         const tool = toolBySlug(step.toolSlug);
+        const { sourceTitle: titles } = category();
         const prior = index > 0
           ? `${toolBySlug(steps[index - 1].toolSlug).name} result`
-          : (combines() ? 'Your images' : 'Your image');
+          : (combines() ? titles.many : titles.one);
         const contract = getFlowTool(step.toolSlug);
         const produces = contract.combinesInputs === true
           ? 'one PDF'
@@ -658,30 +771,27 @@
       }).join('');
       renderAddOptions();
 
-      const formatLabel = combines() && !splits() ? 'Page image format' : 'Final output format';
-      finalFormatLabel.hidden = !producesImage();
-      finalFormatText.textContent = formatLabel;
-      finalFormat.setAttribute('aria-label', formatLabel);
-      finalFormat.disabled = isRunning;
+      renderFormatControl();
 
       renderSources();
-      runButton.disabled = sources.length === 0 || steps.length === 0 || isRunning;
+      runButton.disabled = sources.length === 0 || steps.length === 0 || isRunning || startReadiness() !== undefined;
       copyRecipe.hidden = steps.length === 0;
     };
     /**
-     * A chain without a combining step makes one file, so it carries one image.
-     * Dropping the combining step therefore has to resolve the extra pages, and
-     * say which one it kept rather than losing them quietly.
+     * A chain without a combining step makes one file, so it carries one source.
+     * Dropping the combining step therefore has to resolve the extra ones, and
+     * say which it kept rather than losing them quietly.
      */
     const applySourceLimit = () => {
-      const limit = combines() ? maximumPdfPages : 1;
+      const limit = sourceLimit();
 
       if (sources.length <= limit) return;
 
       const dropped = sources.slice(limit);
-      for (const source of dropped) URL.revokeObjectURL(source.previewUrl);
+      const noun = dropped[0].kind === 'pdf' ? 'PDF' : 'image';
+      for (const source of dropped) releaseSource(source);
       sources = sources.slice(0, limit);
-      showStatus(`This flow makes one file, so it kept ${sources[0].file.name} and removed ${dropped.length} other image${dropped.length === 1 ? '' : 's'}.`);
+      showStatus(`This flow makes one file, so it kept ${sources[0].file.name} and removed ${dropped.length} other ${noun}${dropped.length === 1 ? '' : 's'}.`);
     };
     const addSources = async (selected: readonly File[]) => {
       sourceInput.value = '';
@@ -692,8 +802,17 @@
 
       const multiple = combines();
       const incoming = multiple ? selected : selected.slice(0, 1);
+      const isPdfFlow = categoryId === 'pdf';
 
-      if (multiple) {
+      if (isPdfFlow) {
+        if (multiple) {
+          const problem = validateMergeSelection([...sources.map((source) => source.file), ...incoming]);
+          if (problem) { showError(problem); return; }
+        } else if (!isSupportedPdfFile(incoming[0])) {
+          showError('Choose a PDF to start this flow.');
+          return;
+        }
+      } else if (multiple) {
         const problem = validatePdfSelection([...sources.map((source) => source.file), ...incoming]);
         if (problem) { showError(problem); return; }
       } else if (!isSupportedImageFile(incoming[0])) {
@@ -701,13 +820,27 @@
         return;
       }
 
-      showStatus(incoming.length === 1 ? 'Reading the image locally…' : 'Reading images locally…');
+      const readingNoun = isPdfFlow ? 'document' : 'image';
+      showStatus(incoming.length === 1
+        ? `Reading the ${readingNoun} locally…`
+        : `Reading ${readingNoun}s locally…`);
       await nextFrame();
 
       const added: FlowSource[] = [];
 
       try {
         for (const file of incoming) {
+          if (isPdfFlow) {
+            // pdf-lib, not pdf.js: a page count comes out of opening the
+            // document, so a broken or locked file is refused as it is chosen
+            // and the flows page still carries no renderer until a run needs one.
+            const { openLocalPdfForMerge } = await import('../scripts/pdf-generation');
+            const opened = await openLocalPdfForMerge(file);
+
+            added.push({ kind: 'pdf', id: nextSourceId++, file, pages: opened.pageCount });
+            continue;
+          }
+
           const image = await loadBrowserImage(file);
           const dimensions = { width: image.naturalWidth, height: image.naturalHeight };
           const problem = multiple
@@ -717,6 +850,7 @@
           if (problem) throw new Error(problem);
 
           added.push({
+            kind: 'image',
             id: nextSourceId++,
             file,
             width: dimensions.width,
@@ -724,32 +858,45 @@
             previewUrl: URL.createObjectURL(file),
           });
         }
+
+        if (isPdfFlow && multiple) {
+          // Every document has reported its pages, so the total the merge would
+          // write can be checked before the visitor builds a chain on it.
+          const total = [...sources, ...added]
+            .reduce((pages, source) => pages + (source.kind === 'pdf' ? source.pages : 0), 0);
+          const problem = validateMergedPageCount(total);
+
+          if (problem) throw new Error(problem);
+        }
       } catch (caughtError) {
-        for (const source of added) URL.revokeObjectURL(source.previewUrl);
+        for (const source of added) releaseSource(source);
         clearStatus();
-        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be read.');
+        showError(caughtError instanceof Error
+          ? caughtError.message
+          : `This ${readingNoun} could not be read.`);
         renderSteps();
         return;
       }
 
       // A single-source flow replaces rather than appends: it has room for one.
       if (!multiple) {
-        for (const source of sources) URL.revokeObjectURL(source.previewUrl);
+        for (const source of sources) releaseSource(source);
         sources = [];
       }
 
       sources = [...sources, ...added];
 
-      if (!outputFormatFromRecipe) {
-        outputFormat = getPreferredOutputFormat(getInputImageFormat(sources[0].file));
-        finalFormat.value = outputFormat;
+      const [first] = sources;
+
+      if (!outputFormatFromRecipe && first.kind === 'image') {
+        outputFormat = getPreferredOutputFormat(getInputImageFormat(first.file));
       }
 
       clearStatus();
       renderSteps();
     };
     const clearSources = () => {
-      for (const source of sources) URL.revokeObjectURL(source.previewUrl);
+      for (const source of sources) releaseSource(source);
       sources = [];
       sourceInput.value = '';
       resetResult();
@@ -849,12 +996,22 @@
       renderSteps();
       runButton.textContent = 'Running…';
 
-      let payloads: readonly FlowPayload[] = sources.map((source) => ({
-        file: source.file,
-        width: source.width,
-        height: source.height,
-      }));
-      let pdfResults: readonly FlowPdf[] = [];
+      // A flow starts in whichever hand the category filled: images travel as
+      // payloads and documents as results, which is the same pair of hands every
+      // block after the first one uses.
+      let payloads: readonly FlowPayload[] = sources
+        .filter((source): source is Extract<FlowSource, { kind: 'image' }> => source.kind === 'image')
+        .map((source) => ({ file: source.file, width: source.width, height: source.height }));
+      let pdfResults: readonly FlowPdf[] = sources
+        .filter((source): source is Extract<FlowSource, { kind: 'pdf' }> => source.kind === 'pdf')
+        .map((source) => ({
+          blob: source.file,
+          pages: source.pages,
+          // A chosen document lays its own pages out; nothing here re-sizes them,
+          // and `fit` is the page size that says exactly that.
+          pageSize: 'fit',
+          name: source.file.name,
+        }));
       // The document a set came out of, which names its archive. It is the
       // earliest such document rather than the latest: a split followed by a
       // conversion has taken the same original apart twice over.
@@ -881,6 +1038,38 @@
 
             pdfResults = [{ blob, pages, pageSize, name }];
             payloads = [];
+            continue;
+          }
+
+          if (step.toolSlug === 'merge-pdf') {
+            if (pdfResults.length === 0) throw new Error(`${tool.name} needs the PDFs this flow started from.`);
+
+            const { mergeLocalPdfs, openLocalPdfForMerge } = await import('../scripts/pdf-generation');
+
+            showStatus(`Running ${position}: ${tool.name}, reading the documents locally…`);
+            await nextFrame();
+
+            // Opened again here rather than held since they were chosen: a
+            // merge copies page trees out of live documents, and re-reading
+            // them is cheaper than keeping parsed ones alive across every edit.
+            const merging = [];
+
+            for (const pdf of pdfResults) {
+              merging.push(await openLocalPdfForMerge(
+                pdf.blob instanceof File ? pdf.blob : new File([pdf.blob], pdf.name, { type: 'application/pdf' }),
+              ));
+            }
+
+            const isLarge = isLargeMergeWorkload(merging);
+            const pages = merging.reduce((total, document) => total + document.pageCount, 0);
+            const blob = await mergeLocalPdfs(merging, {
+              onDocument: async (documentNumber, documentCount) => {
+                showStatus(`Running ${position}: ${tool.name}${isLarge ? ', large document' : ''}, ${describeMergeDocumentCount(documentCount)}, joining ${documentNumber} of ${documentCount} locally…`);
+                await nextFrame();
+              },
+            });
+
+            pdfResults = [{ blob, pages, pageSize: 'fit', name: getMergedPdfFilename(merging[0].file.name) }];
             continue;
           }
 
@@ -1089,12 +1278,36 @@
       if (button.dataset.sourceAction === 'up') sources = reorderPdfImages(sources, index, index - 1);
       if (button.dataset.sourceAction === 'down') sources = reorderPdfImages(sources, index, index + 1);
       if (button.dataset.sourceAction === 'remove') {
-        URL.revokeObjectURL(sources[index].previewUrl);
+        releaseSource(sources[index]);
         sources = sources.filter((source) => source.id !== id);
       }
 
       resetResult();
       clearError();
+      renderSteps();
+    });
+    categorySelect.addEventListener('change', () => {
+      const chosen = categorySelect.value;
+
+      if (!isFlowCategoryId(chosen) || chosen === categoryId || isRunning) {
+        categorySelect.value = categoryId;
+        return;
+      }
+
+      categoryId = chosen;
+
+      // A chain built for one starting payload cannot read another, and a
+      // half-kept chain would be a flow the visitor did not assemble. The
+      // sources go with it: they are files of the wrong kind now.
+      for (const source of sources) releaseSource(source);
+      sources = [];
+      steps = [];
+      sourceInput.value = '';
+      outputFormatFromRecipe = false;
+      resetResult();
+      clearError();
+      clearStatus();
+      categorySummary.textContent = category().summary;
       renderSteps();
     });
     finalFormat.addEventListener('change', () => {
@@ -1104,7 +1317,7 @@
     });
     addStepButton.addEventListener('click', () => {
       const toolSlug = addSelect.value;
-      if (!isAvailableImageFlowToolSlug(toolSlug) || !availableStepSlugs().includes(toolSlug)) return;
+      if (!isAvailableFlowToolSlug(toolSlug) || !availableStepSlugs().includes(toolSlug)) return;
       if (steps.length > 0 && !canFlowTo(steps.at(-1)?.toolSlug ?? toolSlug, toolSlug)) return;
       steps.push(defaultStep(toolSlug));
       resetResult();
@@ -1134,6 +1347,7 @@
       renderSteps();
     });
     const currentRecipe = (): Recipe => ({
+      category: categoryId,
       outputFormat,
       steps: steps.map((step) => ({
         toolSlug: step.toolSlug,
@@ -1144,6 +1358,14 @@
       })),
     });
     const applyRecipe = (recipe: Recipe) => {
+      // The starting payload comes first: the chain below it was validated
+      // against this category, and the chooser has to agree with it.
+      if (recipe.category) {
+        categoryId = recipe.category;
+        categorySelect.value = categoryId;
+        categorySummary.textContent = category().summary;
+      }
+
       // Defaults come from defaultStep, so a step whose settings the recipe
       // omits behaves exactly like one added by hand.
       steps = recipe.steps.map((step) => ({
@@ -1156,9 +1378,13 @@
         ...(step.resolution !== undefined ? { resolution: step.resolution } : {}),
       }));
       if (recipe.outputFormat) {
-        outputFormat = recipe.outputFormat;
+        // A link may name a format the chain cannot honour — every image flow
+        // written before this release defaulted to WebP, and one ending in a
+        // PDF now offers only the two formats a page embeds. Keeping the link
+        // readable and moving the format is better than refusing the flow.
+        outputFormat = getUsableFlowFormat(getFlowFormatControl(recipe.steps.map((step) => step.toolSlug)), recipe.outputFormat)
+          ?? recipe.outputFormat;
         outputFormatFromRecipe = true;
-        finalFormat.value = outputFormat;
       }
     };
     const copyRecipeLink = () => {

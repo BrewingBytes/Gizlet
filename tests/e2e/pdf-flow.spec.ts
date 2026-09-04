@@ -94,7 +94,7 @@ test("turns several local images into one PDF in the order shown", async ({
     asFile("tall.jpg", tallJpeg),
   ]);
 
-  const rows = page.getByRole("list", { name: "Starting images" });
+  const rows = page.getByRole("list", { name: "Starting files" });
   await expect(rows.getByRole("listitem")).toHaveCount(3);
   await expect(rows.getByRole("listitem").nth(2)).toContainText("tall.jpg");
 
@@ -251,8 +251,10 @@ test("shares a PDF flow as a settings-only recipe link and reopens it", async ({
   );
 
   const recipe = await page.evaluate(() => window.location.hash);
+  // JPEG rather than WebP: the chain ends in a document, and a page image is
+  // embedded as it is only when it is a JPEG or a PNG.
   expect(recipe).toBe(
-    "#r=v1;f=webp;resize-image:w=300,h=150;jpg-to-pdf:p=legal,o=portrait",
+    "#r=v1;f=jpeg;resize-image:w=300,h=150;jpg-to-pdf:p=legal,o=portrait",
   );
 
   await page.goto(`/flows/${recipe}`);
@@ -285,7 +287,7 @@ test("resolves the extra pages when the combining block is removed", async ({
     "This flow makes one file, so it kept first.jpg and removed 2 other images.",
   );
   await expect(page.locator("[data-source-details]")).toContainText("first.jpg");
-  await expect(page.getByRole("list", { name: "Starting images" })).toBeHidden();
+  await expect(page.getByRole("list", { name: "Starting files" })).toBeHidden();
   await expect(chooseImages(page)).not.toHaveJSProperty("multiple", true);
 });
 
@@ -303,7 +305,7 @@ test("refuses a non-image and a selection larger than one document", async ({
   const error = page.getByRole("alert");
   await expect(error).toContainText("notes.txt");
   await expect(error).toContainText("is not an image this Gizlet can read");
-  await expect(page.getByRole("list", { name: "Starting images" })).toBeHidden();
+  await expect(page.getByRole("list", { name: "Starting files" })).toBeHidden();
 
   await chooseImages(page).setInputFiles(
     Array.from({ length: 101 }, (_, index) =>
@@ -497,4 +499,61 @@ test("says what a one-page document cannot be split into", async ({ page }) => {
   await expect(page.getByRole("alert")).toContainText(
     "one page, so there is nothing to split it into",
   );
+});
+
+test("asks for a page image format, not an output format, when the flow ends in a PDF", async ({
+  page,
+}) => {
+  await page.goto("/flows/");
+
+  // Nothing re-encodes an image yet, so there is no format to choose.
+  await addStep(page, "jpg-to-pdf");
+  await expect(page.locator("[data-final-format-label]")).toBeHidden();
+
+  await page.goto("/flows/");
+  await addStep(page, "compress-image");
+
+  const control = page.locator("[data-final-format-label]");
+  await expect(control).toBeVisible();
+  await expect(control).toContainText("Final output format");
+  await expect(page.getByLabel("Final output format")).toHaveValue("image/webp");
+
+  // Ending the chain in a document renames the control and drops the format a
+  // PDF cannot carry, rather than leaving WebP selected for a file that has none.
+  await addStep(page, "jpg-to-pdf");
+  await expect(control).toContainText("Page image format");
+
+  const format = page.getByLabel("Page image format");
+  await expect(format).toHaveValue("image/jpeg");
+  await expect(format.locator("option")).toHaveCount(2);
+  await expect(format.locator("option")).toHaveText(["JPEG", "PNG"]);
+});
+
+test("keeps naming the page format when a split follows the document", async ({
+  page,
+}) => {
+  await page.goto("/flows/");
+
+  await addStep(page, "compress-image");
+  await addStep(page, "jpg-to-pdf");
+  await addStep(page, "split-pdf");
+
+  // The chain still hands over documents, so the earlier "final output format"
+  // wording named a file this flow never writes.
+  await expect(page.locator("[data-final-format-label]")).toContainText(
+    "Page image format",
+  );
+  await expect(page.getByLabel("Page image format").locator("option")).toHaveText([
+    "JPEG",
+    "PNG",
+  ]);
+
+  // Converting the pages back to images makes the output format real again.
+  await addStep(page, "pdf-to-jpg");
+  await expect(page.locator("[data-final-format-label]")).toContainText(
+    "Final output format",
+  );
+  await expect(
+    page.getByLabel("Final output format").locator("option"),
+  ).toHaveText(["JPEG", "PNG", "WebP"]);
 });
