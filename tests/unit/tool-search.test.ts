@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getPlannedTools } from '../../src/data/tools';
 import { searchTools } from '../../src/scripts/tool-search';
 
 describe('searchTools', () => {
@@ -36,5 +37,22 @@ describe('searchTools', () => {
   it('returns no results for a blank or unmatched query', () => {
     expect(searchTools('')).toEqual([]);
     expect(searchTools('spreadsheet')).toEqual([]);
+  });
+
+  it('offers only Gizlets that exist, because a result is a link about to be followed', () => {
+    // A result carries a path rather than a slug, and a path is what a visitor
+    // would follow, so the routes are what has to stay out of the results.
+    const plannedPaths = new Set<string>(getPlannedTools().map((tool) => tool.path));
+
+    for (const tool of getPlannedTools()) {
+      for (const query of [tool.name, ...tool.keywords]) {
+        expect(
+          searchTools(query).filter((result) => plannedPaths.has(result.path)),
+          `${tool.slug}: ${query}`,
+        ).toEqual([]);
+      }
+    }
+
+    expect(getPlannedTools().length).toBeGreaterThan(0);
   });
 });

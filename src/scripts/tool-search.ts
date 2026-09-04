@@ -1,4 +1,4 @@
-import { toolRegistry, type ToolRegistryEntry } from '../data/tools';
+import { getAvailableTools, type ToolRegistryEntry } from '../data/tools';
 
 export type SearchableTool = Pick<
   ToolRegistryEntry,
@@ -41,10 +41,14 @@ const queryTerms = (query: string) =>
  * Finds Gizlets locally using the catalog fields intended for discovery.
  * Every query term must match so short, unrelated partial matches stay out
  * of the result list.
+ *
+ * The default is the available Gizlets, not the whole registry. A result is a
+ * link a visitor is about to follow, so a planned Gizlet appearing here would
+ * be an invitation to a page that does nothing.
  */
 export function searchTools(
   query: string,
-  tools: readonly SearchableTool[] = toolRegistry,
+  tools: readonly SearchableTool[] = getAvailableTools(),
 ): SearchableTool[] {
   const terms = queryTerms(query);
 

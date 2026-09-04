@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import NotBuiltYet from '../../components/NotBuiltYet.astro';
 import { getPageMetadata } from '../../data/metadata';
 import { toolIndexSocialImagePath } from '../../data/social-images';
 import { getToolIndexStructuredData } from '../../data/structured-data';
@@ -7,7 +8,7 @@ import { getToolCategoryGroups } from '../../data/tools';
 
 const metadata = getPageMetadata({
   title: 'All Gizlets | Gizlet',
-  description: 'Every Gizlet available today, grouped by the kind of job it does.',
+  description: 'Every Gizlet that works, grouped by the kind of job it does, and every one we have not built.',
   pathname: '/tools/',
   image: toolIndexSocialImagePath,
 });
@@ -19,8 +20,9 @@ const categoryGroups = getToolCategoryGroups();
     <p class="metadata">Every Gizlet</p>
     <h1 id="tool-catalogue-title">All the Gizlets, by kind of job.</h1>
     <p class="tool-catalogue__copy">
-      Each one runs in this browser, needs no account, and does a single job. Categories appear here
-      once a Gizlet exists for them.
+      Each one runs in this browser, needs no account, and does a single job. The categories below
+      hold Gizlets that work; what we have not built yet is listed after them, with the phase that
+      explains the order.
     </p>
 
     <nav class="tool-catalogue__jump" aria-label="Jump to a category">
@@ -45,6 +47,7 @@ const categoryGroups = getToolCategoryGroups();
             {group.tools.map((tool) => (
               <li>
                 <a href={tool.path}>
+                  <span class="tool-catalogue__number">{String(tool.id).padStart(3, '0')}</span>
                   <span>
                     <strong>{tool.name}</strong>
                     <span>{tool.description}</span>
@@ -57,6 +60,8 @@ const categoryGroups = getToolCategoryGroups();
         </section>
       ))
     }
+
+    <NotBuiltYet />
   </section>
 </BaseLayout>
 
@@ -107,9 +112,9 @@ const categoryGroups = getToolCategoryGroups();
   }
 
   .tool-catalogue__list a {
-    display: flex;
+    display: grid;
+    grid-template-columns: 3ch minmax(0, 1fr) auto;
     align-items: center;
-    justify-content: space-between;
     gap: var(--space-3);
     min-height: 3.5rem;
     padding: var(--space-2);
@@ -121,7 +126,15 @@ const categoryGroups = getToolCategoryGroups();
     background: var(--surface);
   }
 
-  .tool-catalogue__list a > span:first-child {
+  /* The number is the shipped-Gizlet credential the not-built rows withhold, so
+     the em dash beside a planned row has something to be measured against. */
+  .tool-catalogue__number {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+  }
+
+  .tool-catalogue__list a > span:nth-child(2) {
     display: grid;
     gap: var(--space-1);
   }
@@ -131,7 +144,7 @@ const categoryGroups = getToolCategoryGroups();
     font-size: var(--font-size-lg);
   }
 
-  .tool-catalogue__list a > span:first-child span {
+  .tool-catalogue__list a > span:nth-child(2) span {
     color: var(--text-muted);
   }
 </style>

@@ -1,5 +1,6 @@
 import {
   getGizletRequestIssueUrl,
+  resolvePlannedGizletRequest,
   validateGizletRequest,
   type GizletRequestValues,
 } from '../data/gizlet-request';
@@ -25,15 +26,42 @@ export function initialiseGizletRequestForm(root: HTMLElement): void {
   const errorSummary = root.querySelector<HTMLElement>('[data-request-error-summary]');
   const success = root.querySelector<HTMLElement>('[data-request-success]');
   const continueLink = root.querySelector<HTMLAnchorElement>('[data-request-continue]');
+  const plannedNote = root.querySelector<HTMLElement>('[data-planned-note]');
+  const plannedNoteName = root.querySelector<HTMLElement>('[data-planned-note-name]');
 
-  if (!form || !toolIdea || !useCase || !contact || !toolIdeaError || !errorSummary || !success || !continueLink) {
+  if (
+    !form ||
+    !toolIdea ||
+    !useCase ||
+    !contact ||
+    !toolIdeaError ||
+    !errorSummary ||
+    !success ||
+    !continueLink ||
+    !plannedNote ||
+    !plannedNoteName
+  ) {
     throw new Error('Gizlet request form could not initialise.');
+  }
+
+  // A row in the not-built block passes its Gizlet through the query string,
+  // because this page is one prerendered document and cannot know which row was
+  // clicked at build time. The idea field is filled from the registry entry
+  // rather than from the parameter: the form's minimum length would otherwise
+  // reject a one-click vote, and nothing a link carries reaches the issue.
+  const planned = resolvePlannedGizletRequest(window.location.search);
+
+  if (planned) {
+    toolIdea.value = planned.name;
+    plannedNoteName.textContent = planned.name;
+    plannedNote.hidden = false;
   }
 
   const values = (): GizletRequestValues => ({
     toolIdea: toolIdea.value,
     useCase: useCase.value,
     contact: contact.value,
+    plannedGizlet: planned?.name,
   });
   const clearToolIdeaError = () => {
     setFieldError(toolIdea, toolIdeaError, undefined);

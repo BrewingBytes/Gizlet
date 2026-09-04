@@ -4,6 +4,7 @@
     <nav aria-label="Footer navigation">
       <a href="/tools/">Tools</a>
       <a href="/request-a-gizlet/">Request a Gizlet</a>
+      <a href="/roadmap/">Roadmap</a>
       <a href="/privacy/">Privacy</a>
       <a href="/terms/">Terms</a>
       <a href="/about/">About</a>
@@ -39,7 +40,10 @@
 
   .site-footer nav {
     display: flex;
-    gap: var(--space-3);
+    /* Six links do not fit a 390px viewport in one line, and the shell must not
+       scroll sideways at any width. */
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
   }
 
   .site-footer a {

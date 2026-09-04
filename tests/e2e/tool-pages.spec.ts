@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import {
   getAvailableTools,
+  toolRegistry,
   type AvailableToolSlug,
 } from "../../src/data/tools";
 
@@ -33,9 +34,8 @@ for (const tool of getAvailableTools()) {
       page.getByLabel(workspaceSignatures[tool.slug]),
     ).toBeAttached();
     await expect(
-      page.getByRole("heading", { name: "This Gizlet is being prepared." }),
+      page.getByRole("heading", { name: "This Gizlet is not built yet." }),
     ).toHaveCount(0);
-    await expect(page.getByText("Results will appear here")).toHaveCount(0);
   });
 }
 
@@ -92,15 +92,29 @@ test("lists every available Gizlet on a browsable index", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "All the Gizlets, by kind of job." }),
   ).toBeVisible();
+  // The page describes two kinds of thing now, so it no longer claims to list
+  // only what is available or that a category appears once a Gizlet exists.
+  await expect(page.getByRole("main")).toContainText(
+    "what we have not built yet is listed after them",
+  );
+  await expect(
+    page.getByText("Categories appear here once a Gizlet exists for them"),
+  ).toHaveCount(0);
   await expect(
     page.getByRole("heading", { level: 2, name: "Images" }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { level: 2, name: "PDF" }),
   ).toBeVisible();
+  const formatter = toolRegistry.find((tool) => tool.slug === "json-formatter")!;
   await expect(
     page.getByRole("main").getByRole("link", { name: /JSON Formatter/ }),
   ).toHaveAttribute("href", "/tools/json-formatter/");
+  // A live row prints its registry number, which is what makes the em dash on a
+  // not-built row mean something.
+  await expect(
+    page.getByRole("main").getByRole("link", { name: /JSON Formatter/ }),
+  ).toContainText(String(formatter.id).padStart(3, "0"));
 });
 
 test("publishes structured data search engines can read", async ({ page }) => {

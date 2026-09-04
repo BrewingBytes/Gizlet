@@ -1,11 +1,22 @@
-import { toolRegistry, type RegisteredTool, type ToolRegistryEntry, type ToolSlug } from './tools';
+import {
+  isAvailableTool,
+  toolRegistry,
+  type AvailableToolSlug,
+  type RegisteredTool,
+  type ToolRegistryEntry,
+} from './tools';
 
 /**
- * Keyed by the registry's own slugs rather than by `string`, so a Gizlet added
- * without a related-tools entry fails `astro check` instead of crashing the
- * build inside `getStaticPaths`.
+ * Keyed by the registry's own available slugs rather than by `string`, so a
+ * Gizlet published without a related-tools entry fails `astro check` instead of
+ * crashing the build inside `getStaticPaths`.
+ *
+ * Planned Gizlets are deliberately absent, and the totality is over the
+ * available slugs for that reason: recommending anything from a page that does
+ * not work is the wrong editorial move whatever the types would tolerate, so
+ * the obligation begins when a Gizlet becomes available.
  */
-const relatedToolSlugs: Record<ToolSlug, readonly ToolSlug[]> = {
+const relatedToolSlugs: Record<AvailableToolSlug, readonly AvailableToolSlug[]> = {
   'compress-image': ['resize-image', 'convert-image', 'jpg-to-pdf'],
   'resize-image': ['compress-image', 'convert-image', 'jpg-to-pdf'],
   'convert-image': ['compress-image', 'resize-image', 'jpg-to-pdf'],
@@ -18,7 +29,7 @@ const relatedToolSlugs: Record<ToolSlug, readonly ToolSlug[]> = {
   'split-pdf': ['merge-pdf', 'pdf-to-jpg', 'pdf-viewer'],
 };
 
-function getToolBySlug(slug: ToolSlug): ToolRegistryEntry {
+function getToolBySlug(slug: AvailableToolSlug): ToolRegistryEntry {
   const tool = toolRegistry.find((candidate) => candidate.slug === slug);
 
   if (!tool) {
@@ -31,7 +42,15 @@ function getToolBySlug(slug: ToolSlug): ToolRegistryEntry {
 /**
  * Returns the editorially selected related Gizlets for a registry entry.
  * This is deliberately explicit rather than an automatic recommendation rule.
+ *
+ * A planned Gizlet relates to nothing, and its page renders no related block.
+ * The reverse also holds and matters more: no planned Gizlet appears in an
+ * available Gizlet's list, because the map cannot name one.
  */
 export function getRelatedTools(tool: RegisteredTool): readonly ToolRegistryEntry[] {
+  if (!isAvailableTool(tool)) {
+    return [];
+  }
+
   return relatedToolSlugs[tool.slug].map(getToolBySlug);
 }

@@ -1,8 +1,17 @@
 import { siteUrl } from './metadata';
+import { roadmapPath } from './roadmap';
 import { toolRegistry } from './tools';
 
 const sitemapPathname = '/sitemap.xml';
-const publicInformationPathnames = ['/tools/', '/flows/', '/privacy/', '/terms/', '/about/', '/request-a-gizlet/'] as const;
+const publicInformationPathnames = [
+  '/tools/',
+  '/flows/',
+  roadmapPath,
+  '/privacy/',
+  '/terms/',
+  '/about/',
+  '/request-a-gizlet/',
+] as const;
 
 /**
  * Returns every route that is ready for public search discovery.

@@ -20,6 +20,10 @@
         placeholder="For example: a tool to remove blank pages from a PDF"
       ></textarea>
       <p id="gizlet-tool-idea-error" class="gizlet-request__error" data-tool-idea-error role="alert" hidden></p>
+      <p class="gizlet-request__planned-note" data-planned-note hidden>
+        This is a vote for <strong data-planned-note-name></strong>, which is on the roadmap and not
+        built yet. Rewrite the idea above and it becomes your own request instead.
+      </p>
     </div>
 
     <div class="gizlet-request__field">
@@ -69,7 +73,9 @@
   .gizlet-request__field + .gizlet-request__field { margin-top: var(--space-4); }
   .gizlet-request label { display: block; margin-bottom: var(--space-1); font-weight: 700; }
   .gizlet-request__optional { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase; }
-  .gizlet-request__help, .gizlet-request__privacy { color: var(--text-muted); font-size: var(--font-size-sm); }
+  .gizlet-request__help, .gizlet-request__privacy, .gizlet-request__planned-note { color: var(--text-muted); font-size: var(--font-size-sm); }
+  .gizlet-request__planned-note { margin: var(--space-2) 0 0; padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--color-amber); }
+  .gizlet-request__planned-note strong { color: var(--text); }
   .gizlet-request__help { margin-bottom: var(--space-2); }
   .gizlet-request textarea { min-height: 8rem; }
   .gizlet-request [aria-invalid='true'] { border: var(--border-strong-width) solid var(--color-red); }
