@@ -38,3 +38,137 @@ for (const tool of getAvailableTools()) {
     await expect(page.getByText("Results will appear here")).toHaveCount(0);
   });
 }
+
+test("renders the reusable tool page layout without reserved ad space while ads are disabled", async ({
+  page,
+}) => {
+  await page.goto("/tools/compress-image/");
+
+  await expect(page).toHaveTitle("Compress Image | Gizlet");
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    "content",
+    "Shrink image files while keeping them ready to share.",
+  );
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    "https://gizlet.app/tools/compress-image/",
+  );
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+    "content",
+    "https://gizlet.app/tools/compress-image/",
+  );
+  await expect(
+    page.getByRole("navigation", { name: "Breadcrumb" }),
+  ).toContainText("Compress Image");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Compress Image" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Local processing")).toContainText(
+    "Your file stays on this device.",
+  );
+  await expect(page.getByLabel("Compress Image workspace")).toBeVisible();
+  await expect(page.locator('[data-ad-slot]')).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Related Gizlets" }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: /Resize Image/ })).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+});
+
+test("lists every available Gizlet on a browsable index", async ({ page }) => {
+  await page.goto("/tools/");
+
+  await expect(page).toHaveTitle("All Gizlets | Gizlet");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    "https://gizlet.app/tools/",
+  );
+  await expect(
+    page.getByRole("heading", { name: "All the Gizlets, by kind of job." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Images" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "PDF" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("main").getByRole("link", { name: /JSON Formatter/ }),
+  ).toHaveAttribute("href", "/tools/json-formatter/");
+});
+
+test("publishes structured data search engines can read", async ({ page }) => {
+  await page.goto("/tools/compress-image/");
+
+  const toolMarkup = JSON.parse(
+    (await page
+      .locator('script[type="application/ld+json"]')
+      .textContent()) as string,
+  );
+  expect(toolMarkup[0]["@type"]).toBe("SoftwareApplication");
+  expect(toolMarkup[0].name).toBe("Compress Image");
+  expect(toolMarkup[0].url).toBe("https://gizlet.app/tools/compress-image/");
+  expect(toolMarkup[1]["@type"]).toBe("BreadcrumbList");
+
+  await page.goto("/");
+  const siteMarkup = JSON.parse(
+    (await page
+      .locator('script[type="application/ld+json"]')
+      .textContent()) as string,
+  );
+  expect(siteMarkup["@type"]).toBe("WebSite");
+});
+
+test("keeps the workspace above the supporting content at every width", async ({
+  page,
+}) => {
+  await page.goto("/tools/compress-image/");
+
+  const workspace = page.getByLabel("Compress Image workspace");
+  const firstSection = page.getByRole("heading", {
+    level: 2,
+    name: "What Compress Image does",
+  });
+  const faqQuestion = page.getByRole("heading", {
+    level: 3,
+    name: "Why does the quality slider do nothing for PNG?",
+  });
+
+  const markup = JSON.parse(
+    (await page
+      .locator('script[type="application/ld+json"]')
+      .textContent()) as string,
+  );
+  const faqMarkup = markup.find(
+    (item: { "@type": string }) => item["@type"] === "FAQPage",
+  );
+  expect(faqMarkup.mainEntity).toHaveLength(5);
+
+  for (const question of faqMarkup.mainEntity) {
+    await expect(
+      page.getByRole("heading", { level: 3, name: question.name }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(question.acceptedAnswer.text, { exact: true }),
+    ).toBeVisible();
+  }
+
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+
+    const workspaceBox = (await workspace.boundingBox())!;
+    const sectionBox = (await firstSection.boundingBox())!;
+    const faqBox = (await faqQuestion.boundingBox())!;
+
+    expect(sectionBox.y, `${width}px`).toBeGreaterThan(
+      workspaceBox.y + workspaceBox.height,
+    );
+    expect(faqBox.y, `${width}px`).toBeGreaterThan(sectionBox.y);
+  }
+});
