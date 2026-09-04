@@ -56,7 +56,7 @@ Gizlet uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Conv
 
 - Use a conventional commit type such as `feat`, `fix`, `docs`, `test`, `refactor`, `build`, `ci`, or `chore`; add an optional scope when it improves clarity.
 - Use `!` or a `BREAKING CHANGE:` footer for breaking changes.
-- Keep [CHANGELOG.md](CHANGELOG.md) current for changes that are user- or contributor-visible.
+- Add a changelog entry for changes that are user- or contributor-visible: a file in [changelog.d/](changelog.d/), not an edit to [CHANGELOG.md](CHANGELOG.md), which the release assembles from them.
 - The project begins public releases at `0.1.0`; see the changelog for the release policy.
 - gizlet.app deploys from a `v*` version tag, never from a merge to `main`. See [docs/releasing.md](docs/releasing.md) for the release procedure and the deployment path.
 

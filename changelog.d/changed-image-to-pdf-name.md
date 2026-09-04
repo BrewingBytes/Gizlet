@@ -1,0 +1,1 @@
+- The JPG to PDF Gizlet is now called Image to PDF, accurately reflecting that it accepts JPEG, PNG, WebP, AVIF, and BMP images. Its `jpg-to-pdf` URL and recipe-link slug remain unchanged, so existing links continue to work.

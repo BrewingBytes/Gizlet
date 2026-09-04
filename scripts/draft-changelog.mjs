@@ -1,26 +1,27 @@
 /**
- * Drafts changelog entries for the next release from the Conventional Commit
- * titles between the previous version tag and HEAD.
+ * Drafts changelog entries from the Conventional Commit titles in a range,
+ * writing each one as its own file in changelog.d/.
  *
- *   pnpm run changelog:draft              # print the draft, write nothing
- *   pnpm run changelog:draft -- --write   # merge the draft into CHANGELOG.md
- *   pnpm run changelog:draft -- --since v0.1.0
+ *   pnpm run changelog:draft                          # print the draft, write nothing
+ *   pnpm run changelog:draft -- --write               # write a fragment per entry
+ *   pnpm run changelog:draft -- --since origin/main   # just this branch's commits
  *
- * The draft is a starting point, not a finished changelog. Entries already
- * written under `## [Unreleased]` are never rewritten or removed: --write only
- * appends beneath them, so a release stays possible when the draft is edited
- * down or discarded entirely. See docs/releasing.md.
+ * The draft is a starting point, not a finished changelog: rewrite the file it
+ * writes, merge several into one, or delete the ones describing work nobody
+ * outside the repository can see. An existing fragment is never overwritten, so
+ * the script can be re-run on a branch that already has an edited entry.
+ * scripts/collect-changelog.mjs turns the fragments into a release section, and
+ * docs/releasing.md describes both.
  */
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { changelogSections, draftSections, formatDraft } from './lib/changelog.mjs';
+import { draftSections, formatDraft, fragmentFileName } from './lib/changelog.mjs';
 
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
-const changelogPath = join(repositoryRoot, 'CHANGELOG.md');
-const unreleasedHeading = '## [Unreleased]';
+const fragmentsPath = join(repositoryRoot, 'changelog.d');
 
 function git(...args) {
   return execFileSync('git', args, { cwd: repositoryRoot, encoding: 'utf8', stdio: 'pipe' }).trim();
@@ -31,6 +32,11 @@ function parseArguments(argv) {
 
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
+    if (argument === '--') {
+      // pnpm forwards its own argument separator; node passes it straight on.
+      continue;
+    }
+
     if (argument === '--write') {
       options.write = true;
     } else if (argument === '--since') {
@@ -63,46 +69,6 @@ function commitTitles(since) {
   return log === '' ? [] : log.split('\n');
 }
 
-/**
- * Appends the drafted entries under `## [Unreleased]`, keeping every entry that
- * is already there and adding any section the draft needs but the changelog
- * does not have yet.
- */
-function mergeIntoUnreleased(changelog, sections) {
-  const start = changelog.indexOf(unreleasedHeading);
-  if (start === -1) {
-    throw new Error(`CHANGELOG.md has no ${unreleasedHeading} section to draft into.`);
-  }
-
-  const bodyStart = start + unreleasedHeading.length;
-  const nextHeading = changelog.indexOf('\n## ', bodyStart);
-  const bodyEnd = nextHeading === -1 ? changelog.length : nextHeading;
-  let body = changelog.slice(bodyStart, bodyEnd);
-
-  for (const section of changelogSections) {
-    const entries = sections[section];
-    if (!entries?.length) {
-      continue;
-    }
-
-    const bullets = entries.map((entry) => `- ${entry}`).join('\n');
-    const headingIndex = body.indexOf(`### ${section}\n`);
-
-    if (headingIndex === -1) {
-      body = `${body.replace(/\s+$/, '')}\n\n### ${section}\n\n${bullets}\n`;
-      continue;
-    }
-
-    const sectionStart = headingIndex + `### ${section}\n`.length;
-    const nextSection = body.indexOf('\n### ', sectionStart);
-    const sectionEnd = nextSection === -1 ? body.length : nextSection;
-    const existing = body.slice(sectionStart, sectionEnd).replace(/\s+$/, '');
-    body = `${body.slice(0, sectionStart)}${existing}\n${bullets}\n${body.slice(sectionEnd)}`;
-  }
-
-  return `${changelog.slice(0, bodyStart)}${body}${changelog.slice(bodyEnd)}`;
-}
-
 const options = parseArguments(process.argv.slice(2));
 const since = options.since ?? previousTag();
 const titles = commitTitles(since);
@@ -118,11 +84,35 @@ if (draft === '') {
 }
 
 if (!options.write) {
-  process.stderr.write('Preview only; CHANGELOG.md was not written. Re-run with --write to merge.\n\n');
+  process.stderr.write('Preview only; no fragment was written. Re-run with --write.\n\n');
   process.stdout.write(`${draft}\n`);
   process.exit(0);
 }
 
-const changelog = await readFile(changelogPath, 'utf8');
-await writeFile(changelogPath, mergeIntoUnreleased(changelog, sections), 'utf8');
-process.stderr.write('Merged the draft into CHANGELOG.md under [Unreleased]. Review and edit it before committing.\n');
+await mkdir(fragmentsPath, { recursive: true });
+
+let written = 0;
+let kept = 0;
+
+for (const [section, entries] of Object.entries(sections)) {
+  for (const entry of entries) {
+    const name = fragmentFileName(section, entry);
+    // `wx` fails rather than overwriting, which is what keeps an entry the
+    // author has already rewritten from being replaced by its commit subject.
+    try {
+      await writeFile(join(fragmentsPath, name), `- ${entry}\n`, { encoding: 'utf8', flag: 'wx' });
+      process.stderr.write(`  changelog.d/${name}\n`);
+      written += 1;
+    } catch (error) {
+      if (error.code !== 'EEXIST') {
+        throw error;
+      }
+      process.stderr.write(`  changelog.d/${name} (kept, already written)\n`);
+      kept += 1;
+    }
+  }
+}
+
+process.stderr.write(
+  `Wrote ${written} fragment(s)${kept > 0 ? `, kept ${kept}` : ''}. Rewrite them in the changelog's voice before committing.\n`,
+);

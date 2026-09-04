@@ -1,0 +1,1 @@
+- Pull requests that change something a visitor can see now carry screenshots, and a before-and-after pair when the change replaces something that already existed. [AGENTS.md](AGENTS.md) records where the files live: on a `pr-assets` orphan branch, never in `main` or in the change's own diff.

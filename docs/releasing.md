@@ -41,11 +41,10 @@ Workers Builds authenticates with a Cloudflare API token stored in Cloudflare, n
 ## Cutting a release
 
 1. **Confirm `main` is ready.** Fetch `origin`, check that `origin/main` is green in Actions, and confirm it holds everything intended for the release and nothing that is not.
-2. **Draft the changelog.** Run the automation, review its output, and edit it (see below).
-3. **Roll `[Unreleased]` into a release heading.** Rename `## [Unreleased]` to `## [x.y.z] - YYYY-MM-DD` with today's date, and add a fresh, empty `## [Unreleased]` above it.
-4. **Bump the version.** Set `version` in `package.json` to `x.y.z` by hand. It is not automated.
-5. **Commit.** One commit carrying the changelog and the version bump, with a Conventional Commit title and no body or trailers, per [AGENTS.md](../AGENTS.md) — for example `chore(release): release 0.1.0`. Open it as a pull request and merge it the normal way; the release commit is reviewed like any other.
-6. **Tag the merged commit and push the tag.**
+2. **Bump the version.** Set `version` in `package.json` to `x.y.z` by hand. It is not automated, and the next step reads it.
+3. **Collect the changelog entries.** Run `pnpm run changelog:collect` to see the release section the entries in `changelog.d/` make, then `pnpm run changelog:collect -- --write` to write it into `CHANGELOG.md` as `## [x.y.z] - YYYY-MM-DD` and delete the collected files. Read the result as a whole: entries were written one at a time, months apart, and the release is where they are read together (see below).
+4. **Commit.** One commit carrying the changelog, the deleted fragments, and the version bump, with a Conventional Commit title and no body or trailers, per [AGENTS.md](../AGENTS.md) — for example `chore(release): release 0.1.0`. Open it as a pull request and merge it the normal way; the release commit is reviewed like any other.
+5. **Tag the merged commit and push the tag.**
 
    ```sh
    git fetch origin
@@ -54,26 +53,41 @@ Workers Builds authenticates with a Cloudflare API token stored in Cloudflare, n
    git push origin v0.1.0
    ```
 
-7. **Verify.** Watch `Release` in Actions, then the build in the Cloudflare dashboard, then the live site (below).
+6. **Verify.** Watch `Release` in Actions, then the build in the Cloudflare dashboard, then the live site (below).
 
-## Drafting the changelog
+## Writing the changelog
 
-```sh
-pnpm run changelog:draft                 # print the draft, write nothing
-pnpm run changelog:draft -- --write      # merge the draft into CHANGELOG.md
-pnpm run changelog:draft -- --since v0.1.0
+Entries are not written in `CHANGELOG.md`. A change that is user- or contributor-visible adds a file to [changelog.d/](../changelog.d/) instead, named `<section>-<slug>.md` and holding the markdown bullets the changelog should show:
+
+```
+changelog.d/added-image-to-pdf-preview.md
+changelog.d/fixed-image-conversion-search-ranking.md
 ```
 
-The script reads the Conventional Commit titles between the previous `v*` tag and `HEAD` and maps them onto Keep a Changelog sections: `feat` to Added, `fix` to Fixed, `perf`, `docs`, and `revert` to Changed, and `refactor`, `build`, `chore`, `ci`, `style`, and `test` to nothing, because internal maintenance needs no entry. A breaking change is always kept and prefixed with `**Breaking:**`.
+Every pull request then writes a new file rather than editing the same lines of the same file, which is what stops the changelog from conflicting on every rebase. `## [Unreleased]` in `CHANGELOG.md` is a pointer to that directory and holds no entries; `changelog.d/README.md` documents the format for whoever is writing one.
 
-**Its output is a draft to review, not a changelog to trust.** A commit subject is an instruction to a reader of the git history; a changelog entry tells a visitor what changed for them, and the existing entries are written that way. Expect to rewrite most drafted lines, merge several commits into one entry, and delete entries for work that is invisible from outside. The commit titles that produced a line are still in `git log` if you need the context.
+```sh
+pnpm run changelog:draft                          # print what the commits would say
+pnpm run changelog:draft -- --since origin/main   # just this branch
+pnpm run changelog:draft -- --write               # write one fragment per drafted entry
+pnpm run changelog:collect                        # print the release section, write nothing
+pnpm run changelog:collect -- --write             # write it and delete the fragments
+pnpm run changelog:collect -- --version 0.4.0 --date 2026-09-10
+```
 
-Two properties make the draft safe to run at any point:
+`changelog:draft` reads the Conventional Commit titles between the previous `v*` tag and `HEAD` and maps them onto Keep a Changelog sections: `feat` to Added, `fix` to Fixed, `perf`, `docs`, and `revert` to Changed, and `refactor`, `build`, `chore`, `ci`, `style`, and `test` to nothing, because internal maintenance needs no entry. A breaking change is always kept and prefixed with `**Breaking:**`.
 
-- `--write` only appends beneath what is already under `## [Unreleased]`. It never edits or removes a hand-written entry.
-- Nothing in the release depends on it. Discard the draft entirely and write the section by hand and the release proceeds unchanged.
+**Its output is a draft to review, not a changelog to trust.** A commit subject is an instruction to a reader of the git history; a changelog entry tells a visitor what changed for them, and the existing entries are written that way. Expect to rewrite most drafted lines, merge several files into one, and delete the ones describing work that is invisible from outside. The commit titles that produced a line are still in `git log` if you need the context. Run it at release time with no `--write` to check that nothing landed without an entry.
 
-The parsing and section mapping live in [scripts/lib/changelog.mjs](../scripts/lib/changelog.mjs) as a pure module, covered by `tests/unit/changelog.test.ts`.
+`changelog:collect` groups the files by section, orders them within a section by file name, and inserts them under a fresh `## [Unreleased]`. Three things make it safe to run:
+
+- It refuses when `## [Unreleased]` holds anything but its pointer, rather than overwriting an entry someone wrote there by hand.
+- It refuses when `CHANGELOG.md` already has a section for the version, which is what a forgotten `package.json` bump looks like.
+- It reports every unreadable fragment at once — a name it cannot place, an empty file, a file that does not start with a bullet — instead of one per run.
+
+Nothing in the release depends on either script. Delete the fragments, write the section by hand, and the release proceeds unchanged.
+
+The parsing, the section mapping, and the fragment rules live in [scripts/lib/changelog.mjs](../scripts/lib/changelog.mjs) as a pure module, covered by `tests/unit/changelog.test.ts`.
 
 ## Verifying a deployment
 
