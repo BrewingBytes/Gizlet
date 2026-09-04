@@ -1,1 +1,0 @@
-- The Convert Image Gizlet's description now names the formats it takes, on its card, in its metadata, and on its regenerated preview card: “Convert JPG, PNG, WebP, AVIF, and BMP images to another format in your browser.” The previous wording, “common file formats”, left unanswered the one question a converter is asked.

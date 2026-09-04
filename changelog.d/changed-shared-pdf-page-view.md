@@ -1,1 +1,0 @@
-- Page turning in the two PDF workspaces now comes from one module, `src/scripts/pdf-page-view.ts`, rather than being wired separately in each. It imports pdf.js only as a type, which is what lets Image to PDF reach it without shipping the library.
