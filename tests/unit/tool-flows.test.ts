@@ -82,12 +82,14 @@ describe('Gizlet flow registry', () => {
       'resize-image',
       'convert-image',
       'jpg-to-pdf',
+      'crop-image',
     ]);
     expect(getNextFlowTools('convert-image').map((tool) => tool.toolSlug)).toEqual([
       'compress-image',
       'resize-image',
       'convert-image',
       'jpg-to-pdf',
+      'crop-image',
     ]);
     expect(canFlowTo('convert-image', 'resize-image')).toBe(true);
     expect(canFlowTo('convert-image', 'json-formatter')).toBe(false);
@@ -102,7 +104,7 @@ describe('Gizlet flow registry', () => {
   });
 
   test('puts every image Gizlet upstream of the PDF Gizlet', () => {
-    for (const toolSlug of ['compress-image', 'resize-image', 'convert-image'] as const) {
+    for (const toolSlug of ['compress-image', 'resize-image', 'convert-image', 'crop-image'] as const) {
       expect(canFlowTo(toolSlug, 'jpg-to-pdf'), toolSlug).toBe(true);
     }
   });
@@ -138,6 +140,7 @@ describe('Gizlet flow registry', () => {
       'resize-image',
       'convert-image',
       'jpg-to-pdf',
+      'crop-image',
     ]);
     expect(
       isValidFlowSequence(imageInput, ['resize-image', 'jpg-to-pdf', 'pdf-to-jpg', 'compress-image']),
@@ -216,12 +219,14 @@ describe('Gizlet flow registry', () => {
       'resize-image',
       'convert-image',
       'jpg-to-pdf',
+      'crop-image',
     ]);
     expect(getNextFlowSteps(imageInput, ['convert-image']).map((tool) => tool.toolSlug)).toEqual([
       'compress-image',
       'resize-image',
       'convert-image',
       'jpg-to-pdf',
+      'crop-image',
     ]);
   });
 
@@ -329,6 +334,7 @@ describe('flow categories', () => {
       'resize-image',
       'convert-image',
       'jpg-to-pdf',
+      'crop-image',
     ]);
     expect(getFlowCategoryStartSlugs('pdf')).toEqual(['merge-pdf', 'pdf-to-jpg', 'split-pdf']);
   });

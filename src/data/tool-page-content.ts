@@ -255,6 +255,88 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'crop-image': {
+    what: {
+      heading: 'What Crop Image does',
+      paragraphs: [
+        'Crop Image throws away the edges of a picture and keeps the rectangle you selected. Drag a selection over the preview, or type its position and size in the fields underneath, then choose JPEG, PNG, or WebP for the file that comes out.',
+        'The rectangle is measured in the image’s own pixels rather than in the preview’s, so a selection means the same thing on a phone as it does on a desktop, and the numbers beside it are the dimensions the downloaded file will actually have.',
+      ],
+    },
+    when: {
+      heading: 'When to crop rather than resize',
+      paragraphs: [
+        'Crop when the problem is what is in the frame: a photograph with half a car in the corner, a screenshot that caught the whole desktop, a profile picture that has to be square before anything will accept it.',
+        'Resize when the problem is how big the picture is. The two answer different questions and often run together — crop to the shape you need, then resize it to the dimensions something asks for — and both blocks can sit in the same Gizlet Flow.',
+      ],
+    },
+    options: {
+      heading: 'What the selection controls do',
+      paragraphs: ['A crop is one rectangle, described three ways: dragged, typed, or nudged with the keyboard.'],
+      details: [
+        {
+          term: 'Aspect ratio',
+          description:
+            'Free crop lets the selection be any shape. Choosing a ratio — square, one of the two photographic shapes, widescreen, or any of those turned upright — locks it, so every drag and every typed width keeps that shape. Switching back to free leaves the rectangle exactly where it is.',
+        },
+        {
+          term: 'Left, top, width, and height',
+          description:
+            'The same rectangle in numbers, counted from the top-left corner of the image. Type into them when you know the exact pixels you want, which is more accurate than any drag and is the reason the fields exist rather than being a duplicate of the box.',
+        },
+        {
+          term: 'Keyboard',
+          description:
+            'With the selection focused, the arrow keys move it ten pixels at a time and hold Alt for one. Shift with an arrow key resizes it from the bottom-right corner, keeping the aspect ratio if one is locked.',
+        },
+        {
+          term: 'Output format',
+          description:
+            'JPEG for photographs, WebP for the web, PNG when the crop has to keep transparency or hard edges exactly. A crop is re-encoded, so a JPEG cropped into a JPEG is compressed a second time; PNG or WebP avoids that.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'The picture never leaves the tab',
+      paragraphs: [
+        'The image is decoded, the selected rectangle is drawn onto a canvas, and the result is encoded, all by this browser. Gizlet is a static site with no upload endpoint, so there is nowhere for a photograph to be sent, and nothing is kept once the tab closes.',
+        'Cropping is often the step that removes something private — a face at the edge of a frame, a name on a document, a window in the background — which is exactly the work that should not be done by uploading the uncropped original to somebody’s server first.',
+        'Because the output is drawn fresh, it also arrives without the metadata the original carried, including the camera model and any GPS coordinates.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Is my photo uploaded to crop it?',
+        answer:
+          'No. The selection is drawn onto a canvas in this browser and the cropped file goes straight to your downloads. There is no upload endpoint behind this page, and the uncropped original never leaves the device.',
+      },
+      {
+        question: 'Can I crop to an exact size in pixels?',
+        answer:
+          'Yes. Type the width and height into the fields under the preview, and the left and top values to say where the rectangle sits. Those are the dimensions the downloaded image will have, exactly.',
+      },
+      {
+        question: 'How do I crop a square profile picture?',
+        answer:
+          'Choose the square ratio. The selection becomes the largest square that fits, centred, and you can drag it to the part of the picture you want; every later drag keeps it square.',
+      },
+      {
+        question: 'Can I crop without a mouse?',
+        answer:
+          'Yes. Tab to the selection and use the arrow keys to move it, Alt with an arrow key for single pixels, and Shift with an arrow key to resize it. The four number fields are ordinary inputs and work the same way.',
+      },
+      {
+        question: 'Does cropping lose quality?',
+        answer:
+          'The kept pixels are copied rather than rescaled, so nothing is softened. The file is encoded again, though, so cropping a JPEG and saving as JPEG applies lossy compression a second time; choose PNG or WebP if that matters.',
+      },
+      {
+        question: 'Can I make the image bigger by cropping?',
+        answer:
+          'No. A crop can only keep part of what is already there, and the selection cannot leave the image. To make a picture larger, or to put it on a wider canvas, resize it instead.',
+      },
+    ],
+  },
   'json-ld-generator': {
     what: {
       heading: 'What the JSON-LD Generator does',

@@ -118,6 +118,11 @@ export const toolFlowRegistry = [
     output: pdfPayload,
     splitsInput: true,
   },
+  {
+    toolSlug: 'crop-image',
+    input: imageFlowInput,
+    output: imageOutput,
+  },
 ] as const satisfies readonly ToolFlowDefinition[];
 
 /**

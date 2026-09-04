@@ -1,0 +1,509 @@
+---
+import { getCropAspectRatioOptions } from '../data/image-crop';
+
+// The ratio list is the data module's, so the control cannot offer a shape the
+// crop maths does not know.
+const aspectRatios = getCropAspectRatioOptions();
+---
+
+<section class="crop-image-tool" data-crop-image-tool>
+  <div class="crop-image-tool__picker" data-drop-zone>
+    <input
+      id="crop-image-file"
+      class="crop-image-tool__file-input"
+      type="file"
+      accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp"
+      aria-label="Select an image to crop"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">One image at a time</p>
+    <h2>Drop an image here</h2>
+    <p>JPEG, PNG, WebP, AVIF, or BMP. Nothing leaves this device.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose an image</button>
+  </div>
+
+  <p class="crop-image-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="crop-image-tool__error" data-error role="alert" hidden></p>
+
+  <div class="crop-image-tool__editor" data-editor hidden>
+    <figure class="crop-image-tool__stage">
+      <div class="crop-image-tool__frame" data-frame>
+        <img data-preview-image alt="Selected image preview" />
+        <div
+          class="crop-image-tool__selection"
+          data-selection
+          tabindex="0"
+          role="group"
+          aria-label="Crop selection. Arrow keys move it, shift and arrow keys resize it."
+        >
+          <span class="crop-image-tool__handle crop-image-tool__handle--top-left" data-handle="top-left"></span>
+          <span class="crop-image-tool__handle crop-image-tool__handle--top-right" data-handle="top-right"></span>
+          <span class="crop-image-tool__handle crop-image-tool__handle--bottom-left" data-handle="bottom-left"></span>
+          <span class="crop-image-tool__handle crop-image-tool__handle--bottom-right" data-handle="bottom-right"></span>
+        </div>
+      </div>
+      <figcaption data-input-name></figcaption>
+    </figure>
+
+    <div class="crop-image-tool__controls">
+      <div class="crop-image-tool__ratio">
+        <label for="crop-aspect-ratio">Aspect ratio</label>
+        <select id="crop-aspect-ratio" data-aspect-ratio>
+          {aspectRatios.map((option) => <option value={option.value}>{option.label}</option>)}
+        </select>
+      </div>
+
+      <fieldset class="crop-image-tool__fields">
+        <legend>Selection, in image pixels</legend>
+        <label for="crop-x">Left <span>px</span></label>
+        <input id="crop-x" type="number" min="0" step="1" inputmode="numeric" data-crop-x />
+        <label for="crop-y">Top <span>px</span></label>
+        <input id="crop-y" type="number" min="0" step="1" inputmode="numeric" data-crop-y />
+        <label for="crop-width">Width <span>px</span></label>
+        <input id="crop-width" type="number" min="1" step="1" inputmode="numeric" data-crop-width />
+        <label for="crop-height">Height <span>px</span></label>
+        <input id="crop-height" type="number" min="1" step="1" inputmode="numeric" data-crop-height />
+      </fieldset>
+
+      <div class="crop-image-tool__summary" aria-live="polite">
+        <span class="metadata">Selection</span>
+        <strong data-crop-preview></strong>
+      </div>
+
+      <div class="crop-image-tool__format">
+        <label for="crop-output-format">Output format</label>
+        <select id="crop-output-format" data-output-format>
+          <option value="image/jpeg">JPEG</option>
+          <option value="image/png">PNG</option>
+          <option value="image/webp">WebP</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="crop-image-tool__actions">
+      <button type="button" data-crop>Crop it</button>
+      <button type="button" class="button-secondary" data-reset-selection>Reset selection</button>
+      <button type="button" class="button-secondary" data-clear>Choose another image</button>
+    </div>
+  </div>
+
+  <section class="crop-image-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2>Just the part you wanted.</h2>
+    <figure class="crop-image-tool__result-preview">
+      <img data-result-image alt="Cropped image preview" />
+      <figcaption>Actual cropped image</figcaption>
+    </figure>
+    <dl>
+      <div><dt>Original</dt><dd data-original-dimensions></dd></div>
+      <div><dt>Cropped</dt><dd data-result-dimensions></dd></div>
+    </dl>
+    <div class="crop-image-tool__result-actions">
+      <a class="crop-image-tool__download" data-download>Download image</a>
+      <button type="button" class="button-secondary" data-result-clear>Choose another image</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .crop-image-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .crop-image-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .crop-image-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .crop-image-tool__picker[hidden], .crop-image-tool__editor[hidden], .crop-image-tool__result[hidden] { display: none; }
+  .crop-image-tool__picker h2 { margin-bottom: var(--space-2); }
+  .crop-image-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .crop-image-tool__status, .crop-image-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .crop-image-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .crop-image-tool__editor, .crop-image-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .crop-image-tool__editor { display: grid; gap: var(--space-4); }
+  .crop-image-tool__stage { margin: 0; }
+  .crop-image-tool__frame { position: relative; display: block; width: fit-content; max-width: 100%; margin: 0 auto; overflow: hidden; border: var(--border-width) solid var(--border); touch-action: none; }
+  .crop-image-tool__frame img { display: block; max-width: 100%; max-height: 24rem; }
+  /* The part being thrown away is dimmed rather than the part being kept
+     brightened, so the picture keeps its own colours. One spread shadow does
+     it, clipped by the frame, which beats four positioned overlays. */
+  .crop-image-tool__selection { position: absolute; box-sizing: border-box; border: 2px solid var(--color-amber); box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--text) 55%, transparent); cursor: move; }
+  .crop-image-tool__selection:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .crop-image-tool__handle { position: absolute; width: 0.875rem; height: 0.875rem; background: var(--color-amber); border: 1px solid var(--text); }
+  .crop-image-tool__handle--top-left { top: -0.5rem; left: -0.5rem; cursor: nwse-resize; }
+  .crop-image-tool__handle--top-right { top: -0.5rem; right: -0.5rem; cursor: nesw-resize; }
+  .crop-image-tool__handle--bottom-left { bottom: -0.5rem; left: -0.5rem; cursor: nesw-resize; }
+  .crop-image-tool__handle--bottom-right { bottom: -0.5rem; right: -0.5rem; cursor: nwse-resize; }
+  .crop-image-tool__stage figcaption { margin-top: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-align: center; }
+  .crop-image-tool__controls { display: grid; gap: var(--space-3); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .crop-image-tool__ratio { max-width: 20rem; }
+  .crop-image-tool__ratio label, .crop-image-tool__format label { display: block; margin-bottom: var(--space-1); font-weight: 700; }
+  .crop-image-tool__fields { display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--space-2); margin: 0; padding: 0; border: 0; }
+  .crop-image-tool__fields legend { margin-bottom: var(--space-1); font-weight: 700; }
+  .crop-image-tool__fields label span { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-sm); font-weight: 400; }
+  .crop-image-tool__summary { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); padding: var(--space-2); border-top: var(--border-width) solid var(--border); border-bottom: var(--border-width) solid var(--border); }
+  .crop-image-tool__summary strong { font-family: var(--font-mono); text-align: right; }
+  .crop-image-tool__format { max-width: 20rem; }
+  .crop-image-tool__actions, .crop-image-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .crop-image-tool__result h2 { margin-bottom: var(--space-4); }
+  .crop-image-tool__result-preview { margin: 0 0 var(--space-4); }
+  .crop-image-tool__result-preview img { display: block; max-width: 100%; max-height: 24rem; margin: 0 auto; border: var(--border-width) solid var(--border); }
+  .crop-image-tool__result-preview figcaption { margin-top: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-align: center; }
+  .crop-image-tool__result dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); margin: 0 0 var(--space-4); }
+  .crop-image-tool__result dl div { padding: var(--space-2); border-top: var(--border-width) solid var(--border); }
+  .crop-image-tool__result dt { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
+  .crop-image-tool__result dd { margin: var(--space-1) 0 0; font-weight: 700; }
+  .crop-image-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .crop-image-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+  @media (max-width: 36rem) {
+    .crop-image-tool__picker, .crop-image-tool__editor, .crop-image-tool__result { padding: var(--space-3); }
+    .crop-image-tool__fields { grid-template-columns: auto minmax(0, 1fr); }
+    .crop-image-tool__result dl { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  import {
+    getInputImageFormat,
+    getPreferredOutputFormat,
+    isImageOutputFormat,
+    isSupportedImageFile,
+  } from '../data/image-compression';
+  import {
+    applyCropAspectRatio,
+    clampCropToImage,
+    describeCropCoverage,
+    describeCropRectangle,
+    getCenteredCrop,
+    getCropAspectRatio,
+    getCropFromPoints,
+    getCropOutputFilename,
+    isCropAspectRatioName,
+    moveCropRectangle,
+    resizeCropRectangle,
+    validateCropRectangle,
+    type CropHandle,
+    type CropRectangle,
+  } from '../data/image-crop';
+  import { isLargeImage, type ImageDimensions } from '../data/image-resize';
+  import { cropBrowserImage, encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
+
+  const root = document.querySelector<HTMLElement>('[data-crop-image-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const editor = root.querySelector<HTMLElement>('[data-editor]');
+    const frame = root.querySelector<HTMLElement>('[data-frame]');
+    const previewImage = root.querySelector<HTMLImageElement>('[data-preview-image]');
+    const selection = root.querySelector<HTMLElement>('[data-selection]');
+    const inputName = root.querySelector<HTMLElement>('[data-input-name]');
+    const aspectRatio = root.querySelector<HTMLSelectElement>('[data-aspect-ratio]');
+    const cropX = root.querySelector<HTMLInputElement>('[data-crop-x]');
+    const cropY = root.querySelector<HTMLInputElement>('[data-crop-y]');
+    const cropWidth = root.querySelector<HTMLInputElement>('[data-crop-width]');
+    const cropHeight = root.querySelector<HTMLInputElement>('[data-crop-height]');
+    const cropPreview = root.querySelector<HTMLElement>('[data-crop-preview]');
+    const outputFormat = root.querySelector<HTMLSelectElement>('[data-output-format]');
+    const cropButton = root.querySelector<HTMLButtonElement>('[data-crop]');
+    const resetSelectionButton = root.querySelector<HTMLButtonElement>('[data-reset-selection]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultImage = root.querySelector<HTMLImageElement>('[data-result-image]');
+    const originalDimensions = root.querySelector<HTMLElement>('[data-original-dimensions]');
+    const resultDimensions = root.querySelector<HTMLElement>('[data-result-dimensions]');
+    const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !frame || !previewImage || !selection || !inputName || !aspectRatio || !cropX || !cropY || !cropWidth || !cropHeight || !cropPreview || !outputFormat || !cropButton || !resetSelectionButton || !clearButton || !result || !resultImage || !originalDimensions || !resultDimensions || !download || !resultClearButton) {
+      throw new Error('Crop Image tool could not initialise.');
+    }
+
+    let selectedFile: File | undefined;
+    let sourceImage: HTMLImageElement | undefined;
+    let sourceDimensions: ImageDimensions | undefined;
+    let crop: CropRectangle | undefined;
+    let previewUrl: string | undefined;
+    let resultUrl: string | undefined;
+    /** The gesture in progress, if any: a drag of the box or of one corner. */
+    let gesture: { readonly pointerId: number; readonly kind: 'move' | 'draw'; readonly anchor: { x: number; y: number }; readonly offset: { x: number; y: number } } | undefined;
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+    const revoke = (url: string | undefined) => { if (url) URL.revokeObjectURL(url); };
+    const currentRatio = () =>
+      isCropAspectRatioName(aspectRatio.value) ? getCropAspectRatio(aspectRatio.value) : undefined;
+
+    const resetResult = () => {
+      revoke(resultUrl);
+      resultUrl = undefined;
+      result.hidden = true;
+      resultImage.removeAttribute('src');
+      download.removeAttribute('href');
+      download.removeAttribute('download');
+    };
+
+    const resetTool = () => {
+      selectedFile = undefined;
+      sourceImage = undefined;
+      sourceDimensions = undefined;
+      crop = undefined;
+      fileInput.value = '';
+      revoke(previewUrl);
+      previewUrl = undefined;
+      resetResult();
+      previewImage.removeAttribute('src');
+      aspectRatio.value = 'free';
+      dropZone.hidden = false;
+      editor.hidden = true;
+      clearError();
+      clearStatus();
+    };
+
+    /** Where the selection sits on screen, in the rendered image's own pixels. */
+    const drawSelection = () => {
+      if (!crop || !sourceDimensions) return;
+
+      const scaleX = previewImage.clientWidth / sourceDimensions.width;
+      const scaleY = previewImage.clientHeight / sourceDimensions.height;
+
+      selection.style.left = `${crop.x * scaleX}px`;
+      selection.style.top = `${crop.y * scaleY}px`;
+      selection.style.width = `${crop.width * scaleX}px`;
+      selection.style.height = `${crop.height * scaleY}px`;
+      selection.setAttribute('aria-label', `Crop selection, ${describeCropRectangle(crop)}. Arrow keys move it, shift and arrow keys resize it.`);
+    };
+
+    const renderCrop = () => {
+      if (!crop || !sourceDimensions) return;
+
+      cropX.value = String(crop.x);
+      cropY.value = String(crop.y);
+      cropWidth.value = String(crop.width);
+      cropHeight.value = String(crop.height);
+      cropPreview.textContent = `${crop.width} × ${crop.height} px · ${describeCropCoverage(crop, sourceDimensions)}`;
+      drawSelection();
+    };
+
+    const setCrop = (next: CropRectangle) => {
+      if (!sourceDimensions) return;
+      crop = clampCropToImage(next, sourceDimensions);
+      resetResult();
+      clearError();
+      renderCrop();
+    };
+
+    /** A pointer position in the source image's pixels, not the preview's. */
+    const pointToImage = (event: PointerEvent): { x: number; y: number } => {
+      const bounds = previewImage.getBoundingClientRect();
+      const scaleX = sourceDimensions ? sourceDimensions.width / bounds.width : 1;
+      const scaleY = sourceDimensions ? sourceDimensions.height / bounds.height : 1;
+
+      return { x: (event.clientX - bounds.left) * scaleX, y: (event.clientY - bounds.top) * scaleY };
+    };
+
+    const selectFile = async (file: File | undefined) => {
+      resetTool();
+      if (!file) return;
+      if (!isSupportedImageFile(file)) {
+        showError('Choose a JPEG, PNG, WebP, AVIF, or BMP image.');
+        return;
+      }
+
+      selectedFile = file;
+      dropZone.hidden = true;
+      showStatus('Reading image dimensions…');
+      await nextPaint();
+      try {
+        sourceImage = await loadBrowserImage(file);
+        sourceDimensions = { width: sourceImage.naturalWidth, height: sourceImage.naturalHeight };
+        if (!sourceDimensions.width || !sourceDimensions.height) throw new Error('This image has no usable dimensions.');
+        if (isLargeImage(sourceDimensions)) {
+          showStatus('Large image detected. Preparing it locally…');
+          await nextPaint();
+        }
+        previewUrl = URL.createObjectURL(file);
+        previewImage.src = previewUrl;
+        inputName.textContent = `${file.name} · ${sourceDimensions.width} × ${sourceDimensions.height} px`;
+        outputFormat.value = getPreferredOutputFormat(getInputImageFormat(file));
+        crop = getCenteredCrop(sourceDimensions, currentRatio());
+        clearStatus();
+        editor.hidden = false;
+        // The preview has no measured size until it is both loaded and shown,
+        // and the overlay is positioned against that size rather than the file's.
+        await previewImage.decode().catch(() => undefined);
+        renderCrop();
+      } catch (caughtError) {
+        selectedFile = undefined;
+        sourceImage = undefined;
+        sourceDimensions = undefined;
+        crop = undefined;
+        dropZone.hidden = false;
+        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be read.');
+        clearStatus();
+      }
+    };
+
+    const readTypedCrop = (): CropRectangle | undefined => {
+      const values = [cropX.value, cropY.value, cropWidth.value, cropHeight.value].map(Number);
+
+      if (!values.every((value) => Number.isFinite(value))) return undefined;
+
+      return { x: values[0], y: values[1], width: values[2], height: values[3] };
+    };
+
+    const cropImage = async () => {
+      if (!selectedFile || !sourceImage || !sourceDimensions || !crop || !isImageOutputFormat(outputFormat.value)) return;
+
+      const validation = validateCropRectangle(crop, sourceDimensions);
+
+      if (validation) {
+        showError(validation);
+        return;
+      }
+
+      clearError();
+      resetResult();
+      cropButton.disabled = true;
+      cropButton.textContent = 'Cropping…';
+      showStatus(isLargeImage(sourceDimensions) ? 'Large image: cropping locally…' : 'Cropping locally…');
+      await nextPaint();
+      try {
+        const format = outputFormat.value;
+        const cropped = cropBrowserImage(sourceImage, crop);
+        const output = await encodeBrowserImage(cropped, { width: crop.width, height: crop.height }, format);
+        resultUrl = URL.createObjectURL(output);
+        originalDimensions.textContent = `${sourceDimensions.width} × ${sourceDimensions.height} px`;
+        resultDimensions.textContent = `${crop.width} × ${crop.height} px`;
+        resultImage.src = resultUrl;
+        download.href = resultUrl;
+        download.download = getCropOutputFilename(selectedFile.name, format);
+        editor.hidden = true;
+        result.hidden = false;
+      } catch (caughtError) {
+        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be cropped.');
+      } finally {
+        clearStatus();
+        cropButton.disabled = false;
+        cropButton.textContent = 'Crop it';
+      }
+    };
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void selectFile(fileInput.files?.[0]));
+    clearButton.addEventListener('click', resetTool);
+    resultClearButton.addEventListener('click', resetTool);
+    cropButton.addEventListener('click', () => void cropImage());
+    resetSelectionButton.addEventListener('click', () => {
+      if (sourceDimensions) setCrop(getCenteredCrop(sourceDimensions, currentRatio()));
+    });
+    aspectRatio.addEventListener('change', () => {
+      if (crop && sourceDimensions) setCrop(applyCropAspectRatio(crop, sourceDimensions, currentRatio()));
+    });
+
+    for (const field of [cropX, cropY, cropWidth, cropHeight]) {
+      field.addEventListener('change', () => {
+        const typed = readTypedCrop();
+        if (!typed || !sourceDimensions) return;
+        // A typed width is taken at its word; the ratio then decides the height,
+        // so the two controls cannot disagree about the shape.
+        setCrop(currentRatio() === undefined ? typed : applyCropAspectRatio(typed, sourceDimensions, currentRatio()));
+      });
+    }
+
+    selection.addEventListener('keydown', (event) => {
+      if (!crop || !sourceDimensions) return;
+
+      const step = event.altKey ? 1 : 10;
+      const deltas: Record<string, readonly [number, number]> = {
+        ArrowLeft: [-step, 0],
+        ArrowRight: [step, 0],
+        ArrowUp: [0, -step],
+        ArrowDown: [0, step],
+      };
+      const delta = deltas[event.key];
+
+      if (!delta) return;
+      event.preventDefault();
+      setCrop(
+        event.shiftKey
+          ? resizeCropRectangle(crop, sourceDimensions, delta[0], delta[1], currentRatio())
+          : moveCropRectangle(crop, sourceDimensions, delta[0], delta[1]),
+      );
+    });
+
+    selection.addEventListener('pointerdown', (event) => {
+      if (!crop || !sourceDimensions) return;
+
+      const handle = (event.target as HTMLElement).dataset.handle as CropHandle | undefined;
+      const point = pointToImage(event);
+
+      event.preventDefault();
+      selection.setPointerCapture(event.pointerId);
+
+      if (handle) {
+        // Dragging a corner keeps the opposite one still, which is where the
+        // new rectangle is measured from.
+        gesture = {
+          pointerId: event.pointerId,
+          kind: 'draw',
+          anchor: {
+            x: handle === 'top-left' || handle === 'bottom-left' ? crop.x + crop.width : crop.x,
+            y: handle === 'top-left' || handle === 'top-right' ? crop.y + crop.height : crop.y,
+          },
+          offset: { x: 0, y: 0 },
+        };
+        return;
+      }
+
+      selection.focus();
+      gesture = {
+        pointerId: event.pointerId,
+        kind: 'move',
+        anchor: { x: crop.x, y: crop.y },
+        offset: { x: point.x - crop.x, y: point.y - crop.y },
+      };
+    });
+
+    // A drag started on the picture rather than on the selection draws a new one.
+    previewImage.addEventListener('pointerdown', (event) => {
+      if (!sourceDimensions) return;
+      event.preventDefault();
+      previewImage.setPointerCapture(event.pointerId);
+      const point = pointToImage(event);
+      gesture = { pointerId: event.pointerId, kind: 'draw', anchor: point, offset: { x: 0, y: 0 } };
+    });
+
+    for (const target of [selection, previewImage]) {
+      target.addEventListener('pointermove', (event) => {
+        if (!gesture || gesture.pointerId !== event.pointerId || !crop || !sourceDimensions) return;
+
+        const point = pointToImage(event);
+
+        setCrop(
+          gesture.kind === 'move'
+            ? { ...crop, x: point.x - gesture.offset.x, y: point.y - gesture.offset.y }
+            : getCropFromPoints(gesture.anchor, point, sourceDimensions, currentRatio()),
+        );
+      });
+
+      for (const eventName of ['pointerup', 'pointercancel']) {
+        target.addEventListener(eventName, (event) => {
+          const pointerEvent = event as PointerEvent;
+          if (gesture?.pointerId !== pointerEvent.pointerId) return;
+          gesture = undefined;
+          if (target.hasPointerCapture(pointerEvent.pointerId)) target.releasePointerCapture(pointerEvent.pointerId);
+        });
+      }
+    }
+
+    // The overlay is placed in rendered pixels, so it has to be replaced when
+    // the rendered size changes.
+    window.addEventListener('resize', drawSelection);
+    for (const eventName of ['dragenter', 'dragover']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    for (const eventName of ['dragleave', 'drop']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    dropZone.addEventListener('drop', (event) => void selectFile(event.dataTransfer?.files[0]));
+  }
+</script>

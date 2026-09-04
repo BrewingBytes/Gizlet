@@ -57,6 +57,7 @@ describe('getRelatedTools', () => {
   it('uses explicit registry-backed relationships instead of guessing recommendations', () => {
     expect(getRelatedTools(toolRegistry[0]).map((tool) => tool.slug)).toEqual([
       'resize-image',
+      'crop-image',
       'convert-image',
       'jpg-to-pdf',
     ]);

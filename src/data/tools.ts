@@ -303,8 +303,12 @@ export const toolRegistry = [
       "aspect ratio crop",
       "square crop",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "One JPEG, PNG, WebP, AVIF, or BMP image; drag a selection or type its position and size, optionally locked to an aspect ratio, and choose JPEG, PNG, or WebP output.",
+      output: "The selected area as an image ready to download in the selected format.",
+    },
   },
   {
     id: 12,

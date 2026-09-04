@@ -106,7 +106,7 @@ export const roadmapPhases: readonly RoadmapPhase[] = [
     title: 'The image gaps, on Canvas',
     status: 'next',
     when: 'Next. It needs no new dependency at all, which is why it goes ahead of work that does.',
-    what: 'The obvious holes next to the three image Gizlets that already exist: cutting a picture down, arranging several into one, turning one upright, setting one on a background, reading what a photo says about you and stripping it out, and reading a colour or a size back off an image without changing it.',
+    what: 'The obvious holes next to the image Gizlets that were already there: cutting a picture down, arranging several into one, turning one upright, setting one on a background, reading what a photo says about you and stripping it out, and reading a colour or a size back off an image without changing it.',
     toolSlugs: [
       'crop-image',
       'collage-maker',
@@ -203,7 +203,6 @@ export interface PlannedToolChain {
 }
 
 export const plannedToolChains = [
-  { slug: 'crop-image', chain: ['pdf-to-jpg', 'crop-image', 'compress-image'] },
   { slug: 'collage-maker', chain: ['pdf-to-jpg', 'collage-maker', 'compress-image'] },
   { slug: 'rotate-flip-image', chain: ['pdf-to-jpg', 'rotate-flip-image', 'jpg-to-pdf'] },
   { slug: 'image-background', chain: ['resize-image', 'image-background', 'compress-image'] },

@@ -17,9 +17,10 @@ import {
  * the obligation begins when a Gizlet becomes available.
  */
 const relatedToolSlugs: Record<AvailableToolSlug, readonly AvailableToolSlug[]> = {
-  'compress-image': ['resize-image', 'convert-image', 'jpg-to-pdf'],
-  'resize-image': ['compress-image', 'convert-image', 'jpg-to-pdf'],
-  'convert-image': ['compress-image', 'resize-image', 'jpg-to-pdf'],
+  'compress-image': ['resize-image', 'crop-image', 'convert-image', 'jpg-to-pdf'],
+  'resize-image': ['crop-image', 'compress-image', 'convert-image', 'jpg-to-pdf'],
+  'convert-image': ['compress-image', 'resize-image', 'crop-image', 'jpg-to-pdf'],
+  'crop-image': ['resize-image', 'compress-image', 'convert-image', 'jpg-to-pdf'],
   'json-ld-generator': ['json-formatter'],
   'json-formatter': ['json-ld-generator'],
   'jpg-to-pdf': ['pdf-to-jpg', 'merge-pdf', 'pdf-viewer'],

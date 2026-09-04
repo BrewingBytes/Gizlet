@@ -1,4 +1,10 @@
 import { type ImageOutputFormat } from './image-compression';
+import {
+  defaultFlowCropAspectRatio,
+  flowCropAspectRatioNames,
+  isFlowCropAspectRatioName,
+  type FlowCropAspectRatioName,
+} from './image-crop';
 import { validateResizeDimensions } from './image-resize';
 import {
   defaultPdfOrientation,
@@ -41,6 +47,7 @@ export interface RecipeStep {
   readonly width?: number;
   readonly height?: number;
   readonly quality?: number;
+  readonly ratio?: FlowCropAspectRatioName;
   readonly pageSize?: PdfPageSizeName;
   readonly orientation?: PdfOrientation;
   readonly resolution?: PdfImageResolution;
@@ -79,6 +86,23 @@ const recipeFormatNames = {
 type RecipeFormatName = keyof typeof recipeFormatNames;
 
 /**
+ * A ratio as a link spells it.
+ *
+ * This format's delimiters are `; : , =`, and a ratio is written `16:9`, so the
+ * colon becomes an `x` on the way into a link and back again on the way out.
+ * The spelling is derived rather than listed, so a ratio added to the Gizlet
+ * cannot arrive here without one.
+ */
+function getCropRatioToken(name: FlowCropAspectRatioName): string {
+  return name.replace(':', 'x');
+}
+
+const cropRatioTokens = flowCropAspectRatioNames.map(getCropRatioToken);
+const cropRatioNamesByToken = new Map(
+  flowCropAspectRatioNames.map((name) => [getCropRatioToken(name), name]),
+);
+
+/**
  * The setting keys each Gizlet may carry, and the shape each value takes.
  *
  * `'number'` means a whole number checked by that Gizlet's own validator. An
@@ -90,6 +114,10 @@ const recipeStepSettings = {
   'resize-image': { w: 'number', h: 'number' },
   'compress-image': { q: 'number' },
   'convert-image': {},
+  // A drawn rectangle is a place on a picture nobody else has, so a link
+  // carries the shape instead: a flow crops the largest centred rectangle of
+  // the named ratio. Free crop has no shape to name and is not offered here.
+  'crop-image': { a: cropRatioTokens },
   'jpg-to-pdf': { p: pdfPageSizeNames, o: pdfOrientationNames },
   // A merge has nothing to name: which documents it joins, and in what order,
   // is the list of files the visitor chose rather than a setting. The entry
@@ -192,6 +220,16 @@ function buildStep(
     if (quality < minimumRecipeQuality || quality > maximumRecipeQuality) return undefined;
 
     return { toolSlug, quality };
+  }
+
+  if (toolSlug === 'crop-image') {
+    if (!Object.hasOwn(settings, 'a')) return { toolSlug };
+
+    const ratio = cropRatioNamesByToken.get(String(settings.a));
+
+    if (!ratio) return undefined;
+
+    return { toolSlug, ratio };
   }
 
   if (toolSlug === 'jpg-to-pdf') {
@@ -349,6 +387,14 @@ export function encodeRecipe(recipe: Recipe): string | undefined {
       if (!Number.isInteger(step.quality)) return undefined;
 
       settings.push(`q=${step.quality}`);
+    }
+
+    if (step.toolSlug === 'crop-image') {
+      const ratio = step.ratio ?? defaultFlowCropAspectRatio;
+
+      if (!isFlowCropAspectRatioName(ratio)) return undefined;
+
+      settings.push(`a=${getCropRatioToken(ratio)}`);
     }
 
     if (step.toolSlug === 'jpg-to-pdf') {

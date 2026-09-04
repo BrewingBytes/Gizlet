@@ -200,6 +200,32 @@ describe('encodeRecipe', () => {
   });
 });
 
+describe('a crop in a recipe', () => {
+  it('carries the shape rather than a rectangle', () => {
+    const encoded = encodeRecipe({
+      steps: [{ toolSlug: 'crop-image', ratio: '16:9' }, { toolSlug: 'compress-image', quality: 70 }],
+    });
+
+    expect(encoded).toBe('#r=v1;crop-image:a=16x9;compress-image:q=70');
+    expect(decodeRecipe(encoded ?? '')?.steps).toEqual([
+      { toolSlug: 'crop-image', ratio: '16:9' },
+      { toolSlug: 'compress-image', quality: 70 },
+    ]);
+  });
+
+  it('defaults a crop that names no shape, because a flow has to crop to something', () => {
+    expect(encodeRecipe({ steps: [{ toolSlug: 'crop-image' }] })).toBe('#r=v1;crop-image:a=1x1');
+    expect(decodeRecipe('#r=v1;crop-image')?.steps).toEqual([{ toolSlug: 'crop-image' }]);
+  });
+
+  it('refuses a shape that is not one of the offered ones', () => {
+    // Free crop is a rectangle somebody drew, which a link cannot carry.
+    expect(decodeRecipe('#r=v1;crop-image:a=free')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;crop-image:a=16:9')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;crop-image:a=99x1')).toBeUndefined();
+  });
+});
+
 describe('the settings-only guarantee', () => {
   it('cannot emit a value that would break out of its own delimiters', () => {
     // Every whitelisted value is a whole number or a closed enum, which is why
@@ -210,6 +236,7 @@ describe('the settings-only guarantee', () => {
       { outputFormat: 'image/jpeg', steps: [{ toolSlug: 'resize-image', width: 16384, height: 1 }] },
       { outputFormat: 'image/png', steps: [{ toolSlug: 'compress-image', quality: 40 }] },
       { steps: [{ toolSlug: 'jpg-to-pdf', pageSize: 'legal', orientation: 'portrait' }] },
+      { steps: [{ toolSlug: 'crop-image', ratio: '9:16' }] },
     ];
 
     for (const recipe of recipes) {
