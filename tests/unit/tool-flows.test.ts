@@ -84,17 +84,26 @@ describe('Gizlet flow registry', () => {
     }
   });
 
-  test('hands the PDF on to both Gizlets that read one', () => {
+  test('hands the PDF on to every Gizlet that reads one', () => {
     expect(getFlowTool('jpg-to-pdf').output).toEqual({ kind: 'pdf-file' });
     expect(getFlowToolsForInput('pdf-file').map((tool) => tool.toolSlug)).toEqual([
       'merge-pdf',
       'pdf-to-jpg',
+      'split-pdf',
     ]);
     expect(getNextFlowTools('jpg-to-pdf').map((tool) => tool.toolSlug)).toEqual([
       'merge-pdf',
       'pdf-to-jpg',
+      'split-pdf',
     ]);
     expect(canFlowTo('jpg-to-pdf', 'merge-pdf')).toBe(true);
+    expect(canFlowTo('jpg-to-pdf', 'split-pdf')).toBe(true);
+    // Splitting keeps the payload a PDF, so the PDF Gizlets follow it too.
+    expect(getNextFlowTools('split-pdf').map((tool) => tool.toolSlug)).toEqual([
+      'merge-pdf',
+      'pdf-to-jpg',
+      'split-pdf',
+    ]);
     // A PDF reaches an image Gizlet only through the one that converts it.
     expect(canFlowTo('jpg-to-pdf', 'compress-image')).toBe(false);
     expect(canFlowTo('pdf-to-jpg', 'compress-image')).toBe(true);
@@ -117,6 +126,10 @@ describe('Gizlet flow registry', () => {
     expect(splitsFlowInput(['resize-image', 'compress-image'])).toBe(false);
     expect(splitsFlowInput(['jpg-to-pdf'])).toBe(false);
     expect(splitsFlowInput(['jpg-to-pdf', 'pdf-to-jpg'])).toBe(true);
+    // Splitting keeps the payload kind, so its set is read from the property
+    // rather than guessed from the hand-off.
+    expect(splitsFlowInput(['jpg-to-pdf', 'split-pdf'])).toBe(true);
+    expect(splitsFlowInput(['jpg-to-pdf', 'split-pdf', 'pdf-to-jpg'])).toBe(true);
     expect(splitsFlowInput(['jpg-to-pdf', 'pdf-to-jpg', 'compress-image'])).toBe(true);
     // The last step of either kind decides, so combining after splitting is one
     // file again rather than a set.
@@ -144,10 +157,11 @@ describe('Gizlet flow registry', () => {
     // because a lone document is exactly what it wants.
     expect(getNextFlowSteps(imageInput, ['jpg-to-pdf']).map((tool) => tool.toolSlug)).toEqual([
       'pdf-to-jpg',
+      'split-pdf',
     ]);
     expect(
       getNextFlowSteps(imageInput, ['resize-image', 'jpg-to-pdf']).map((tool) => tool.toolSlug),
-    ).toEqual(['pdf-to-jpg']);
+    ).toEqual(['pdf-to-jpg', 'split-pdf']);
   });
 
   /**
@@ -161,11 +175,16 @@ describe('Gizlet flow registry', () => {
     expect(getNextFlowSteps(pdfInput, []).map((tool) => tool.toolSlug)).toEqual([
       'merge-pdf',
       'pdf-to-jpg',
+      'split-pdf',
     ]);
     expect(isValidFlowSequence(pdfInput, ['merge-pdf', 'merge-pdf'])).toBe(false);
     expect(getNextFlowSteps(pdfInput, ['merge-pdf']).map((tool) => tool.toolSlug)).toEqual([
       'pdf-to-jpg',
+      'split-pdf',
     ]);
+    // Splitting a merged document leaves several again, so a second merge has
+    // something to join once more.
+    expect(isValidFlowSequence(pdfInput, ['merge-pdf', 'split-pdf', 'merge-pdf'])).toBe(true);
   });
 
   test('offers the steps that read the starting payload to an empty chain', () => {
@@ -216,20 +235,14 @@ describe('the compatibility rule, against contracts that do not exist yet', () =
     input: { kind: 'pdf-file' },
     output: { kind: 'pdf-file' },
   };
-  const splitPdf: ToolFlowDefinition = {
-    toolSlug: 'split-pdf',
-    input: { kind: 'pdf-file' },
-    output: { kind: 'pdf-file' },
-    splitsInput: true,
-  };
-  const definitions: readonly ToolFlowDefinition[] = [...toolFlowRegistry, compressPdf, splitPdf];
+  const definitions: readonly ToolFlowDefinition[] = [...toolFlowRegistry, compressPdf];
 
   test('offers a further PDF Gizlet after Image to PDF as soon as one declares itself', () => {
     expect(getNextFlowTools('jpg-to-pdf', definitions).map((tool) => tool.toolSlug)).toEqual([
       'merge-pdf',
       'pdf-to-jpg',
-      'compress-pdf',
       'split-pdf',
+      'compress-pdf',
     ]);
     expect(canFlowTo('jpg-to-pdf', 'compress-pdf', definitions)).toBe(true);
   });
@@ -238,8 +251,8 @@ describe('the compatibility rule, against contracts that do not exist yet', () =
     expect(getNextFlowTools('compress-pdf', definitions).map((tool) => tool.toolSlug)).toEqual([
       'merge-pdf',
       'pdf-to-jpg',
-      'compress-pdf',
       'split-pdf',
+      'compress-pdf',
     ]);
     expect(canFlowTo('compress-pdf', 'pdf-to-jpg', definitions)).toBe(true);
   });

@@ -88,6 +88,11 @@ const recipeStepSettings = {
   // whole number or one of a closed list of names, and a page range would be
   // the one free-text key in the format; a flow converts the whole document.
   'pdf-to-jpg': { r: pdfImageResolutionNames },
+  // Which ranges to split out is deliberately absent, for the same reason a
+  // page selection is: a range is free text, and every value this format
+  // carries is a whole number or one of a closed list of names. A flow splits
+  // the document into its pages, which needs no setting to say so.
+  'split-pdf': {},
 } as const satisfies Record<RecipeToolSlug, Readonly<Record<string, 'number' | readonly string[]>>>;
 
 const recipeToolSlugs = Object.keys(recipeStepSettings) as readonly RecipeToolSlug[];
