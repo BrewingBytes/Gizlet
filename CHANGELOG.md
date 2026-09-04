@@ -6,21 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-### Added
-
-- The Image to PDF Gizlet now shows the document it has just made, before anything is downloaded. The result panel draws the assembled PDF page by page, with previous, next, and a page jump, so the page order, the page size, and what automatic orientation did to each sheet are all visible while there is still time to change them. It is the finished document that is drawn, not a re-rendering of the source images. pdf.js is loaded only once a PDF exists, so the page's initial JavaScript is unchanged for a visitor who never presses the button, and a preview that will not draw says so and leaves the download alone, because a document can be perfectly good even when drawing it is not.
-
-### Changed
-
-- Pull requests that change something a visitor can see now carry screenshots, and a before-and-after pair when the change replaces something that already existed. [AGENTS.md](AGENTS.md) records where the files live: on a `pr-assets` orphan branch, never in `main` or in the change's own diff.
-- Page turning in the two PDF workspaces now comes from one module, `src/scripts/pdf-page-view.ts`, rather than being wired separately in each. It imports pdf.js only as a type, which is what lets Image to PDF reach it without shipping the library.
-- The JPG to PDF Gizlet is now called Image to PDF, accurately reflecting that it accepts JPEG, PNG, WebP, AVIF, and BMP images. Its `jpg-to-pdf` URL and recipe-link slug remain unchanged, so existing links continue to work.
-- The Convert Image Gizlet's description now names the formats it takes, on its card, in its metadata, and on its regenerated preview card: “Convert JPG, PNG, WebP, AVIF, and BMP images to another format in your browser.” The previous wording, “common file formats”, left unanswered the one question a converter is asked.
-
-### Fixed
-
-- Searching for an image conversion no longer sends people to Image to PDF. Its `png to pdf`, `webp to pdf`, `avif to pdf`, and `bmp to pdf` keywords made it match `jpg to png` — the keyword Convert Image declares for itself — on every term, and the connector `to` scored three times over, once for its name, once for its description, and once for its keywords. It outranked the converter on the converter's own query, and was the only result for `webp`, `avif`, and `bmp`. Connector words are now dropped from a query before it is scored, an exact keyword phrase earns the same kind of bonus an exact name match already did, and the three image Gizlets declare the formats they genuinely accept. `jpg to png` and `avif to jpg` rank Convert Image first; `png to pdf` still returns Image to PDF alone.
-- The Image to PDF page's format question no longer asks “or only JPG?”. The Gizlet stopped claiming to be JPG-only when it was renamed, so the question raised a doubt its own page no longer invited.
+Entries for the next release are written as files in [changelog.d/](changelog.d/), one per change. See [docs/releasing.md](docs/releasing.md).
 
 ## [0.3.0] - 2026-09-03
 

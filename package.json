@@ -15,6 +15,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "changelog:draft": "node scripts/draft-changelog.mjs",
+    "changelog:collect": "node scripts/collect-changelog.mjs",
     "deploy": "wrangler deploy"
   },
   "dependencies": {

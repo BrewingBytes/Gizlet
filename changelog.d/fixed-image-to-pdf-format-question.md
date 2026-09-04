@@ -1,0 +1,1 @@
+- The Image to PDF page's format question no longer asks “or only JPG?”. The Gizlet stopped claiming to be JPG-only when it was renamed, so the question raised a doubt its own page no longer invited.

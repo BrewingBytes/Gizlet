@@ -3,10 +3,14 @@ import { describe, expect, it } from "vitest";
 import {
   changelogSectionFor,
   changelogSections,
+  collectFragments,
   draftSections,
   formatDraft,
   formatEntry,
+  formatRelease,
+  fragmentFileName,
   parseCommitTitle,
+  parseFragmentName,
 } from "../../scripts/lib/changelog.mjs";
 
 describe("commit title parsing", () => {
@@ -140,6 +144,102 @@ describe("drafting a release", () => {
         "- Keep the wordmark visible.",
       ].join("\n"),
     );
-    expect(changelogSections).toEqual(["Added", "Changed", "Fixed"]);
+    expect(changelogSections).toEqual([
+      "Added",
+      "Changed",
+      "Deprecated",
+      "Removed",
+      "Fixed",
+      "Security",
+    ]);
+  });
+});
+
+describe("fragment names", () => {
+  it("reads the section and the slug", () => {
+    expect(parseFragmentName("added-image-to-pdf-preview.md")).toEqual({
+      section: "Added",
+      slug: "image-to-pdf-preview",
+    });
+    expect(parseFragmentName("security-csp-report-only.md")?.section).toBe("Security");
+  });
+
+  it("rejects a name the collector cannot place", () => {
+    expect(parseFragmentName("improved-something.md")).toBeNull();
+    expect(parseFragmentName("added.md")).toBeNull();
+    expect(parseFragmentName("Added-Thing.md")).toBeNull();
+    expect(parseFragmentName("added-thing.txt")).toBeNull();
+    expect(parseFragmentName("README.md")).toBeNull();
+  });
+
+  it("builds a short kebab-case name from an entry", () => {
+    expect(fragmentFileName("Fixed", "Keep the wordmark visible on dark backgrounds.")).toBe(
+      "fixed-keep-the-wordmark-visible-on-dark.md",
+    );
+    expect(fragmentFileName("Added", "Add a `pdf-file` payload kind")).toBe(
+      "added-add-a-pdf-file-payload-kind.md",
+    );
+  });
+
+  it("names a file even when nothing in the entry survives slugging", () => {
+    expect(fragmentFileName("Changed", "!!!")).toBe("changed-entry.md");
+  });
+
+  it("round-trips a drafted name back to its section", () => {
+    expect(parseFragmentName(fragmentFileName("Changed", "Rename JPG to PDF"))?.section).toBe(
+      "Changed",
+    );
+  });
+});
+
+describe("collecting fragments", () => {
+  const fragments = [
+    { name: "fixed-wordmark.md", body: "- Keep the wordmark visible.\n" },
+    { name: "added-json-formatter.md", body: "- A local JSON formatter.\n" },
+    { name: "added-a-pdf-viewer.md", body: "- A PDF Viewer Gizlet.\n" },
+  ];
+
+  it("groups fragments into sections, ordered by file name", () => {
+    expect(collectFragments(fragments)).toEqual({
+      Added: ["- A PDF Viewer Gizlet.", "- A local JSON formatter."],
+      Fixed: ["- Keep the wordmark visible."],
+    });
+  });
+
+  it("keeps a multi-bullet fragment as one block, as written", () => {
+    const body = "- First bullet.\n- Second bullet, same change.\n";
+    expect(collectFragments([{ name: "changed-two.md", body }]).Changed).toEqual([
+      "- First bullet.\n- Second bullet, same change.",
+    ]);
+  });
+
+  it("reports every unreadable fragment at once", () => {
+    expect(() =>
+      collectFragments([
+        { name: "improved-thing.md", body: "- Something." },
+        { name: "added-empty.md", body: "\n" },
+        { name: "fixed-prose.md", body: "Not a bullet." },
+      ]),
+    ).toThrow(/3 fragment\(s\)[\s\S]*added-empty[\s\S]*fixed-prose[\s\S]*improved-thing/);
+  });
+
+  it("collects nothing from no fragments", () => {
+    expect(collectFragments([])).toEqual({});
+    expect(formatRelease({})).toBe("");
+  });
+
+  it("renders a release section in changelog order", () => {
+    expect(formatRelease(collectFragments(fragments))).toBe(
+      [
+        "### Added",
+        "",
+        "- A PDF Viewer Gizlet.",
+        "- A local JSON formatter.",
+        "",
+        "### Fixed",
+        "",
+        "- Keep the wordmark visible.",
+      ].join("\n"),
+    );
   });
 });

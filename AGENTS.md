@@ -15,6 +15,7 @@ Read [docs/architecture.md](docs/architecture.md) before changing the applicatio
 - `src/pages/` — static routes, including `tools/[slug].astro` (generated from the registry) and the generated `sitemap.xml`, `robots.txt`, `tools.json`, and `llms.txt`.
 - `tests/unit/` — Vitest, one file per `src/data` module. `tests/e2e/` — Playwright smoke coverage.
 - `docs/` — architecture baseline, privacy data contract, measurement constraints, request-form behavior, release procedure.
+- `changelog.d/` — one file per unreleased changelog entry. A change writes its entry here rather than editing `CHANGELOG.md`, so two pull requests never edit the same lines; the release collects them.
 
 ## Architecture constraints
 
@@ -68,7 +69,7 @@ Add focused Vitest coverage for deterministic logic and Playwright coverage for 
 
 - Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), for example `feat: add image resize tool` or `fix(json): retain invalid input`. CI rejects any other subject line.
 - A commit message is the title only. Do not add a body, and do not add trailers such as `Co-Authored-By` or any other authorship or tool attribution.
-- Use [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Keep `CHANGELOG.md` current for user- or contributor-visible changes.
+- Use [Semantic Versioning](https://semver.org/spec/v2.0.0.html). A user- or contributor-visible change adds its changelog entry as a file in [changelog.d/](changelog.d/), named `<section>-<slug>.md`; see [changelog.d/README.md](changelog.d/README.md). Do not edit `CHANGELOG.md` outside a release.
 - Releases follow [docs/releasing.md](docs/releasing.md). Deployment is gated on a `v*` version tag, not on a merge to `main`, and a tag is never created without the matching changelog section and `package.json` bump in the same commit. Follow that document instead of improvising a release, and do not tag or push the `release` branch unless the user explicitly asks for a release.
 - Before creating a pull request, fetch `origin`, rebase the feature branch directly onto the latest `origin/main`, and verify that no unrelated, unmerged issue commits remain in the branch history.
 - After completing a change, create a pull request unless the user explicitly asks not to.

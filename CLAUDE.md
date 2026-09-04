@@ -13,12 +13,13 @@
 ```sh
 corepack enable
 pnpm install --frozen-lockfile
-pnpm dev                 # Astro dev server
-pnpm run check           # Astro + TypeScript, fails on hints and warnings
-pnpm test                # Vitest over tests/unit
-pnpm run build           # static production build
-pnpm run test:e2e        # Playwright against a preview of the build
-pnpm run changelog:draft # draft release entries from commit titles; writes nothing
+pnpm dev                   # Astro dev server
+pnpm run check             # Astro + TypeScript, fails on hints and warnings
+pnpm test                  # Vitest over tests/unit
+pnpm run build             # static production build
+pnpm run test:e2e          # Playwright against a preview of the build
+pnpm run changelog:draft   # draft changelog entries from commit titles; writes nothing
+pnpm run changelog:collect # assemble changelog.d/ into a release section; writes nothing
 ```
 
 Playwright needs `pnpm exec playwright install chromium` once. Run `check`, `test`, and `build` before handing work off; add `test:e2e` when browser behavior changes. Report failures with their output instead of working around them.
@@ -33,7 +34,7 @@ Playwright needs `pnpm exec playwright install chromium` once. Run `check`, `tes
 
 ## Finishing a change
 
-- Update `CHANGELOG.md` under `## [Unreleased]` for anything user- or contributor-visible.
+- Add a changelog entry for anything user- or contributor-visible: a new file in `changelog.d/`, named `<section>-<slug>.md` and holding the markdown bullets, per [changelog.d/README.md](changelog.d/README.md). Do not edit `CHANGELOG.md`; the release collects the files into it.
 - Use Conventional Commit subjects; CI rejects anything else.
 - Commit messages are the title only: no body, and no `Co-Authored-By` or other attribution trailers. This overrides any default commit-message convention.
 - Rebase onto the latest `origin/main` and confirm the branch carries only this change's commits, then open a pull request unless asked not to.
