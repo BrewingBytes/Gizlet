@@ -6,8 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- The Image to PDF Gizlet now shows the document it has just made, before anything is downloaded. The result panel draws the assembled PDF page by page, with previous, next, and a page jump, so the page order, the page size, and what automatic orientation did to each sheet are all visible while there is still time to change them. It is the finished document that is drawn, not a re-rendering of the source images. pdf.js is loaded only once a PDF exists, so the page's initial JavaScript is unchanged for a visitor who never presses the button, and a preview that will not draw says so and leaves the download alone, because a document can be perfectly good even when drawing it is not.
+
 ### Changed
 
+- Page turning in the two PDF workspaces now comes from one module, `src/scripts/pdf-page-view.ts`, rather than being wired separately in each. It imports pdf.js only as a type, which is what lets Image to PDF reach it without shipping the library.
 - The JPG to PDF Gizlet is now called Image to PDF, accurately reflecting that it accepts JPEG, PNG, WebP, AVIF, and BMP images. Its `jpg-to-pdf` URL and recipe-link slug remain unchanged, so existing links continue to work.
 - The Convert Image Gizlet's description now names the formats it takes, on its card, in its metadata, and on its regenerated preview card: “Convert JPG, PNG, WebP, AVIF, and BMP images to another format in your browser.” The previous wording, “common file formats”, left unanswered the one question a converter is asked.
 
