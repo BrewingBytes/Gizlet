@@ -10,6 +10,7 @@ import {
 import { maximumImageDimension } from '../../src/data/image-resize';
 
 const fullRecipe: Recipe = {
+  category: 'images',
   outputFormat: 'image/webp',
   steps: [
     { toolSlug: 'resize-image', width: 800, height: 600 },
@@ -27,6 +28,7 @@ describe('decodeRecipe', () => {
 
   it('reads a fragment with or without its leading hash', () => {
     expect(decodeRecipe('r=v1;compress-image:q=60')).toEqual({
+      category: 'images',
       outputFormat: undefined,
       steps: [{ toolSlug: 'compress-image', quality: 60 }],
     });
@@ -78,6 +80,7 @@ describe('decodeRecipe', () => {
     expect(decodeRecipe('#r=v1;resize-image:w=800')).toBeUndefined();
     expect(decodeRecipe('#r=v1;resize-image:h=600')).toBeUndefined();
     expect(decodeRecipe('#r=v1;resize-image')).toEqual({
+      category: 'images',
       outputFormat: undefined,
       steps: [{ toolSlug: 'resize-image' }],
     });
@@ -102,6 +105,7 @@ describe('decodeRecipe', () => {
 
 describe('a PDF flow in a recipe', () => {
   const pdfRecipe: Recipe = {
+    category: 'images',
     outputFormat: 'image/jpeg',
     steps: [
       { toolSlug: 'resize-image', width: 1200, height: 1200 },
@@ -124,6 +128,7 @@ describe('a PDF flow in a recipe', () => {
 
   it('accepts a bare PDF step, which the builder fills with its own defaults', () => {
     expect(decodeRecipe('#r=v1;jpg-to-pdf')).toEqual({
+      category: 'images',
       outputFormat: undefined,
       steps: [{ toolSlug: 'jpg-to-pdf' }],
     });
@@ -233,5 +238,56 @@ describe('the settings-only guarantee', () => {
     // The enum keys are whitelists of exact names, not free text.
     expect(decodeRecipe('#r=v1;jpg-to-pdf:p=holiday.jpg,o=auto')).toBeUndefined();
     expect(decodeRecipe('#r=v1;jpg-to-pdf:p=https://example.com,o=auto')).toBeUndefined();
+  });
+});
+
+describe('a flow that starts from a PDF', () => {
+  const splitRecipe: Recipe = {
+    category: 'pdf',
+    steps: [{ toolSlug: 'split-pdf' }, { toolSlug: 'pdf-to-jpg', resolution: 'print' }],
+  };
+
+  it('names its category, because the chain is only valid against that starting payload', () => {
+    const encoded = encodeRecipe(splitRecipe);
+
+    expect(encoded).toBe('#r=v1;c=pdf;split-pdf;pdf-to-jpg:r=print');
+    expect(decodeRecipe(encoded ?? '')).toEqual({ ...splitRecipe, outputFormat: undefined });
+  });
+
+  it('carries a merge, which an image flow has nothing to hand it', () => {
+    expect(decodeRecipe('#r=v1;c=pdf;merge-pdf')).toEqual({
+      category: 'pdf',
+      outputFormat: undefined,
+      steps: [{ toolSlug: 'merge-pdf' }],
+    });
+    expect(decodeRecipe('#r=v1;merge-pdf')).toBeUndefined();
+  });
+
+  it('rejects an image chain under the PDF category, and a PDF chain under images', () => {
+    expect(decodeRecipe('#r=v1;c=pdf;compress-image:q=80')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;c=images;split-pdf')).toBeUndefined();
+  });
+
+  it('rejects a category outside the closed list rather than defaulting to images', () => {
+    expect(decodeRecipe('#r=v1;c=pdfs;split-pdf')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;c=;split-pdf')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;c=json;json-formatter')).toBeUndefined();
+  });
+
+  /**
+   * The token is omitted for the default category, so a link shared before
+   * categories existed is still the link this release writes for that flow.
+   */
+  it('leaves an image flow`s link byte for byte what it was', () => {
+    expect(encodeRecipe({ steps: [{ toolSlug: 'convert-image' }] })).toBe('#r=v1;convert-image');
+    expect(encodeRecipe({ category: 'images', steps: [{ toolSlug: 'convert-image' }] })).toBe(
+      '#r=v1;convert-image',
+    );
+    expect(decodeRecipe('#r=v1;convert-image')?.category).toBe('images');
+  });
+
+  it('still carries no free text: a split names no ranges and a merge no order', () => {
+    expect(decodeRecipe('#r=v1;c=pdf;split-pdf:r=1-3')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;c=pdf;merge-pdf:n=contract.pdf')).toBeUndefined();
   });
 });

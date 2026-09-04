@@ -14,9 +14,12 @@ import {
   type PdfImageResolution,
 } from './pdf-to-jpg';
 import {
-  getFlowTool,
+  defaultFlowCategoryId,
+  getFlowCategory,
+  isFlowCategoryId,
   isValidFlowSequence,
-  type AvailableImageFlowToolSlug,
+  type AvailableFlowToolSlug,
+  type FlowCategoryId,
 } from './tool-flows';
 
 /**
@@ -30,8 +33,8 @@ import {
  * module rather than a promise about it.
  */
 
-/** Slugs a recipe may name: published Gizlets the image flow builder can chain. */
-export type RecipeToolSlug = AvailableImageFlowToolSlug;
+/** Slugs a recipe may name: published Gizlets the flow builder can chain. */
+export type RecipeToolSlug = AvailableFlowToolSlug;
 
 export interface RecipeStep {
   readonly toolSlug: RecipeToolSlug;
@@ -47,6 +50,14 @@ export interface Recipe {
   readonly steps: readonly RecipeStep[];
   /** The flow's single image output format, which the builder applies to every step. */
   readonly outputFormat?: ImageOutputFormat;
+  /**
+   * The starting payload the chain was built from.
+   *
+   * A link written before the format carried a category names no category, and
+   * every such link was an image flow, so its absence reads as `images` rather
+   * than making the link unreadable.
+   */
+  readonly category?: FlowCategoryId;
 }
 
 /** A leading version token. An unrecognised version means the whole fragment is ignored. */
@@ -80,9 +91,9 @@ const recipeStepSettings = {
   'compress-image': { q: 'number' },
   'convert-image': {},
   'jpg-to-pdf': { p: pdfPageSizeNames, o: pdfOrientationNames },
-  // A merge joins several PDFs, which an image flow never holds: the one PDF
-  // the flow made is already a single payload. The entry keeps this map total
-  // over the chainable Gizlets, and the flow graph refuses the chain itself.
+  // A merge has nothing to name: which documents it joins, and in what order,
+  // is the list of files the visitor chose rather than a setting. The entry
+  // keeps this map total over the chainable Gizlets.
   'merge-pdf': {},
   // Which pages to convert is deliberately absent. Every other value here is a
   // whole number or one of a closed list of names, and a page range would be
@@ -225,6 +236,20 @@ export function decodeRecipe(fragment: string): Recipe | undefined {
   if (segments[0] !== `r=${recipeVersion}`) return undefined;
 
   let index = 1;
+  let category: FlowCategoryId = defaultFlowCategoryId;
+  const categorySegment = segments[index];
+
+  if (categorySegment?.startsWith('c=')) {
+    const id = categorySegment.slice(2);
+
+    // A category outside the closed list is rejected rather than defaulted: a
+    // link that named one is a link about a different starting payload.
+    if (!isFlowCategoryId(id)) return undefined;
+
+    category = id;
+    index += 1;
+  }
+
   let outputFormat: ImageOutputFormat | undefined;
   const formatSegment = segments[index];
 
@@ -261,17 +286,23 @@ export function decodeRecipe(fragment: string): Recipe | undefined {
     steps.push(step);
   }
 
-  return isValidFlowChain(steps.map((step) => step.toolSlug)) ? { steps, outputFormat } : undefined;
+  return isValidFlowChain(steps.map((step) => step.toolSlug), category)
+    ? { steps, outputFormat, category }
+    : undefined;
 }
 
 /**
  * Checks a chain against the executable compatibility graph, so the recipe
  * format and the composition thesis validate against the same data.
+ *
+ * The category supplies the starting payload, which is what decides whether the
+ * first block can read anything at all.
  */
-function isValidFlowChain(toolSlugs: readonly RecipeToolSlug[]): boolean {
-  const input = getFlowTool(toolSlugs[0]).input;
-
-  return input.kind === 'image-file' && isValidFlowSequence(input, toolSlugs);
+function isValidFlowChain(
+  toolSlugs: readonly RecipeToolSlug[],
+  category: FlowCategoryId,
+): boolean {
+  return isValidFlowSequence(getFlowCategory(category).input, toolSlugs);
 }
 
 /**
@@ -282,9 +313,17 @@ function isValidFlowChain(toolSlugs: readonly RecipeToolSlug[]): boolean {
  */
 export function encodeRecipe(recipe: Recipe): string | undefined {
   if (recipe.steps.length === 0 || recipe.steps.length > maximumRecipeSteps) return undefined;
-  if (!isValidFlowChain(recipe.steps.map((step) => step.toolSlug))) return undefined;
+
+  const category = recipe.category ?? defaultFlowCategoryId;
+
+  if (!isFlowCategoryId(category)) return undefined;
+  if (!isValidFlowChain(recipe.steps.map((step) => step.toolSlug), category)) return undefined;
 
   const segments = [`r=${recipeVersion}`];
+
+  // The default category is left out so an image flow's link is the same string
+  // it was before categories existed, and every link already shared still reads.
+  if (category !== defaultFlowCategoryId) segments.push(`c=${category}`);
 
   if (recipe.outputFormat) {
     const name = (Object.keys(recipeFormatNames) as RecipeFormatName[]).find(

@@ -4,15 +4,23 @@ import {
   canFlowTo,
   canReorderFlowStep,
   combinesFlowInputs,
+  defaultFlowCategoryId,
   flowlessToolSlugs,
+  getAvailableFlowCategories,
+  getFlowCategory,
+  getFlowCategoryStartSlugs,
+  getFlowFormatControl,
   getFlowTool,
   getFlowToolsForInput,
   getNextFlowSteps,
   getNextFlowTools,
+  getUsableFlowFormat,
   hasCompleteFlowContracts,
+  isFlowCategoryId,
   isValidFlowSequence,
   splitsFlowInput,
   toolFlowRegistry,
+  type FlowCategoryId,
   type FlowPayloadContract,
   type ToolFlowDefinition,
 } from '../../src/data/tool-flows';
@@ -285,5 +293,159 @@ describe('the compatibility rule, against contracts that do not exist yet', () =
     expect(combinesFlowInputs(['jpg-to-pdf', 'compress-pdf'], definitions)).toBe(true);
     expect(combinesFlowInputs(['pdf-to-jpg', 'compress-image'], definitions)).toBe(false);
     expect(splitsFlowInput(['jpg-to-pdf', 'compress-pdf'], definitions)).toBe(false);
+  });
+});
+
+describe('flow categories', () => {
+  test('offers a category only while a published Gizlet can start it', () => {
+    const offered = getAvailableFlowCategories().map((category) => category.id as FlowCategoryId);
+
+    expect(offered).toEqual(['images', 'pdf']);
+
+    for (const id of offered) {
+      expect(getFlowCategoryStartSlugs(id).length).toBeGreaterThan(0);
+    }
+  });
+
+  test('derives the starting Gizlets from the contracts rather than a list', () => {
+    // Every Gizlet whose input is the category's payload, and no other.
+    expect(getFlowCategoryStartSlugs('images')).toEqual([
+      'compress-image',
+      'resize-image',
+      'convert-image',
+      'jpg-to-pdf',
+    ]);
+    expect(getFlowCategoryStartSlugs('pdf')).toEqual(['merge-pdf', 'pdf-to-jpg', 'split-pdf']);
+  });
+
+  test('gives the PDF category the starting payload the PDF Gizlets declare', () => {
+    const { input } = getFlowCategory('pdf');
+
+    expect(input.kind).toBe('pdf-file');
+
+    for (const slug of getFlowCategoryStartSlugs('pdf')) {
+      expect(isValidFlowSequence(input, [slug])).toBe(true);
+    }
+  });
+
+  /**
+   * A merge was reachable in the contracts and unreachable in the product: this
+   * is the chain 0.4.0's changelog described and no visitor could build.
+   */
+  test('lets a PDF flow merge documents and then take them apart again', () => {
+    const { input } = getFlowCategory('pdf');
+
+    expect(isValidFlowSequence(input, ['merge-pdf'])).toBe(true);
+    expect(isValidFlowSequence(input, ['merge-pdf', 'split-pdf'])).toBe(true);
+    expect(isValidFlowSequence(input, ['merge-pdf', 'pdf-to-jpg', 'jpg-to-pdf'])).toBe(true);
+    // Two combining steps in a row still have nothing to join the second time.
+    expect(isValidFlowSequence(input, ['merge-pdf', 'merge-pdf'])).toBe(false);
+  });
+
+  test('keeps the categories apart: neither starting payload feeds the other`s Gizlets', () => {
+    expect(isValidFlowSequence(getFlowCategory('pdf').input, ['compress-image'])).toBe(false);
+    expect(isValidFlowSequence(getFlowCategory('images').input, ['split-pdf'])).toBe(false);
+  });
+
+  test('recognises only the ids it offers', () => {
+    expect(isFlowCategoryId('images')).toBe(true);
+    expect(isFlowCategoryId('pdf')).toBe(true);
+    expect(isFlowCategoryId('pdfs')).toBe(false);
+    expect(isFlowCategoryId('')).toBe(false);
+    expect(() => getFlowCategory('json' as never)).toThrow();
+  });
+
+  test('starts from images when nothing has chosen, which is what every old link meant', () => {
+    expect(defaultFlowCategoryId).toBe('images');
+    expect(isFlowCategoryId(defaultFlowCategoryId)).toBe(true);
+  });
+});
+
+describe('the image format a chain can honour', () => {
+  test('offers nothing when no step re-encodes an image', () => {
+    expect(getFlowFormatControl([]).kind).toBe('none');
+    expect(getFlowFormatControl(['jpg-to-pdf']).kind).toBe('none');
+    expect(getFlowFormatControl(['merge-pdf']).kind).toBe('none');
+    expect(getFlowFormatControl(['split-pdf']).kind).toBe('none');
+    expect(getFlowFormatControl(['merge-pdf', 'split-pdf']).kind).toBe('none');
+  });
+
+  test('names the output format when the chain ends in images', () => {
+    for (const chain of [
+      ['compress-image'],
+      ['resize-image', 'convert-image'],
+      ['pdf-to-jpg'],
+      ['jpg-to-pdf', 'pdf-to-jpg'],
+      ['compress-image', 'jpg-to-pdf', 'split-pdf', 'pdf-to-jpg'],
+    ] as const) {
+      const control = getFlowFormatControl(chain);
+
+      expect(control).toMatchObject({
+        kind: 'output',
+        label: 'Final output format',
+        formats: ['image/jpeg', 'image/png', 'image/webp'],
+      });
+    }
+  });
+
+  /**
+   * The defect this replaces: a chain ending in a set of PDFs offered a "final
+   * output format" of WebP, naming the format of a file it never produced.
+   */
+  test('names the page format, and drops WebP, whenever the chain ends in a PDF', () => {
+    for (const chain of [
+      ['compress-image', 'jpg-to-pdf'],
+      ['convert-image', 'jpg-to-pdf', 'split-pdf'],
+      ['resize-image', 'jpg-to-pdf', 'split-pdf', 'merge-pdf'],
+      ['jpg-to-pdf', 'pdf-to-jpg', 'jpg-to-pdf'],
+      ['split-pdf', 'pdf-to-jpg', 'jpg-to-pdf'],
+    ] as const) {
+      const control = getFlowFormatControl(chain);
+
+      expect(control).toMatchObject({ kind: 'pages', label: 'Page image format' });
+      expect(control.kind === 'pages' && control.formats).toEqual(['image/jpeg', 'image/png']);
+    }
+  });
+
+  test('agrees with itself over every chain the graph allows from either category', () => {
+    const chains: string[][] = [];
+
+    for (const category of getAvailableFlowCategories()) {
+      const walk = (chain: string[]) => {
+        if (chain.length > 0) chains.push([...chain]);
+        if (chain.length >= 4) return;
+
+        for (const { toolSlug } of toolFlowRegistry) {
+          const next = [...chain, toolSlug];
+          if (isValidFlowSequence(category.input, next)) walk(next);
+        }
+      };
+
+      walk([]);
+    }
+
+    expect(chains.length).toBeGreaterThan(200);
+
+    for (const chain of chains) {
+      const control = getFlowFormatControl(chain);
+      const endsInPdf = getFlowTool(chain[chain.length - 1]).output.kind === 'pdf-file';
+
+      if (control.kind === 'none') continue;
+
+      // The label and the formats both follow from what the chain produces, so
+      // neither can describe a file the other does not.
+      expect(control.kind).toBe(endsInPdf ? 'pages' : 'output');
+      expect(control.formats.includes('image/webp')).toBe(!endsInPdf);
+    }
+  });
+
+  test('moves a format the chain cannot honour rather than leaving it stale', () => {
+    const pages = getFlowFormatControl(['compress-image', 'jpg-to-pdf']);
+    const output = getFlowFormatControl(['compress-image']);
+
+    expect(getUsableFlowFormat(pages, 'image/webp')).toBe('image/jpeg');
+    expect(getUsableFlowFormat(pages, 'image/png')).toBe('image/png');
+    expect(getUsableFlowFormat(output, 'image/webp')).toBe('image/webp');
+    expect(getUsableFlowFormat({ kind: 'none' }, 'image/webp')).toBeUndefined();
   });
 });

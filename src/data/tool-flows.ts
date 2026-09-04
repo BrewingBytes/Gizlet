@@ -1,4 +1,6 @@
 import type { ImageInputFormat, ImageOutputFormat } from './image-compression';
+import { describePdfPageCount, maximumPdfPages } from './jpg-to-pdf';
+import { describeMergeDocumentCount, maximumMergeDocuments } from './merge-pdf';
 import { getAvailableTools, toolRegistry, type AvailableToolSlug, type ToolRegistryEntry } from './tools';
 
 /** A data shape that can be passed from one Gizlet operation to another. */
@@ -49,6 +51,9 @@ export const imageFlowInput = {
   kind: 'image-file',
   acceptedFormats: ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/bmp'],
 } as const satisfies FlowPayloadContract;
+
+/** The payload a PDF flow starts from. */
+export const pdfFlowInput = { kind: 'pdf-file' } as const satisfies FlowPayloadContract;
 
 const imageOutput = {
   kind: 'image-file',
@@ -137,25 +142,29 @@ export type FlowDefinition = (typeof toolFlowRegistry)[number];
 export type FlowToolSlug = FlowDefinition['toolSlug'];
 
 /**
- * The payload kinds an image-started flow can carry. This is a list of shapes
- * rather than of Gizlets: a new Gizlet joins the image lineage by declaring one
- * of these kinds, without being named here.
+ * The payload kinds the flow builder can carry. This is a list of shapes rather
+ * than of Gizlets: a new Gizlet joins a chain by declaring one of these kinds,
+ * without being named here.
+ *
+ * Both the image and the PDF category draw from this one list, because the
+ * lineages meet: an image chain can end in a document and a PDF chain can end
+ * in images. What separates the categories is only where a chain may start.
  */
-export const imageFlowPayloadKinds = ['image-file', 'pdf-file'] as const;
+export const flowPayloadKinds = ['image-file', 'pdf-file'] as const;
 
-export type ImageFlowPayloadKind = (typeof imageFlowPayloadKinds)[number];
+export type FlowPayloadLineageKind = (typeof flowPayloadKinds)[number];
 
-/** Everything the image flow builder can put in a chain. */
-export type ImageFlowToolSlug = Extract<
+/** Everything the flow builder can put in a chain. */
+export type ChainableFlowToolSlug = Extract<
   FlowDefinition,
-  { readonly input: { readonly kind: ImageFlowPayloadKind } }
+  { readonly input: { readonly kind: FlowPayloadLineageKind } }
 >['toolSlug'];
 
 /** The chainable slugs, in registry order, derived rather than listed. */
-function getImageFlowToolSlugs(): readonly ImageFlowToolSlug[] {
+function getChainableFlowToolSlugs(): readonly ChainableFlowToolSlug[] {
   return toolFlowRegistry
-    .filter((tool): tool is Extract<FlowDefinition, { readonly input: { readonly kind: ImageFlowPayloadKind } }> =>
-      imageFlowPayloadKinds.includes(tool.input.kind as ImageFlowPayloadKind),
+    .filter((tool): tool is Extract<FlowDefinition, { readonly input: { readonly kind: FlowPayloadLineageKind } }> =>
+      flowPayloadKinds.includes(tool.input.kind as FlowPayloadLineageKind),
     )
     .map((tool) => tool.toolSlug);
 }
@@ -164,20 +173,125 @@ function getImageFlowToolSlugs(): readonly ImageFlowToolSlug[] {
  * Chainable and published: what the builder may actually offer. A planned
  * Gizlet can declare its contract early without appearing in a flow.
  */
-export type AvailableImageFlowToolSlug = ImageFlowToolSlug & AvailableToolSlug;
+export type AvailableFlowToolSlug = ChainableFlowToolSlug & AvailableToolSlug;
 
-export function getAvailableImageFlowToolSlugs(): readonly AvailableImageFlowToolSlug[] {
+export function getAvailableFlowToolSlugs(): readonly AvailableFlowToolSlug[] {
   const published = new Set<string>(getAvailableTools().map((tool) => tool.slug));
 
-  return getImageFlowToolSlugs().filter(
-    (slug): slug is AvailableImageFlowToolSlug => published.has(slug),
+  return getChainableFlowToolSlugs().filter(
+    (slug): slug is AvailableFlowToolSlug => published.has(slug),
   );
 }
 
-export function isAvailableImageFlowToolSlug(
-  value: string,
-): value is AvailableImageFlowToolSlug {
-  return getAvailableImageFlowToolSlugs().includes(value as AvailableImageFlowToolSlug);
+export function isAvailableFlowToolSlug(value: string): value is AvailableFlowToolSlug {
+  return getAvailableFlowToolSlugs().includes(value as AvailableFlowToolSlug);
+}
+
+/**
+ * A starting payload a visitor can choose between, with the copy the builder
+ * needs to ask for it. The category decides only where a chain begins; every
+ * hand-off after that is the payload-kind rule, as it was when images were the
+ * only way in.
+ */
+export interface FlowCategory {
+  readonly id: string;
+  readonly label: string;
+  readonly input: FlowPayloadContract;
+  /** What the category can do, shown beside the chooser. */
+  readonly summary: string;
+  /** The starting-input heading, for one file and for several. */
+  readonly sourceTitle: { readonly one: string; readonly many: string };
+  /** What the file picker accepts, said in words and as an `accept` list. */
+  readonly sourceDetails: string;
+  readonly accept: string;
+  /** The picker's button, for a chain that takes one file and for one that takes several. */
+  readonly chooseLabel: { readonly one: string; readonly many: string };
+  readonly addLabel: { readonly one: string; readonly many: string };
+  /** The picker's accessible name, which never changes with the chain. */
+  readonly chooseAriaLabel: string;
+  /**
+   * How many starting files a combining chain takes, and how to count them.
+   *
+   * The ceiling is the combining Gizlet's own, not a number invented here: an
+   * image flow assembles pages and a PDF flow joins documents, and those are
+   * different limits because they are different jobs.
+   */
+  readonly combiningLimit: number;
+  readonly describeSourceCount: (count: number) => string;
+}
+
+/**
+ * Every starting payload the builder knows, in the order it offers them.
+ *
+ * A category is a starting point rather than a group of Gizlets, so nothing
+ * here lists which Gizlets belong to it: `getFlowCategoryStartSlugs` reads that
+ * off the same contracts the graph uses.
+ */
+export const flowCategories = [
+  {
+    id: 'images',
+    label: 'Images',
+    input: imageFlowInput,
+    summary: 'Image Gizlets pass a file to one another, and can end by making a PDF. A block is offered when it accepts what the block before it produces.',
+    sourceTitle: { one: 'Your image', many: 'Your images' },
+    sourceDetails: 'JPEG, PNG, WebP, AVIF, or BMP.',
+    accept: 'image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp',
+    chooseLabel: { one: 'Choose image', many: 'Choose images' },
+    addLabel: { one: 'Choose another image', many: 'Add images' },
+    chooseAriaLabel: 'Choose images for this flow',
+    combiningLimit: maximumPdfPages,
+    describeSourceCount: describePdfPageCount,
+  },
+  {
+    id: 'pdf',
+    label: 'PDF',
+    input: pdfFlowInput,
+    summary: 'PDF Gizlets pass a document to one another, and can end by making images. A block is offered when it accepts what the block before it produces.',
+    sourceTitle: { one: 'Your PDF', many: 'Your PDFs' },
+    sourceDetails: 'PDF.',
+    accept: 'application/pdf,.pdf',
+    chooseLabel: { one: 'Choose PDF', many: 'Choose PDFs' },
+    addLabel: { one: 'Choose another PDF', many: 'Add PDFs' },
+    chooseAriaLabel: 'Choose PDFs for this flow',
+    combiningLimit: maximumMergeDocuments,
+    describeSourceCount: describeMergeDocumentCount,
+  },
+] as const satisfies readonly FlowCategory[];
+
+export type FlowCategoryId = (typeof flowCategories)[number]['id'];
+
+/** The category a flow starts from when nothing has chosen one. */
+export const defaultFlowCategoryId = 'images' satisfies FlowCategoryId;
+
+export function isFlowCategoryId(value: string): value is FlowCategoryId {
+  return flowCategories.some((category) => category.id === value);
+}
+
+export function getFlowCategory(id: FlowCategoryId): FlowCategory {
+  const category = flowCategories.find((candidate) => candidate.id === id);
+  if (!category) throw new Error(`Missing flow category: ${id}`);
+  return category;
+}
+
+/** The published Gizlets that can begin a chain in this category. */
+export function getFlowCategoryStartSlugs(
+  id: FlowCategoryId,
+): readonly AvailableFlowToolSlug[] {
+  const available = new Set<string>(getAvailableFlowToolSlugs());
+
+  return getFlowToolsForInput(getFlowCategory(id).input)
+    .map((tool) => tool.toolSlug)
+    .filter((slug): slug is AvailableFlowToolSlug => available.has(slug));
+}
+
+/**
+ * The categories worth offering: one with nothing published to start it would
+ * be a chooser that leads to an empty step list, which is worse than no chooser.
+ */
+export function getAvailableFlowCategories(): readonly FlowCategory[] {
+  return flowCategories.filter(
+    (category) => getFlowCategoryStartSlugs(category.id).length > 0,
+  );
 }
 
 type Definitions = readonly ToolFlowDefinition[];
@@ -353,4 +467,76 @@ export function hasCompleteFlowContracts(
       definitions.some((flowTool) => flowTool.toolSlug === tool.slug) ||
       flowless.includes(tool.slug),
   );
+}
+
+/**
+ * The image-format control a chain needs, if it needs one at all.
+ *
+ * Three things have to agree — whether the control appears, what it is called,
+ * and which formats it offers — and all three follow from what the chain ends
+ * by producing. Deriving them separately is what let a chain ending in a set of
+ * PDFs offer a "final output format" of WebP.
+ */
+export type FlowFormatControl =
+  | { readonly kind: 'none' }
+  | {
+      readonly kind: 'pages' | 'output';
+      readonly label: string;
+      readonly formats: readonly ImageOutputFormat[];
+    };
+
+/**
+ * Formats that survive being put in a PDF.
+ *
+ * `getPdfEmbedStrategy` embeds JPEG and PNG byte for byte and re-encodes
+ * everything else as JPEG, so offering WebP for a chain that ends in a document
+ * would only buy a second lossy pass. The two here are the honest choice a page
+ * image has: small and lossy, or large and lossless.
+ */
+export const pdfPageImageFormats = ['image/jpeg', 'image/png'] as const satisfies readonly ImageOutputFormat[];
+
+/** Formats a chain can hand the visitor as its own result. */
+export const flowOutputImageFormats = ['image/jpeg', 'image/png', 'image/webp'] as const satisfies readonly ImageOutputFormat[];
+
+export function getFlowFormatControl(
+  toolSlugs: readonly ToolRegistryEntry['slug'][],
+  definitions: Definitions = toolFlowRegistry,
+): FlowFormatControl {
+  const last = toolSlugs.at(-1);
+
+  // Nothing re-encodes an image, so there is no image format to choose. A
+  // merge, or a split that only copies page trees, is such a chain.
+  if (
+    last === undefined ||
+    !toolSlugs.some((toolSlug) => getFlowTool(toolSlug, definitions).output.kind === 'image-file')
+  ) {
+    return { kind: 'none' };
+  }
+
+  // What the chain ends by producing, rather than whether it combines or
+  // splits: a split after a combine still hands the visitor documents.
+  if (getFlowTool(last, definitions).output.kind === 'pdf-file') {
+    return { kind: 'pages', label: 'Page image format', formats: pdfPageImageFormats };
+  }
+
+  return { kind: 'output', label: 'Final output format', formats: flowOutputImageFormats };
+}
+
+/**
+ * The format a chain can actually honour, given the one already chosen.
+ *
+ * Adding a PDF block to a chain set to WebP must not leave a setting the chain
+ * would quietly ignore, so the choice moves to the nearest format the control
+ * offers rather than being left stale.
+ */
+export function getUsableFlowFormat(
+  control: FlowFormatControl,
+  selected: ImageOutputFormat,
+): ImageOutputFormat | undefined {
+  if (control.kind === 'none') return undefined;
+  if (control.formats.includes(selected)) return selected;
+
+  // WebP is the only format a PDF-terminated chain drops, and JPEG is what
+  // pdf-lib would have re-encoded it to anyway.
+  return control.formats[0];
 }
