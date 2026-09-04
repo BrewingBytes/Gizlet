@@ -260,7 +260,6 @@ const [firstCategory] = categories;
     getUsableFlowFormat,
     isAvailableFlowToolSlug,
     isFlowCategoryId,
-    splitsFlowInput,
     type AvailableFlowToolSlug,
     type FlowCategoryId,
   } from '../data/tool-flows';
@@ -288,7 +287,6 @@ const [firstCategory] = categories;
     isLargePdfWorkload,
     isPdfOrientation,
     isPdfPageSizeName,
-    maximumPdfPages,
     reorderPdfImages,
     usesFixedPageSize,
     validatePdfImage,
@@ -480,8 +478,6 @@ const [firstCategory] = categories;
     const stepSlugs = (): readonly FlowToolSlug[] => steps.map((step) => step.toolSlug);
     /** A chain with a combining step makes one file out of several sources. */
     const combines = () => combinesFlowInputs(stepSlugs());
-    /** A chain that ends by taking a document apart finishes with a set. */
-    const splits = () => splitsFlowInput(stepSlugs());
     /**
      * Whether an image format applies, what it is called, and which formats it
      * offers — one answer from one place, so a chain that ends in a document
