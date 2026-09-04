@@ -1,6 +1,6 @@
 # Gizlet Design System
 
-Version: 1.0  
+Version: 1.1  
 Brand owner: BrewingBytes  
 Product: Gizlet  
 Tagline: **A little tool for everything.**
@@ -34,8 +34,8 @@ Supporting language:
 
 - No signup.
 - No upload queue when local processing is possible.
-- No artificial Free-tier tool restrictions.
-- Gizlet Pro removes ads.
+- No Gizlet held back behind a tier.
+- Ads pay for it.
 - Most tools should work in the browser.
 
 ---
@@ -209,6 +209,15 @@ Gizlet should sound like a useful person, not enterprise software.
 
 Humor should be subtle and occasional.
 
+### Where humor is not allowed
+
+None at all in:
+
+- a kill-criterion line
+- the won't-build table
+
+Wit within a sentence of “we would stop building this” reads as a pre-emptive apology for the decision. These are the lines a reader tests the product's honesty against, so they are written flat: what would make us stop, and what we are not going to build.
+
 ---
 
 ## 6. Layout
@@ -247,6 +256,22 @@ Avoid:
 - soft purple shadows
 - oversized icon cards
 
+### Document pages
+
+`/roadmap`, `/about` and `/privacy` are a fourth layout type, alongside the homepage, a tool page and the Gizlet index. A page whose job is to be read rather than used gets:
+
+- a `38rem` measure
+- Georgia headings
+- mono uppercase labels in a left column, prose in the column beside them
+- 2px rules for section breaks
+- no cards
+- no sidebar
+- no rail
+
+It should read as a document, not as a dashboard with paragraphs in it.
+
+Today `/about`, `/privacy` and `/terms` render through `LegalPageLayout.astro` at a `48rem` measure with 1px rules. That is a deviation from this pattern rather than an exemption from it: those pages move to the document pattern when they are next touched.
+
 ---
 
 ## 7. Homepage
@@ -261,8 +286,7 @@ Order:
 4. top ad slot
 5. popular Gizlets
 6. categories
-7. Pro strip
-8. footer
+7. footer
 
 ### Homepage search
 
@@ -301,38 +325,39 @@ Advanced settings should be hidden or de-emphasized until needed.
 
 ---
 
-## 9. Local processing badge
+## 9. Status badges
+
+Locality and availability are two different questions, and a badge answers exactly one of them. Whether a Gizlet runs on the device says nothing about whether it exists yet, and a Gizlet that does not exist yet has no locality to report. Do not give the two axes the same shape.
+
+### Local processing
 
 When a tool runs fully on-device:
 
 `● LOCAL PROCESSING`
 `Your file stays on this device.`
 
-Use green as the status color.
+Use green as the status color, and keep the leading dot.
 
 Do not claim local processing if the tool sends data to the server.
+
+### Availability
+
+A Gizlet that is not published says so in its own form: mono, uppercase, no dot, never green.
+
+- `PLANNED` — a Gizlet the roadmap commits to
+- `WON'T BUILD` — a Gizlet deliberately declined
+
+Set both in slate, the same muted color as the rest of the mono metadata. Amber is the brand color and green means local, so neither is available here. Warning is reserved for kill-criterion lines, which are a claim about the product rather than a status on a row.
+
+A planned Gizlet carries no local-processing badge. There is no processing to describe yet, and the green badge is a promise about a file the visitor cannot hand over.
 
 ---
 
 ## 10. Ads
 
-Ads are part of Gizlet Free and must be designed into the layout from day one.
+Ads are how Gizlet pays for itself, and they must be designed into the layout from day one.
 
-Gizlet Pro removes ads only.
-
-### Free
-
-- all Gizlets
-- same processing quality
-- same limits
-- ads visible
-
-### Pro
-
-- all Gizlets
-- same processing quality
-- same limits
-- no ads
+There is one Gizlet: every tool, the same processing quality, the same limits, no account, ads visible. There is no paid tier. If an ad-free tier is ever built it earns its own design work and its own place in this document, and until then nothing in the product may describe one.
 
 ### Reserved desktop placements
 
@@ -349,6 +374,18 @@ SEO / long-form tools:
 
 - top banner
 - right rail
+
+### Pages that carry no ads
+
+Some pages exist to be believed rather than to earn:
+
+- `/privacy`
+- `/roadmap`
+- a planned Gizlet's placeholder page
+
+None of them carries an ad, in any placement. A page whose content is “here is how we would know to quit” loses its argument the moment an ad rail sits beside it, and it is the page most likely to be screenshotted and quoted. Commercial intent on these routes is near zero and their credibility value is disproportionate, so the trade is not close.
+
+Stated honestly, this is an addition rather than a correction. The placements above reserve inventory for the homepage, tool pages, and SEO long-form tools, and have never said anything about these routes. `/privacy`, `/about` and `/terms` already carry no ad; this makes that a rule instead of an accident, and settles `/roadmap` and placeholder pages before either ships.
 
 ### Ad UX rules
 
@@ -400,6 +437,10 @@ Pattern:
 `001   Compress Image   Shrink photos without turning them into soup.   LOCAL   IMAGE`
 
 This creates a recognizable Gizlet identity.
+
+The leading number is the Gizlet's registry id, zero-padded to three digits. It is a shipped-Gizlet credential, so the rendering **withholds** it from a planned entry and prints an em dash in its place. Every entry has an id — the registry requires the field and a test asserts the ids are unique — so this is a rule about what a row shows, not about what the data holds.
+
+The Gizlet index at `/tools/` prints no number today. The pattern says “often”, so that stays within the rule, but a row that does print a number prints it this way.
 
 ### Category navigation
 
