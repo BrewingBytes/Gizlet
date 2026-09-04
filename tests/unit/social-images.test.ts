@@ -32,9 +32,8 @@ const plannedTool = {
   category: 'developer',
   description: 'Not built yet.',
   keywords: [],
-  processesLocally: true,
+  processesLocally: false,
   launchStatus: 'planned',
-  agent: { input: '', output: '' },
 } as const satisfies ToolRegistryEntry;
 
 describe('getToolSocialImagePath', () => {

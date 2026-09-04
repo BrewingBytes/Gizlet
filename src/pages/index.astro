@@ -6,9 +6,12 @@ import { getPageMetadata } from '../data/metadata';
 import { homeSocialImagePath } from '../data/social-images';
 import { getSiteStructuredData } from '../data/structured-data';
 import { toolSearchPlaceholder } from '../data/tool-search-examples';
-import { getToolCategoryGroups, toolRegistry, toolsIndexPath } from '../data/tools';
+import { getAvailableTools, getToolCategoryGroups, toolsIndexPath } from '../data/tools';
 
 const categoryGroups = getToolCategoryGroups();
+// The index rows are links, so they list the Gizlets that exist. A planned one
+// belongs in the not-built block on /tools, where a row is not a link.
+const availableTools = getAvailableTools();
 
 const metadata = getPageMetadata({
   title: homePageTitle,
@@ -51,7 +54,7 @@ const metadata = getPageMetadata({
 
     <ol class="tool-index__list">
       {
-        toolRegistry.map((tool) => (
+        availableTools.map((tool) => (
           <li class="tool-index__item">
             <a href={tool.path}>
               <span class="tool-index__number">{String(tool.id).padStart(3, '0')}</span>

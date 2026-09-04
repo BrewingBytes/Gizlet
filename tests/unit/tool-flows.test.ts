@@ -24,7 +24,7 @@ import {
   type FlowPayloadContract,
   type ToolFlowDefinition,
 } from '../../src/data/tool-flows';
-import { toolRegistry } from '../../src/data/tools';
+import { getPlannedTools, toolRegistry } from '../../src/data/tools';
 
 const imageInput: FlowPayloadContract = {
   kind: 'image-file',
@@ -32,7 +32,22 @@ const imageInput: FlowPayloadContract = {
 };
 
 describe('Gizlet flow registry', () => {
-  test('declares a contract for every catalogued Gizlet, or says it has none', () => {
+  test('declares a contract for every available Gizlet, or says it has none', () => {
+    expect(hasCompleteFlowContracts()).toBe(true);
+  });
+
+  test('leaves a planned Gizlet out of the obligation entirely', () => {
+    // A planned Gizlet reads and writes nothing, because there is no code to
+    // read or write anything. Inventing a payload kind for it would put the
+    // compatibility graph ahead of the implementation; the obligation lands
+    // when the Gizlet becomes available.
+    const contracted = new Set<string>(toolFlowRegistry.map((tool) => tool.toolSlug));
+
+    for (const tool of getPlannedTools()) {
+      expect(contracted, tool.slug).not.toContain(tool.slug);
+      expect(flowlessToolSlugs as readonly string[], tool.slug).not.toContain(tool.slug);
+    }
+
     expect(hasCompleteFlowContracts()).toBe(true);
   });
 

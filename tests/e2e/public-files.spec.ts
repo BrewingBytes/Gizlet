@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+import { getPlannedTools } from "../../src/data/tools";
+
+const [planned] = getPlannedTools();
+
 test("serves public sitemap and crawler-discovery files", async ({
   request,
 }) => {
@@ -37,7 +41,28 @@ test("serves public sitemap and crawler-discovery files", async ({
         localProcessing: true,
       }),
     ]),
+    // A separate key, a separate shape: nothing under `planned` says what to
+    // send it or what it hands back, because it does neither.
+    planned: expect.arrayContaining([
+      expect.objectContaining({
+        slug: planned.slug,
+        route: `https://gizlet.app${planned.path}`,
+        availability: "planned",
+        roadmapUrl: expect.stringContaining("https://gizlet.app/roadmap/#phase-"),
+      }),
+    ]),
   });
+
+  const catalogueBody = await catalogue.json();
+  expect(catalogueBody.plannedNotice).toContain("are not built");
+  expect(catalogueBody.tools.map((tool: { slug: string }) => tool.slug)).not.toContain(
+    planned.slug,
+  );
+  for (const entry of catalogueBody.planned) {
+    expect(entry).not.toHaveProperty("localProcessing");
+    expect(entry).not.toHaveProperty("input");
+    expect(entry).not.toHaveProperty("output");
+  }
 
   expect(llms.headers()["content-type"]).toContain("text/plain");
   await expect(llms).toBeOK();
@@ -46,5 +71,17 @@ test("serves public sitemap and crawler-discovery files", async ({
   );
   await expect(llms.text()).resolves.toContain(
     "[Compress Image](https://gizlet.app/tools/compress-image/)",
+  );
+  // Plaintext has no keys, so the planned half needs a heading that carries the
+  // whole claim, and its lines are deliberately not Markdown links.
+  await expect(llms.text()).resolves.toContain("## Planned Gizlets — not available");
+  await expect(llms.text()).resolves.toContain(
+    `- ${planned.name} (https://gizlet.app${planned.path}):`,
+  );
+  await expect(llms.text()).resolves.not.toContain(`[${planned.name}](`);
+
+  // A planned route is noindex and absent from the sitemap.
+  await expect(sitemap.text()).resolves.not.toContain(
+    `https://gizlet.app${planned.path}`,
   );
 });

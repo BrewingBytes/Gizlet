@@ -47,6 +47,7 @@
   --border: var(--color-soft);
   --link: var(--color-blue);
   --success: var(--color-green);
+  --warning: var(--color-warning);
   --control-background: var(--color-surface);
   --control-text: var(--color-ink);
   --button-background: var(--color-ink);
@@ -57,6 +58,9 @@
   :root {
     /* Lighter than --color-green so local and success copy keeps AA contrast on dark surfaces. */
     --success: #46a877;
+    /* Lighter than --color-warning for the same reason: a kill-criterion label
+       has to be readable on a dark surface, not merely present. */
+    --warning: #d98200;
     --background: #1b1a17;
     --surface: #26231e;
     --text: #fffdf7;
@@ -79,6 +83,7 @@
   --border: var(--color-soft);
   --link: var(--color-blue);
   --success: var(--color-green);
+  --warning: var(--color-warning);
   --control-background: var(--color-surface);
   --control-text: var(--color-ink);
   --button-background: var(--color-ink);
@@ -88,6 +93,7 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
   --success: #46a877;
+  --warning: #d98200;
   --background: #1b1a17;
   --surface: #26231e;
   --text: #fffdf7;

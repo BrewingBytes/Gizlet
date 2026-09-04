@@ -1,0 +1,414 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getPageMetadata } from '../data/metadata';
+import {
+  getRoadmapPhaseAnchor,
+  getToolsForPhase,
+  roadmapPath,
+  roadmapPhases,
+  roadmapRefusals,
+  roadmapStatusLabels,
+} from '../data/roadmap';
+import { isAvailableTool, toolsIndexPath } from '../data/tools';
+
+/**
+ * The roadmap, shaped as a document rather than as a product page.
+ *
+ * There is no timeline, connector, dot, gantt or card here, and that is a
+ * decision rather than an omission: every one of those shapes implies a date,
+ * and this page has none to give. What it has instead is a form each phase
+ * fills in identically — when, what, what it reuses, what would tell us it is
+ * working, and what would make us stop — so a reader can compare two phases by
+ * reading the same line twice rather than by trusting the prose.
+ *
+ * The page carries no advertisement in any placement, per design.md §10. Its
+ * whole argument is that the plan is honest, and an ad rail beside a paragraph
+ * headed "how we would know to quit" would settle that argument the wrong way.
+ */
+const metadata = getPageMetadata({
+  title: 'Roadmap | Gizlet',
+  description:
+    'What Gizlet is building next, what it reuses to get there, and the conditions under which each phase stops.',
+  pathname: roadmapPath,
+});
+const phases = roadmapPhases.map((phase) => ({
+  phase,
+  anchor: getRoadmapPhaseAnchor(phase),
+  tools: getToolsForPhase(phase),
+}));
+---
+
+<BaseLayout metadata={metadata}>
+  <article class="roadmap">
+    <header class="roadmap__header">
+      <p class="metadata">Roadmap</p>
+      <h1>What we're building, and what would make us stop.</h1>
+      <p class="roadmap__standfirst">
+        A phase here is an order of work, not a date. Each one names what it would reuse, the one
+        number Gizlet can actually watch, and the condition under which it does not get built. The
+        Gizlets that exist are on the <a href={toolsIndexPath}>Gizlet index</a>, and the ones that
+        do not are listed there too.
+      </p>
+    </header>
+
+    {
+      phases.map(({ phase, anchor, tools }) => (
+        <section class="roadmap__phase" id={anchor} aria-labelledby={`${anchor}-title`}>
+          <p class="metadata roadmap__phase-eyebrow">
+            Phase {phase.number} · {roadmapStatusLabels[phase.status]}
+          </p>
+          <h2 id={`${anchor}-title`}>{phase.title}</h2>
+
+          <div class="roadmap__field">
+            <p class="metadata">When</p>
+            <p>{phase.when}</p>
+          </div>
+
+          <div class="roadmap__field">
+            <p class="metadata">What</p>
+            <p>{phase.what}</p>
+            <ul class="roadmap__tools">
+              {tools.map((tool) => (
+                <li>
+                  {isAvailableTool(tool) ? (
+                    <a href={tool.path}>{tool.name}</a>
+                  ) : (
+                    <span>{tool.name}</span>
+                  )}
+                  <span class="metadata roadmap__availability">
+                    {isAvailableTool(tool) ? 'SHIPPED' : 'PLANNED'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {phase.unregistered && (
+              <dl class="roadmap__unregistered">
+                {phase.unregistered.map((candidate) => (
+                  <>
+                    <dt>{candidate.name} · not on the bench</dt>
+                    <dd>{candidate.reason}</dd>
+                  </>
+                ))}
+              </dl>
+            )}
+          </div>
+
+          <div class="roadmap__field">
+            <p class="metadata">Shared machinery</p>
+            <ul class="roadmap__machinery">
+              {phase.sharedMachinery.map((piece) => (
+                <li>{piece}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div class="roadmap__field">
+            <p class="metadata">Signal</p>
+            <p>{phase.signal}</p>
+          </div>
+
+          <div class="roadmap__field roadmap__field--kill">
+            <p class="metadata">How we'll know to stop</p>
+            <p>{phase.killCriterion}</p>
+          </div>
+
+          {phase.standing && (
+            <div class="roadmap__field">
+              <p class="metadata">Where it stands</p>
+              <p>{phase.standing}</p>
+            </div>
+          )}
+        </section>
+      ))
+    }
+
+    <section class="roadmap__refusals" aria-labelledby="roadmap-refusals-title">
+      <h2 id="roadmap-refusals-title">What we won't build.</h2>
+      <p class="roadmap__standfirst">
+        Not a shortlist of things we ran out of time for. Each of these is a job a browser tab
+        cannot do honestly, so each one names whoever does it properly instead.
+      </p>
+
+      <div class="roadmap__table-scroll">
+        <table class="roadmap__table">
+          <thead>
+            <tr>
+              <th scope="col">Won't build</th>
+              <th scope="col">Why</th>
+              <th scope="col">Use instead</th>
+            </tr>
+          </thead>
+          <tbody>
+            {roadmapRefusals.map((refusal) => (
+              <tr>
+                <th scope="row">{refusal.subject}</th>
+                <td>{refusal.reason}</td>
+                <td>
+                  <a href={refusal.useInsteadUrl} rel="noreferrer">
+                    {refusal.useInstead}
+                  </a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p class="roadmap__close">If it needs a server, it isn't a Gizlet.</p>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  /* The document pattern from design.md §6: a 38rem prose measure with the mono
+     uppercase labels in a column to its left, Georgia headings, and 2px rules
+     for section breaks. A roadmap that reads like a document is harder to
+     mistake for a release schedule than one that reads like a product page. */
+  .roadmap {
+    --roadmap-label-column: 9rem;
+
+    max-width: calc(var(--roadmap-label-column) + var(--space-4) + 38rem);
+  }
+
+  .roadmap__header,
+  .roadmap__standfirst,
+  .roadmap__phase > h2,
+  .roadmap__phase > .metadata,
+  .roadmap__refusals > h2 {
+    max-width: 38rem;
+  }
+
+  .roadmap__header h1 {
+    font-size: clamp(2rem, 4.5vw, 3rem);
+  }
+
+  .roadmap__header .metadata {
+    margin-bottom: var(--space-1);
+  }
+
+  .roadmap__standfirst {
+    color: var(--text-muted);
+    font-size: var(--font-size-lg);
+  }
+
+  .roadmap__phase {
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: var(--border-strong-width) solid var(--text);
+  }
+
+  /* An arrived-at phase says so and nothing else happens: no scroll animation,
+     no flash, nothing that would make a link into an effect. */
+  .roadmap__phase:target {
+    padding-left: var(--space-3);
+    border-left: var(--border-strong-width) solid var(--color-amber);
+  }
+
+  .roadmap__phase-eyebrow {
+    margin-bottom: var(--space-1);
+    font-weight: 700;
+  }
+
+  /* The label sits in its own column rather than above the prose, so a reader
+     comparing two phases can run down one edge of the page. */
+  .roadmap__field {
+    display: grid;
+    grid-template-columns: var(--roadmap-label-column) minmax(0, 38rem);
+    /* The row gap is tight because the second and later items in a field are a
+       continuation of its prose rather than a new field. */
+    gap: var(--space-2) var(--space-4);
+    margin-top: var(--space-4);
+  }
+
+  .roadmap__field > .metadata {
+    margin: 0;
+    padding-top: 0.2rem;
+  }
+
+  .roadmap__field > :not(.metadata) {
+    grid-column: 2;
+  }
+
+  .roadmap__field p:not(.metadata) {
+    margin-bottom: 0;
+    color: var(--text-muted);
+  }
+
+  /* Warning is reserved for this line: it is a claim about the product rather
+     than a status on a row. */
+  .roadmap__field--kill {
+    padding-left: var(--space-3);
+    border-left: var(--border-strong-width) solid var(--warning);
+    grid-template-columns:
+      calc(var(--roadmap-label-column) - var(--space-3) - var(--border-strong-width))
+      minmax(0, 38rem);
+  }
+
+  .roadmap__field--kill > .metadata {
+    color: var(--warning);
+  }
+
+  .roadmap__tools,
+  .roadmap__machinery {
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .roadmap__tools li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-1) 0;
+    border-bottom: var(--border-width) solid var(--border);
+  }
+
+  .roadmap__availability {
+    white-space: nowrap;
+  }
+
+  .roadmap__machinery li {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+  }
+
+  .roadmap__machinery li::before {
+    content: '· ';
+  }
+
+  .roadmap__unregistered {
+    margin: var(--space-3) 0 0;
+  }
+
+  .roadmap__unregistered dt {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .roadmap__unregistered dd {
+    margin: var(--space-1) 0 0;
+    color: var(--text-muted);
+  }
+
+  .roadmap__refusals {
+    margin-top: var(--space-7);
+    padding-top: var(--space-4);
+    border-top: var(--border-strong-width) solid var(--text);
+  }
+
+  .roadmap__table-scroll {
+    overflow-x: auto;
+  }
+
+  .roadmap__table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  .roadmap__table th,
+  .roadmap__table td {
+    padding: var(--space-2) var(--space-3) var(--space-2) 0;
+    border-bottom: var(--border-width) solid var(--border);
+    vertical-align: top;
+  }
+
+  .roadmap__table thead th {
+    border-bottom-width: var(--border-strong-width);
+    border-bottom-color: var(--text);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .roadmap__table tbody th {
+    width: 9rem;
+    font-family: var(--font-display);
+  }
+
+  /* The reason gets more words than the refusal, so it gets more room. */
+  .roadmap__table td:first-of-type {
+    min-width: 20rem;
+    color: var(--text-muted);
+  }
+
+  .roadmap__table td:last-of-type {
+    width: 11rem;
+  }
+
+  .roadmap__close {
+    margin: var(--space-5) 0 0;
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+
+  @media (max-width: 52rem) {
+    /* Below the width the two columns need, the label goes back above its
+       prose rather than squeezing both into an unreadable measure. */
+    .roadmap__field,
+    .roadmap__field--kill {
+      display: block;
+    }
+
+    .roadmap__field > .metadata {
+      margin-bottom: var(--space-1);
+      padding-top: 0;
+    }
+  }
+
+  @media (max-width: 44rem) {
+    /* The table stacks rather than scrolling on a phone: three columns of prose
+       in 20rem is a scroll nobody completes. */
+    .roadmap__table,
+    .roadmap__table tbody,
+    .roadmap__table tr,
+    .roadmap__table th,
+    .roadmap__table td {
+      display: block;
+      width: auto;
+    }
+
+    .roadmap__table thead {
+      display: none;
+    }
+
+    .roadmap__table tr {
+      padding-bottom: var(--space-3);
+      border-bottom: var(--border-strong-width) solid var(--border);
+    }
+
+    .roadmap__table tr + tr {
+      margin-top: var(--space-3);
+    }
+
+    /* These have to name the same selectors the desktop widths do, or the
+       column widths keep applying to blocks and every cell wraps early. */
+    .roadmap__table th,
+    .roadmap__table td,
+    .roadmap__table tbody th,
+    .roadmap__table td:first-of-type,
+    .roadmap__table td:last-of-type {
+      width: auto;
+      min-width: 0;
+      padding: 0;
+      border-bottom: 0;
+    }
+
+    .roadmap__table td {
+      margin-top: var(--space-1);
+    }
+
+    .roadmap__table tbody th {
+      font-size: var(--font-size-lg);
+    }
+  }
+</style>

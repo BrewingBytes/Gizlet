@@ -1,7 +1,7 @@
 import type { ImageInputFormat, ImageOutputFormat } from './image-compression';
 import { describePdfPageCount, maximumPdfPages } from './jpg-to-pdf';
 import { describeMergeDocumentCount, maximumMergeDocuments } from './merge-pdf';
-import { getAvailableTools, toolRegistry, type AvailableToolSlug, type ToolRegistryEntry } from './tools';
+import { getAvailableTools, type AvailableToolSlug, type ToolRegistryEntry } from './tools';
 
 /** A data shape that can be passed from one Gizlet operation to another. */
 export type FlowPayloadContract =
@@ -455,14 +455,21 @@ export function canReorderFlowStep(
 }
 
 /**
- * Guards against catalog additions that forget to declare their executable
+ * Guards against published Gizlets that forget to declare their executable
  * contract, while letting one that deliberately has none say so.
+ *
+ * The guard covers the available Gizlets, not the whole registry. A planned
+ * Gizlet genuinely has no contract: it reads and writes nothing, because there
+ * is no code to read or write anything, and inventing a payload kind for a
+ * Gizlet that does not exist would put the compatibility graph ahead of the
+ * implementation. The obligation lands the moment a Gizlet becomes available,
+ * which is where `AGENTS.md` means it.
  */
 export function hasCompleteFlowContracts(
   definitions: Definitions = toolFlowRegistry,
   flowless: readonly string[] = flowlessToolSlugs,
 ): boolean {
-  return toolRegistry.every(
+  return getAvailableTools().every(
     (tool) =>
       definitions.some((flowTool) => flowTool.toolSlug === tool.slug) ||
       flowless.includes(tool.slug),

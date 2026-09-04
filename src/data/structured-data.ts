@@ -1,6 +1,6 @@
 import { siteUrl } from './metadata';
 import { getToolPageContent, type ToolFaqEntry } from './tool-page-content';
-import { getAvailableTools, toolsIndexPath, type ToolRegistryEntry } from './tools';
+import { getAvailableTools, isAvailableTool, toolsIndexPath, type ToolRegistryEntry } from './tools';
 
 /**
  * Schema.org descriptions of the pages Gizlet publishes.
@@ -82,12 +82,37 @@ function getToolFaqStructuredData(
   };
 }
 
+/** The trail that leads to a Gizlet page. The trailing crumb intentionally has
+ * no `item`: it is the page being described. */
+function getToolBreadcrumbStructuredData(tool: ToolRegistryEntry): StructuredDataItem {
+  return {
+    '@context': schemaContext,
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Gizlet', item: absoluteUrl('/') },
+      { '@type': 'ListItem', position: 2, name: 'Tools', item: absoluteUrl(toolsIndexPath) },
+      { '@type': 'ListItem', position: 3, name: tool.name },
+    ],
+  };
+}
+
 /**
  * Describes a Gizlet as the free browser application it is, with the trail that
- * leads to it. The trailing crumb intentionally has no `item`: it is the page
- * being described. The FAQ is appended only when the page renders one.
+ * leads to it. The FAQ is appended only when the page renders one.
+ *
+ * A planned Gizlet gets the trail and nothing else. `SoftwareApplication` with
+ * `isAccessibleForFree` and a zero-price offer would be this module claiming a
+ * working, free application exists at that address, and `noindex` does not
+ * suppress JSON-LD: a crawler reading the markup would still see one. This is
+ * the machine-readable half of the site, and it is held to the same rule as the
+ * visible half — nothing is described as free, local, or available unless the
+ * registry says so.
  */
 export function getToolStructuredData(tool: ToolRegistryEntry): readonly StructuredDataItem[] {
+  if (!isAvailableTool(tool)) {
+    return [getToolBreadcrumbStructuredData(tool)];
+  }
+
   const faq = getToolPageContent(tool)?.faq;
 
   return [
@@ -108,15 +133,7 @@ export function getToolStructuredData(tool: ToolRegistryEntry): readonly Structu
       },
       publisher,
     },
-    {
-      '@context': schemaContext,
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Gizlet', item: absoluteUrl('/') },
-        { '@type': 'ListItem', position: 2, name: 'Tools', item: absoluteUrl(toolsIndexPath) },
-        { '@type': 'ListItem', position: 3, name: tool.name },
-      ],
-    },
+    getToolBreadcrumbStructuredData(tool),
     ...(faq && faq.length > 0 ? [getToolFaqStructuredData(tool, faq)] : []),
   ];
 }

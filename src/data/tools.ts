@@ -4,21 +4,23 @@
  * UI features should derive their navigation, search, category, and related-tool
  * data from this module instead of maintaining their own tool lists.
  */
-export type ToolCategory = "images" | "pdf" | "seo" | "developer";
+export type ToolCategory = "images" | "pdf" | "seo" | "developer" | "archive" | "video";
 
 export type ToolLaunchStatus = "planned" | "available";
 
 /**
  * Concise, stable guidance for people and software discovering a Gizlet
- * outside its visual interface. These fields are published in /tools.json and
- * llms.txt only for tools that are available.
+ * outside its visual interface. Only an available Gizlet carries these: a
+ * planned one has no implementation, so it has nothing truthful to say about
+ * what it reads or writes.
  */
 export interface ToolAgentDetails {
   readonly input: string;
   readonly output: string;
 }
 
-export interface ToolRegistryEntry {
+/** What every entry carries, whether it is built or only planned. */
+export interface ToolRegistryEntryBase {
   /** A stable numeric identifier, used for ordering and cross-tool references. */
   readonly id: number;
   readonly name: string;
@@ -28,10 +30,31 @@ export interface ToolRegistryEntry {
   readonly category: ToolCategory;
   readonly description: string;
   readonly keywords: readonly string[];
+}
+
+/** A Gizlet with an implementation behind it, so its claims can be true. */
+export interface AvailableToolEntry extends ToolRegistryEntryBase {
+  readonly launchStatus: "available";
   readonly processesLocally: boolean;
-  readonly launchStatus: ToolLaunchStatus;
   readonly agent: ToolAgentDetails;
 }
+
+/**
+ * A Gizlet the roadmap commits to and no code implements yet.
+ *
+ * `processesLocally` is the literal `false` rather than a `boolean`, because
+ * locality is a claim about an implementation and a planned Gizlet has none.
+ * The compiler keeps that decision rather than a convention doing it. What the
+ * catalogue publishes is a separate question: `agent-catalog.ts` omits the
+ * locality field for a planned Gizlet instead of publishing `false`, so
+ * nothing claims locality and nothing denies it.
+ */
+export interface PlannedToolEntry extends ToolRegistryEntryBase {
+  readonly launchStatus: "planned";
+  readonly processesLocally: false;
+}
+
+export type ToolRegistryEntry = AvailableToolEntry | PlannedToolEntry;
 
 export const toolRegistry = [
   {
@@ -264,6 +287,496 @@ export const toolRegistry = [
       output: "One PDF per range or page, holding copies of those pages, downloadable individually or together as a ZIP archive.",
     },
   },
+  {
+    id: 11,
+    name: "Crop Image",
+    slug: "crop-image",
+    path: "/tools/crop-image/",
+    category: "images",
+    description: "Cut an image down to the part you actually want.",
+    keywords: [
+      "crop",
+      "crop image",
+      "crop photo",
+      "cut image",
+      "trim image",
+      "aspect ratio crop",
+      "square crop",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 12,
+    name: "Collage Maker",
+    slug: "collage-maker",
+    path: "/tools/collage-maker/",
+    category: "images",
+    description: "Arrange several images into one picture.",
+    keywords: [
+      "collage",
+      "collage maker",
+      "photo grid",
+      "combine images",
+      "photo collage",
+      "picture layout",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 13,
+    name: "Rotate & Flip Image",
+    slug: "rotate-flip-image",
+    path: "/tools/rotate-flip-image/",
+    category: "images",
+    description: "Turn an image upright, or mirror it.",
+    keywords: [
+      "rotate image",
+      "flip image",
+      "mirror image",
+      "turn photo",
+      "rotate 90 degrees",
+      "straighten photo",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 14,
+    name: "Image Background",
+    slug: "image-background",
+    path: "/tools/image-background/",
+    category: "images",
+    description: "Set an image on a canvas size and background colour you choose.",
+    keywords: [
+      "image background",
+      "add background to png",
+      "canvas size",
+      "pad image",
+      "white background",
+      "square an image",
+      "product photo background",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 15,
+    name: "Remove Image Metadata",
+    slug: "remove-image-metadata",
+    path: "/tools/remove-image-metadata/",
+    category: "images",
+    description: "See what a photo says about you, then strip it out.",
+    keywords: [
+      "remove exif",
+      "strip metadata",
+      "exif viewer",
+      "remove gps from photo",
+      "photo location data",
+      "clean image metadata",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 16,
+    name: "Image Dimensions",
+    slug: "image-dimensions",
+    path: "/tools/image-dimensions/",
+    category: "images",
+    description: "Read an image's size, ratio, and type without changing it.",
+    keywords: [
+      "image size",
+      "image dimensions",
+      "pixel dimensions",
+      "aspect ratio checker",
+      "megapixels",
+      "check image resolution",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 17,
+    name: "Image Color Picker",
+    slug: "image-color-picker",
+    path: "/tools/image-color-picker/",
+    category: "images",
+    description: "Lift a colour out of a picture as HEX, RGB, or HSL.",
+    keywords: [
+      "color picker",
+      "colour picker",
+      "eyedropper",
+      "pick color from image",
+      "hex from image",
+      "get color code",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 18,
+    name: "Favicon Generator",
+    slug: "favicon-generator",
+    path: "/tools/favicon-generator/",
+    category: "images",
+    description: "Make a site's icon set from one square picture.",
+    keywords: [
+      "favicon",
+      "favicon generator",
+      "site icon",
+      "apple touch icon",
+      "ico file",
+      "app icon sizes",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 19,
+    name: "Organize PDF",
+    slug: "organize-pdf",
+    path: "/tools/organize-pdf/",
+    category: "pdf",
+    description: "Reorder, rotate, duplicate, and drop pages in one pass.",
+    keywords: [
+      "organize pdf",
+      "reorder pdf pages",
+      "rotate pdf",
+      "delete pdf pages",
+      "rearrange pdf",
+      "move pdf pages",
+      "duplicate pdf page",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 20,
+    name: "Watermark PDF",
+    slug: "watermark-pdf",
+    path: "/tools/watermark-pdf/",
+    category: "pdf",
+    description: "Stamp text or a picture across the pages you name.",
+    keywords: [
+      "watermark pdf",
+      "stamp pdf",
+      "add watermark",
+      "draft watermark",
+      "confidential stamp",
+      "overlay text on pdf",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 21,
+    name: "PDF Page Numbers",
+    slug: "pdf-page-numbers",
+    path: "/tools/pdf-page-numbers/",
+    category: "pdf",
+    description: "Number the pages of a document that arrived without them.",
+    keywords: [
+      "pdf page numbers",
+      "number pdf pages",
+      "add page numbers",
+      "paginate pdf",
+      "bates numbering",
+      "footer page number",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 22,
+    name: "Sign PDF",
+    slug: "sign-pdf",
+    path: "/tools/sign-pdf/",
+    category: "pdf",
+    description: "Place a signature you drew onto the page it belongs on.",
+    keywords: [
+      "sign pdf",
+      "pdf signature",
+      "draw signature",
+      "add signature to pdf",
+      "fill and sign",
+      "stamp a signature",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 23,
+    name: "Clean PDF Metadata",
+    slug: "clean-pdf-metadata",
+    path: "/tools/clean-pdf-metadata/",
+    category: "pdf",
+    description: "Read a document's hidden fields, then clear them.",
+    keywords: [
+      "pdf metadata",
+      "remove pdf author",
+      "clean pdf properties",
+      "pdf document info",
+      "strip pdf metadata",
+      "pdf producer field",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 24,
+    name: "QR Code Generator",
+    slug: "qr-code-generator",
+    path: "/tools/qr-code-generator/",
+    category: "developer",
+    description: "Turn a link or a line of text into a scannable square.",
+    keywords: [
+      "qr code",
+      "qr code generator",
+      "make a qr code",
+      "url to qr",
+      "wifi qr code",
+      "qr png",
+      "qr svg",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 25,
+    name: "URL Encode & Decode",
+    slug: "url-encode-decode",
+    path: "/tools/url-encode-decode/",
+    category: "developer",
+    description: "Percent-encode a string, or read one back.",
+    keywords: [
+      "url encode",
+      "url decode",
+      "percent encoding",
+      "uri encode",
+      "escape url",
+      "query string encoding",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 26,
+    name: "Base64 Encode & Decode",
+    slug: "base64-encode-decode",
+    path: "/tools/base64-encode-decode/",
+    category: "developer",
+    description: "Move between plain text, a small file, and Base64.",
+    keywords: [
+      "base64",
+      "base64 encode",
+      "base64 decode",
+      "file to base64",
+      "data uri",
+      "url safe base64",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 27,
+    name: "JWT Decoder",
+    slug: "jwt-decoder",
+    path: "/tools/jwt-decoder/",
+    category: "developer",
+    description: "Read a token's header and claims without verifying it.",
+    keywords: [
+      "jwt",
+      "jwt decoder",
+      "decode jwt",
+      "json web token",
+      "read jwt claims",
+      "token expiry",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 28,
+    name: "File Hash Generator",
+    slug: "file-hash-generator",
+    path: "/tools/file-hash-generator/",
+    category: "developer",
+    description: "Check a download is the file it claims to be.",
+    keywords: [
+      "file hash",
+      "sha256",
+      "sha512",
+      "checksum",
+      "verify download",
+      "hash generator",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 29,
+    name: "JSON and CSV Converter",
+    slug: "json-csv-converter",
+    path: "/tools/json-csv-converter/",
+    category: "developer",
+    description: "Move flat records between JSON and CSV in either direction.",
+    keywords: [
+      "json to csv",
+      "csv to json",
+      "convert json csv",
+      "tabular json",
+      "spreadsheet to json",
+      "export json as csv",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 30,
+    name: "CSV Viewer",
+    slug: "csv-viewer",
+    path: "/tools/csv-viewer/",
+    category: "developer",
+    description: "Read a delimited file as a table, and tidy its quoting.",
+    keywords: [
+      "csv viewer",
+      "open csv",
+      "read csv online",
+      "csv formatter",
+      "tsv viewer",
+      "csv table",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 31,
+    name: "Timestamp Converter",
+    slug: "timestamp-converter",
+    path: "/tools/timestamp-converter/",
+    category: "developer",
+    description: "Read a Unix timestamp as a date, and the other way round.",
+    keywords: [
+      "timestamp converter",
+      "unix time",
+      "epoch converter",
+      "iso 8601",
+      "epoch to date",
+      "date to epoch",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 32,
+    name: "UUID Generator",
+    slug: "uuid-generator",
+    path: "/tools/uuid-generator/",
+    category: "developer",
+    description: "Produce identifiers from your browser's own randomness.",
+    keywords: [
+      "uuid",
+      "uuid generator",
+      "guid",
+      "uuid v4",
+      "random id",
+      "generate uuid",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 33,
+    name: "Create ZIP",
+    slug: "create-zip",
+    path: "/tools/create-zip/",
+    category: "archive",
+    description: "Bundle a pile of files into one archive.",
+    keywords: [
+      "create zip",
+      "zip files",
+      "make a zip",
+      "compress files",
+      "zip folder",
+      "archive files",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 34,
+    name: "Extract Archive",
+    slug: "extract-archive",
+    path: "/tools/extract-archive/",
+    category: "archive",
+    description: "Look inside a ZIP or RAR and pull out what you need.",
+    keywords: [
+      "unzip",
+      "extract zip",
+      "open rar",
+      "extract archive",
+      "unrar",
+      "view archive contents",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 35,
+    name: "Trim Video",
+    slug: "trim-video",
+    path: "/tools/trim-video/",
+    category: "video",
+    description: "Keep the part of a clip that matters and drop the rest.",
+    keywords: [
+      "trim video",
+      "cut video",
+      "shorten video",
+      "clip video",
+      "crop video length",
+      "video trimmer",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 36,
+    name: "Video to Frames",
+    slug: "video-to-frames",
+    path: "/tools/video-to-frames/",
+    category: "video",
+    description: "Pull still pictures out of a moving one.",
+    keywords: [
+      "video to frames",
+      "extract frames",
+      "video to images",
+      "screenshot video",
+      "frame grab",
+      "video stills",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
+  {
+    id: 37,
+    name: "Video to GIF",
+    slug: "video-to-gif",
+    path: "/tools/video-to-gif/",
+    category: "video",
+    description: "Make a short loop out of a short clip.",
+    keywords: [
+      "video to gif",
+      "mp4 to gif",
+      "make a gif",
+      "gif converter",
+      "animated gif",
+      "clip to gif",
+    ],
+    processesLocally: false,
+    launchStatus: "planned",
+  },
 ] as const satisfies readonly ToolRegistryEntry[];
 
 /**
@@ -279,12 +792,18 @@ export type ToolSlug = RegisteredTool['slug'];
 /** A registry entry known to be published. */
 export type AvailableTool = Extract<RegisteredTool, { readonly launchStatus: 'available' }>;
 
+/** A registry entry the roadmap commits to and no code implements yet. */
+export type PlannedTool = Extract<RegisteredTool, { readonly launchStatus: 'planned' }>;
+
 /**
  * The slugs of published Gizlets. A workspace map keyed by this covers exactly
  * the Gizlets that have a workspace, so promoting a planned Gizlet without
  * wiring one is a type error rather than a blank page.
  */
 export type AvailableToolSlug = AvailableTool['slug'];
+
+/** The slugs of planned Gizlets, for maps that describe the roadmap. */
+export type PlannedToolSlug = PlannedTool['slug'];
 
 export const toolsIndexPath = '/tools/';
 
@@ -294,6 +813,8 @@ export const toolCategoryLabels = {
   pdf: 'PDF',
   seo: 'SEO',
   developer: 'Developer',
+  archive: 'Archive',
+  video: 'Video',
 } as const satisfies Record<ToolCategory, string>;
 
 export interface ToolCategoryGroup {
@@ -308,11 +829,22 @@ export interface ToolCategoryGroup {
  * Narrows a registry entry to a published Gizlet. Tool pages branch on this
  * before choosing a workspace, so a planned Gizlet reaches the placeholder
  * because of its launch status rather than by falling off a list of slugs.
+ *
+ * It is generic so the caller keeps whatever it started with: passing a
+ * `RegisteredTool` narrows to its available members, which is what makes a
+ * slug-keyed workspace map type-check on the other side of the branch.
  */
-export function isAvailableTool(
-  tool: ToolRegistryEntry,
-): tool is ToolRegistryEntry & { readonly launchStatus: 'available' } {
+export function isAvailableTool<Tool extends ToolRegistryEntry>(
+  tool: Tool,
+): tool is Tool & { readonly launchStatus: 'available' } {
   return tool.launchStatus === 'available';
+}
+
+/** Narrows a registry entry to a Gizlet that is planned and not built. */
+export function isPlannedTool<Tool extends ToolRegistryEntry>(
+  tool: Tool,
+): tool is Tool & { readonly launchStatus: 'planned' } {
+  return tool.launchStatus === 'planned';
 }
 
 /** Every Gizlet that is published, in registry order. */
@@ -320,14 +852,20 @@ export function getAvailableTools(): readonly AvailableTool[] {
   return toolRegistry.filter(isAvailableTool);
 }
 
-/**
- * Groups published Gizlets by category. Navigation derives its categories from
- * this, so a category with no available Gizlet is never advertised.
- */
-export function getToolCategoryGroups(): readonly ToolCategoryGroup[] {
+/** Every Gizlet the roadmap commits to and no code implements yet. */
+export function getPlannedTools(): readonly PlannedTool[] {
+  return toolRegistry.filter(isPlannedTool);
+}
+
+/** The planned Gizlet a slug names, when the slug is one the roadmap carries. */
+export function getPlannedToolBySlug(slug: string): PlannedTool | undefined {
+  return getPlannedTools().find((tool) => tool.slug === slug);
+}
+
+function groupByCategory(tools: readonly ToolRegistryEntry[]): readonly ToolCategoryGroup[] {
   const groups = new Map<ToolCategory, ToolRegistryEntry[]>();
 
-  for (const tool of getAvailableTools()) {
+  for (const tool of tools) {
     const group = groups.get(tool.category);
 
     if (group) {
@@ -337,10 +875,28 @@ export function getToolCategoryGroups(): readonly ToolCategoryGroup[] {
     }
   }
 
-  return [...groups].map(([category, tools]) => ({
+  return [...groups].map(([category, categoryTools]) => ({
     category,
     label: toolCategoryLabels[category],
     path: `${toolsIndexPath}#${category}`,
-    tools,
+    tools: categoryTools,
   }));
+}
+
+/**
+ * Groups published Gizlets by category. Navigation derives its categories from
+ * this, so a category with no available Gizlet is never advertised.
+ */
+export function getToolCategoryGroups(): readonly ToolCategoryGroup[] {
+  return groupByCategory(getAvailableTools());
+}
+
+/**
+ * Groups planned Gizlets by category, for the not-built block. A category
+ * appears here on the strength of its planned entries alone, which is why this
+ * is a separate list rather than a flag on the one above: `/tools`’ navigation
+ * and its live groups must keep describing only Gizlets that exist.
+ */
+export function getPlannedToolCategoryGroups(): readonly ToolCategoryGroup[] {
+  return groupByCategory(getPlannedTools());
 }

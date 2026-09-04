@@ -14,7 +14,7 @@ Read [docs/architecture.md](docs/architecture.md) before changing the applicatio
 - `src/layouts/BaseLayout.astro` — document shell, metadata, theme bootstrap, and the env-gated ads tag.
 - `src/pages/` — static routes, including `tools/[slug].astro` (generated from the registry) and the generated `sitemap.xml`, `robots.txt`, `tools.json`, and `llms.txt`.
 - `tests/unit/` — Vitest, one file per `src/data` module. `tests/e2e/` — Playwright smoke coverage.
-- `docs/` — architecture baseline, privacy data contract, measurement constraints, request-form behavior, release procedure.
+- `docs/` — architecture baseline, privacy data contract, measurement constraints, request-form behavior, the roadmap narrative, release procedure.
 - `changelog.d/` — one file per unreleased changelog entry. A change writes its entry here rather than editing `CHANGELOG.md`, so two pull requests never edit the same lines; the release collects them.
 
 ## Architecture constraints
@@ -33,10 +33,19 @@ Read [docs/architecture.md](docs/architecture.md) before changing the applicatio
 Adding or changing a Gizlet:
 
 1. Add or update its `toolRegistry` entry, keeping `id` stable and `path` in the `/tools/<slug>/` form with the trailing slash.
-2. Keep `processesLocally` and `launchStatus` truthful. Only `available` tools are published to the agent catalogue; a planned tool renders the placeholder workspace on its tool page.
-3. Put the tool's deterministic logic in a `src/data/<tool>.ts` module and its UI in `src/components/<Tool>Tool.astro`, then wire the slug into `src/pages/tools/[slug].astro`.
-4. If the tool can hand its output to another Gizlet, add its contract to `src/data/tool-flows.ts`; that registry is executable compatibility data, separate from the editorial related-tool recommendations. Declare only the payload kinds it reads and writes — compatibility is derived from those, so there is no adjacency list to update, and a Gizlet becomes available after every Gizlet whose output it accepts. A Gizlet that only shows the visitor something reads and writes nothing another Gizlet can use, so it is not a pipeline step: name it in `flowlessToolSlugs` instead, and do not give it a contract that hands its input back.
-5. Add Vitest coverage for the logic module and registry rules, and Playwright coverage when a browser flow matters.
+2. Keep `processesLocally` and `launchStatus` truthful. `ToolRegistryEntry` is a discriminated union on `launchStatus`: an available entry carries a `boolean` locality and an `agent` block, and a planned entry carries the literal `false` and no `agent` block at all, because locality is a claim about an implementation and a planned Gizlet has none.
+3. Both kinds reach the agent catalogue, under separate keys and separate shapes. `/tools.json` publishes available Gizlets under `tools` and planned ones under `planned`, and `llms.txt` gives the planned half its own heading. A planned entry omits the locality field, the input and output descriptions, and the privacy sentence rather than publishing an empty or false value for each: nothing claims locality, nothing denies it, and the fields that would let it be called are simply absent. A planned Gizlet renders the not-built placeholder on its tool page, is `noindex`, carries no advertisement in any placement, emits breadcrumb structured data only, and appears in no search result or related-tools list.
+4. Put the tool's deterministic logic in a `src/data/<tool>.ts` module and its UI in `src/components/<Tool>Tool.astro`, then wire the slug into `src/pages/tools/[slug].astro`.
+5. If the tool can hand its output to another Gizlet, add its contract to `src/data/tool-flows.ts`; that registry is executable compatibility data, separate from the editorial related-tool recommendations. Declare only the payload kinds it reads and writes — compatibility is derived from those, so there is no adjacency list to update, and a Gizlet becomes available after every Gizlet whose output it accepts. A Gizlet that only shows the visitor something reads and writes nothing another Gizlet can use, so it is not a pipeline step: name it in `flowlessToolSlugs` instead, and do not give it a contract that hands its input back.
+6. Add Vitest coverage for the logic module and registry rules, and Playwright coverage when a browser flow matters.
+
+## The roadmap
+
+`src/data/roadmap.ts` holds the phases, the flow chains a planned Gizlet would finish, and the refusals, and `/roadmap` and the not-built block on `/tools` render them. A phase names slugs and nothing else about a Gizlet, so the roadmap cannot drift from the registry: it never repeats it. [docs/roadmap.md](docs/roadmap.md) is the narrative and holds no list at all — no name, slug, route or phase number — and a Vitest case greps it to keep that true.
+
+**Closing a tool issue means updating the roadmap in the same pull request.** A Gizlet becoming real is a change to the roadmap, not a follow-up to it: any other order leaves the site briefly claiming a working Gizlet does not exist. In that one pull request, the registry entry flips to `available`, gains an `agent` block, a flow contract or a declared exemption in `flowlessToolSlugs`, a `relatedToolSlugs` key and a social card, and its phase in `src/data/roadmap.ts` records it as shipped.
+
+A phase's signal and kill criterion are constrained by [docs/signals.md](docs/signals.md), and both are written flat: [design.md](design.md) forbids humour in a kill-criterion line and in the refusal table.
 
 ## Privacy and UX
 

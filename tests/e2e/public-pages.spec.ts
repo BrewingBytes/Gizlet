@@ -13,6 +13,7 @@ test("links to and renders public information pages with page metadata", async (
   await expect(footer.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy/");
   await expect(footer.getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms/");
   await expect(footer.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about/");
+  await expect(footer.getByRole("link", { name: "Roadmap" })).toHaveAttribute("href", "/roadmap/");
   await expect(footer.getByRole("link", { name: "Request a Gizlet" })).toHaveAttribute("href", "/request-a-gizlet/");
 
   await page.goto("/privacy/");

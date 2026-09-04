@@ -10,10 +10,17 @@ import PdfToJpgTool from '../../components/PdfToJpgTool.astro';
 import PdfViewerTool from '../../components/PdfViewerTool.astro';
 import ResizeImageTool from '../../components/ResizeImageTool.astro';
 import SplitPdfTool from '../../components/SplitPdfTool.astro';
+import { getPlannedGizletRequestPath } from '../../data/gizlet-request';
+import {
+  getPhaseForPlannedTool,
+  getPlannedToolChainEntries,
+  getRoadmapPhasePath,
+} from '../../data/roadmap';
 import { getRelatedTools } from '../../data/tool-page-related';
 import { getToolProcessingDescription } from '../../data/tool-page-status';
 import {
   isAvailableTool,
+  isPlannedTool,
   toolRegistry,
   type AvailableToolSlug,
   type RegisteredTool,
@@ -56,32 +63,68 @@ const { tool, relatedTools } = Astro.props;
 // Launch status decides whether there is a workspace at all; the slug only
 // decides which one.
 const Workspace = isAvailableTool(tool) ? toolWorkspaces[tool.slug] : undefined;
+const planned = isPlannedTool(tool) ? tool : undefined;
+// Everything a not-built page shows instead of a workspace: where the Gizlet
+// sits in the order, the chain it would finish with its live steps as real
+// links, and the one action that exists — asking for it.
+const placeholder = planned
+  ? {
+      phase: getPhaseForPlannedTool(planned),
+      requestPath: getPlannedGizletRequestPath(planned.slug),
+      chain: getPlannedToolChainEntries(planned.slug),
+    }
+  : undefined;
 ---
 
+<!-- A not-built page carries no advertisement in any placement (design.md §10)
+  and stays out of search: it is honest about being empty, and an indexed empty
+  page is a search result that lies on its behalf. -->
 <ToolPageLayout
   tool={tool}
   relatedTools={relatedTools}
   processingStatus={getToolProcessingDescription(tool.slug)}
-  showRail
-  showPostResultAd
+  showRail={!placeholder}
+  showPostResultAd={!placeholder}
+  robots={placeholder ? 'noindex, nofollow' : undefined}
 >
   {
     Workspace ? (
       <div slot="workspace"><Workspace /></div>
     ) : (
-      <section slot="workspace" class="tool-page-placeholder" aria-labelledby="workspace-title">
-        <p class="metadata">Coming soon</p>
-        <h2 id="workspace-title">This Gizlet is being prepared.</h2>
-        <p>Its workspace will live here, ready for one job done properly.</p>
-      </section>
-    )
-  }
+      placeholder && (
+        <section slot="workspace" class="tool-page-placeholder" aria-labelledby="workspace-title">
+          <p class="metadata">Planned</p>
+          <h2 id="workspace-title">This Gizlet is not built yet.</h2>
+          <p>
+            There is nothing to use on this page. It is on the roadmap, which says where it sits in
+            the order and what would make us drop it.
+          </p>
 
-  {
-    !Workspace && (
-      <section slot="result" class="tool-page-placeholder__result" aria-label="Tool result area">
-        <p class="metadata">Results will appear here</p>
-      </section>
+          {placeholder.chain.length > 0 && (
+            <div class="tool-page-placeholder__chain">
+              <p class="metadata">The chain it would finish</p>
+              <ol>
+                {placeholder.chain.map((step) => (
+                  <li>
+                    {isAvailableTool(step) ? (
+                      <a href={step.path}>{step.name}</a>
+                    ) : (
+                      <span>{step.name}</span>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          <p class="tool-page-placeholder__actions">
+            <a href={getRoadmapPhasePath(placeholder.phase)}>
+              Phase {placeholder.phase.number}: {placeholder.phase.title}
+            </a>
+            <a href={placeholder.requestPath}>Ask for {tool.name}</a>
+          </p>
+        </section>
+      )
     )
   }
 </ToolPageLayout>
@@ -101,19 +144,46 @@ const Workspace = isAvailableTool(tool) ? toolWorkspaces[tool.slug] : undefined;
     max-width: 30rem;
   }
 
-  .tool-page-placeholder p:last-child {
+  .tool-page-placeholder > p:not(.metadata) {
     max-width: 34rem;
-    margin-bottom: 0;
     color: var(--text-muted);
   }
 
-  .tool-page-placeholder__result {
-    min-height: 4rem;
-    padding: var(--space-3) 0;
-    border-top: var(--border-width) solid var(--border);
+  .tool-page-placeholder__chain {
+    margin-top: var(--space-4);
   }
 
-  .tool-page-placeholder__result .metadata {
+  .tool-page-placeholder__chain .metadata {
+    margin-bottom: var(--space-1);
+  }
+
+  .tool-page-placeholder__chain ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-2);
     margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* The step that is missing is the one without a link, which is the argument
+     the chain is here to make. */
+  .tool-page-placeholder__chain li:not(:last-child)::after {
+    margin-left: var(--space-2);
+    color: var(--text-muted);
+    content: '→';
+  }
+
+  .tool-page-placeholder__chain span {
+    color: var(--text-muted);
+  }
+
+  .tool-page-placeholder__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    margin: var(--space-4) 0 0;
+    font-weight: 700;
   }
 </style>

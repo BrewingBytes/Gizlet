@@ -15,6 +15,7 @@ describe("sitemap generation", () => {
       new URL("/", siteUrl).toString(),
       new URL("/tools/", siteUrl).toString(),
       new URL("/flows/", siteUrl).toString(),
+      new URL("/roadmap/", siteUrl).toString(),
       new URL("/privacy/", siteUrl).toString(),
       new URL("/terms/", siteUrl).toString(),
       new URL("/about/", siteUrl).toString(),
@@ -28,6 +29,7 @@ describe("sitemap generation", () => {
     expect(getSitemapXml()).toContain("<loc>https://gizlet.app/</loc>");
     expect(getSitemapXml()).toContain("<loc>https://gizlet.app/tools/</loc>");
     expect(getSitemapXml()).toContain("<loc>https://gizlet.app/flows/</loc>");
+    expect(getSitemapXml()).toContain("<loc>https://gizlet.app/roadmap/</loc>");
     expect(getSitemapXml()).toContain("<loc>https://gizlet.app/privacy/</loc>");
     expect(getSitemapXml()).toContain("<loc>https://gizlet.app/request-a-gizlet/</loc>");
     expect(getSitemapXml()).toContain("json-ld-generator");

@@ -5,7 +5,7 @@
 ## Before you start
 
 - Work from the GitHub issue that defines the task. It sets the scope and acceptance criteria; anything outside it belongs in a follow-up issue.
-- Read [docs/architecture.md](docs/architecture.md) before touching the stack or dependencies, [design.md](design.md) before visual work, and [docs/releasing.md](docs/releasing.md) before anything touching deployment, versions, or the changelog's release headings.
+- Read [docs/architecture.md](docs/architecture.md) before touching the stack or dependencies, [design.md](design.md) before visual work, [docs/roadmap.md](docs/roadmap.md) before touching the phases or the not-built catalogue, and [docs/releasing.md](docs/releasing.md) before anything touching deployment, versions, or the changelog's release headings.
 - The repository is small enough to read directly. Prefer opening the relevant files over broad searches, and see the repository map in [AGENTS.md](AGENTS.md) for where things live.
 
 ## Commands

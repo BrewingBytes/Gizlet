@@ -7,7 +7,7 @@ import {
   serialiseStructuredData,
 } from '../../src/data/structured-data';
 import { getToolPageContent } from '../../src/data/tool-page-content';
-import { getAvailableTools, toolRegistry } from '../../src/data/tools';
+import { getAvailableTools, getPlannedTools, toolRegistry } from '../../src/data/tools';
 
 const compressImage = toolRegistry.find((tool) => tool.slug === 'compress-image')!;
 
@@ -98,12 +98,43 @@ describe('getToolStructuredData', () => {
   });
 
   it('publishes no FAQ markup for a Gizlet without supporting content', () => {
-    const plannedTool = { ...compressImage, slug: 'planned-gizlet' } as const;
+    const undocumented = { ...compressImage, slug: 'undocumented-gizlet' } as const;
 
-    expect(getToolStructuredData(plannedTool).map((item) => item['@type'])).toEqual([
+    expect(getToolStructuredData(undocumented).map((item) => item['@type'])).toEqual([
       'SoftwareApplication',
       'BreadcrumbList',
     ]);
+  });
+
+  it('describes a planned Gizlet as a page and never as an application', () => {
+    for (const tool of getPlannedTools()) {
+      const markup = getToolStructuredData(tool);
+
+      // `noindex` does not suppress JSON-LD, so a crawler reading the markup
+      // would still be told a free, working application lives at this address.
+      // The trail is the only true thing there is to say about the page.
+      expect(markup.map((item) => item['@type']), tool.slug).toEqual(['BreadcrumbList']);
+      expect(markup[0].itemListElement).toEqual([
+        { '@type': 'ListItem', position: 1, name: 'Gizlet', item: 'https://gizlet.app/' },
+        { '@type': 'ListItem', position: 2, name: 'Tools', item: 'https://gizlet.app/tools/' },
+        { '@type': 'ListItem', position: 3, name: tool.name },
+      ]);
+      expect(JSON.stringify(markup)).not.toContain('isAccessibleForFree');
+      expect(JSON.stringify(markup)).not.toContain('Offer');
+    }
+
+    expect(getPlannedTools().length).toBeGreaterThan(0);
+  });
+
+  it('keeps a planned Gizlet out of the index listing search engines read', () => {
+    const [collection] = getToolIndexStructuredData();
+    const list = (collection.mainEntity as { itemListElement: Record<string, unknown>[] })
+      .itemListElement;
+    const plannedRoutes = getPlannedTools().map((tool) => `https://gizlet.app${tool.path}`);
+
+    for (const route of plannedRoutes) {
+      expect(list.map((item) => item.url)).not.toContain(route);
+    }
   });
 });
 
