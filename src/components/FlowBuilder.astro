@@ -224,8 +224,7 @@
     canReorderFlowStep,
     combinesFlowInputs,
     getFlowTool,
-    getFlowToolsForInput,
-    getNextFlowTools,
+    getNextFlowSteps,
     imageFlowInput,
     isAvailableImageFlowToolSlug,
     type AvailableImageFlowToolSlug,
@@ -407,10 +406,7 @@
     };
 
     const availableStepSlugs = (): readonly FlowToolSlug[] => {
-      const last = steps.at(-1);
-      const candidates = last ? getNextFlowTools(last.toolSlug) : getFlowToolsForInput(imageFlowInput);
-
-      return candidates
+      return getNextFlowSteps(imageFlowInput, stepSlugs())
         .map((candidate) => candidate.toolSlug)
         .filter(isAvailableImageFlowToolSlug);
     };

@@ -1,0 +1,469 @@
+---
+---
+
+<section class="merge-pdf-tool" data-merge-pdf-tool>
+  <div class="merge-pdf-tool__picker" data-drop-zone>
+    <input
+      id="merge-pdf-files"
+      class="merge-pdf-tool__file-input"
+      type="file"
+      multiple
+      accept="application/pdf,.pdf"
+      aria-label="Select PDFs to merge"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">Two or more PDFs, one document out</p>
+    <h2>Drop your PDFs here</h2>
+    <p>They are read and joined by this browser. Nothing is uploaded.</p>
+    <button type="button" class="button-secondary" data-select-files>Choose PDFs</button>
+  </div>
+
+  <p class="merge-pdf-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="merge-pdf-tool__error" data-error role="alert" hidden></p>
+
+  <div class="merge-pdf-tool__editor" data-editor hidden>
+    <div class="merge-pdf-tool__documents">
+      <div class="merge-pdf-tool__documents-heading">
+        <p class="metadata">Merge order</p>
+        <p data-document-summary></p>
+      </div>
+      <ol class="merge-pdf-tool__document-list" aria-label="PDFs in the merge" data-document-list></ol>
+    </div>
+
+    <!--
+      One document row, cloned by the script for each chosen PDF. Keeping the
+      markup here rather than building it in JavaScript means the rows carry
+      Astro's style scope and no filename is ever handled as markup.
+    -->
+    <template data-document-template>
+      <li class="merge-pdf-tool__document">
+        <span class="merge-pdf-tool__document-number" data-document-number></span>
+        <span class="merge-pdf-tool__document-details">
+          <strong data-document-name></strong>
+          <span data-document-meta></span>
+        </span>
+        <span class="merge-pdf-tool__document-actions">
+          <button type="button" class="merge-pdf-tool__icon-button" data-document-action="up">↑</button>
+          <button type="button" class="merge-pdf-tool__icon-button" data-document-action="down">↓</button>
+          <button type="button" class="merge-pdf-tool__remove" data-document-action="remove">Remove</button>
+        </span>
+      </li>
+    </template>
+
+    <p class="merge-pdf-tool__note" data-readiness role="status" hidden></p>
+
+    <div class="merge-pdf-tool__actions">
+      <button type="button" data-merge>Merge the PDFs</button>
+      <button type="button" class="button-secondary" data-clear>Start over</button>
+    </div>
+  </div>
+
+  <section class="merge-pdf-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2>Your merged PDF is ready.</h2>
+    <p class="merge-pdf-tool__result-details" data-result-details></p>
+
+    <div class="merge-pdf-tool__preview" data-preview hidden>
+      <p class="metadata">Preview</p>
+      <div class="merge-pdf-tool__preview-page" data-page-area>
+        <canvas data-page-canvas aria-label="Current PDF page"></canvas>
+        <p class="merge-pdf-tool__preview-page-error" data-page-error role="alert" hidden></p>
+      </div>
+      <div class="merge-pdf-tool__pager">
+        <button type="button" class="merge-pdf-tool__icon-button" data-previous aria-label="Previous page">←</button>
+        <label class="merge-pdf-tool__page-field" for="merge-pdf-preview-page">
+          <span>Page</span>
+          <input id="merge-pdf-preview-page" type="text" inputmode="numeric" autocomplete="off" data-page-input aria-label="Go to page" />
+          <span data-page-total></span>
+        </label>
+        <button type="button" class="merge-pdf-tool__icon-button" data-next aria-label="Next page">→</button>
+      </div>
+    </div>
+
+    <p class="merge-pdf-tool__preview-error" data-preview-error role="status" hidden></p>
+
+    <div class="merge-pdf-tool__result-actions">
+      <a class="merge-pdf-tool__download" data-download>Download PDF</a>
+      <button type="button" class="button-secondary" data-result-clear>Start over</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .merge-pdf-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .merge-pdf-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .merge-pdf-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .merge-pdf-tool__editor[hidden], .merge-pdf-tool__result[hidden], .merge-pdf-tool__note[hidden], .merge-pdf-tool__preview[hidden], .merge-pdf-tool__preview-error[hidden], .merge-pdf-tool__preview-page-error[hidden] { display: none; }
+  .merge-pdf-tool__picker h2 { margin-bottom: var(--space-2); }
+  .merge-pdf-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .merge-pdf-tool__status, .merge-pdf-tool__error, .merge-pdf-tool__note { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .merge-pdf-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .merge-pdf-tool__note { margin: 0; border-left-color: var(--color-warning); color: var(--color-warning); }
+  .merge-pdf-tool__editor, .merge-pdf-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .merge-pdf-tool__editor { display: grid; gap: var(--space-4); }
+  .merge-pdf-tool__documents-heading { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); }
+  .merge-pdf-tool__documents-heading p:not(.metadata) { margin: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .merge-pdf-tool__document-list { margin: var(--space-2) 0 0; padding: 0; list-style: none; }
+  .merge-pdf-tool__document { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-top: var(--border-width) solid var(--border); }
+  .merge-pdf-tool__document:last-child { border-bottom: var(--border-width) solid var(--border); }
+  .merge-pdf-tool__document-number { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-sm); }
+  .merge-pdf-tool__document-details { display: grid; gap: var(--space-1); min-width: 0; }
+  .merge-pdf-tool__document-details strong { overflow-wrap: anywhere; }
+  .merge-pdf-tool__document-details span { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .merge-pdf-tool__document-actions { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+  .merge-pdf-tool__icon-button { min-width: 2.75rem; min-height: 2.75rem; padding: 0; border: var(--border-width) solid var(--border); background: transparent; color: var(--text); font-weight: 700; }
+  .merge-pdf-tool__icon-button:disabled { color: var(--text-muted); opacity: 0.5; }
+  .merge-pdf-tool__remove { min-height: 2.75rem; padding: 0 var(--space-2); border: var(--border-width) solid var(--border); background: transparent; color: var(--text); }
+  .merge-pdf-tool__actions, .merge-pdf-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .merge-pdf-tool__result h2 { margin-bottom: var(--space-2); }
+  .merge-pdf-tool__result-details { margin-bottom: var(--space-4); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .merge-pdf-tool__preview { display: grid; gap: var(--space-2); margin-bottom: var(--space-4); }
+  .merge-pdf-tool__preview .metadata { margin: 0; }
+  .merge-pdf-tool__preview-page { display: grid; justify-items: center; gap: var(--space-2); min-width: 0; padding: var(--space-3); border: var(--border-width) solid var(--border); background: var(--background); overflow: auto; }
+  .merge-pdf-tool__preview-page canvas { display: block; max-width: 100%; max-height: 32rem; height: auto; background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 18%); }
+  .merge-pdf-tool__preview-page-error { margin: 0; color: var(--color-red); font-size: var(--font-size-sm); }
+  .merge-pdf-tool__preview-error { margin-bottom: var(--space-4); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--color-warning); color: var(--color-warning); }
+  .merge-pdf-tool__pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-2); }
+  .merge-pdf-tool__page-field { display: flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
+  .merge-pdf-tool__page-field input { width: 4rem; min-height: 2.75rem; text-align: center; font-family: var(--font-mono); }
+  .merge-pdf-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .merge-pdf-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+  @media (max-width: 36rem) {
+    .merge-pdf-tool__picker, .merge-pdf-tool__editor, .merge-pdf-tool__result { padding: var(--space-3); }
+    .merge-pdf-tool__document { grid-template-columns: 2rem minmax(0, 1fr); }
+    .merge-pdf-tool__document-actions { grid-column: 1 / -1; }
+  }
+</style>
+
+<script>
+  import { formatFileSize } from '../data/image-compression';
+  import { describePdfPageCount, reorderPdfImages } from '../data/jpg-to-pdf';
+  import {
+    canMergeDocuments,
+    describeMergeDocumentCount,
+    describeMergedDocument,
+    getMergedPageTotal,
+    getMergeReadinessMessage,
+    getMergedPdfFilename,
+    isLargeMergeWorkload,
+    maximumMergeDocuments,
+    validateMergedPageCount,
+    validateMergeSelection,
+  } from '../data/merge-pdf';
+  import { getPdfPreviewErrorMessage } from '../data/pdf-viewer';
+  import { mergeLocalPdfs, openLocalPdfForMerge, type LocalMergeSource } from '../scripts/pdf-generation';
+  import { createPdfPageView } from '../scripts/pdf-page-view';
+
+  /** One chosen document, with an id the list rows are keyed by. */
+  interface MergeEntry {
+    readonly id: number;
+    readonly source: LocalMergeSource;
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-merge-pdf-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFilesButton = root.querySelector<HTMLButtonElement>('[data-select-files]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const editor = root.querySelector<HTMLElement>('[data-editor]');
+    const documentList = root.querySelector<HTMLOListElement>('[data-document-list]');
+    const documentTemplate = root.querySelector<HTMLTemplateElement>('[data-document-template]');
+    const documentSummary = root.querySelector<HTMLElement>('[data-document-summary]');
+    const readiness = root.querySelector<HTMLElement>('[data-readiness]');
+    const mergeButton = root.querySelector<HTMLButtonElement>('[data-merge]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultDetails = root.querySelector<HTMLElement>('[data-result-details]');
+    const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+    const preview = root.querySelector<HTMLElement>('[data-preview]');
+    const previewError = root.querySelector<HTMLElement>('[data-preview-error]');
+    const pageArea = root.querySelector<HTMLElement>('[data-page-area]');
+    const pageCanvas = root.querySelector<HTMLCanvasElement>('[data-page-canvas]');
+    const pageError = root.querySelector<HTMLElement>('[data-page-error]');
+    const previousButton = root.querySelector<HTMLButtonElement>('[data-previous]');
+    const nextButton = root.querySelector<HTMLButtonElement>('[data-next]');
+    const pageInput = root.querySelector<HTMLInputElement>('[data-page-input]');
+    const pageTotal = root.querySelector<HTMLElement>('[data-page-total]');
+
+    if (!fileInput || !selectFilesButton || !dropZone || !status || !error || !editor || !documentList || !documentTemplate || !documentSummary || !readiness || !mergeButton || !clearButton || !result || !resultDetails || !download || !resultClearButton || !preview || !previewError || !pageArea || !pageCanvas || !pageError || !previousButton || !nextButton || !pageInput || !pageTotal) {
+      throw new Error('Merge PDF tool could not initialise.');
+    }
+
+    let entries: readonly MergeEntry[] = [];
+    let nextEntryId = 1;
+    let resultUrl: string | undefined;
+    let isMerging = false;
+    // A preview arrives after the document it belongs to, so a later merge must
+    // be able to discard an earlier one's rather than show the wrong document.
+    let previewToken = 0;
+
+    /**
+     * The preview's page turning, shared with the PDF Viewer Gizlet. A merged
+     * document is the pages it was given, so the preview is the proof that the
+     * order came out as the list promised.
+     */
+    const pageView = createPdfPageView({
+      pageArea,
+      canvas: pageCanvas,
+      pageError,
+      previousButton,
+      nextButton,
+      pageInput,
+      pageTotal,
+    });
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+
+    const sources = (): readonly LocalMergeSource[] => entries.map((entry) => entry.source);
+
+    const resetResult = () => {
+      previewToken += 1;
+      pageView.reset();
+      preview.hidden = true;
+      previewError.hidden = true;
+      previewError.textContent = '';
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      resultUrl = undefined;
+      result.hidden = true;
+      resultDetails.textContent = '';
+      download.removeAttribute('href');
+      download.removeAttribute('download');
+    };
+
+    const resetTool = () => {
+      entries = [];
+      fileInput.value = '';
+      resetResult();
+      clearError();
+      clearStatus();
+      render();
+    };
+
+    /** One row of the document list, cloned from the template in the markup. */
+    const renderEntry = (entry: MergeEntry, index: number): HTMLLIElement => {
+      const item = documentTemplate.content.firstElementChild?.cloneNode(true);
+
+      if (!(item instanceof HTMLLIElement)) throw new Error('The document row template is missing.');
+
+      const number = item.querySelector<HTMLElement>('[data-document-number]');
+      const name = item.querySelector<HTMLElement>('[data-document-name]');
+      const meta = item.querySelector<HTMLElement>('[data-document-meta]');
+
+      if (!number || !name || !meta) throw new Error('The document row template is incomplete.');
+
+      number.textContent = String(index + 1).padStart(2, '0');
+      name.textContent = entry.source.file.name;
+      meta.textContent = `${describePdfPageCount(entry.source.pageCount)} · ${formatFileSize(entry.source.file.size)}`;
+
+      for (const button of item.querySelectorAll<HTMLButtonElement>('[data-document-action]')) {
+        const action = button.dataset.documentAction;
+
+        button.dataset.entryId = String(entry.id);
+        button.setAttribute(
+          'aria-label',
+          action === 'remove'
+            ? `Remove ${entry.source.file.name}`
+            : `Move ${entry.source.file.name} ${action === 'up' ? 'up' : 'down'}`,
+        );
+        button.disabled =
+          isMerging ||
+          (action === 'up' && index === 0) ||
+          (action === 'down' && index === entries.length - 1);
+      }
+
+      return item;
+    };
+
+    const render = () => {
+      const readinessMessage = getMergeReadinessMessage(entries.length);
+
+      documentList.replaceChildren(...entries.map(renderEntry));
+      documentSummary.textContent = entries.length === 0
+        ? ''
+        : `${describeMergeDocumentCount(entries.length)} · ${describePdfPageCount(getMergedPageTotal(sources()))} · up to ${maximumMergeDocuments}`;
+      editor.hidden = entries.length === 0;
+      readiness.textContent = readinessMessage ?? '';
+      readiness.hidden = readinessMessage === undefined;
+      mergeButton.disabled = !canMergeDocuments(entries.length) || isMerging;
+      clearButton.disabled = isMerging;
+    };
+
+    const addFiles = async (selected: readonly File[]) => {
+      fileInput.value = '';
+      if (selected.length === 0) return;
+
+      clearError();
+      resetResult();
+
+      const problem = validateMergeSelection([...sources().map((source) => source.file), ...selected]);
+      if (problem) {
+        showError(problem);
+        return;
+      }
+
+      showStatus(selected.length === 1 ? 'Reading the PDF locally…' : 'Reading PDFs locally…');
+      await nextPaint();
+
+      try {
+        const added: MergeEntry[] = [];
+
+        for (const file of selected) {
+          added.push({ id: nextEntryId++, source: await openLocalPdfForMerge(file) });
+        }
+
+        const combined = [...entries, ...added];
+        // The page total is only knowable once every document has been opened,
+        // so the guard is applied to the selection as a whole rather than to
+        // the file that happened to cross the line.
+        const pageProblem = validateMergedPageCount(
+          getMergedPageTotal(combined.map((entry) => entry.source)),
+        );
+
+        if (pageProblem) throw new Error(pageProblem);
+
+        entries = combined;
+        clearStatus();
+      } catch (caughtError) {
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : 'These PDFs could not be read.');
+      }
+
+      render();
+    };
+
+    /**
+     * Draws the document that was just merged, so it is seen before it is taken.
+     *
+     * pdf.js is reached only from here, and only by dynamic import: the library
+     * and its worker are over a megabyte between them, and this page has no use
+     * for either until a merged PDF exists. A static import would put both in
+     * the page's initial JavaScript, where every visitor would pay for them.
+     */
+    const showPreview = async (pdf: Blob) => {
+      const token = ++previewToken;
+
+      showStatus('Drawing the preview locally…');
+      await nextPaint();
+
+      try {
+        const { openLocalPdf } = await import('../scripts/pdf-rendering');
+        const opened = await openLocalPdf(pdf);
+
+        if (token !== previewToken) {
+          await opened.close().catch(() => undefined);
+          return;
+        }
+
+        preview.hidden = false;
+        await pageView.show(opened);
+      } catch {
+        if (token !== previewToken) return;
+        // A document can be perfectly good even when drawing it is not, so the
+        // preview goes and the finished file stays where the visitor left it.
+        preview.hidden = true;
+        previewError.textContent = getPdfPreviewErrorMessage();
+        previewError.hidden = false;
+      } finally {
+        if (token === previewToken) clearStatus();
+      }
+    };
+
+    const mergePdfs = async () => {
+      if (!canMergeDocuments(entries.length) || isMerging) return;
+
+      isMerging = true;
+      clearError();
+      resetResult();
+      mergeButton.textContent = 'Merging…';
+      render();
+
+      const merging = sources();
+      const isLarge = isLargeMergeWorkload(merging);
+      // Set only once the result panel is showing, so a merge that failed
+      // halfway cannot leave a preview standing next to an error.
+      let merged: Blob | undefined;
+
+      try {
+        const pdf = await mergeLocalPdfs(merging, {
+          onDocument: async (documentNumber, documentCount) => {
+            showStatus(
+              isLarge
+                ? `Large document: copying the pages of PDF ${documentNumber} of ${documentCount} locally…`
+                : `Copying the pages of PDF ${documentNumber} of ${documentCount} locally…`,
+            );
+            await nextPaint();
+          },
+        });
+
+        resultUrl = URL.createObjectURL(pdf);
+        resultDetails.textContent = `${describeMergedDocument(merging)} · ${formatFileSize(pdf.size)}`;
+        download.href = resultUrl;
+        download.download = getMergedPdfFilename(merging[0].file.name);
+        result.hidden = false;
+        merged = pdf;
+        clearStatus();
+      } catch (caughtError) {
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : 'These PDFs could not be merged.');
+      } finally {
+        isMerging = false;
+        mergeButton.textContent = 'Merge the PDFs';
+        render();
+      }
+
+      // Outside the merge: the file is finished and downloadable whether or not
+      // it can be drawn, so the workspace is usable again before this starts.
+      if (merged) await showPreview(merged);
+    };
+
+    const moveEntry = (id: number, offset: number) => {
+      const index = entries.findIndex((entry) => entry.id === id);
+      if (index === -1) return;
+      entries = reorderPdfImages(entries, index, index + offset);
+    };
+
+    const removeEntry = (id: number) => {
+      entries = entries.filter((entry) => entry.id !== id);
+    };
+
+    selectFilesButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void addFiles([...(fileInput.files ?? [])]));
+    clearButton.addEventListener('click', resetTool);
+    resultClearButton.addEventListener('click', resetTool);
+    mergeButton.addEventListener('click', () => void mergePdfs());
+
+    documentList.addEventListener('click', (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-document-action]');
+      if (!button || isMerging) return;
+
+      const id = Number(button.dataset.entryId);
+
+      if (button.dataset.documentAction === 'up') moveEntry(id, -1);
+      if (button.dataset.documentAction === 'down') moveEntry(id, 1);
+      if (button.dataset.documentAction === 'remove') removeEntry(id);
+
+      resetResult();
+      clearError();
+      render();
+    });
+
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    }
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    }
+    dropZone.addEventListener('drop', (event) => void addFiles([...(event.dataTransfer?.files ?? [])]));
+
+    render();
+  }
+</script>

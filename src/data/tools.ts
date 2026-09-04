@@ -193,6 +193,29 @@ export const toolRegistry = [
       output: "The document rendered page by page on screen, with page thumbnails and zoom. Nothing is written to a file.",
     },
   },
+  {
+    id: 8,
+    name: "Merge PDF",
+    slug: "merge-pdf",
+    path: "/tools/merge-pdf/",
+    category: "pdf",
+    description: "Join several PDFs into one, in the order you choose.",
+    keywords: [
+      "merge pdf",
+      "combine pdf",
+      "join pdf",
+      "merge pdf files",
+      "combine pdfs into one",
+      "append pdf",
+      "pdf merger",
+    ],
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "Two or more PDF files, in the order you set. A password-protected PDF is refused rather than merged.",
+      output: "A single PDF holding every page of every document, in that order, ready to download.",
+    },
+  },
 ] as const satisfies readonly ToolRegistryEntry[];
 
 /**
