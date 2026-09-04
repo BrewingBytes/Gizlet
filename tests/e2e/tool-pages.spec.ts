@@ -14,6 +14,7 @@ const workspaceSignatures = {
   "compress-image": "Select an image to compress",
   "resize-image": "Select an image to resize",
   "convert-image": "Select an image to convert",
+  "crop-image": "Select an image to crop",
   "json-ld-generator": "Schema type",
   "json-formatter": "JSON input",
   "jpg-to-pdf": "Select images to put in a PDF",

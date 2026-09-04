@@ -35,6 +35,7 @@ const bespokeSocialImageSlugs: readonly string[] = [
   'compress-image',
   'resize-image',
   'convert-image',
+  'crop-image',
   'json-ld-generator',
   'json-formatter',
   'jpg-to-pdf',

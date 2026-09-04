@@ -273,6 +273,16 @@ const [firstCategory] = categories;
     type ImageOutputFormat,
   } from '../data/image-compression';
   import { getConversionOutputFilename } from '../data/image-conversion';
+  import {
+    defaultFlowCropAspectRatio,
+    flowCropAspectRatioNames,
+    getCenteredCrop,
+    getCropAspectRatio,
+    getCropAspectRatioOptions,
+    getCropOutputFilename,
+    isFlowCropAspectRatioName,
+    type FlowCropAspectRatioName,
+  } from '../data/image-crop';
   import { getPdfPreviewErrorMessage, isSupportedPdfFile } from '../data/pdf-viewer';
   import { decodeRecipe, encodeRecipe, type Recipe } from '../data/recipes';
   import { getResizeOutputFilename, validateResizeDimensions } from '../data/image-resize';
@@ -320,7 +330,7 @@ const [firstCategory] = categories;
   } from '../data/split-pdf';
   import { toolRegistry } from '../data/tools';
   import { createZipArchive, zipMimeType } from '../data/zip-archive';
-  import { encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
+  import { cropBrowserImage, encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
   import { createImagePdf, openLocalPdfForSplit, splitLocalPdf } from '../scripts/pdf-generation';
   import { createPdfPageView } from '../scripts/pdf-page-view';
 
@@ -346,6 +356,7 @@ const [firstCategory] = categories;
     width?: number;
     height?: number;
     quality?: number;
+    ratio?: FlowCropAspectRatioName;
     pageSize?: PdfPageSizeName;
     orientation?: PdfOrientation;
     resolution?: PdfImageResolution;
@@ -537,6 +548,7 @@ const [firstCategory] = categories;
       toolSlug,
       ...(toolSlug === 'resize-image' ? { width: 500, height: 500 } : {}),
       ...(toolSlug === 'compress-image' ? { quality: 80 } : {}),
+      ...(toolSlug === 'crop-image' ? { ratio: defaultFlowCropAspectRatio } : {}),
       ...(toolSlug === 'jpg-to-pdf' ? { pageSize: defaultPdfPageSize, orientation: defaultPdfOrientation } : {}),
       ...(toolSlug === 'pdf-to-jpg' ? { resolution: defaultPdfImageResolution } : {}),
     });
@@ -572,6 +584,10 @@ const [firstCategory] = categories;
       }
       if (step.toolSlug === 'compress-image') {
         return `<div class="flow-block__settings"><label for="step-quality-${step.id}">Quality</label><div class="flow-block__quality"><input id="step-quality-${step.id}" data-step-setting="quality" data-step-id="${step.id}" aria-label="${name} quality" type="range" min="40" max="100" value="${escapeHtml(step.quality ?? 80)}" ${outputFormat === 'image/png' ? 'disabled' : ''} /><output data-quality-output="${step.id}">${escapeHtml(step.quality ?? 80)}%</output></div></div>${outputFormat === 'image/png' ? '<p class="flow-block__format-note">PNG does not use a quality setting.</p>' : ''}`;
+      }
+      if (step.toolSlug === 'crop-image') {
+        const ratio = step.ratio ?? defaultFlowCropAspectRatio;
+        return `<div class="flow-block__settings"><label for="step-ratio-${step.id}">Crop to</label><select id="step-ratio-${step.id}" data-step-setting="ratio" data-step-id="${step.id}" aria-label="${name} aspect ratio">${optionsMarkup(getCropAspectRatioOptions(flowCropAspectRatioNames), ratio)}</select></div><p class="flow-block__format-note">The largest rectangle of that shape, taken from the middle of the image.</p>`;
       }
       if (step.toolSlug === 'jpg-to-pdf') {
         const pageSize = step.pageSize ?? defaultPdfPageSize;
@@ -921,6 +937,7 @@ const [firstCategory] = categories;
 
       if (setting === 'orientation' && isPdfOrientation(target.value)) step.orientation = target.value;
       if (setting === 'resolution' && isPdfImageResolution(target.value)) step.resolution = target.value;
+      if (setting === 'ratio' && isFlowCropAspectRatioName(target.value)) step.ratio = target.value;
       if (setting === 'width') step.width = Number(target.value);
       if (setting === 'height') step.height = Number(target.value);
       if (setting === 'quality') {
@@ -943,12 +960,24 @@ const [firstCategory] = categories;
         if (validation) throw new Error(`Resize Image: ${validation}`);
       }
 
-      const blob = await encodeBrowserImage(image, dimensions, outputFormat, step.toolSlug === 'compress-image' ? (step.quality ?? 80) / 100 : undefined);
+      // A flow has nobody to drag a rectangle, so a crop block takes the
+      // largest centred one of its chosen shape: what the workspace opens on
+      // when that ratio is picked and nothing else is touched.
+      let source: CanvasImageSource = image;
+      if (step.toolSlug === 'crop-image') {
+        const rectangle = getCenteredCrop(sourceDimensions, getCropAspectRatio(step.ratio ?? defaultFlowCropAspectRatio));
+        source = cropBrowserImage(image, rectangle);
+        dimensions = { width: rectangle.width, height: rectangle.height };
+      }
+
+      const blob = await encodeBrowserImage(source, dimensions, outputFormat, step.toolSlug === 'compress-image' ? (step.quality ?? 80) / 100 : undefined);
       const filename = step.toolSlug === 'convert-image'
         ? getConversionOutputFilename(payload.file.name, outputFormat)
         : step.toolSlug === 'resize-image'
           ? getResizeOutputFilename(payload.file.name, outputFormat)
-          : getOutputFilename(payload.file.name, outputFormat);
+          : step.toolSlug === 'crop-image'
+            ? getCropOutputFilename(payload.file.name, outputFormat)
+            : getOutputFilename(payload.file.name, outputFormat);
 
       return { file: new File([blob], filename, { type: blob.type }), ...dimensions };
     };
@@ -1353,6 +1382,7 @@ const [firstCategory] = categories;
         toolSlug: step.toolSlug,
         ...(step.toolSlug === 'resize-image' ? { width: step.width, height: step.height } : {}),
         ...(step.toolSlug === 'compress-image' ? { quality: step.quality } : {}),
+        ...(step.toolSlug === 'crop-image' ? { ratio: step.ratio } : {}),
         ...(step.toolSlug === 'jpg-to-pdf' ? { pageSize: step.pageSize, orientation: step.orientation } : {}),
         ...(step.toolSlug === 'pdf-to-jpg' ? { resolution: step.resolution } : {}),
       })),
@@ -1373,6 +1403,7 @@ const [firstCategory] = categories;
         ...(step.width !== undefined ? { width: step.width } : {}),
         ...(step.height !== undefined ? { height: step.height } : {}),
         ...(step.quality !== undefined ? { quality: step.quality } : {}),
+        ...(step.ratio !== undefined ? { ratio: step.ratio } : {}),
         ...(step.pageSize !== undefined ? { pageSize: step.pageSize } : {}),
         ...(step.orientation !== undefined ? { orientation: step.orientation } : {}),
         ...(step.resolution !== undefined ? { resolution: step.resolution } : {}),

@@ -47,6 +47,7 @@ test("offers a block only when it accepts what the block before it produces", as
     "Resize Image",
     "Convert Image",
     "Image to PDF",
+    "Crop Image",
   ]);
 
   await addStep(page, "jpg-to-pdf");
@@ -71,6 +72,7 @@ test("offers a block only when it accepts what the block before it produces", as
     "Resize Image",
     "Convert Image",
     "Image to PDF",
+    "Crop Image",
   ]);
 });
 
