@@ -1,1 +1,0 @@
-- `pnpm run changelog:draft -- --write` no longer fails with `Unknown argument: --`. pnpm 10 forwards its own argument separator to the script, which the script then read as a flag it did not recognise, so the documented invocation had never worked. Both changelog scripts now ignore it.
