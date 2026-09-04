@@ -660,6 +660,87 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'pdf-to-jpg': {
+    what: {
+      heading: 'What PDF to Image does',
+      paragraphs: [
+        'PDF to Image draws the pages of a PDF and hands each one back as a picture. The same engine that powers the PDF Viewer renders a page onto a canvas inside this tab, and the same encoder the image Gizlets use writes it out as JPEG, PNG, or WebP.',
+        'Take the whole document or name the pages you want. Each page arrives as its own file with its own download, and a set arrives as one archive as well, so twelve pages need not be twelve clicks.',
+      ],
+    },
+    when: {
+      heading: 'When a page is more useful as a picture',
+      paragraphs: [
+        'Whenever something will only take an image: a marketplace listing that wants photographs, a form that accepts a JPEG and refuses a PDF, a slide that needs one page of a report dropped into it, a chat that would rather show a page than attach a document.',
+        'It is also the way back into the rest of Gizlet. A page that has become an image can be compressed, resized, or converted like any other, and Gizlet Flows can run those one after another without a file ever being written in between.',
+      ],
+    },
+    options: {
+      heading: 'What the page, format, and resolution controls do',
+      paragraphs: [],
+      details: [
+        {
+          term: 'Pages',
+          description:
+            'Numbers and ranges, like 1-3, 5. Leaving the field empty converts the whole document. A page that is not in this PDF is refused rather than skipped quietly, and the preview beside the field is there to find the numbers with.',
+        },
+        {
+          term: 'Image format',
+          description:
+            'JPEG suits scans and pages with photographs on them, and is what most upload forms expect. PNG keeps text and line art exactly, at a larger file size. WebP is usually the smallest of the three and every current browser reads it.',
+        },
+        {
+          term: 'Resolution',
+          description:
+            'A PDF page is measured in points, so 72 dpi is the page at exactly its own size. 144 dpi doubles it, which is the right default for reading text on a screen, and 216 dpi is for printing or cropping into. A page too large to draw at the chosen setting is drawn at the largest size the device can hold instead of failing.',
+        },
+        {
+          term: 'Limits',
+          description:
+            'Up to 100 pages in one pass, and past 20 the Gizlet says it is working through a long document rather than looking stalled. A password-protected PDF is refused with an explanation, because its pages cannot be read without the password.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'The pages are drawn here, not sent away',
+      paragraphs: [
+        'Reading the PDF, drawing each page, encoding the images, and packing the archive all happen in this browser. Gizlet is a static site with no upload endpoint, so there is no server that could receive the document, and nothing survives closing the tab.',
+        'The archive is assembled on this device too, by code that ships with the page, which is the part most conversion sites use as their reason to take the file. Scanned contracts, medical letters, and identity documents are exactly the PDFs that should not be handed to one.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Is the PDF uploaded to convert it?',
+        answer:
+          'No. The document is parsed, drawn, and encoded by this browser, and the images are written straight to your downloads. There is no upload endpoint behind this page.',
+      },
+      {
+        question: 'Can I convert only some of the pages?',
+        answer:
+          'Yes. Put numbers and ranges in the Pages field, like 1-3, 5, and only those pages are converted. Leave it empty and you get the whole document.',
+      },
+      {
+        question: 'Which resolution should I choose?',
+        answer:
+          '144 dpi for anything that will be looked at on a screen, which is why it is the default. 72 dpi when the file size matters more than the detail, and 216 dpi when the image will be printed or cropped into.',
+      },
+      {
+        question: 'How do I download every page at once?',
+        answer:
+          'A set of pages comes with a single archive holding all of them, alongside the individual links. The archive is built in this browser from the same images, so it costs no second conversion.',
+      },
+      {
+        question: 'Will the text still be selectable in the image?',
+        answer:
+          'No, and that is what converting to an image means: a picture of the page has no text layer. Keep the PDF if the words have to stay searchable, and use the images where a picture is what is wanted.',
+      },
+      {
+        question: 'Can it convert a password-protected PDF?',
+        answer:
+          'No. A protected document cannot be decoded without its password, and this Gizlet does not ask for one. Open it in an application that can, save an unlocked copy, and convert that instead.',
+      },
+    ],
+  },
 };
 
 /** The supporting content for a Gizlet page, if it has any yet. */

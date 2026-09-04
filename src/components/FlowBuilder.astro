@@ -96,6 +96,19 @@
         </div>
       </div>
       <p class="flow-builder__preview-error" data-preview-error role="status" hidden></p>
+      <ol class="flow-builder__result-list" aria-label="Final results" data-result-list hidden></ol>
+
+      <!-- One file of a set, cloned per result, so no filename is ever markup. -->
+      <template data-result-template>
+        <li class="flow-result">
+          <img class="flow-result__thumbnail" alt="" data-result-thumbnail />
+          <span class="flow-result__details">
+            <strong data-result-name></strong>
+            <span data-result-meta></span>
+          </span>
+          <a class="flow-result__download" data-result-download>Download</a>
+        </li>
+      </template>
       <div class="flow-builder__result-actions">
         <a data-download>Download image</a>
         <button type="button" class="button-secondary" data-result-clear>Clear result</button>
@@ -104,7 +117,7 @@
 
     <div class="flow-builder__run">
       <div class="flow-builder__run-copy">
-        <p>One download at the end. Intermediate files stay in this browser tab.</p>
+        <p>One download at the end, an archive when a flow makes a set. Intermediate files stay in this browser tab.</p>
         <p class="flow-builder__share">
           <button type="button" class="flow-builder__text-button" data-copy-recipe hidden>Copy recipe link</button>
           <span data-recipe-status role="status" aria-live="polite"></span>
@@ -210,7 +223,15 @@
   .flow-builder__page-field { display: flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
   /* Specific enough to beat the global control width, which these styles share rather than scope. */
   .flow-builder .flow-builder__page-field input[type='text'] { width: 4rem; min-height: 2.75rem; text-align: center; font-family: var(--font-mono); }
-  .flow-builder__preview[hidden], .flow-builder__preview-error[hidden], .flow-builder__preview-page-error[hidden], .flow-builder__result figure[hidden], .flow-builder__final-format[hidden] { display: none; }
+  .flow-builder__preview[hidden], .flow-builder__preview-error[hidden], .flow-builder__preview-page-error[hidden], .flow-builder__result figure[hidden], .flow-builder__final-format[hidden], .flow-builder__result-list[hidden] { display: none; }
+  .flow-builder__result-list { margin: var(--space-3) 0; padding: 0; list-style: none; max-height: 24rem; overflow-y: auto; }
+  .flow-result { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-top: var(--border-width) solid var(--border); }
+  .flow-result:last-child { border-bottom: var(--border-width) solid var(--border); }
+  .flow-result__thumbnail { display: block; width: 3.5rem; height: 3.5rem; border: var(--border-width) solid var(--border); object-fit: contain; background: #fff; }
+  .flow-result__details { display: grid; gap: var(--space-1); min-width: 0; }
+  .flow-result__details strong { overflow-wrap: anywhere; }
+  .flow-result__details span { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .flow-result__download { min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-width) solid var(--border); color: var(--text); line-height: 1.25; text-decoration: none; white-space: nowrap; }
   @media (max-width: 36rem) {
     .flow-source { grid-template-columns: 2rem 3rem minmax(0, 1fr); }
     .flow-source__actions { grid-column: 2 / -1; }
@@ -227,6 +248,7 @@
     getNextFlowSteps,
     imageFlowInput,
     isAvailableImageFlowToolSlug,
+    splitsFlowInput,
     type AvailableImageFlowToolSlug,
   } from '../data/tool-flows';
   import {
@@ -261,7 +283,18 @@
     type PdfOrientation,
     type PdfPageSizeName,
   } from '../data/jpg-to-pdf';
+  import {
+    defaultPdfImageResolution,
+    describePdfImageCount,
+    getPdfImageArchiveName,
+    getPdfImageResolutionOptions,
+    getPdfToImageErrorMessage,
+    isPdfImageResolution,
+    validatePdfToImagePageCount,
+    type PdfImageResolution,
+  } from '../data/pdf-to-jpg';
   import { toolRegistry } from '../data/tools';
+  import { createZipArchive, zipMimeType } from '../data/zip-archive';
   import { encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
   import { createImagePdf } from '../scripts/pdf-generation';
   import { createPdfPageView } from '../scripts/pdf-page-view';
@@ -278,6 +311,7 @@
     quality?: number;
     pageSize?: PdfPageSizeName;
     orientation?: PdfOrientation;
+    resolution?: PdfImageResolution;
   }
 
   /** A chosen starting image, decoded so its page can be measured up front. */
@@ -329,12 +363,14 @@
     const nextButton = root.querySelector<HTMLButtonElement>('[data-next]');
     const pageInput = root.querySelector<HTMLInputElement>('[data-page-input]');
     const pageTotal = root.querySelector<HTMLElement>('[data-page-total]');
+    const resultList = root.querySelector<HTMLOListElement>('[data-result-list]');
+    const resultTemplate = root.querySelector<HTMLTemplateElement>('[data-result-template]');
     const download = root.querySelector<HTMLAnchorElement>('[data-download]');
     const resultClear = root.querySelector<HTMLButtonElement>('[data-result-clear]');
     const copyRecipe = root.querySelector<HTMLButtonElement>('[data-copy-recipe]');
     const recipeStatus = root.querySelector<HTMLElement>('[data-recipe-status]');
 
-    if (!sourceInput || !sourceSelect || !sourceClear || !sourceTitle || !sourceDetails || !sourceList || !sourceTemplate || !error || !status || !stepList || !addSelect || !addStepButton || !finalFormat || !finalFormatLabel || !finalFormatText || !runButton || !result || !resultTitle || !resultDetails || !resultFigure || !resultImage || !preview || !previewError || !pageArea || !pageCanvas || !pageError || !previousButton || !nextButton || !pageInput || !pageTotal || !download || !resultClear || !copyRecipe || !recipeStatus) {
+    if (!sourceInput || !sourceSelect || !sourceClear || !sourceTitle || !sourceDetails || !sourceList || !sourceTemplate || !error || !status || !stepList || !addSelect || !addStepButton || !finalFormat || !finalFormatLabel || !finalFormatText || !runButton || !result || !resultTitle || !resultDetails || !resultFigure || !resultImage || !resultList || !resultTemplate || !preview || !previewError || !pageArea || !pageCanvas || !pageError || !previousButton || !nextButton || !pageInput || !pageTotal || !download || !resultClear || !copyRecipe || !recipeStatus) {
       throw new Error('Flow builder could not initialise.');
     }
 
@@ -343,6 +379,8 @@
     let nextSourceId = 1;
     let nextStepId = 1;
     let resultUrl: string | undefined;
+    /** The object URLs a set of results holds, so none outlives the panel. */
+    let resultItemUrls: string[] = [];
     let isRunning = false;
     let outputFormat: ImageOutputFormat = 'image/webp';
     // A recipe's chosen format outlives the source file, which would otherwise
@@ -382,10 +420,17 @@
     const stepSlugs = (): readonly FlowToolSlug[] => steps.map((step) => step.toolSlug);
     /** A chain with a combining step makes one file out of several images. */
     const combines = () => combinesFlowInputs(stepSlugs());
+    /** A chain that ends by taking a document apart finishes with a set. */
+    const splits = () => splitsFlowInput(stepSlugs());
     /** Only a chain that re-encodes an image has an image format to choose. */
     const producesImage = () => steps.some((step) => getFlowTool(step.toolSlug).output.kind === 'image-file');
 
-    const revokeResult = () => { if (resultUrl) URL.revokeObjectURL(resultUrl); resultUrl = undefined; };
+    const revokeResult = () => {
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      resultUrl = undefined;
+      for (const url of resultItemUrls) URL.revokeObjectURL(url);
+      resultItemUrls = [];
+    };
     const resetResult = () => {
       revokeResult();
       // Discards a preview still being drawn, so clearing the panel cannot be
@@ -398,6 +443,8 @@
       result.hidden = true;
       resultImage.removeAttribute('src');
       resultFigure.hidden = false;
+      resultList.hidden = true;
+      resultList.replaceChildren();
       resultTitle.textContent = 'Your image is ready.';
       download.textContent = 'Download image';
       download.removeAttribute('href');
@@ -416,6 +463,7 @@
       ...(toolSlug === 'resize-image' ? { width: 500, height: 500 } : {}),
       ...(toolSlug === 'compress-image' ? { quality: 80 } : {}),
       ...(toolSlug === 'jpg-to-pdf' ? { pageSize: defaultPdfPageSize, orientation: defaultPdfOrientation } : {}),
+      ...(toolSlug === 'pdf-to-jpg' ? { resolution: defaultPdfImageResolution } : {}),
     });
     const canReorder = (fromIndex: number, toIndex: number): boolean => {
       return canReorderFlowStep(imageFlowInput, stepSlugs(), fromIndex, toIndex);
@@ -455,6 +503,10 @@
         const orientation = step.orientation ?? defaultPdfOrientation;
         const fixed = usesFixedPageSize(pageSize);
         return `<div class="flow-block__settings flow-block__settings--pdf"><label for="step-page-size-${step.id}"><span>Page size</span><select id="step-page-size-${step.id}" data-step-setting="pageSize" data-step-id="${step.id}" aria-label="${name} page size">${optionsMarkup(getPdfPageSizeOptions(), pageSize)}</select></label><label for="step-orientation-${step.id}"><span>Orientation</span><select id="step-orientation-${step.id}" data-step-setting="orientation" data-step-id="${step.id}" aria-label="${name} orientation" ${fixed ? '' : 'disabled'}>${optionsMarkup(getPdfOrientationOptions(), orientation)}</select></label></div>${fixed ? '' : '<p class="flow-block__format-note">A fitted page already has the image’s own orientation.</p>'}`;
+      }
+      if (step.toolSlug === 'pdf-to-jpg') {
+        const resolution = step.resolution ?? defaultPdfImageResolution;
+        return `<div class="flow-block__settings"><label for="step-resolution-${step.id}">Resolution</label><select id="step-resolution-${step.id}" data-step-setting="resolution" data-step-id="${step.id}" aria-label="${name} resolution">${optionsMarkup(getPdfImageResolutionOptions(), resolution)}</select></div><p class="flow-block__format-note">Every page of the document becomes an image, in the format chosen below.</p>`;
       }
       return '';
     };
@@ -520,18 +572,47 @@
 
       return item;
     };
+    /** One file of a set, cloned from the template so a filename is never markup. */
+    const renderResultItem = (payload: FlowPayload): HTMLLIElement => {
+      const item = resultTemplate.content.firstElementChild?.cloneNode(true);
+      if (!(item instanceof HTMLLIElement)) throw new Error('The result template is missing.');
+
+      const thumbnail = item.querySelector<HTMLImageElement>('[data-result-thumbnail]');
+      const name = item.querySelector<HTMLElement>('[data-result-name]');
+      const meta = item.querySelector<HTMLElement>('[data-result-meta]');
+      const link = item.querySelector<HTMLAnchorElement>('[data-result-download]');
+
+      if (!thumbnail || !name || !meta || !link) throw new Error('The result template is incomplete.');
+
+      const url = URL.createObjectURL(payload.file);
+      resultItemUrls.push(url);
+
+      thumbnail.src = url;
+      name.textContent = payload.file.name;
+      meta.textContent = `${payload.width} × ${payload.height} px · ${formatFileSize(payload.file.size)}`;
+      link.href = url;
+      link.download = payload.file.name;
+      link.setAttribute('aria-label', `Download ${payload.file.name}`);
+
+      return item;
+    };
     const renderSteps = () => {
       stepList.innerHTML = steps.map((step, index) => {
         const tool = toolBySlug(step.toolSlug);
         const prior = index > 0
           ? `${toolBySlug(steps[index - 1].toolSlug).name} result`
           : (combines() ? 'Your images' : 'Your image');
-        const produces = getFlowTool(step.toolSlug).combinesInputs === true ? 'one PDF' : 'image result';
+        const contract = getFlowTool(step.toolSlug);
+        const produces = contract.combinesInputs === true
+          ? 'one PDF'
+          : contract.splitsInput === true
+            ? 'one image per page'
+            : 'image result';
         return `<li><div class="flow-builder__connector" aria-hidden="true"><span>↓</span></div><article class="flow-block"><div class="flow-block__grip" aria-hidden="true">⠿</div><div class="flow-block__number">${String(index + 1).padStart(2, '0')}</div><div class="flow-block__content"><div class="flow-block__heading"><div><h2>${tool.name}</h2><p>${prior} → ${produces}</p></div><span class="status-local">Local</span></div>${settingsMarkup(step)}</div><div class="flow-block__actions" aria-label="${tool.name} controls"><button type="button" class="flow-block__icon-button" data-step-action="up" data-step-id="${step.id}" aria-label="Move ${tool.name} up" ${index === 0 || !canReorder(index, index - 1) || isRunning ? 'disabled' : ''}>↑</button><button type="button" class="flow-block__icon-button" data-step-action="down" data-step-id="${step.id}" aria-label="Move ${tool.name} down" ${index === steps.length - 1 || !canReorder(index, index + 1) || isRunning ? 'disabled' : ''}>↓</button><button type="button" class="flow-block__remove" data-step-action="remove" data-step-id="${step.id}" ${isRunning ? 'disabled' : ''}>Remove</button></div></article></li>`;
       }).join('');
       renderAddOptions();
 
-      const formatLabel = combines() ? 'Page image format' : 'Final output format';
+      const formatLabel = combines() && !splits() ? 'Page image format' : 'Final output format';
       finalFormatLabel.hidden = !producesImage();
       finalFormatText.textContent = formatLabel;
       finalFormat.setAttribute('aria-label', formatLabel);
@@ -646,6 +727,7 @@
       }
 
       if (setting === 'orientation' && isPdfOrientation(target.value)) step.orientation = target.value;
+      if (setting === 'resolution' && isPdfImageResolution(target.value)) step.resolution = target.value;
       if (setting === 'width') step.width = Number(target.value);
       if (setting === 'height') step.height = Number(target.value);
       if (setting === 'quality') {
@@ -727,6 +809,8 @@
         height: source.height,
       }));
       let pdfResult: { readonly blob: Blob; readonly pages: number; readonly pageSize: PdfPageSizeName; readonly name: string } | undefined;
+      // The document a set of images came out of, which names their archive.
+      let setSourceName: string | undefined;
 
       try {
         for (const [index, step] of steps.entries()) {
@@ -749,6 +833,53 @@
 
             pdfResult = { blob, pages, pageSize, name };
             payloads = [];
+            continue;
+          }
+
+          if (step.toolSlug === 'pdf-to-jpg') {
+            // Only a PDF block can precede this one, so the graph guarantees a
+            // document is waiting; the check is here because a chain that
+            // reached this state some other way must say so rather than throw.
+            if (!pdfResult) throw new Error(`${tool.name} needs a PDF from the block before it.`);
+
+            showStatus(`Running ${position}: ${tool.name}, reading the document locally…`);
+            await nextFrame();
+
+            // pdf.js is loaded only when a flow actually reaches this block, so
+            // the page carries neither the library nor its worker until then.
+            const { openLocalPdf } = await import('../scripts/pdf-rendering');
+            const { renderPdfPagesToImages } = await import('../scripts/pdf-to-image');
+            const opened = await openLocalPdf(pdfResult.blob, {
+              getErrorMessage: getPdfToImageErrorMessage,
+            });
+
+            try {
+              const countProblem = validatePdfToImagePageCount(opened.pageCount);
+              if (countProblem) throw new Error(countProblem);
+
+              const images = await renderPdfPagesToImages(opened, {
+                documentName: pdfResult.name,
+                pageNumbers: Array.from({ length: opened.pageCount }, (_, page) => page + 1),
+                pageCount: opened.pageCount,
+                format: outputFormat,
+                resolution: step.resolution ?? defaultPdfImageResolution,
+                onPage: async (pagePosition, total) => {
+                  showStatus(`Running ${position}: ${tool.name}, page ${pagePosition} of ${total} locally…`);
+                  await nextFrame();
+                },
+              });
+
+              payloads = images.map((image) => ({
+                file: image.file,
+                width: image.width,
+                height: image.height,
+              }));
+            } finally {
+              await opened.close().catch(() => undefined);
+            }
+
+            setSourceName = pdfResult.name;
+            pdfResult = undefined;
             continue;
           }
 
@@ -776,6 +907,32 @@
           // is there to be used whether or not the drawing succeeds.
           await drawPreview(pdfResult.blob);
           showStatus('Done. Your PDF is ready to download.');
+        } else if (payloads.length > 1) {
+          showStatus(`Packing ${describePdfImageCount(payloads.length)} into one archive locally…`);
+          await nextFrame();
+
+          // The archive is written here, from the same files the individual
+          // links point at: one download at the end, and still no server.
+          const entries = await Promise.all(
+            payloads.map(async (payload) => ({
+              name: payload.file.name,
+              data: new Uint8Array(await payload.file.arrayBuffer()),
+            })),
+          );
+          const archive = new Blob([createZipArchive(entries)], { type: zipMimeType });
+          const total = payloads.reduce((bytes, payload) => bytes + payload.file.size, 0);
+
+          resultUrl = URL.createObjectURL(archive);
+          resultTitle.textContent = 'Your images are ready.';
+          resultDetails.textContent = `${describePdfImageCount(payloads.length)} · ${getFormatLabel(outputFormat)} · ${formatFileSize(total)}`;
+          resultFigure.hidden = true;
+          resultList.replaceChildren(...payloads.map(renderResultItem));
+          resultList.hidden = false;
+          download.textContent = `Download all ${payloads.length} pages`;
+          download.href = resultUrl;
+          download.download = getPdfImageArchiveName(setSourceName ?? 'document.pdf');
+          result.hidden = false;
+          showStatus('Done. Your images are ready to download.');
         } else {
           const [output] = payloads;
           resultUrl = URL.createObjectURL(output.file);
@@ -861,6 +1018,7 @@
         ...(step.toolSlug === 'resize-image' ? { width: step.width, height: step.height } : {}),
         ...(step.toolSlug === 'compress-image' ? { quality: step.quality } : {}),
         ...(step.toolSlug === 'jpg-to-pdf' ? { pageSize: step.pageSize, orientation: step.orientation } : {}),
+        ...(step.toolSlug === 'pdf-to-jpg' ? { resolution: step.resolution } : {}),
       })),
     });
     const applyRecipe = (recipe: Recipe) => {
@@ -873,6 +1031,7 @@
         ...(step.quality !== undefined ? { quality: step.quality } : {}),
         ...(step.pageSize !== undefined ? { pageSize: step.pageSize } : {}),
         ...(step.orientation !== undefined ? { orientation: step.orientation } : {}),
+        ...(step.resolution !== undefined ? { resolution: step.resolution } : {}),
       }));
       if (recipe.outputFormat) {
         outputFormat = recipe.outputFormat;

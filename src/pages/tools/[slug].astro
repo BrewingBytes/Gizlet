@@ -6,6 +6,7 @@ import JsonLdGeneratorTool from '../../components/JsonLdGeneratorTool.astro';
 import JpgToPdfTool from '../../components/JpgToPdfTool.astro';
 import JsonFormatterTool from '../../components/JsonFormatterTool.astro';
 import MergePdfTool from '../../components/MergePdfTool.astro';
+import PdfToJpgTool from '../../components/PdfToJpgTool.astro';
 import PdfViewerTool from '../../components/PdfViewerTool.astro';
 import ResizeImageTool from '../../components/ResizeImageTool.astro';
 import { getRelatedTools } from '../../data/tool-page-related';
@@ -46,6 +47,7 @@ const toolWorkspaces = {
   'jpg-to-pdf': JpgToPdfTool,
   'pdf-viewer': PdfViewerTool,
   'merge-pdf': MergePdfTool,
+  'pdf-to-jpg': PdfToJpgTool,
 } as const satisfies Record<AvailableToolSlug, unknown>;
 
 const { tool, relatedTools } = Astro.props;

@@ -34,6 +34,14 @@ export interface ToolFlowDefinition {
    * it, so a chain containing one takes several starting payloads.
    */
   readonly combinesInputs?: boolean;
+  /**
+   * A one-to-many step: it takes one payload apart, so everything after it runs
+   * once per piece and the chain ends with a set rather than a file. Declared
+   * rather than inferred from the payload kinds, for the same reason as its
+   * opposite: a future Gizlet that reads a PDF and writes one image would
+   * otherwise be mistaken for a splitting one.
+   */
+  readonly splitsInput?: boolean;
 }
 
 /** The payload an image flow starts from. Exported so no UI restates it. */
@@ -92,6 +100,12 @@ export const toolFlowRegistry = [
     input: pdfPayload,
     output: pdfPayload,
     combinesInputs: true,
+  },
+  {
+    toolSlug: 'pdf-to-jpg',
+    input: pdfPayload,
+    output: imageOutput,
+    splitsInput: true,
   },
 ] as const satisfies readonly ToolFlowDefinition[];
 
@@ -217,19 +231,45 @@ export function combinesFlowInputs(
 }
 
 /**
+ * The last step that changes how many payloads a chain carries.
+ *
+ * A combining step makes one payload out of many and a splitting step takes one
+ * apart again, so neither the presence of a kind nor a count of them settles
+ * what a chain holds — only the last of them does.
+ */
+function lastPayloadCountStep(
+  toolSlugs: readonly ToolRegistryEntry['slug'][],
+  definitions: Definitions = toolFlowRegistry,
+): ToolFlowDefinition | undefined {
+  return [...toolSlugs]
+    .reverse()
+    .map((toolSlug) => getFlowTool(toolSlug, definitions))
+    .find((tool) => tool.splitsInput === true || tool.combinesInputs === true);
+}
+
+/** Whether a chain ends with a set of files rather than with one. */
+export function splitsFlowInput(
+  toolSlugs: readonly ToolRegistryEntry['slug'][],
+  definitions: Definitions = toolFlowRegistry,
+): boolean {
+  return lastPayloadCountStep(toolSlugs, definitions)?.splitsInput === true;
+}
+
+/**
  * Whether a chain still carries several payloads.
  *
  * A flow starts with as many payloads as the visitor chose, and a combining
  * step makes a single one of them, so everything after a combining step has
- * exactly one payload however many the flow began with. Nothing in the
- * catalogue turns one payload back into several yet; when a Gizlet does, it
- * belongs in this rule rather than in a list of exceptions.
+ * exactly one payload however many the flow began with — until a splitting
+ * step takes that one apart again, which is a rule rather than an exception.
  */
 function carriesSeveralPayloads(
   toolSlugs: readonly ToolRegistryEntry['slug'][],
   definitions: Definitions = toolFlowRegistry,
 ): boolean {
-  return !combinesFlowInputs(toolSlugs, definitions);
+  const last = lastPayloadCountStep(toolSlugs, definitions);
+
+  return last === undefined || last.splitsInput === true;
 }
 
 /** Validates an ordered pipeline against its initial payload and each hand-off. */

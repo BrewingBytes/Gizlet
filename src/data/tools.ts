@@ -216,6 +216,30 @@ export const toolRegistry = [
       output: "A single PDF holding every page of every document, in that order, ready to download.",
     },
   },
+  {
+    id: 9,
+    name: "PDF to Image",
+    slug: "pdf-to-jpg",
+    path: "/tools/pdf-to-jpg/",
+    category: "pdf",
+    description: "Turn the pages of a PDF into images you can use anywhere.",
+    keywords: [
+      "pdf to jpg",
+      "pdf to image",
+      "pdf to png",
+      "pdf to webp",
+      "convert pdf to image",
+      "pdf pages to images",
+      "extract pages from pdf",
+      "pdf page to picture",
+    ],
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "One PDF file; choose which pages to convert, JPEG, PNG, or WebP output, and a resolution of 72, 144, or 216 dpi.",
+      output: "One image per chosen page, downloadable individually or together as a ZIP archive.",
+    },
+  },
 ] as const satisfies readonly ToolRegistryEntry[];
 
 /**
