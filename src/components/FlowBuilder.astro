@@ -79,9 +79,23 @@
       <figure data-result-figure>
         <img data-result-image alt="Final flow result" />
       </figure>
-      <p class="flow-builder__result-document" data-result-document hidden>
-        <span aria-hidden="true">▤</span> One PDF, ready to open anywhere.
-      </p>
+      <div class="flow-builder__preview" data-preview hidden>
+        <p class="metadata">Preview</p>
+        <div class="flow-builder__preview-page" data-page-area>
+          <canvas data-page-canvas aria-label="Current PDF page"></canvas>
+          <p class="flow-builder__preview-page-error" data-page-error role="alert" hidden></p>
+        </div>
+        <div class="flow-builder__pager">
+          <button type="button" class="flow-source__icon-button" data-previous aria-label="Previous page">←</button>
+          <label class="flow-builder__page-field" for="flow-preview-page">
+            <span>Page</span>
+            <input id="flow-preview-page" type="text" inputmode="numeric" autocomplete="off" data-page-input aria-label="Go to page" />
+            <span data-page-total></span>
+          </label>
+          <button type="button" class="flow-source__icon-button" data-next aria-label="Next page">→</button>
+        </div>
+      </div>
+      <p class="flow-builder__preview-error" data-preview-error role="status" hidden></p>
       <div class="flow-builder__result-actions">
         <a data-download>Download image</a>
         <button type="button" class="button-secondary" data-result-clear>Clear result</button>
@@ -186,8 +200,17 @@
   .flow-source__icon-button { min-width: 2.75rem; min-height: 2.75rem; padding: 0; border: var(--border-width) solid var(--border); background: transparent; color: var(--text); font-weight: 700; }
   .flow-source__icon-button:disabled { color: var(--text-muted); opacity: 0.5; }
   .flow-source__remove { min-height: 2.75rem; padding: 0 var(--space-2); border: var(--border-width) solid var(--border); background: transparent; color: var(--text); }
-  .flow-builder__result-document { margin: 0; padding: var(--space-3); border: var(--border-width) solid var(--border); background: var(--background); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-sm); }
-  .flow-builder__result-document[hidden], .flow-builder__result figure[hidden], .flow-builder__final-format[hidden] { display: none; }
+  .flow-builder__preview { display: grid; gap: var(--space-2); margin: var(--space-3) 0; }
+  .flow-builder__preview .metadata { margin: 0; }
+  .flow-builder__preview-page { display: grid; justify-items: center; gap: var(--space-2); min-width: 0; padding: var(--space-3); border: var(--border-width) solid var(--border); background: var(--background); overflow: auto; }
+  .flow-builder__preview-page canvas { display: block; max-width: 100%; max-height: 24rem; height: auto; background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 18%); }
+  .flow-builder__preview-page-error { margin: 0; color: var(--color-red); font-size: var(--font-size-sm); }
+  .flow-builder__preview-error { margin: 0 0 var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--color-warning); color: var(--color-warning); }
+  .flow-builder__pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-2); }
+  .flow-builder__page-field { display: flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
+  /* Specific enough to beat the global control width, which these styles share rather than scope. */
+  .flow-builder .flow-builder__page-field input[type='text'] { width: 4rem; min-height: 2.75rem; text-align: center; font-family: var(--font-mono); }
+  .flow-builder__preview[hidden], .flow-builder__preview-error[hidden], .flow-builder__preview-page-error[hidden], .flow-builder__result figure[hidden], .flow-builder__final-format[hidden] { display: none; }
   @media (max-width: 36rem) {
     .flow-source { grid-template-columns: 2rem 3rem minmax(0, 1fr); }
     .flow-source__actions { grid-column: 2 / -1; }
@@ -217,6 +240,7 @@
     type ImageOutputFormat,
   } from '../data/image-compression';
   import { getConversionOutputFilename } from '../data/image-conversion';
+  import { getPdfPreviewErrorMessage } from '../data/pdf-viewer';
   import { decodeRecipe, encodeRecipe, type Recipe } from '../data/recipes';
   import { getResizeOutputFilename, validateResizeDimensions } from '../data/image-resize';
   import {
@@ -241,6 +265,7 @@
   import { toolRegistry } from '../data/tools';
   import { encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
   import { createImagePdf } from '../scripts/pdf-generation';
+  import { createPdfPageView } from '../scripts/pdf-page-view';
 
   // Chainable, published, and derived: adding a Gizlet with an image or PDF
   // contract joins the builder without a list here being edited.
@@ -295,14 +320,22 @@
     const resultTitle = root.querySelector<HTMLElement>('[data-result-title]');
     const resultDetails = root.querySelector<HTMLElement>('[data-result-details]');
     const resultFigure = root.querySelector<HTMLElement>('[data-result-figure]');
-    const resultDocument = root.querySelector<HTMLElement>('[data-result-document]');
     const resultImage = root.querySelector<HTMLImageElement>('[data-result-image]');
+    const preview = root.querySelector<HTMLElement>('[data-preview]');
+    const previewError = root.querySelector<HTMLElement>('[data-preview-error]');
+    const pageArea = root.querySelector<HTMLElement>('[data-page-area]');
+    const pageCanvas = root.querySelector<HTMLCanvasElement>('[data-page-canvas]');
+    const pageError = root.querySelector<HTMLElement>('[data-page-error]');
+    const previousButton = root.querySelector<HTMLButtonElement>('[data-previous]');
+    const nextButton = root.querySelector<HTMLButtonElement>('[data-next]');
+    const pageInput = root.querySelector<HTMLInputElement>('[data-page-input]');
+    const pageTotal = root.querySelector<HTMLElement>('[data-page-total]');
     const download = root.querySelector<HTMLAnchorElement>('[data-download]');
     const resultClear = root.querySelector<HTMLButtonElement>('[data-result-clear]');
     const copyRecipe = root.querySelector<HTMLButtonElement>('[data-copy-recipe]');
     const recipeStatus = root.querySelector<HTMLElement>('[data-recipe-status]');
 
-    if (!sourceInput || !sourceSelect || !sourceClear || !sourceTitle || !sourceDetails || !sourceList || !sourceTemplate || !error || !status || !stepList || !addSelect || !addStepButton || !finalFormat || !finalFormatLabel || !finalFormatText || !runButton || !result || !resultTitle || !resultDetails || !resultFigure || !resultDocument || !resultImage || !download || !resultClear || !copyRecipe || !recipeStatus) {
+    if (!sourceInput || !sourceSelect || !sourceClear || !sourceTitle || !sourceDetails || !sourceList || !sourceTemplate || !error || !status || !stepList || !addSelect || !addStepButton || !finalFormat || !finalFormatLabel || !finalFormatText || !runButton || !result || !resultTitle || !resultDetails || !resultFigure || !resultImage || !preview || !previewError || !pageArea || !pageCanvas || !pageError || !previousButton || !nextButton || !pageInput || !pageTotal || !download || !resultClear || !copyRecipe || !recipeStatus) {
       throw new Error('Flow builder could not initialise.');
     }
 
@@ -316,6 +349,24 @@
     // A recipe's chosen format outlives the source file, which would otherwise
     // reset it to the format preferred for that input.
     let outputFormatFromRecipe = false;
+    // A preview arrives after the document it belongs to, so a later run must
+    // be able to discard an earlier one's rather than show the wrong document.
+    let previewToken = 0;
+
+    /**
+     * The preview's page turning, shared with the two PDF workspaces. A flow
+     * shows what it produced rather than offering a reading workspace, so the
+     * page is fitted to its column and there is nothing to zoom.
+     */
+    const pageView = createPdfPageView({
+      pageArea,
+      canvas: pageCanvas,
+      pageError,
+      previousButton,
+      nextButton,
+      pageInput,
+      pageTotal,
+    });
 
     const toolBySlug = (toolSlug: FlowToolSlug) => {
       const tool = toolRegistry.find((candidate) => candidate.slug === toolSlug);
@@ -338,10 +389,16 @@
     const revokeResult = () => { if (resultUrl) URL.revokeObjectURL(resultUrl); resultUrl = undefined; };
     const resetResult = () => {
       revokeResult();
+      // Discards a preview still being drawn, so clearing the panel cannot be
+      // followed by a page appearing in it.
+      previewToken += 1;
+      pageView.reset();
+      preview.hidden = true;
+      previewError.hidden = true;
+      previewError.textContent = '';
       result.hidden = true;
       resultImage.removeAttribute('src');
       resultFigure.hidden = false;
-      resultDocument.hidden = true;
       resultTitle.textContent = 'Your image is ready.';
       download.textContent = 'Download image';
       download.removeAttribute('href');
@@ -624,6 +681,42 @@
 
       return { file: new File([blob], filename, { type: blob.type }), ...dimensions };
     };
+    /**
+     * Draws the document the flow produced, so the page order and what
+     * automatic orientation did to each sheet can be read before anything is
+     * downloaded — the same thing the image result panel does with an image.
+     *
+     * pdf.js is imported here rather than at the top of the module: it and its
+     * worker are over a megabyte between them, and a flow that never makes a
+     * PDF has no use for either. A static import would put both in this page's
+     * initial JavaScript, where every visitor would pay for them.
+     */
+    const drawPreview = async (pdf: Blob) => {
+      const token = ++previewToken;
+
+      showStatus('Drawing the preview locally…');
+      await nextFrame();
+
+      try {
+        const { openLocalPdf } = await import('../scripts/pdf-rendering');
+        const opened = await openLocalPdf(pdf);
+
+        if (token !== previewToken) {
+          await opened.close().catch(() => undefined);
+          return;
+        }
+
+        preview.hidden = false;
+        await pageView.show(opened);
+      } catch {
+        if (token !== previewToken) return;
+        // A document can be perfectly good even when drawing it is not, so the
+        // preview goes and the finished file stays where the visitor left it.
+        preview.hidden = true;
+        previewError.textContent = getPdfPreviewErrorMessage();
+        previewError.hidden = false;
+      }
+    };
     const runFlow = async () => {
       if (sources.length === 0 || steps.length === 0 || isRunning) return;
       isRunning = true;
@@ -643,14 +736,6 @@
         for (const [index, step] of steps.entries()) {
           const tool = toolBySlug(step.toolSlug);
           const position = `${index + 1} of ${steps.length}`;
-
-          // An inspection block shows the payload and changes nothing, so the
-          // run reports it and carries the same payload forward.
-          if (getFlowTool(step.toolSlug).passesInputThrough) {
-            showStatus(`Running ${position}: ${tool.name} locally…`);
-            await nextFrame();
-            continue;
-          }
 
           if (step.toolSlug === 'jpg-to-pdf') {
             const pageSize = step.pageSize ?? defaultPdfPageSize;
@@ -687,11 +772,13 @@
           resultTitle.textContent = 'Your PDF is ready.';
           resultDetails.textContent = `${describePdfPageCount(pdfResult.pages)} · ${getPdfPageSizeLabel(pdfResult.pageSize)} · ${formatFileSize(pdfResult.blob.size)}`;
           resultFigure.hidden = true;
-          resultDocument.hidden = false;
           download.textContent = 'Download PDF';
           download.href = resultUrl;
           download.download = pdfResult.name;
           result.hidden = false;
+          // The panel is complete before the preview is drawn, so the download
+          // is there to be used whether or not the drawing succeeds.
+          await drawPreview(pdfResult.blob);
           showStatus('Done. Your PDF is ready to download.');
         } else {
           const [output] = payloads;

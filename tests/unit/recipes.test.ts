@@ -147,6 +147,18 @@ describe('a PDF flow in a recipe', () => {
     expect(decodeRecipe('#r=v1;jpg-to-pdf:o=portrait')).toBeUndefined();
   });
 
+  /**
+   * 0.3.0 offered a PDF Viewer block, so a link written by it can name that
+   * step. The block did nothing and has been removed, and an unreadable recipe
+   * is ignored whole rather than in part — which is this format's documented
+   * behaviour, not a new failure. No alias is kept: the window is one release
+   * long, and reviving the slug would mean reviving a step that never ran.
+   */
+  it('ignores a 0.3.0 link that names the removed PDF Viewer block', () => {
+    expect(decodeRecipe('#r=v1;jpg-to-pdf:p=a4,o=auto;pdf-viewer')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;pdf-viewer')).toBeUndefined();
+  });
+
   it('rejects a chain that continues past the PDF, which nothing can read yet', () => {
     expect(decodeRecipe('#r=v1;jpg-to-pdf;compress-image')).toBeUndefined();
     expect(

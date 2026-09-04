@@ -176,39 +176,3 @@ test("refuses a file that is not a PDF and one it cannot decode", async ({ page 
   await expect(page.locator("[data-page-total]")).toHaveText("of 2");
   await expect(page.getByRole("alert")).toBeHidden();
 });
-
-test("carries a PDF through a flow and hands it on unchanged", async ({ page }) => {
-  await page.goto("/flows/");
-
-  const nextTool = page.getByLabel("Next compatible Gizlet");
-  await nextTool.selectOption("jpg-to-pdf");
-  await page.getByRole("button", { name: "Add step" }).click();
-
-  // The viewer reads a PDF, so the graph now offers it after Image to PDF with
-  // no adjacency list having been edited.
-  await expect(nextTool.locator("option")).toHaveText([
-    "Choose the next Gizlet",
-    "PDF Viewer",
-  ]);
-  await nextTool.selectOption("pdf-viewer");
-  await page.getByRole("button", { name: "Add step" }).click();
-  await expect(page.getByRole("heading", { name: "PDF Viewer" })).toBeVisible();
-
-  const image = Buffer.from(
-    "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAYADADASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAcI/8QAGBABAAMBAAAAAAAAAAAAAAAAABdmpOP/xAAXAQEBAQEAAAAAAAAAAAAAAAAABQYE/8QAKBEAAQEFBQkAAAAAAAAAAAAAAAEEBRESUQIDE6HRBhQVFiExUlNh/9oADAMBAAIRAxEAPwDKguUCWTD0IEsmHoicxu325WtDv4W1eGaakNbjQ6BLJh6Liyu0ryZm7C3e1NLNHoqd4VRKFh1Mt6zz4qQjCn0AMsVwAAAAAAD/2Q==",
-    "base64",
-  );
-  await page.getByLabel("Choose images for this flow").setInputFiles([
-    { name: "a.jpg", mimeType: "image/jpeg", buffer: image },
-    { name: "b.jpg", mimeType: "image/jpeg", buffer: image },
-  ]);
-
-  await page.getByRole("button", { name: "Run flow" }).click();
-  await expect(page.getByRole("link", { name: "Download PDF" })).toBeVisible();
-  // The inspection step changed nothing: still the two-page document.
-  await expect(page.locator("[data-result-details]")).toContainText("2 pages · A4");
-  await expect(page.getByRole("link", { name: "Download PDF" })).toHaveAttribute(
-    "download",
-    "a-and-1-more.pdf",
-  );
-});

@@ -74,8 +74,6 @@ const recipeStepSettings = {
   'compress-image': { q: 'number' },
   'convert-image': {},
   'jpg-to-pdf': { p: pdfPageSizeNames, o: pdfOrientationNames },
-  // An inspection step has nothing to configure, so it carries no settings.
-  'pdf-viewer': {},
 } as const satisfies Record<RecipeToolSlug, Readonly<Record<string, 'number' | readonly string[]>>>;
 
 const recipeToolSlugs = Object.keys(recipeStepSettings) as readonly RecipeToolSlug[];
