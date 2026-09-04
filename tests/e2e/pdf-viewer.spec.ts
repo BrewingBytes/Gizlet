@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 import { pdfZoomLevels } from "../../src/data/pdf-viewer";
+import { paintedPixels } from "./support/pdf-canvas";
 
 /**
  * A real PDF, built with the library the Image to PDF Gizlet already ships, so
@@ -42,20 +43,6 @@ const openPdf = async (page: Page, buffer: Buffer, name = "sample.pdf") => {
     buffer,
   });
 };
-
-/** How much of the canvas is painted, as a fingerprint of the drawn page. */
-const paintedPixels = (page: Page) =>
-  page.locator("[data-page-canvas]").evaluate((canvas) => {
-    const element = canvas as HTMLCanvasElement;
-    const context = element.getContext("2d");
-    if (!context) return 0;
-    const { data } = context.getImageData(0, 0, element.width, element.height);
-    let painted = 0;
-    for (let index = 0; index < data.length; index += 4) {
-      if (data[index] < 250 || data[index + 1] < 250 || data[index + 2] < 250) painted += 1;
-    }
-    return painted;
-  });
 
 test("opens a local PDF and draws its pages on this device", async ({ page }) => {
   const requests: string[] = [];

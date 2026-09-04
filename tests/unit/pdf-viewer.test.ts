@@ -10,6 +10,7 @@ import {
   getPdfFitScale,
   getPdfOpenErrorMessage,
   getPdfPageErrorMessage,
+  getPdfPreviewErrorMessage,
   getPdfRenderScale,
   isLargePdfViewerDocument,
   isPdfZoom,
@@ -217,5 +218,13 @@ describe('failure wording', () => {
 
     expect(message).toContain('Page 4');
     expect(message).toContain('rest of the document');
+  });
+
+  it('keeps a preview failure away from the file it could not draw', () => {
+    const message = getPdfPreviewErrorMessage();
+
+    expect(message).toContain('preview could not be drawn');
+    expect(message).toContain('Your PDF was still made');
+    expect(message).toContain('download');
   });
 });

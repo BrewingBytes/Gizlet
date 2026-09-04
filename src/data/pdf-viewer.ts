@@ -171,3 +171,13 @@ export function getPdfOpenErrorMessage(errorName: string | undefined): string {
 export function getPdfPageErrorMessage(pageNumber: number): string {
   return `Page ${pageNumber} could not be drawn. The rest of the document is still readable.`;
 }
+
+/**
+ * Wording for a document that was made but cannot be drawn back.
+ *
+ * Rendering is the only part that failed, so the file itself is still whole
+ * and the visitor is pointed at it rather than left thinking it was lost.
+ */
+export function getPdfPreviewErrorMessage(): string {
+  return 'The preview could not be drawn on this device. Your PDF was still made, and the download below is the whole document.';
+}

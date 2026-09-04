@@ -106,21 +106,13 @@
 <script>
   import { formatFileSize } from '../data/image-compression';
   import {
-    canZoomPdf,
-    clampPdfPage,
-    defaultPdfZoom,
     describePdfPagePosition,
-    describePdfZoom,
-    getNextPdfZoom,
-    getPdfPageErrorMessage,
-    getPdfRenderScale,
     isLargePdfViewerDocument,
-    parsePdfPageInput,
     pdfThumbnailWidth,
     validatePdfFileSelection,
     validatePdfPageCount,
-    type PdfZoom,
   } from '../data/pdf-viewer';
+  import { createPdfPageView } from '../scripts/pdf-page-view';
   import { openLocalPdf, type LocalPdfDocument } from '../scripts/pdf-rendering';
 
   const root = document.querySelector<HTMLElement>('[data-pdf-viewer-tool]');
@@ -153,11 +145,28 @@
 
     let openDocument: LocalPdfDocument | undefined;
     let pageCount = 0;
-    let currentPage = 1;
-    let zoom: PdfZoom = defaultPdfZoom;
-    // Renders are asynchronous, so a later one must be able to discard an
-    // earlier one's result rather than painting a page the visitor left.
-    let renderToken = 0;
+    // Thumbnails are drawn one at a time and must survive a visitor turning
+    // pages while they arrive, so they are cancelled by the document changing
+    // rather than by the page view's own redraws.
+    let documentToken = 0;
+
+    const pageView = createPdfPageView({
+      pageArea,
+      canvas: pageCanvas,
+      pageError,
+      previousButton,
+      nextButton,
+      pageInput,
+      pageTotal,
+      zoomOutButton,
+      zoomInButton,
+      zoomLevel,
+      onPageChange: (pageNumber) => {
+        for (const button of thumbnails.querySelectorAll<HTMLButtonElement>('[data-thumbnail]')) {
+          button.setAttribute('aria-current', String(Number(button.dataset.page) === pageNumber));
+        }
+      },
+    });
 
     const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     const clearError = () => { error.hidden = true; error.textContent = ''; };
@@ -166,73 +175,16 @@
     const clearStatus = () => { status.hidden = true; status.textContent = ''; };
 
     const resetTool = () => {
-      renderToken += 1;
-      void openDocument?.close().catch(() => undefined);
+      documentToken += 1;
       openDocument = undefined;
       pageCount = 0;
-      currentPage = 1;
-      zoom = defaultPdfZoom;
+      pageView.reset();
       fileInput.value = '';
       thumbnails.replaceChildren();
-      pageCanvas.removeAttribute('width');
-      pageCanvas.removeAttribute('height');
-      pageError.hidden = true;
       reader.hidden = true;
       dropZone.hidden = false;
       clearError();
       clearStatus();
-    };
-
-    const updateControls = () => {
-      pageInput.value = String(currentPage);
-      pageTotal.textContent = `of ${pageCount}`;
-      pageCanvas.setAttribute('aria-label', describePdfPagePosition(currentPage, pageCount));
-      previousButton.disabled = currentPage <= 1;
-      nextButton.disabled = currentPage >= pageCount;
-      zoomLevel.textContent = describePdfZoom(zoom);
-      zoomOutButton.disabled = !canZoomPdf(zoom, 'out');
-      zoomInButton.disabled = !canZoomPdf(zoom, 'in');
-
-      for (const button of thumbnails.querySelectorAll<HTMLButtonElement>('[data-thumbnail]')) {
-        button.setAttribute('aria-current', String(Number(button.dataset.page) === currentPage));
-      }
-    };
-
-    /** The width a page has to fit into, so it opens readable. */
-    const availableWidth = () => {
-      const styles = window.getComputedStyle(pageArea);
-      const padding = Number.parseFloat(styles.paddingLeft) + Number.parseFloat(styles.paddingRight);
-
-      return Math.max(1, pageArea.clientWidth - padding);
-    };
-
-    const renderCurrentPage = async () => {
-      if (!openDocument) return;
-
-      const token = ++renderToken;
-      pageError.hidden = true;
-
-      try {
-        const { width } = await openDocument.getPageSize(currentPage);
-        if (token !== renderToken) return;
-
-        const scale = getPdfRenderScale(width, availableWidth(), zoom);
-        await openDocument.renderPage(currentPage, pageCanvas, scale);
-      } catch {
-        if (token !== renderToken) return;
-        // One unreadable page must say so rather than leave a blank canvas.
-        pageError.textContent = getPdfPageErrorMessage(currentPage);
-        pageError.hidden = false;
-      }
-    };
-
-    const goToPage = (pageNumber: number) => {
-      const target = clampPdfPage(pageNumber, pageCount);
-      if (target === currentPage) return;
-
-      currentPage = target;
-      updateControls();
-      void renderCurrentPage();
     };
 
     /** Thumbnails are drawn after the first page, so reading starts sooner. */
@@ -240,7 +192,7 @@
       if (!openDocument) return;
 
       for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
-        if (token !== renderToken) return;
+        if (token !== documentToken) return;
 
         const item = thumbnailTemplate.content.firstElementChild?.cloneNode(true);
         if (!(item instanceof HTMLButtonElement)) return;
@@ -251,7 +203,7 @@
 
         item.dataset.page = String(pageNumber);
         item.setAttribute('aria-label', describePdfPagePosition(pageNumber, pageCount));
-        item.setAttribute('aria-current', String(pageNumber === currentPage));
+        item.setAttribute('aria-current', String(pageNumber === pageView.currentPage));
         number.textContent = String(pageNumber);
         thumbnails.append(item);
 
@@ -290,10 +242,8 @@
 
         openDocument = opened;
         pageCount = opened.pageCount;
-        currentPage = 1;
         documentName.textContent = `${file.name} · ${formatFileSize(file.size)} · ${pageCount} ${pageCount === 1 ? 'page' : 'pages'}`;
         reader.hidden = false;
-        updateControls();
 
         if (isLargePdfViewerDocument(pageCount)) {
           showStatus(`Large document: drawing ${pageCount} page thumbnails locally…`);
@@ -301,10 +251,10 @@
           clearStatus();
         }
 
-        await renderCurrentPage();
-        const token = renderToken;
+        await pageView.show(opened);
+        const token = documentToken;
         await renderThumbnails(token);
-        if (token === renderToken) clearStatus();
+        if (token === documentToken) clearStatus();
       } catch (caughtError) {
         openDocument = undefined;
         reader.hidden = true;
@@ -317,30 +267,9 @@
     selectFileButton.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', () => void openFile(fileInput.files?.[0]));
     clearButton.addEventListener('click', resetTool);
-    previousButton.addEventListener('click', () => goToPage(currentPage - 1));
-    nextButton.addEventListener('click', () => goToPage(currentPage + 1));
-    pageInput.addEventListener('change', () => {
-      const parsed = parsePdfPageInput(pageInput.value, pageCount);
-      // A page that is not in this document restores the field rather than
-      // jumping somewhere the visitor did not ask for.
-      if (parsed === undefined) {
-        pageInput.value = String(currentPage);
-        return;
-      }
-      goToPage(parsed);
-    });
-    for (const [button, direction] of [[zoomOutButton, 'out'], [zoomInButton, 'in']] as const) {
-      button.addEventListener('click', () => {
-        const next = getNextPdfZoom(zoom, direction);
-        if (next === zoom) return;
-        zoom = next;
-        updateControls();
-        void renderCurrentPage();
-      });
-    }
     thumbnails.addEventListener('click', (event) => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-thumbnail]');
-      if (button?.dataset.page) goToPage(Number(button.dataset.page));
+      if (button?.dataset.page) pageView.goToPage(Number(button.dataset.page));
     });
     for (const eventName of ['dragenter', 'dragover']) {
       dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });

@@ -87,6 +87,26 @@ const pageSizeOptions = getPdfPageSizeOptions();
     <p class="metadata">Ready to download</p>
     <h2>Your PDF is ready.</h2>
     <p class="jpg-to-pdf-tool__result-details" data-result-details></p>
+
+    <div class="jpg-to-pdf-tool__preview" data-preview hidden>
+      <p class="metadata">Preview</p>
+      <div class="jpg-to-pdf-tool__preview-page" data-page-area>
+        <canvas data-page-canvas aria-label="Current PDF page"></canvas>
+        <p class="jpg-to-pdf-tool__preview-page-error" data-page-error role="alert" hidden></p>
+      </div>
+      <div class="jpg-to-pdf-tool__pager">
+        <button type="button" class="jpg-to-pdf-tool__icon-button" data-previous aria-label="Previous page">←</button>
+        <label class="jpg-to-pdf-tool__page-field" for="jpg-to-pdf-preview-page">
+          <span>Page</span>
+          <input id="jpg-to-pdf-preview-page" type="text" inputmode="numeric" autocomplete="off" data-page-input aria-label="Go to page" />
+          <span data-page-total></span>
+        </label>
+        <button type="button" class="jpg-to-pdf-tool__icon-button" data-next aria-label="Next page">→</button>
+      </div>
+    </div>
+
+    <p class="jpg-to-pdf-tool__preview-error" data-preview-error role="status" hidden></p>
+
     <div class="jpg-to-pdf-tool__result-actions">
       <a class="jpg-to-pdf-tool__download" data-download>Download PDF</a>
       <button type="button" class="button-secondary" data-result-clear>Start over</button>
@@ -98,7 +118,7 @@ const pageSizeOptions = getPdfPageSizeOptions();
   .jpg-to-pdf-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
   .jpg-to-pdf-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
   .jpg-to-pdf-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
-  .jpg-to-pdf-tool__editor[hidden], .jpg-to-pdf-tool__result[hidden], .jpg-to-pdf-tool__note[hidden] { display: none; }
+  .jpg-to-pdf-tool__editor[hidden], .jpg-to-pdf-tool__result[hidden], .jpg-to-pdf-tool__note[hidden], .jpg-to-pdf-tool__preview[hidden], .jpg-to-pdf-tool__preview-error[hidden], .jpg-to-pdf-tool__preview-page-error[hidden] { display: none; }
   .jpg-to-pdf-tool__picker h2 { margin-bottom: var(--space-2); }
   .jpg-to-pdf-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
   .jpg-to-pdf-tool__status, .jpg-to-pdf-tool__error, .jpg-to-pdf-tool__note { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
@@ -126,6 +146,15 @@ const pageSizeOptions = getPdfPageSizeOptions();
   .jpg-to-pdf-tool__actions, .jpg-to-pdf-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
   .jpg-to-pdf-tool__result h2 { margin-bottom: var(--space-2); }
   .jpg-to-pdf-tool__result-details { margin-bottom: var(--space-4); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .jpg-to-pdf-tool__preview { display: grid; gap: var(--space-2); margin-bottom: var(--space-4); }
+  .jpg-to-pdf-tool__preview .metadata { margin: 0; }
+  .jpg-to-pdf-tool__preview-page { display: grid; justify-items: center; gap: var(--space-2); min-width: 0; padding: var(--space-3); border: var(--border-width) solid var(--border); background: var(--background); overflow: auto; }
+  .jpg-to-pdf-tool__preview-page canvas { display: block; max-width: 100%; max-height: 32rem; height: auto; background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 18%); }
+  .jpg-to-pdf-tool__preview-page-error { margin: 0; color: var(--color-red); font-size: var(--font-size-sm); }
+  .jpg-to-pdf-tool__preview-error { margin-bottom: var(--space-4); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--color-warning); color: var(--color-warning); }
+  .jpg-to-pdf-tool__pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-2); }
+  .jpg-to-pdf-tool__page-field { display: flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
+  .jpg-to-pdf-tool__page-field input { width: 4rem; min-height: 2.75rem; text-align: center; font-family: var(--font-mono); }
   .jpg-to-pdf-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
   .jpg-to-pdf-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
   @media (max-width: 36rem) {
@@ -154,8 +183,10 @@ const pageSizeOptions = getPdfPageSizeOptions();
     type PdfOrientation,
     type PdfPageSizeName,
   } from '../data/jpg-to-pdf';
+  import { getPdfPreviewErrorMessage } from '../data/pdf-viewer';
   import { loadBrowserImage } from '../scripts/image-processing';
   import { createImagePdf } from '../scripts/pdf-generation';
+  import { createPdfPageView } from '../scripts/pdf-page-view';
 
   interface PdfPage {
     readonly id: number;
@@ -186,8 +217,17 @@ const pageSizeOptions = getPdfPageSizeOptions();
     const resultDetails = root.querySelector<HTMLElement>('[data-result-details]');
     const download = root.querySelector<HTMLAnchorElement>('[data-download]');
     const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+    const preview = root.querySelector<HTMLElement>('[data-preview]');
+    const previewError = root.querySelector<HTMLElement>('[data-preview-error]');
+    const pageArea = root.querySelector<HTMLElement>('[data-page-area]');
+    const pageCanvas = root.querySelector<HTMLCanvasElement>('[data-page-canvas]');
+    const pageError = root.querySelector<HTMLElement>('[data-page-error]');
+    const previousButton = root.querySelector<HTMLButtonElement>('[data-previous]');
+    const nextButton = root.querySelector<HTMLButtonElement>('[data-next]');
+    const pageInput = root.querySelector<HTMLInputElement>('[data-page-input]');
+    const pageTotal = root.querySelector<HTMLElement>('[data-page-total]');
 
-    if (!fileInput || !selectFilesButton || !dropZone || !status || !error || !editor || !pageList || !pageTemplate || !pageSummary || !pageSize || !orientation || !fitNote || !buildButton || !clearButton || !result || !resultDetails || !download || !resultClearButton) {
+    if (!fileInput || !selectFilesButton || !dropZone || !status || !error || !editor || !pageList || !pageTemplate || !pageSummary || !pageSize || !orientation || !fitNote || !buildButton || !clearButton || !result || !resultDetails || !download || !resultClearButton || !preview || !previewError || !pageArea || !pageCanvas || !pageError || !previousButton || !nextButton || !pageInput || !pageTotal) {
       throw new Error('Image to PDF tool could not initialise.');
     }
 
@@ -195,6 +235,24 @@ const pageSizeOptions = getPdfPageSizeOptions();
     let nextPageId = 1;
     let resultUrl: string | undefined;
     let isBuilding = false;
+    // A preview arrives after the document it belongs to, so a later build must
+    // be able to discard an earlier one's rather than show the wrong document.
+    let previewToken = 0;
+
+    /**
+     * The preview's page turning, shared with the PDF Viewer Gizlet. The page
+     * size was just chosen here, so the page is fitted to its column and there
+     * is nothing to zoom.
+     */
+    const pageView = createPdfPageView({
+      pageArea,
+      canvas: pageCanvas,
+      pageError,
+      previousButton,
+      nextButton,
+      pageInput,
+      pageTotal,
+    });
 
     const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     const clearError = () => { error.hidden = true; error.textContent = ''; };
@@ -208,6 +266,11 @@ const pageSizeOptions = getPdfPageSizeOptions();
       isPdfOrientation(orientation.value) ? orientation.value : 'auto';
 
     const resetResult = () => {
+      previewToken += 1;
+      pageView.reset();
+      preview.hidden = true;
+      previewError.hidden = true;
+      previewError.textContent = '';
       if (resultUrl) URL.revokeObjectURL(resultUrl);
       resultUrl = undefined;
       result.hidden = true;
@@ -325,6 +388,43 @@ const pageSizeOptions = getPdfPageSizeOptions();
       render();
     };
 
+    /**
+     * Draws the document that was just built, so it is seen before it is taken.
+     *
+     * pdf.js is reached only from here, and only by dynamic import: the library
+     * and its worker are over a megabyte between them, and this page has no use
+     * for either until a PDF exists. A static import would put both in the
+     * page's initial JavaScript, where every visitor would pay for them.
+     */
+    const showPreview = async (pdf: Blob) => {
+      const token = ++previewToken;
+
+      showStatus('Drawing the preview locally…');
+      await nextPaint();
+
+      try {
+        const { openLocalPdf } = await import('../scripts/pdf-rendering');
+        const opened = await openLocalPdf(pdf);
+
+        if (token !== previewToken) {
+          await opened.close().catch(() => undefined);
+          return;
+        }
+
+        preview.hidden = false;
+        await pageView.show(opened);
+      } catch {
+        if (token !== previewToken) return;
+        // A document can be perfectly good even when drawing it is not, so the
+        // preview goes and the finished file stays where the visitor left it.
+        preview.hidden = true;
+        previewError.textContent = getPdfPreviewErrorMessage();
+        previewError.hidden = false;
+      } finally {
+        if (token === previewToken) clearStatus();
+      }
+    };
+
     const buildPdf = async () => {
       if (pages.length === 0 || isBuilding) return;
 
@@ -336,6 +436,9 @@ const pageSizeOptions = getPdfPageSizeOptions();
 
       const total = pages.length;
       const isLarge = isLargePdfWorkload(pages);
+      // Set only once the result panel is showing, so a build that failed
+      // halfway cannot leave a preview standing next to an error.
+      let built: Blob | undefined;
 
       try {
         const pdf = await createImagePdf(pages, {
@@ -356,6 +459,7 @@ const pageSizeOptions = getPdfPageSizeOptions();
         download.href = resultUrl;
         download.download = getPdfOutputFilename(pages[0].file.name, total);
         result.hidden = false;
+        built = pdf;
         clearStatus();
       } catch (caughtError) {
         clearStatus();
@@ -365,6 +469,10 @@ const pageSizeOptions = getPdfPageSizeOptions();
         buildButton.textContent = 'Make the PDF';
         render();
       }
+
+      // Outside the build: the file is finished and downloadable whether or not
+      // it can be drawn, so the workspace is usable again before this starts.
+      if (built) await showPreview(built);
     };
 
     const movePage = (id: number, offset: number) => {
