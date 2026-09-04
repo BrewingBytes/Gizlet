@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Entries for the next release are written as files in [changelog.d/](changelog.d/), one per change. See [docs/releasing.md](docs/releasing.md).
 
+## [0.4.1] - 2026-09-04
+
+### Added
+
+- A Gizlet Flow can start from a PDF. The category chooser above the chain offers PDF alongside Images, so the documents on the device can be merged, split, and turned into pictures in one pass: `Merge PDF → Split PDF`, `Split PDF → PDF to Image`, or a merge whose pages come back out as images. Nothing new was taught to the flow graph — Merge PDF, PDF to Image, and Split PDF each declared a PDF as their input when they shipped, and the workspace was the only thing that could not offer them a document to read. It is the chain 0.4.0 described and no visitor could build. Each document is opened by this browser as it is chosen, so the list shows its page count and refuses a locked or damaged file before a chain is built on top of it, and that costs `pdf-lib` alone: the flows page still fetches no PDF renderer until a run has something to draw. A merge says that one PDF is not a merge rather than leaving a button that does nothing, and switching category clears the chain, because a chain assembled for images cannot read a document and half of one would be a flow nobody assembled.
+- A category appears only while a published Gizlet can begin it, derived from the starting payloads in `src/data/tool-flows.ts` rather than listed anywhere, and a recipe link carries the category it was built in. A link written before this release names none, which is exactly what an image flow means, so every recipe already shared still opens as the flow it was.
+
+### Fixed
+
+- A flow that ends by making a PDF no longer asks for the format of a file it never writes. The control was shown whenever any block re-encoded an image, and named the wrong thing twice over: a chain ending in Split PDF called it the "final output format" while handing over a set of documents, and every chain ending in a PDF offered WebP, which `pdf-lib` cannot embed and re-encodes as JPEG — a second lossy pass bought for nothing. Whether the control appears, what it is called, and which formats it offers now come from one tested function reading what the chain actually ends by producing: a chain that finishes with a document asks for the page image format and offers the two formats a PDF page carries as it is, JPEG and PNG; one that finishes with images keeps all three; and a chain that re-encodes nothing, such as a merge, has no format to choose. Adding a PDF block to a chain set to WebP moves the setting rather than leaving one the run would ignore, and a recipe link naming WebP for such a chain still opens, with the format the chain can honour.
+
 ## [0.4.0] - 2026-09-04
 
 ### Added
