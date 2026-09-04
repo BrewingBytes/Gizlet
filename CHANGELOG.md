@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- Pull requests that change something a visitor can see now carry screenshots, and a before-and-after pair when the change replaces something that already existed. [AGENTS.md](AGENTS.md) records where the files live: on a `pr-assets` orphan branch, never in `main` or in the change's own diff.
 - Page turning in the two PDF workspaces now comes from one module, `src/scripts/pdf-page-view.ts`, rather than being wired separately in each. It imports pdf.js only as a type, which is what lets Image to PDF reach it without shipping the library.
 - The JPG to PDF Gizlet is now called Image to PDF, accurately reflecting that it accepts JPEG, PNG, WebP, AVIF, and BMP images. Its `jpg-to-pdf` URL and recipe-link slug remain unchanged, so existing links continue to work.
 - The Convert Image Gizlet's description now names the formats it takes, on its card, in its metadata, and on its regenerated preview card: “Convert JPG, PNG, WebP, AVIF, and BMP images to another format in your browser.” The previous wording, “common file formats”, left unanswered the one question a converter is asked.
