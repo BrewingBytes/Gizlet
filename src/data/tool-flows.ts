@@ -34,11 +34,6 @@ export interface ToolFlowDefinition {
    * it, so a chain containing one takes several starting payloads.
    */
   readonly combinesInputs?: boolean;
-  /**
-   * An inspection step: it shows the payload and hands it on untouched. A flow
-   * runs it for the visitor's benefit and carries the same payload forward.
-   */
-  readonly passesInputThrough?: boolean;
 }
 
 /** The payload an image flow starts from. Exported so no UI restates it. */
@@ -92,13 +87,22 @@ export const toolFlowRegistry = [
     output: pdfPayload,
     combinesInputs: true,
   },
-  {
-    toolSlug: 'pdf-viewer',
-    input: pdfPayload,
-    output: pdfPayload,
-    passesInputThrough: true,
-  },
 ] as const satisfies readonly ToolFlowDefinition[];
+
+/**
+ * Gizlets that deliberately have no flow contract, because they read and write
+ * nothing another Gizlet can use.
+ *
+ * A Gizlet that only shows the visitor something is not a pipeline step: no
+ * flow needs an Image Viewer block to see an image, and a result panel that
+ * previews its own output leaves such a block with nothing to do. Saying so
+ * here is the honest alternative to giving one a pass-through contract it does
+ * not have, and it keeps `hasCompleteFlowContracts` a real guard against a
+ * Gizlet that simply forgot to declare itself.
+ */
+export const flowlessToolSlugs = [
+  'pdf-viewer',
+] as const satisfies readonly ToolRegistryEntry['slug'][];
 
 /** The registry's own entries, with their payload kinds preserved. */
 export type FlowDefinition = (typeof toolFlowRegistry)[number];
@@ -241,7 +245,17 @@ export function canReorderFlowStep(
   return isValidFlowSequence(input, reordered, definitions);
 }
 
-/** Guards against catalog additions that forget to declare their executable contract. */
-export function hasCompleteFlowContracts(definitions: Definitions = toolFlowRegistry): boolean {
-  return toolRegistry.every((tool) => definitions.some((flowTool) => flowTool.toolSlug === tool.slug));
+/**
+ * Guards against catalog additions that forget to declare their executable
+ * contract, while letting one that deliberately has none say so.
+ */
+export function hasCompleteFlowContracts(
+  definitions: Definitions = toolFlowRegistry,
+  flowless: readonly string[] = flowlessToolSlugs,
+): boolean {
+  return toolRegistry.every(
+    (tool) =>
+      definitions.some((flowTool) => flowTool.toolSlug === tool.slug) ||
+      flowless.includes(tool.slug),
+  );
 }

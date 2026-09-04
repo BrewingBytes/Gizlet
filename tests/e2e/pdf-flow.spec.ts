@@ -4,6 +4,8 @@ import { expect, test, type Page } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 
 import { fixedPdfPageSizes } from "../../src/data/jpg-to-pdf";
+import { chunksCarryingPdfJs, initialScripts } from "./support/initial-scripts";
+import { paintedAspect, paintedPixels } from "./support/pdf-canvas";
 
 /**
  * The same two tiny JPEGs the Image to PDF workspace uses: one wider than it is
@@ -49,14 +51,10 @@ test("offers a block only when it accepts what the block before it produces", as
 
   await addStep(page, "jpg-to-pdf");
 
-  // A PDF is followed by exactly the Gizlets that declare they read one.
-  await expect(options).toHaveText(["Choose the next Gizlet", "PDF Viewer"]);
-
-  await addStep(page, "pdf-viewer");
-
-  // And nothing follows the viewer, because it also hands on a PDF and no
-  // other Gizlet reads one yet.
-  await expect(options).toHaveText(["Choose the next Gizlet", "PDF Viewer"]);
+  // A PDF is followed by exactly the Gizlets that declare they read one, and
+  // nothing does yet — so the chain ends there rather than offering a block
+  // that would only look at what the flow already shows.
+  await expect(options).toHaveText(["Choose the next Gizlet"]);
 });
 
 test("turns several local images into one PDF in the order shown", async ({
@@ -99,8 +97,9 @@ test("turns several local images into one PDF in the order shown", async ({
     page.getByRole("heading", { name: "Your PDF is ready." }),
   ).toBeVisible();
   await expect(page.locator("[data-result-details]")).toContainText("2 pages · A4");
-  // The result is a document, so the image preview steps aside.
+  // The result is a document, so the image element steps aside for the pages.
   await expect(page.getByAltText("Final flow result")).toBeHidden();
+  await expect(page.locator("[data-preview]")).toBeVisible();
 
   const download = page.getByRole("link", { name: "Download PDF" });
   await expect(download).toHaveAttribute("download", "tall-and-1-more.pdf");
@@ -118,6 +117,62 @@ test("turns several local images into one PDF in the order shown", async ({
   const [first, second] = pdf.getPages().map((pdfPage) => pdfPage.getSize());
   expect(first.width).toBeCloseTo(fixedPdfPageSizes.a4.width, 2);
   expect(second.width).toBeCloseTo(fixedPdfPageSizes.a4.height, 2);
+});
+
+test("shows the pages of the PDF a flow made, before anything is downloaded", async ({
+  page,
+}) => {
+  await page.goto("/flows/");
+
+  await addStep(page, "jpg-to-pdf");
+  await chooseImages(page).setInputFiles([
+    asFile("tall.jpg", tallJpeg),
+    asFile("wide.jpg", wideJpeg),
+  ]);
+  await page.getByRole("button", { name: "Run flow" }).click();
+
+  // The summary and the download are still what they were; the preview is
+  // added to the result panel rather than standing in for either.
+  await expect(page.locator("[data-result-details]")).toContainText("2 pages · A4");
+  const download = page.getByRole("link", { name: "Download PDF" });
+  await expect(download).toBeVisible();
+
+  const pageField = page.getByLabel("Go to page");
+  await expect(page.locator("[data-preview]")).toBeVisible();
+  await expect(page.locator("[data-page-total]")).toHaveText("of 2");
+  await expect(pageField).toHaveValue("1");
+
+  // A page that was genuinely drawn, and drawn from the document the flow
+  // produced: automatic orientation turned the second sheet, so page one is
+  // upright and page two is on its side. Re-rendering the starting images
+  // could not produce that.
+  await expect.poll(() => paintedPixels(page)).toBeGreaterThan(0);
+  await expect.poll(() => paintedAspect(page)).toBeLessThan(1);
+
+  const next = page.getByRole("button", { name: "Next page" });
+  await expect(page.getByRole("button", { name: "Previous page" })).toBeDisabled();
+  await next.click();
+  await expect(pageField).toHaveValue("2");
+  await expect(next).toBeDisabled();
+  await expect.poll(() => paintedAspect(page)).toBeGreaterThan(1);
+
+  // A page that is not in the document restores the field rather than jumping.
+  await pageField.fill("9");
+  await pageField.press("Enter");
+  await expect(pageField).toHaveValue("2");
+
+  // Reading the preview left the download exactly where it was.
+  const downloadPromise = page.waitForEvent("download");
+  await download.click();
+  const saved = await downloadPromise;
+  expect(saved.suggestedFilename()).toBe("tall-and-1-more.pdf");
+
+  const pdf = await PDFDocument.load(await readFile(await saved.path()));
+  expect(pdf.getPageCount()).toBe(2);
+
+  // Clearing the result takes the preview with it.
+  await page.getByRole("button", { name: "Clear result" }).click();
+  await expect(page.locator("[data-preview]")).toBeHidden();
 });
 
 test("runs every image step on every page before combining them", async ({
@@ -240,4 +295,39 @@ test("refuses a non-image and a selection larger than one document", async ({
   );
   await expect(error).toContainText("One PDF holds up to 100 pages here");
   await expect(page.getByRole("button", { name: "Run flow" })).toBeDisabled();
+});
+
+
+/**
+ * The flow builder draws a PDF result, but a flow that never makes one has no
+ * use for pdf.js, so the library has to stay out of what this page hands a
+ * visitor on arrival — asserted against the built bundles, not the source.
+ */
+test("keeps pdf.js out of the flows page until a run has made a PDF", async ({
+  page,
+}) => {
+  const requested: string[] = [];
+  page.on("request", (request) => requested.push(request.url()));
+
+  const builder = await initialScripts(page, "/flows/");
+  expect(builder.length).toBeGreaterThan(0);
+  expect(chunksCarryingPdfJs(builder)).toBe(0);
+  expect(requested.filter((url) => url.includes("pdf.worker"))).toEqual([]);
+
+  // The control: the PDF Viewer page does import pdf.js up front, so the check
+  // above is looking for something it would genuinely find.
+  expect(
+    chunksCarryingPdfJs(await initialScripts(page, "/tools/pdf-viewer/")),
+  ).toBeGreaterThan(0);
+
+  // And on this page the library arrives only once a run has a PDF to draw.
+  await page.goto("/flows/");
+  await addStep(page, "jpg-to-pdf");
+  await chooseImages(page).setInputFiles(asFile("wide.jpg", wideJpeg));
+  await page.getByRole("button", { name: "Run flow" }).click();
+  await expect(page.locator("[data-preview]")).toBeVisible();
+
+  await expect
+    .poll(() => requested.filter((url) => url.includes("pdf.worker")).length)
+    .toBeGreaterThan(0);
 });

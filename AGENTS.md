@@ -35,7 +35,7 @@ Adding or changing a Gizlet:
 1. Add or update its `toolRegistry` entry, keeping `id` stable and `path` in the `/tools/<slug>/` form with the trailing slash.
 2. Keep `processesLocally` and `launchStatus` truthful. Only `available` tools are published to the agent catalogue; a planned tool renders the placeholder workspace on its tool page.
 3. Put the tool's deterministic logic in a `src/data/<tool>.ts` module and its UI in `src/components/<Tool>Tool.astro`, then wire the slug into `src/pages/tools/[slug].astro`.
-4. If the tool can hand its output to another Gizlet, add its contract to `src/data/tool-flows.ts`; that registry is executable compatibility data, separate from the editorial related-tool recommendations. Declare only the payload kinds it reads and writes — compatibility is derived from those, so there is no adjacency list to update, and a Gizlet becomes available after every Gizlet whose output it accepts.
+4. If the tool can hand its output to another Gizlet, add its contract to `src/data/tool-flows.ts`; that registry is executable compatibility data, separate from the editorial related-tool recommendations. Declare only the payload kinds it reads and writes — compatibility is derived from those, so there is no adjacency list to update, and a Gizlet becomes available after every Gizlet whose output it accepts. A Gizlet that only shows the visitor something reads and writes nothing another Gizlet can use, so it is not a pipeline step: name it in `flowlessToolSlugs` instead, and do not give it a contract that hands its input back.
 5. Add Vitest coverage for the logic module and registry rules, and Playwright coverage when a browser flow matters.
 
 ## Privacy and UX

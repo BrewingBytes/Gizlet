@@ -1,9 +1,10 @@
 import { readFile } from "node:fs/promises";
 
-import { expect, test, type Page, type Response } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 
 import { fixedPdfPageSizes } from "../../src/data/jpg-to-pdf";
+import { chunksCarryingPdfJs, initialScripts } from "./support/initial-scripts";
 import { paintedAspect, paintedPixels } from "./support/pdf-canvas";
 
 /**
@@ -145,33 +146,6 @@ test("shows the assembled PDF in the result panel before it is downloaded", asyn
   await page.getByRole("button", { name: "Start over" }).first().click();
   await expect(page.locator("[data-preview]")).toBeHidden();
 });
-
-/**
- * The bodies of the scripts a page loads for itself, so a test can ask what is
- * in a page's initial JavaScript rather than only which files arrived.
- */
-const initialScripts = async (page: Page, path: string) => {
-  const bodies: Promise<string>[] = [];
-  const record = (response: Response) => {
-    if (response.request().resourceType() === "script") {
-      bodies.push(response.text().catch(() => ""));
-    }
-  };
-
-  page.on("response", record);
-  await page.goto(path);
-  await page.waitForLoadState("networkidle");
-  page.off("response", record);
-
-  return Promise.all(bodies);
-};
-
-/**
- * pdf.js reaches its worker through a bundled asset URL, so every chunk that
- * carries the library carries that filename.
- */
-const chunksCarryingPdfJs = (bodies: readonly string[]) =>
-  bodies.filter((body) => body.includes("pdf.worker")).length;
 
 test("keeps pdf.js out of the page until a PDF has been made", async ({ page }) => {
   const requested: string[] = [];

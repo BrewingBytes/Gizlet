@@ -4,6 +4,7 @@ import {
   canFlowTo,
   canReorderFlowStep,
   combinesFlowInputs,
+  flowlessToolSlugs,
   getFlowTool,
   getFlowToolsForInput,
   getNextFlowTools,
@@ -21,13 +22,31 @@ const imageInput: FlowPayloadContract = {
 };
 
 describe('Gizlet flow registry', () => {
-  test('declares a contract for every catalogued Gizlet', () => {
+  test('declares a contract for every catalogued Gizlet, or says it has none', () => {
     expect(hasCompleteFlowContracts()).toBe(true);
   });
 
+  test('catches a Gizlet that forgot its contract rather than declared none', () => {
+    const forgetful = toolFlowRegistry.filter((tool) => tool.toolSlug !== 'compress-image');
+
+    expect(hasCompleteFlowContracts(forgetful)).toBe(false);
+    // The exemption has to be declared to count: without the list, the Gizlet
+    // that deliberately has no contract is indistinguishable from that.
+    expect(hasCompleteFlowContracts(toolFlowRegistry, [])).toBe(false);
+  });
+
+  test('keeps a Gizlet that declares no contract out of the graph entirely', () => {
+    const contracted: readonly string[] = toolFlowRegistry.map((tool) => tool.toolSlug);
+
+    for (const toolSlug of flowlessToolSlugs) {
+      expect(contracted, toolSlug).not.toContain(toolSlug);
+      expect(() => getFlowTool(toolSlug)).toThrow(/Missing flow contract/);
+    }
+  });
+
   test('stays in tool-registry order, which is the order the step dropdown offers', () => {
-    const registryOrder = toolRegistry.map((tool) => tool.slug);
-    const flowOrder = toolFlowRegistry.map((tool) => tool.toolSlug);
+    const registryOrder: readonly string[] = toolRegistry.map((tool) => tool.slug);
+    const flowOrder: readonly string[] = toolFlowRegistry.map((tool) => tool.toolSlug);
 
     expect(flowOrder).toEqual(registryOrder.filter((slug) => flowOrder.includes(slug)));
   });
@@ -63,22 +82,14 @@ describe('Gizlet flow registry', () => {
     }
   });
 
-  test('offers the PDF reader after Image to PDF, because a Gizlet now declares it reads one', () => {
+  test('ends the image flow at the PDF, because no Gizlet reads one yet', () => {
     expect(getFlowTool('jpg-to-pdf').output).toEqual({ kind: 'pdf-file' });
-    expect(getFlowToolsForInput('pdf-file').map((tool) => tool.toolSlug)).toEqual(['pdf-viewer']);
-    expect(getNextFlowTools('jpg-to-pdf').map((tool) => tool.toolSlug)).toEqual(['pdf-viewer']);
-    expect(canFlowTo('jpg-to-pdf', 'pdf-viewer')).toBe(true);
+    // Empty because nothing consumes a PDF, not because the payload was
+    // declared a dead end: the injected contracts below prove the difference.
+    expect(getFlowToolsForInput('pdf-file')).toEqual([]);
+    expect(getNextFlowTools('jpg-to-pdf')).toEqual([]);
     // A PDF still cannot go back to an image Gizlet: nothing converts one yet.
     expect(canFlowTo('jpg-to-pdf', 'compress-image')).toBe(false);
-  });
-
-  test('carries the payload through an inspection step untouched', () => {
-    const viewer = getFlowTool('pdf-viewer');
-
-    expect(viewer.passesInputThrough).toBe(true);
-    expect(viewer.input).toEqual(viewer.output);
-    expect(getFlowTool('jpg-to-pdf').passesInputThrough).toBeUndefined();
-    expect(isValidFlowSequence(imageInput, ['resize-image', 'jpg-to-pdf', 'pdf-viewer'])).toBe(true);
   });
 
   test('knows which chains turn several starting payloads into one', () => {
@@ -134,7 +145,6 @@ describe('the compatibility rule, against contracts that do not exist yet', () =
 
   test('offers a further PDF Gizlet after Image to PDF as soon as one declares itself', () => {
     expect(getNextFlowTools('jpg-to-pdf', definitions).map((tool) => tool.toolSlug)).toEqual([
-      'pdf-viewer',
       'pdf-to-jpg',
       'compress-pdf',
     ]);
@@ -150,7 +160,6 @@ describe('the compatibility rule, against contracts that do not exist yet', () =
       'jpg-to-pdf',
     ]);
     expect(getNextFlowTools('compress-pdf', definitions).map((tool) => tool.toolSlug)).toEqual([
-      'pdf-viewer',
       'pdf-to-jpg',
       'compress-pdf',
     ]);
