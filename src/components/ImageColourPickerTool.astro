@@ -1,0 +1,350 @@
+---
+---
+
+<section class="colour-tool" data-colour-picker-tool>
+  <div class="colour-tool__picker" data-drop-zone>
+    <input
+      id="colour-file"
+      class="colour-tool__file-input"
+      type="file"
+      accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp"
+      aria-label="Select an image to pick colours from"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">Nothing is changed or saved</p>
+    <h2>Drop an image here</h2>
+    <p>JPEG, PNG, WebP, AVIF, or BMP. The pixels are read here, not uploaded.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose an image</button>
+  </div>
+
+  <p class="colour-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="colour-tool__error" data-error role="alert" hidden></p>
+
+  <div class="colour-tool__workspace" data-workspace hidden>
+    <figure class="colour-tool__stage">
+      <div class="colour-tool__frame">
+        <canvas
+          data-pick-canvas
+          tabindex="0"
+          role="application"
+          aria-label="Image to pick a colour from. Click a pixel, or move with the arrow keys and press Enter."
+        ></canvas>
+        <span class="colour-tool__marker" data-marker hidden aria-hidden="true"></span>
+      </div>
+      <figcaption data-input-name></figcaption>
+    </figure>
+
+    <div class="colour-tool__readout">
+      <div class="colour-tool__swatch" data-swatch>
+        <strong data-swatch-hex>#000000</strong>
+      </div>
+
+      <dl class="colour-tool__values" data-values></dl>
+
+      <!-- One value with its copy button, cloned per notation. -->
+      <template data-value-template>
+        <div class="colour-value">
+          <dt data-value-label></dt>
+          <dd>
+            <span data-value-text></span>
+            <button type="button" class="colour-value__copy" data-value-copy>Copy</button>
+          </dd>
+        </div>
+      </template>
+
+      <p class="colour-tool__position" data-position></p>
+      <p class="colour-tool__copied" data-copied role="status" aria-live="polite"></p>
+    </div>
+
+    <div class="colour-tool__history" data-history-section hidden>
+      <p class="metadata">Picked this visit</p>
+      <ul class="colour-tool__history-list" data-history aria-label="Colours picked this visit"></ul>
+      <p class="utility-text">Forgotten when this tab closes. Nothing is stored.</p>
+    </div>
+
+    <div class="colour-tool__actions">
+      <button type="button" class="button-secondary" data-clear>Choose another image</button>
+    </div>
+  </div>
+</section>
+
+<style>
+  .colour-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .colour-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .colour-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .colour-tool__picker[hidden], .colour-tool__workspace[hidden], .colour-tool__history[hidden] { display: none; }
+  .colour-tool__picker h2 { margin-bottom: var(--space-2); }
+  .colour-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .colour-tool__status, .colour-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .colour-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .colour-tool__workspace { display: grid; gap: var(--space-4); padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .colour-tool__stage { margin: 0; }
+  .colour-tool__frame { position: relative; width: fit-content; max-width: 100%; margin: 0 auto; border: var(--border-width) solid var(--border); }
+  .colour-tool__frame canvas { display: block; max-width: 100%; max-height: 24rem; cursor: crosshair; touch-action: none; }
+  .colour-tool__frame canvas:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  /* The marker is a ring rather than a dot: a dot would cover the pixel it is
+     pointing at, which is the one the visitor is looking at. */
+  .colour-tool__marker { position: absolute; width: 1rem; height: 1rem; margin: -0.5rem 0 0 -0.5rem; border: 2px solid var(--surface); border-radius: 50%; box-shadow: 0 0 0 2px var(--text); pointer-events: none; }
+  .colour-tool__marker[hidden] { display: none; }
+  .colour-tool__stage figcaption { margin-top: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-align: center; }
+  .colour-tool__readout { display: grid; grid-template-columns: minmax(0, 10rem) minmax(0, 1fr); gap: var(--space-3) var(--space-4); align-items: start; padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .colour-tool__swatch { display: flex; align-items: flex-end; min-height: 7rem; padding: var(--space-2); border: var(--border-width) solid var(--border); background: #ffffff; }
+  .colour-tool__swatch strong { font-family: var(--font-mono); font-size: var(--font-size-lg); }
+  .colour-tool__values { margin: 0; }
+  .colour-value { display: grid; grid-template-columns: 4rem minmax(0, 1fr); align-items: baseline; gap: var(--space-2); padding: var(--space-1) 0; }
+  .colour-value dt { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-sm); }
+  .colour-value dd { display: flex; align-items: baseline; gap: var(--space-2); margin: 0; font-family: var(--font-mono); font-weight: 700; }
+  .colour-value__copy { min-height: 2.75rem; padding: 0 var(--space-2); border: 0; background: none; color: var(--text-muted); font: inherit; font-family: var(--font-body); font-size: var(--font-size-sm); font-weight: 700; text-decoration: underline; cursor: pointer; }
+  .colour-value__copy:hover { color: var(--text); }
+  .colour-tool__position, .colour-tool__copied { grid-column: 2; margin: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .colour-tool__copied { min-height: 1.25rem; color: var(--success); }
+  .colour-tool__history { padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .colour-tool__history .metadata { margin-bottom: var(--space-2); }
+  .colour-tool__history-list { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0 0 var(--space-2); padding: 0; list-style: none; }
+  .colour-tool__history-swatch { display: block; width: 3rem; height: 3rem; padding: 0; border: var(--border-width) solid var(--border); cursor: pointer; }
+  .colour-tool__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  @media (max-width: 36rem) {
+    .colour-tool__workspace { padding: var(--space-3); }
+    .colour-tool__readout { grid-template-columns: minmax(0, 1fr); }
+    .colour-tool__position, .colour-tool__copied { grid-column: 1; }
+  }
+</style>
+
+<script>
+  import { isSupportedImageFile } from '../data/image-compression';
+  import {
+    addToColourHistory,
+    clampToImage,
+    describePickedColour,
+    getColourValues,
+    prefersDarkText,
+    type PickedColour,
+  } from '../data/image-colour';
+  import { isLargeImage, type ImageDimensions } from '../data/image-resize';
+  import { loadBrowserImage } from '../scripts/image-processing';
+
+  const root = document.querySelector<HTMLElement>('[data-colour-picker-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const workspace = root.querySelector<HTMLElement>('[data-workspace]');
+    const canvas = root.querySelector<HTMLCanvasElement>('[data-pick-canvas]');
+    const marker = root.querySelector<HTMLElement>('[data-marker]');
+    const inputName = root.querySelector<HTMLElement>('[data-input-name]');
+    const swatch = root.querySelector<HTMLElement>('[data-swatch]');
+    const swatchHex = root.querySelector<HTMLElement>('[data-swatch-hex]');
+    const values = root.querySelector<HTMLElement>('[data-values]');
+    const valueTemplate = root.querySelector<HTMLTemplateElement>('[data-value-template]');
+    const position = root.querySelector<HTMLElement>('[data-position]');
+    const copied = root.querySelector<HTMLElement>('[data-copied]');
+    const historySection = root.querySelector<HTMLElement>('[data-history-section]');
+    const history = root.querySelector<HTMLUListElement>('[data-history]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !workspace || !canvas || !marker || !inputName || !swatch || !swatchHex || !values || !valueTemplate || !position || !copied || !historySection || !history || !clearButton) {
+      throw new Error('Image Color Picker tool could not initialise.');
+    }
+
+    let sourceDimensions: ImageDimensions | undefined;
+    let context: CanvasRenderingContext2D | undefined;
+    let picked: PickedColour | undefined;
+    let recent: readonly PickedColour[] = [];
+
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+
+    const resetTool = () => {
+      sourceDimensions = undefined;
+      context = undefined;
+      picked = undefined;
+      recent = [];
+      fileInput.value = '';
+      values.replaceChildren();
+      history.replaceChildren();
+      historySection.hidden = true;
+      marker.hidden = true;
+      copied.textContent = '';
+      position.textContent = '';
+      dropZone.hidden = false;
+      workspace.hidden = true;
+      clearError();
+      clearStatus();
+    };
+
+    const copy = async (label: string, value: string) => {
+      try {
+        await navigator.clipboard.writeText(value);
+        copied.textContent = `${label} copied.`;
+      } catch {
+        copied.textContent = 'This browser would not let the page copy. Select the value instead.';
+      }
+    };
+
+    /** Draws the marker over the pixel that was picked, in rendered pixels. */
+    const drawMarker = (colour: PickedColour) => {
+      if (!sourceDimensions) return;
+
+      const scaleX = canvas.clientWidth / sourceDimensions.width;
+      const scaleY = canvas.clientHeight / sourceDimensions.height;
+
+      marker.style.left = `${(colour.x + 0.5) * scaleX}px`;
+      marker.style.top = `${(colour.y + 0.5) * scaleY}px`;
+      marker.style.background = colour.hex;
+      marker.hidden = false;
+    };
+
+    const renderHistory = () => {
+      historySection.hidden = recent.length === 0;
+      history.replaceChildren(
+        ...recent.map((colour) => {
+          const item = document.createElement('li');
+          const button = document.createElement('button');
+
+          button.type = 'button';
+          button.className = 'colour-tool__history-swatch';
+          button.style.background = colour.hex;
+          button.title = colour.hex;
+          button.setAttribute('aria-label', `Copy ${colour.hex}`);
+          button.addEventListener('click', () => void copy('HEX', colour.hex));
+          item.append(button);
+
+          return item;
+        }),
+      );
+    };
+
+    const showColour = (colour: PickedColour) => {
+      picked = colour;
+      swatch.style.background = colour.hex;
+      swatch.style.color = prefersDarkText(colour) ? '#0f172a' : '#ffffff';
+      swatchHex.textContent = colour.hex;
+      values.replaceChildren(
+        ...getColourValues(colour).map((entry) => {
+          const item = valueTemplate.content.firstElementChild?.cloneNode(true) as HTMLElement;
+          const button = item.querySelector<HTMLButtonElement>('[data-value-copy]')!;
+
+          item.querySelector('[data-value-label]')!.textContent = entry.label;
+          item.querySelector('[data-value-text]')!.textContent = entry.value;
+          button.setAttribute('aria-label', `Copy ${entry.label}`);
+          button.addEventListener('click', () => void copy(entry.label, entry.value));
+
+          return item;
+        }),
+      );
+      position.textContent = `Pixel ${colour.x}, ${colour.y}`;
+      canvas.setAttribute(
+        'aria-label',
+        `Image to pick a colour from. ${colour.hex} at pixel ${colour.x}, ${colour.y}. Arrow keys move the pick, shift moves it ten pixels.`,
+      );
+      drawMarker(colour);
+      recent = addToColourHistory(recent, colour);
+      renderHistory();
+    };
+
+    /** Reads one pixel out of the canvas the picture was drawn into. */
+    const pickAt = (point: { x: number; y: number }) => {
+      if (!context || !sourceDimensions) return;
+
+      const at = clampToImage(point, sourceDimensions);
+      const [red, green, blue] = context.getImageData(at.x, at.y, 1, 1).data;
+
+      showColour(describePickedColour({ red, green, blue }, at));
+    };
+
+    /** A pointer position in the picture's own pixels, not the preview's. */
+    const pointToImage = (event: PointerEvent) => {
+      const bounds = canvas.getBoundingClientRect();
+      const scaleX = sourceDimensions ? sourceDimensions.width / bounds.width : 1;
+      const scaleY = sourceDimensions ? sourceDimensions.height / bounds.height : 1;
+
+      return { x: (event.clientX - bounds.left) * scaleX, y: (event.clientY - bounds.top) * scaleY };
+    };
+
+    const selectFile = async (file: File | undefined) => {
+      resetTool();
+      if (!file) return;
+      if (!isSupportedImageFile(file)) {
+        showError('Choose a JPEG, PNG, WebP, AVIF, or BMP image.');
+        return;
+      }
+
+      dropZone.hidden = true;
+      showStatus('Reading the picture locally…');
+
+      try {
+        const image = await loadBrowserImage(file);
+
+        sourceDimensions = { width: image.naturalWidth, height: image.naturalHeight };
+        if (!sourceDimensions.width || !sourceDimensions.height) throw new Error('This image has no usable dimensions.');
+        if (isLargeImage(sourceDimensions)) showStatus('Large image detected. Reading it locally…');
+
+        canvas.width = sourceDimensions.width;
+        canvas.height = sourceDimensions.height;
+        // `willReadFrequently` is the whole job here: every pick reads a pixel
+        // back, and without it the browser keeps the canvas on the GPU and pays
+        // for a transfer each time.
+        const drawing = canvas.getContext('2d', { willReadFrequently: true });
+
+        if (!drawing) throw new Error('Your browser cannot read this image.');
+
+        drawing.drawImage(image, 0, 0);
+        context = drawing;
+        inputName.textContent = `${file.name} · ${sourceDimensions.width} × ${sourceDimensions.height} px`;
+        clearStatus();
+        workspace.hidden = false;
+        // The middle pixel is a starting answer rather than an empty panel.
+        pickAt({ x: sourceDimensions.width / 2, y: sourceDimensions.height / 2 });
+      } catch (caughtError) {
+        sourceDimensions = undefined;
+        context = undefined;
+        dropZone.hidden = false;
+        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be read.');
+        clearStatus();
+      }
+    };
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void selectFile(fileInput.files?.[0]));
+    clearButton.addEventListener('click', resetTool);
+
+    canvas.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      canvas.focus();
+      canvas.setPointerCapture(event.pointerId);
+      pickAt(pointToImage(event));
+    });
+    canvas.addEventListener('pointermove', (event) => {
+      // Only while dragging: a picker that followed the pointer everywhere
+      // would never let a colour sit still long enough to be copied.
+      if (canvas.hasPointerCapture(event.pointerId)) pickAt(pointToImage(event));
+    });
+    canvas.addEventListener('keydown', (event) => {
+      if (!picked) return;
+
+      const step = event.shiftKey ? 10 : 1;
+      const moves: Record<string, readonly [number, number]> = {
+        ArrowLeft: [-step, 0],
+        ArrowRight: [step, 0],
+        ArrowUp: [0, -step],
+        ArrowDown: [0, step],
+      };
+      const move = moves[event.key];
+
+      if (!move) return;
+      event.preventDefault();
+      pickAt({ x: picked.x + move[0], y: picked.y + move[1] });
+    });
+
+    window.addEventListener('resize', () => { if (picked) drawMarker(picked); });
+    for (const eventName of ['dragenter', 'dragover']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    for (const eventName of ['dragleave', 'drop']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    dropZone.addEventListener('drop', (event) => void selectFile(event.dataTransfer?.files[0]));
+  }
+</script>

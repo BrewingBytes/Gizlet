@@ -436,8 +436,12 @@ export const toolRegistry = [
       "hex from image",
       "get color code",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "One JPEG, PNG, WebP, AVIF, or BMP image, read on-device and left unchanged; pick a pixel with a pointer or the arrow keys.",
+      output: "That pixel as HEX, RGB and HSL on screen, copyable, with the colours picked this visit kept until the tab closes. No file is written.",
+    },
   },
   {
     id: 18,

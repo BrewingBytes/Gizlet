@@ -746,6 +746,87 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'image-color-picker': {
+    what: {
+      heading: 'What the Image Color Picker does',
+      paragraphs: [
+        'Pick a pixel out of a picture and read its colour as HEX, RGB and HSL, ready to copy. The image is drawn onto a canvas in this browser and each pick reads that one pixel back.',
+        'Click or tap the picture, or focus it and move the pick with the arrow keys — one pixel a step, ten with Shift held. The colours picked during this visit stay in a row underneath until the tab closes.',
+      ],
+    },
+    when: {
+      heading: 'When the colour is in the picture',
+      paragraphs: [
+        'When something has to match: the exact blue in a logo you were sent as a PNG, the background of a screenshot you are extending, the accent colour of a photograph you are building a page around. The value is in the file; this reads it out.',
+        'It is also the fastest way to check what a colour actually is rather than what it looks like. Two greys that look identical on screen are rarely the same grey, and the numbers settle it.',
+      ],
+    },
+    options: {
+      heading: 'How to pick, and what you get',
+      paragraphs: ['One pixel, three notations, and a short memory.'],
+      details: [
+        {
+          term: 'Pointer or touch',
+          description:
+            'Click or tap a pixel. Holding the button down and dragging keeps picking as you move, so a colour can be found by sweeping across an area rather than by aiming at it.',
+        },
+        {
+          term: 'Keyboard',
+          description:
+            'Focus the picture and use the arrow keys: one pixel a step, ten with Shift. The picture starts on its middle pixel, so there is always a colour to move from rather than an empty panel to aim at.',
+        },
+        {
+          term: 'HEX, RGB and HSL',
+          description:
+            'The same colour in the three notations CSS takes, each with a copy button. A grey is reported with a hue of zero, because every hue produces a grey and naming one would be inventing it.',
+        },
+        {
+          term: 'The colours you picked',
+          description:
+            'The last eight, newest first, each copyable by clicking it. Picking the same colour twice moves it rather than duplicating it. They are held in the page and nothing is stored: closing the tab forgets them.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'The pixels are read here',
+      paragraphs: [
+        'The picture is decoded and drawn onto a canvas by this browser, and each pick reads one pixel out of that canvas. Gizlet is a static site with no upload endpoint, so nothing is sent anywhere, and this Gizlet writes no file at all.',
+        'The colour history lives in the page for as long as the tab does. It is not saved to the browser, not sent anywhere, and not recoverable afterwards — if a colour matters, copy it.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Is my image uploaded to pick a colour?',
+        answer:
+          'No. It is drawn onto a canvas in this browser and read one pixel at a time. There is no upload endpoint behind this page, and nothing is written.',
+      },
+      {
+        question: 'Can I pick a colour without a mouse?',
+        answer:
+          'Yes. Tab to the picture and use the arrow keys, one pixel a step or ten with Shift held. The current pixel and its colour are announced as you move.',
+      },
+      {
+        question: 'Why is the hue of my grey zero?',
+        answer:
+          'Because a grey has no hue: every hue produces it once the saturation is zero. Reporting zero is the convention browsers use too, and it is more honest than printing whatever the arithmetic left behind.',
+      },
+      {
+        question: 'Are the colours I picked saved?',
+        answer:
+          'Only in the page, and only until you close the tab. Nothing is written to your browser storage and nothing is sent anywhere, so a colour you want to keep should be copied.',
+      },
+      {
+        question: 'The colour is slightly different from the original. Why?',
+        answer:
+          'A lossy format changes pixels: a JPEG of a flat colour is a field of very slightly different colours. What you get is what is actually in the file, which is what any other picker on the same file would also report.',
+      },
+      {
+        question: 'Can it pull a whole palette out of an image?',
+        answer:
+          'No. This picks the pixel you point at. Choosing a palette means deciding what a picture is mostly made of, which is a judgement rather than a reading, and it is not this Gizlet.',
+      },
+    ],
+  },
   'json-ld-generator': {
     what: {
       heading: 'What the JSON-LD Generator does',

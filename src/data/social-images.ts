@@ -41,6 +41,7 @@ const bespokeSocialImageSlugs: readonly string[] = [
   'image-background',
   'remove-image-metadata',
   'image-dimensions',
+  'image-color-picker',
   'json-ld-generator',
   'json-formatter',
   'jpg-to-pdf',
