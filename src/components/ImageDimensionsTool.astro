@@ -1,0 +1,195 @@
+---
+---
+
+<section class="dimensions-tool" data-image-dimensions-tool>
+  <div class="dimensions-tool__picker" data-drop-zone>
+    <input
+      id="dimensions-file"
+      class="dimensions-tool__file-input"
+      type="file"
+      accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp"
+      aria-label="Select an image to measure"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">Nothing is changed or saved</p>
+    <h2>Drop an image here</h2>
+    <p>JPEG, PNG, WebP, AVIF, or BMP. It is measured here, not uploaded.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose an image</button>
+  </div>
+
+  <p class="dimensions-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="dimensions-tool__error" data-error role="alert" hidden></p>
+
+  <div class="dimensions-tool__report" data-report hidden>
+    <figure class="dimensions-tool__preview">
+      <img data-preview-image alt="Measured image preview" />
+      <figcaption data-input-name></figcaption>
+    </figure>
+
+    <dl class="dimensions-tool__facts" data-facts></dl>
+
+    <!-- One measurement, cloned per fact, so no filename or value is markup. -->
+    <template data-fact-template>
+      <div class="dimensions-fact">
+        <dt data-fact-label></dt>
+        <dd>
+          <span data-fact-value></span>
+          <button type="button" class="dimensions-fact__copy" data-fact-copy hidden>Copy</button>
+        </dd>
+      </div>
+    </template>
+
+    <p class="dimensions-tool__copied" data-copied role="status" aria-live="polite"></p>
+
+    <div class="dimensions-tool__actions">
+      <button type="button" class="button-secondary" data-clear>Measure another image</button>
+    </div>
+  </div>
+</section>
+
+<style>
+  .dimensions-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .dimensions-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .dimensions-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .dimensions-tool__picker[hidden], .dimensions-tool__report[hidden] { display: none; }
+  .dimensions-tool__picker h2 { margin-bottom: var(--space-2); }
+  .dimensions-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .dimensions-tool__status, .dimensions-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .dimensions-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .dimensions-tool__report { display: grid; gap: var(--space-4); padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .dimensions-tool__preview { margin: 0; }
+  .dimensions-tool__preview img { display: block; max-width: 100%; max-height: 18rem; margin: 0 auto; border: var(--border-width) solid var(--border); }
+  .dimensions-tool__preview figcaption { margin-top: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-align: center; }
+  .dimensions-tool__facts { display: grid; gap: 0; margin: 0; }
+  .dimensions-fact { display: grid; grid-template-columns: minmax(0, 14rem) minmax(0, 1fr); align-items: baseline; gap: var(--space-3); padding: var(--space-2) 0; border-top: var(--border-width) solid var(--border); }
+  .dimensions-fact dt { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-sm); text-transform: uppercase; }
+  .dimensions-fact dd { display: flex; align-items: baseline; gap: var(--space-2); margin: 0; font-size: var(--font-size-lg); font-weight: 700; }
+  /* The first two rows are what most visitors came for, so they are the ones
+     that read as an answer rather than as a table. */
+  .dimensions-fact:first-of-type dd, .dimensions-fact:nth-of-type(2) dd { font-family: var(--font-mono); }
+  .dimensions-fact__copy { min-height: 2.75rem; padding: 0 var(--space-2); border: 0; background: none; color: var(--text-muted); font: inherit; font-size: var(--font-size-sm); font-weight: 700; text-decoration: underline; cursor: pointer; }
+  .dimensions-fact__copy:hover { color: var(--text); }
+  .dimensions-fact__copy[hidden] { display: none; }
+  .dimensions-tool__copied { margin: 0; min-height: 1.5rem; color: var(--success); font-weight: 700; }
+  .dimensions-tool__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  @media (max-width: 36rem) {
+    .dimensions-tool__report { padding: var(--space-3); }
+    .dimensions-fact { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  }
+</style>
+
+<script>
+  import {
+    formatFileSize,
+    getInputImageFormat,
+    isSupportedImageFile,
+  } from '../data/image-compression';
+  import { getImageFacts } from '../data/image-dimensions';
+  import { loadBrowserImage } from '../scripts/image-processing';
+
+  const root = document.querySelector<HTMLElement>('[data-image-dimensions-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const report = root.querySelector<HTMLElement>('[data-report]');
+    const previewImage = root.querySelector<HTMLImageElement>('[data-preview-image]');
+    const inputName = root.querySelector<HTMLElement>('[data-input-name]');
+    const facts = root.querySelector<HTMLElement>('[data-facts]');
+    const factTemplate = root.querySelector<HTMLTemplateElement>('[data-fact-template]');
+    const copied = root.querySelector<HTMLElement>('[data-copied]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !report || !previewImage || !inputName || !facts || !factTemplate || !copied || !clearButton) {
+      throw new Error('Image Dimensions tool could not initialise.');
+    }
+
+    let previewUrl: string | undefined;
+
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+
+    const resetTool = () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = undefined;
+      fileInput.value = '';
+      previewImage.removeAttribute('src');
+      facts.replaceChildren();
+      copied.textContent = '';
+      dropZone.hidden = false;
+      report.hidden = true;
+      clearError();
+      clearStatus();
+    };
+
+    const copy = async (label: string, value: string) => {
+      try {
+        await navigator.clipboard.writeText(value);
+        copied.textContent = `${label} copied.`;
+      } catch {
+        // A refused clipboard is the browser's decision, not a failure of the
+        // measurement, so the numbers stay on screen to be selected by hand.
+        copied.textContent = 'This browser would not let the page copy. Select the value instead.';
+      }
+    };
+
+    const selectFile = async (file: File | undefined) => {
+      resetTool();
+      if (!file) return;
+      if (!isSupportedImageFile(file)) {
+        showError('Choose a JPEG, PNG, WebP, AVIF, or BMP image.');
+        return;
+      }
+
+      dropZone.hidden = true;
+      showStatus('Measuring it locally…');
+
+      try {
+        const image = await loadBrowserImage(file);
+        const dimensions = { width: image.naturalWidth, height: image.naturalHeight };
+
+        if (!dimensions.width || !dimensions.height) throw new Error('This image has no usable dimensions.');
+
+        previewUrl = URL.createObjectURL(file);
+        previewImage.src = previewUrl;
+        inputName.textContent = file.name;
+        facts.replaceChildren(
+          ...getImageFacts(dimensions, {
+            format: getInputImageFormat(file),
+            size: formatFileSize(file.size),
+          }).map((fact) => {
+            const item = factTemplate.content.firstElementChild?.cloneNode(true) as HTMLElement;
+            const button = item.querySelector<HTMLButtonElement>('[data-fact-copy]')!;
+
+            item.querySelector('[data-fact-label]')!.textContent = fact.label;
+            item.querySelector('[data-fact-value]')!.textContent = fact.value;
+            button.hidden = !fact.copyable;
+            button.setAttribute('aria-label', `Copy ${fact.label.toLowerCase()}`);
+            button.addEventListener('click', () => void copy(fact.label, fact.value));
+
+            return item;
+          }),
+        );
+        clearStatus();
+        report.hidden = false;
+      } catch (caughtError) {
+        dropZone.hidden = false;
+        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be read.');
+        clearStatus();
+      }
+    };
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void selectFile(fileInput.files?.[0]));
+    clearButton.addEventListener('click', resetTool);
+    for (const eventName of ['dragenter', 'dragover']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    for (const eventName of ['dragleave', 'drop']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    dropZone.addEventListener('drop', (event) => void selectFile(event.dataTransfer?.files[0]));
+  }
+</script>

@@ -414,8 +414,12 @@ export const toolRegistry = [
       "megapixels",
       "check image resolution",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "One JPEG, PNG, WebP, AVIF, or BMP image, read on-device and left unchanged.",
+      output: "Its pixel dimensions, aspect ratio, megapixels, shape, format and file size on screen, with the numbers copyable. No file is written.",
+    },
   },
   {
     id: 17,

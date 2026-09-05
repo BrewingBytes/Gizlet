@@ -665,6 +665,87 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'image-dimensions': {
+    what: {
+      heading: 'What Image Dimensions does',
+      paragraphs: [
+        'Image Dimensions reads a picture and tells you about it: how many pixels across and down, what aspect ratio that works out to, how many megapixels, whether it is landscape or portrait, what format the file is, and how big it is on disk.',
+        'It changes nothing and writes nothing. The picture is decoded by this browser to be measured, the numbers appear, and the file on your device is exactly the file that was there before.',
+      ],
+    },
+    when: {
+      heading: 'When you just need the number',
+      paragraphs: [
+        'When a form says "maximum 2000 pixels wide" and you have no idea. When a print shop asks how many megapixels. When something needs a 16:9 image and you are holding one that might be. Opening a photo editor to read four numbers is a lot of application for the question.',
+        'It is also the Gizlet to reach for before the others: read the dimensions here, then resize, crop, or put the picture on a background, knowing what you started with.',
+      ],
+    },
+    options: {
+      heading: 'What the numbers mean',
+      paragraphs: ['Eight facts, and the first two have a copy button because they are the ones that get pasted into things.'],
+      details: [
+        {
+          term: 'Dimensions, width and height',
+          description:
+            'The pixels the browser decoded, which is the size the picture actually is. A photograph whose orientation is stored as a tag is reported the way it is displayed, which is the number every other application will also show.',
+        },
+        {
+          term: 'Aspect ratio',
+          description:
+            'The sides divided by everything they have in common: 1920 by 1080 is 16:9. A picture whose sides reduce to nothing anybody recognises is named after the shape it is within one percent of, marked with a ≈, and one that is not near any common shape is given as a decimal instead of a ratio nobody could use.',
+        },
+        {
+          term: 'Megapixels and shape',
+          description:
+            'The pixel count as a camera would advertise it, and whether the picture is landscape, portrait, or square. Below a tenth of a megapixel it says so rather than rounding down to zero.',
+        },
+        {
+          term: 'Format and file size',
+          description:
+            'What the file is, detected from the file itself rather than from its name, and how much space it takes. A large file with small dimensions usually means a lossless format; that is what Compress Image is for.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'Read, not uploaded',
+      paragraphs: [
+        'The picture is decoded by this browser to be measured. Gizlet is a static site with no upload endpoint, so nothing is sent anywhere, and this Gizlet writes no file at all — there is not even a download, because nothing was made.',
+        'It is the least invasive thing you can do to a photograph, and it still happens entirely on your device.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Does this change my image?',
+        answer:
+          'No. It decodes the picture to measure it and produces no file at all. The image on your device is untouched, and there is nothing to download.',
+      },
+      {
+        question: 'Why is the aspect ratio shown with a ≈?',
+        answer:
+          'Because the sides do not divide into a ratio anybody would recognise, but the picture is within one percent of one that they would. 4001 by 2250 is not exactly 16:9, and saying ≈ 16:9 is more useful than the exact fraction.',
+      },
+      {
+        question: 'Is anything uploaded to measure it?',
+        answer:
+          'No. The file is read by this browser and never leaves the tab. There is no upload endpoint behind this page.',
+      },
+      {
+        question: 'My phone says a different size. Which is right?',
+        answer:
+          'Both, usually. A photograph can store its pixels one way round and carry a tag asking to be shown the other way; this reports it as it is displayed, which is what other software shows too. Remove Image Metadata shows that tag if you want to see it.',
+      },
+      {
+        question: 'What counts as a megapixel?',
+        answer:
+          'A million pixels: width multiplied by height, divided by a million. A 4032 by 3024 photograph is about 12 MP, which is the number a phone camera advertises.',
+      },
+      {
+        question: 'Why is the copy button only on some rows?',
+        answer:
+          'Because only some of them are values people paste somewhere: the dimensions, the ratio, and each side on its own. Nobody pastes the word "Landscape" into a form.',
+      },
+    ],
+  },
   'json-ld-generator': {
     what: {
       heading: 'What the JSON-LD Generator does',

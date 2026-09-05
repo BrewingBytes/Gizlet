@@ -175,6 +175,7 @@ export const toolFlowRegistry = [
  */
 export const flowlessToolSlugs = [
   'pdf-viewer',
+  'image-dimensions',
 ] as const satisfies readonly ToolRegistryEntry['slug'][];
 
 /** The registry's own entries, with their payload kinds preserved. */

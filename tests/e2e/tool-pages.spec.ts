@@ -19,6 +19,7 @@ const workspaceSignatures = {
   "rotate-flip-image": "Select an image to rotate or flip",
   "image-background": "Select an image to put on a background",
   "remove-image-metadata": "Select an image to inspect",
+  "image-dimensions": "Select an image to measure",
   "json-ld-generator": "Schema type",
   "json-formatter": "JSON input",
   "jpg-to-pdf": "Select images to put in a PDF",
