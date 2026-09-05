@@ -104,8 +104,8 @@ export const roadmapPhases: readonly RoadmapPhase[] = [
   {
     number: 2,
     title: 'The image gaps, on Canvas',
-    status: 'next',
-    when: 'Next. It needs no new dependency at all, which is why it goes ahead of work that does.',
+    status: 'shipped',
+    when: 'Done. It went ahead of work that needed a new dependency, because it needed none at all.',
     what: 'The obvious holes next to the image Gizlets that were already there: cutting a picture down, arranging several into one, turning one upright, setting one on a background, reading what a photo says about you and stripping it out, and reading a colour or a size back off an image without changing it.',
     toolSlugs: [
       'crop-image',
@@ -119,11 +119,12 @@ export const roadmapPhases: readonly RoadmapPhase[] = [
     sharedMachinery: ['Canvas', 'the existing browser image decode and encode helpers', 'the existing pixel limits', 'no new dependency'],
     signal: 'Issues filed through the request form that name one of these by name.',
     killCriterion: 'If 30 days after this page publishes no filed issue names an image Gizlet, none of these gets built, and the order gets rewritten around whatever visitors did ask for.',
+    standing: 'Shipped whole: all seven, on Canvas, with no dependency added and the pixel limits the older image Gizlets already kept. The kill criterion never got to run — the phase was built inside the window it was meant to be judged in, which is the honest reading of it rather than a claim that demand was proven. Two of the seven turned out to belong to no Flow at all and say so in the same list as the PDF viewer, and one of them, Remove Image Metadata, needed an EXIF reader written here rather than installed, because a page arguing that your photograph should be seen by nobody cannot fetch a parser to establish it.',
   },
   {
     number: 3,
     title: 'The PDF page tree',
-    status: 'later',
+    status: 'next',
     when: 'After the PDF viewer becomes a surface the other PDF Gizlets can reuse. Every Gizlet here needs to show a visitor a page before it can ask them where to put something on it.',
     what: 'The page-level document jobs, all of which are the same two pieces wearing different hats: pick pages, then write something onto them. Reordering and rotating, a watermark, page numbers, a signature you drew yourself, and clearing the fields a document carries about whoever made it.',
     toolSlugs: ['organize-pdf', 'watermark-pdf', 'pdf-page-numbers', 'sign-pdf', 'clean-pdf-metadata'],
