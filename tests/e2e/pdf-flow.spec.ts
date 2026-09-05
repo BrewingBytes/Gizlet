@@ -50,6 +50,7 @@ test("offers a block only when it accepts what the block before it produces", as
     "Crop Image",
     "Collage Maker",
     "Rotate & Flip Image",
+    "Image Background",
     "Remove Image Metadata",
   ]);
 
@@ -78,6 +79,7 @@ test("offers a block only when it accepts what the block before it produces", as
     "Crop Image",
     "Collage Maker",
     "Rotate & Flip Image",
+    "Image Background",
     "Remove Image Metadata",
   ]);
 });

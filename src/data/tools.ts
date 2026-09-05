@@ -370,8 +370,12 @@ export const toolRegistry = [
       "square an image",
       "product photo background",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "One JPEG, PNG, WebP, AVIF, or BMP image; set a canvas size, a background colour or transparency, how the image is fitted into it, where it sits, and JPEG, PNG, or WebP output.",
+      output: "The image drawn onto the chosen canvas, ready to download, keeping transparency in PNG and WebP.",
+    },
   },
   {
     id: 15,

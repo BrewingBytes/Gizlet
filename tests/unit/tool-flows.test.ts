@@ -90,6 +90,7 @@ describe('Gizlet flow registry', () => {
       'crop-image',
       'collage-maker',
       'rotate-flip-image',
+      'image-background',
       'remove-image-metadata',
     ]);
     expect(getNextFlowTools('convert-image').map((tool) => tool.toolSlug)).toEqual([
@@ -100,6 +101,7 @@ describe('Gizlet flow registry', () => {
       'crop-image',
       'collage-maker',
       'rotate-flip-image',
+      'image-background',
       'remove-image-metadata',
     ]);
     expect(canFlowTo('convert-image', 'resize-image')).toBe(true);
@@ -115,7 +117,7 @@ describe('Gizlet flow registry', () => {
   });
 
   test('puts every image Gizlet upstream of the PDF Gizlet', () => {
-    for (const toolSlug of ['compress-image', 'resize-image', 'convert-image', 'crop-image', 'collage-maker', 'rotate-flip-image', 'remove-image-metadata'] as const) {
+    for (const toolSlug of ['compress-image', 'resize-image', 'convert-image', 'crop-image', 'collage-maker', 'rotate-flip-image', 'image-background', 'remove-image-metadata'] as const) {
       expect(canFlowTo(toolSlug, 'jpg-to-pdf'), toolSlug).toBe(true);
     }
   });
@@ -154,6 +156,7 @@ describe('Gizlet flow registry', () => {
       'crop-image',
       'collage-maker',
       'rotate-flip-image',
+      'image-background',
       'remove-image-metadata',
     ]);
     expect(
@@ -236,6 +239,7 @@ describe('Gizlet flow registry', () => {
       'crop-image',
       'collage-maker',
       'rotate-flip-image',
+      'image-background',
       'remove-image-metadata',
     ]);
     expect(getNextFlowSteps(imageInput, ['convert-image']).map((tool) => tool.toolSlug)).toEqual([
@@ -246,6 +250,7 @@ describe('Gizlet flow registry', () => {
       'crop-image',
       'collage-maker',
       'rotate-flip-image',
+      'image-background',
       'remove-image-metadata',
     ]);
   });
@@ -353,6 +358,7 @@ describe('how many payloads a chain takes', () => {
     const { limit, describeCount } = getFlowCombiningLimit(getFlowCategory('images'), [
       'collage-maker',
       'rotate-flip-image',
+      'image-background',
       'remove-image-metadata',
     ]);
 
@@ -392,6 +398,7 @@ describe('flow categories', () => {
       'crop-image',
       'collage-maker',
       'rotate-flip-image',
+      'image-background',
       'remove-image-metadata',
     ]);
     expect(getFlowCategoryStartSlugs('pdf')).toEqual(['merge-pdf', 'pdf-to-jpg', 'split-pdf']);

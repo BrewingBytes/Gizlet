@@ -1,5 +1,6 @@
 import type { ImageOutputFormat } from '../data/image-compression';
 import { getCollageSourceRectangle, type CollagePlan } from '../data/image-collage';
+import type { BackgroundPlan } from '../data/image-background';
 import type { CropRectangle } from '../data/image-crop';
 import { getOrientationDrawing, type ImageOrientation } from '../data/image-orientation';
 import type { ImageDimensions } from '../data/image-resize';
@@ -171,6 +172,40 @@ export function orientBrowserImage(
   context.rotate(drawing.rotationRadians);
   context.scale(drawing.scaleX, drawing.scaleY);
   context.drawImage(image, drawing.drawX, drawing.drawY, drawing.drawWidth, drawing.drawHeight);
+
+  return canvas;
+}
+
+/**
+ * Draws an image onto a background canvas, on-device.
+ *
+ * The plan decides the canvas and where the picture sits on it; this paints the
+ * background, unless there is none to paint, and draws the picture where it was
+ * put. A canvas starts transparent, so "no background" is the absence of the
+ * fill rather than a colour pretending to be one.
+ */
+export function drawImageBackground(
+  canvas: HTMLCanvasElement,
+  image: CanvasImageSource,
+  plan: BackgroundPlan,
+  background: string,
+): HTMLCanvasElement {
+  canvas.width = plan.canvas.width;
+  canvas.height = plan.canvas.height;
+  const context = canvas.getContext('2d');
+
+  if (!context) throw new Error('Your browser cannot prepare this image.');
+
+  context.clearRect(0, 0, plan.canvas.width, plan.canvas.height);
+
+  if (background !== 'transparent') {
+    context.fillStyle = background;
+    context.fillRect(0, 0, plan.canvas.width, plan.canvas.height);
+  }
+
+  if (plan.width > 0 && plan.height > 0) {
+    context.drawImage(image, plan.x, plan.y, plan.width, plan.height);
+  }
 
   return canvas;
 }

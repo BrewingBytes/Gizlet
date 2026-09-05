@@ -583,6 +583,88 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'image-background': {
+    what: {
+      heading: 'What Image Background does',
+      paragraphs: [
+        'Image Background puts a picture onto a canvas you choose: a size, a colour behind it, how the picture is scaled into it, and where it sits. Your browser draws the two together and hands back one image.',
+        'It is the Gizlet for a transparent PNG that needs something behind it, and for a photograph that has to be a particular shape before somewhere will accept it. The preview is the canvas itself, drawn at full size and shown smaller, so what is on screen is what the download holds.',
+      ],
+    },
+    when: {
+      heading: 'When the shape is the requirement',
+      paragraphs: [
+        'Reach for it when the destination dictates the frame: a marketplace that wants square photographs, a link preview that has to be 1200 by 630, a story that has to be tall. Fitting a landscape photograph into a square by cropping loses the edges; putting it on a square canvas keeps all of it.',
+        'It is also what a logo with a transparent background needs before it goes somewhere that shows it on white, or on black, or on anything unpredictable. Choosing the colour here means the answer is in the file rather than left to whatever renders it.',
+      ],
+    },
+    options: {
+      heading: 'What the canvas controls do',
+      paragraphs: ['A canvas, a rule for scaling the picture into it, and where it is held.'],
+      details: [
+        {
+          term: 'Canvas size',
+          description:
+            'The finished image’s dimensions. The presets are the shapes the job usually asks for — the picture’s own size, a 1080 square, a 1200 by 630 link preview, a 1080 by 1920 story — and the two fields take anything else. Choosing a size in the fields updates the preset to match rather than leaving the two disagreeing.',
+        },
+        {
+          term: 'Fit',
+          description:
+            'Fit inside scales the whole picture until it fits, leaving background around it. Fill the canvas scales until no background shows and trims whatever overflows. Original size leaves every pixel as it is, which is what you want when adding a border rather than resizing anything.',
+        },
+        {
+          term: 'Position and nudges',
+          description:
+            'Nine anchors, from top left to bottom right, decide where the picture is held. The two nudge fields move it from there in canvas pixels, including negative values, for the cases where an anchor is nearly right.',
+        },
+        {
+          term: 'Background and format',
+          description:
+            'Any colour, or none at all. PNG and WebP keep a transparent background; JPEG cannot hold transparency, so it is saved white and the page says so before you download rather than after.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'The canvas is drawn here',
+      paragraphs: [
+        'The picture is decoded, drawn onto the canvas, and encoded by this browser, and the finished file goes straight to your downloads. Gizlet is a static site with no upload endpoint, so there is nowhere for an image to be sent, and nothing is kept once the tab closes.',
+        'Product photographs and logos are the files this Gizlet is for, and they are usually somebody’s work before a launch. Preparing them should not mean handing them to a site that sees them first.',
+        'Because the output is drawn fresh onto a canvas, it arrives without the metadata the original carried, including the camera model and any GPS coordinates.',
+      ],
+    },
+    faq: [
+      {
+        question: 'How do I put a white background behind a transparent PNG?',
+        answer:
+          'Leave the canvas at the image’s own size, pick white as the background, and save. The transparent areas become white, and nothing else about the picture changes.',
+      },
+      {
+        question: 'Why did my transparent background come out white?',
+        answer:
+          'Because the output format was JPEG, which has no transparency at all. Choose PNG or WebP to keep it clear; the page warns about this as soon as the two settings disagree.',
+      },
+      {
+        question: 'What is the difference between fitting inside and filling the canvas?',
+        answer:
+          'Fitting scales the picture until all of it is visible, leaving background at two edges. Filling scales it until the canvas is covered, which means the parts that overflow are cut off. Fitting keeps everything; filling keeps the frame full.',
+      },
+      {
+        question: 'How do I make a square image for a listing?',
+        answer:
+          'Choose the 1080 square canvas, leave the fit on Fit inside, and pick a background colour. A landscape photograph then keeps all of its content, with bands above and below in the colour you chose.',
+      },
+      {
+        question: 'Can the picture be bigger than the canvas?',
+        answer:
+          'Yes, with Original size. Every pixel stays as it is and whatever falls outside the canvas is not saved, which is the honest way to add a border to a picture without touching it.',
+      },
+      {
+        question: 'Is anything uploaded?',
+        answer:
+          'No. The canvas is drawn by this browser and written straight to a download. There is no upload endpoint behind this page.',
+      },
+    ],
+  },
   'json-ld-generator': {
     what: {
       heading: 'What the JSON-LD Generator does',

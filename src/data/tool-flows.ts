@@ -151,6 +151,11 @@ export const toolFlowRegistry = [
     output: imageOutput,
   },
   {
+    toolSlug: 'image-background',
+    input: imageFlowInput,
+    output: imageOutput,
+  },
+  {
     toolSlug: 'remove-image-metadata',
     input: imageFlowInput,
     output: imageOutput,

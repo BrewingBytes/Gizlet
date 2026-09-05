@@ -1,0 +1,480 @@
+---
+import {
+  defaultBackgroundAnchor,
+  defaultBackgroundColour,
+  defaultBackgroundFit,
+  getBackgroundAnchorOptions,
+  getBackgroundCanvasPresetOptions,
+  getBackgroundFitOptions,
+} from '../data/image-background';
+
+// Every control's options come from the layout module, so a fit or a canvas
+// size added there needs no edit here.
+const canvasPresets = getBackgroundCanvasPresetOptions();
+const fits = getBackgroundFitOptions();
+const anchors = getBackgroundAnchorOptions();
+---
+
+<section class="image-background-tool" data-image-background-tool>
+  <div class="image-background-tool__picker" data-drop-zone>
+    <input
+      id="image-background-file"
+      class="image-background-tool__file-input"
+      type="file"
+      accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp"
+      aria-label="Select an image to put on a background"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">One image at a time</p>
+    <h2>Drop an image here</h2>
+    <p>JPEG, PNG, WebP, AVIF, or BMP. Nothing leaves this device.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose an image</button>
+  </div>
+
+  <p class="image-background-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="image-background-tool__error" data-error role="alert" hidden></p>
+
+  <div class="image-background-tool__editor" data-editor hidden>
+    <figure class="image-background-tool__stage">
+      <!-- The checkerboard behind the canvas is the page's, not the picture's,
+        so a transparent background looks transparent instead of white. -->
+      <div class="image-background-tool__frame">
+        <canvas data-preview-canvas aria-label="Image on its background"></canvas>
+      </div>
+      <figcaption data-plan-summary></figcaption>
+    </figure>
+
+    <div class="image-background-tool__controls">
+      <div class="image-background-tool__field">
+        <label for="background-canvas-preset">Canvas size</label>
+        <select id="background-canvas-preset" data-canvas-preset>
+          {canvasPresets.map((option) => <option value={option.value}>{option.label}</option>)}
+        </select>
+      </div>
+
+      <div class="image-background-tool__field">
+        <label for="background-width">Width <span>px</span></label>
+        <input id="background-width" type="number" min="1" step="1" inputmode="numeric" data-canvas-width />
+      </div>
+
+      <div class="image-background-tool__field">
+        <label for="background-height">Height <span>px</span></label>
+        <input id="background-height" type="number" min="1" step="1" inputmode="numeric" data-canvas-height />
+      </div>
+
+      <div class="image-background-tool__field">
+        <label for="background-fit">Fit</label>
+        <select id="background-fit" data-fit>
+          {fits.map((option) => (
+            <option value={option.value} selected={option.value === defaultBackgroundFit}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <p class="utility-text" data-fit-note></p>
+      </div>
+
+      <div class="image-background-tool__field">
+        <label for="background-anchor">Position</label>
+        <select id="background-anchor" data-anchor>
+          {anchors.map((option) => (
+            <option value={option.value} selected={option.value === defaultBackgroundAnchor}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div class="image-background-tool__field">
+        <label for="background-offset-x">Nudge across <span>px</span></label>
+        <input id="background-offset-x" type="number" step="1" inputmode="numeric" value="0" data-offset-x />
+      </div>
+
+      <div class="image-background-tool__field">
+        <label for="background-offset-y">Nudge down <span>px</span></label>
+        <input id="background-offset-y" type="number" step="1" inputmode="numeric" value="0" data-offset-y />
+      </div>
+
+      <div class="image-background-tool__field">
+        <label for="background-colour">Background</label>
+        <input id="background-colour" type="color" value={defaultBackgroundColour} data-colour />
+        <label class="image-background-tool__checkbox" for="background-transparent">
+          <input id="background-transparent" type="checkbox" data-transparent />
+          Keep it transparent
+        </label>
+      </div>
+
+      <div class="image-background-tool__field">
+        <label for="background-output-format">Output format</label>
+        <select id="background-output-format" data-output-format>
+          <option value="image/jpeg">JPEG</option>
+          <option value="image/png" selected>PNG</option>
+          <option value="image/webp">WebP</option>
+        </select>
+        <p class="utility-text" data-transparency-note hidden></p>
+      </div>
+    </div>
+
+    <div class="image-background-tool__actions">
+      <button type="button" data-apply>Put it on the background</button>
+      <button type="button" class="button-secondary" data-clear>Choose another image</button>
+    </div>
+  </div>
+
+  <section class="image-background-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2>Sitting on something.</h2>
+    <figure class="image-background-tool__result-preview">
+      <div class="image-background-tool__frame">
+        <img data-result-image alt="Finished image preview" />
+      </div>
+      <figcaption>Actual exported image</figcaption>
+    </figure>
+    <dl>
+      <div><dt>Original</dt><dd data-original-dimensions></dd></div>
+      <div><dt>Canvas</dt><dd data-result-dimensions></dd></div>
+      <div><dt>File size</dt><dd data-result-size></dd></div>
+    </dl>
+    <div class="image-background-tool__result-actions">
+      <a class="image-background-tool__download" data-download>Download image</a>
+      <button type="button" class="button-secondary" data-result-back>Change it</button>
+      <button type="button" class="button-secondary" data-result-clear>Choose another image</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .image-background-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .image-background-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .image-background-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .image-background-tool__picker[hidden], .image-background-tool__editor[hidden], .image-background-tool__result[hidden] { display: none; }
+  .image-background-tool__picker h2 { margin-bottom: var(--space-2); }
+  .image-background-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .image-background-tool__status, .image-background-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .image-background-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .image-background-tool__editor, .image-background-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .image-background-tool__editor { display: grid; gap: var(--space-4); }
+  .image-background-tool__stage { margin: 0; }
+  /* A checkerboard, so a transparent background reads as transparent rather
+     than as whatever colour the page happens to be. */
+  .image-background-tool__frame {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;
+    border: var(--border-width) solid var(--border);
+    background-color: #ffffff;
+    background-image:
+      linear-gradient(45deg, #d9d3c7 25%, transparent 25%),
+      linear-gradient(-45deg, #d9d3c7 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #d9d3c7 75%),
+      linear-gradient(-45deg, transparent 75%, #d9d3c7 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  }
+  .image-background-tool__frame canvas, .image-background-tool__frame img { display: block; max-width: 100%; max-height: 24rem; }
+  .image-background-tool__stage figcaption { margin-top: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-align: center; }
+  .image-background-tool__controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: var(--space-3); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .image-background-tool__field label { display: block; margin-bottom: var(--space-1); font-weight: 700; }
+  .image-background-tool__field label span { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-sm); font-weight: 400; }
+  .image-background-tool__field input, .image-background-tool__field select { width: 100%; }
+  .image-background-tool__field input[type='color'] { min-height: 2.75rem; padding: 2px; }
+  .image-background-tool__checkbox { display: flex; align-items: center; gap: var(--space-1); min-height: 2.75rem; margin-top: var(--space-1); margin-bottom: 0; }
+  .image-background-tool__checkbox input { width: auto; }
+  .image-background-tool__field .utility-text { margin: var(--space-1) 0 0; }
+  .image-background-tool__field .utility-text[hidden] { display: none; }
+  .image-background-tool__actions, .image-background-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .image-background-tool__result h2 { margin-bottom: var(--space-4); }
+  .image-background-tool__result-preview { margin: 0 0 var(--space-4); }
+  .image-background-tool__result-preview figcaption { margin-top: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-align: center; }
+  .image-background-tool__result dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); margin: 0 0 var(--space-4); }
+  .image-background-tool__result dl div { padding: var(--space-2); border-top: var(--border-width) solid var(--border); }
+  .image-background-tool__result dt { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
+  .image-background-tool__result dd { margin: var(--space-1) 0 0; font-weight: 700; }
+  .image-background-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .image-background-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+  @media (max-width: 36rem) {
+    .image-background-tool__picker, .image-background-tool__editor, .image-background-tool__result { padding: var(--space-3); }
+    .image-background-tool__result dl { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  import {
+    formatFileSize,
+    getInputImageFormat,
+    isImageOutputFormat,
+    isSupportedImageFile,
+  } from '../data/image-compression';
+  import {
+    backgroundFits,
+    defaultBackgroundAnchor,
+    defaultBackgroundColour,
+    defaultBackgroundFit,
+    describeBackgroundPlan,
+    getBackgroundCanvasPreset,
+    getBackgroundOutputFilename,
+    getEffectiveBackground,
+    getMatchingCanvasPreset,
+    getTransparencyNote,
+    isBackgroundAnchor,
+    isBackgroundCanvasPreset,
+    isBackgroundColour,
+    isBackgroundFit,
+    planImageBackground,
+    transparentBackground,
+    validateBackgroundCanvas,
+  } from '../data/image-background';
+  import { isLargeImage, type ImageDimensions } from '../data/image-resize';
+  import { drawImageBackground, encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
+
+  const root = document.querySelector<HTMLElement>('[data-image-background-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const editor = root.querySelector<HTMLElement>('[data-editor]');
+    const previewCanvas = root.querySelector<HTMLCanvasElement>('[data-preview-canvas]');
+    const planSummary = root.querySelector<HTMLElement>('[data-plan-summary]');
+    const canvasPreset = root.querySelector<HTMLSelectElement>('[data-canvas-preset]');
+    const canvasWidth = root.querySelector<HTMLInputElement>('[data-canvas-width]');
+    const canvasHeight = root.querySelector<HTMLInputElement>('[data-canvas-height]');
+    const fit = root.querySelector<HTMLSelectElement>('[data-fit]');
+    const fitNote = root.querySelector<HTMLElement>('[data-fit-note]');
+    const anchor = root.querySelector<HTMLSelectElement>('[data-anchor]');
+    const offsetX = root.querySelector<HTMLInputElement>('[data-offset-x]');
+    const offsetY = root.querySelector<HTMLInputElement>('[data-offset-y]');
+    const colour = root.querySelector<HTMLInputElement>('[data-colour]');
+    const transparent = root.querySelector<HTMLInputElement>('[data-transparent]');
+    const outputFormat = root.querySelector<HTMLSelectElement>('[data-output-format]');
+    const transparencyNote = root.querySelector<HTMLElement>('[data-transparency-note]');
+    const applyButton = root.querySelector<HTMLButtonElement>('[data-apply]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultImage = root.querySelector<HTMLImageElement>('[data-result-image]');
+    const originalDimensions = root.querySelector<HTMLElement>('[data-original-dimensions]');
+    const resultDimensions = root.querySelector<HTMLElement>('[data-result-dimensions]');
+    const resultSize = root.querySelector<HTMLElement>('[data-result-size]');
+    const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const resultBack = root.querySelector<HTMLButtonElement>('[data-result-back]');
+    const resultClear = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !previewCanvas || !planSummary || !canvasPreset || !canvasWidth || !canvasHeight || !fit || !fitNote || !anchor || !offsetX || !offsetY || !colour || !transparent || !outputFormat || !transparencyNote || !applyButton || !clearButton || !result || !resultImage || !originalDimensions || !resultDimensions || !resultSize || !download || !resultBack || !resultClear) {
+      throw new Error('Image Background tool could not initialise.');
+    }
+
+    let selectedFile: File | undefined;
+    let sourceImage: HTMLImageElement | undefined;
+    let sourceDimensions: ImageDimensions | undefined;
+    let resultUrl: string | undefined;
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+
+    const currentFit = () => (isBackgroundFit(fit.value) ? fit.value : defaultBackgroundFit);
+    const currentAnchor = () =>
+      isBackgroundAnchor(anchor.value) ? anchor.value : defaultBackgroundAnchor;
+    const currentCanvas = (): ImageDimensions => ({
+      width: Number(canvasWidth.value),
+      height: Number(canvasHeight.value),
+    });
+    const currentBackground = () => {
+      if (transparent.checked) return transparentBackground;
+
+      return isBackgroundColour(colour.value) ? colour.value : defaultBackgroundColour;
+    };
+    const currentOptions = () => ({
+      canvas: currentCanvas(),
+      fit: currentFit(),
+      anchor: currentAnchor(),
+      offsetX: Number(offsetX.value) || 0,
+      offsetY: Number(offsetY.value) || 0,
+    });
+
+    const resetResult = () => {
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      resultUrl = undefined;
+      result.hidden = true;
+      resultImage.removeAttribute('src');
+      download.removeAttribute('href');
+      download.removeAttribute('download');
+    };
+
+    const resetTool = () => {
+      selectedFile = undefined;
+      sourceImage = undefined;
+      sourceDimensions = undefined;
+      fileInput.value = '';
+      resetResult();
+      dropZone.hidden = false;
+      editor.hidden = true;
+      clearError();
+      clearStatus();
+    };
+
+    /** The preview is the drawing the download holds, at the canvas's own size. */
+    const renderPreview = () => {
+      if (!sourceImage || !sourceDimensions || !isImageOutputFormat(outputFormat.value)) return;
+
+      fitNote.textContent = backgroundFits[currentFit()].description;
+
+      const note = getTransparencyNote(currentBackground(), outputFormat.value);
+
+      transparencyNote.textContent = note ?? '';
+      transparencyNote.hidden = note === undefined;
+      colour.disabled = transparent.checked;
+
+      const problem = validateBackgroundCanvas(currentCanvas());
+
+      if (problem) {
+        planSummary.textContent = problem;
+        applyButton.disabled = true;
+        return;
+      }
+
+      const plan = planImageBackground(sourceDimensions, currentOptions());
+
+      canvasPreset.value = getMatchingCanvasPreset(plan.canvas, sourceDimensions);
+      drawImageBackground(
+        previewCanvas,
+        sourceImage,
+        plan,
+        getEffectiveBackground(currentBackground(), outputFormat.value),
+      );
+      planSummary.textContent = describeBackgroundPlan(plan);
+      applyButton.disabled = false;
+    };
+
+    const settingsChanged = () => {
+      resetResult();
+      clearError();
+      renderPreview();
+    };
+
+    const selectFile = async (file: File | undefined) => {
+      resetTool();
+      if (!file) return;
+      if (!isSupportedImageFile(file)) {
+        showError('Choose a JPEG, PNG, WebP, AVIF, or BMP image.');
+        return;
+      }
+
+      selectedFile = file;
+      dropZone.hidden = true;
+      showStatus('Reading image dimensions…');
+      await nextPaint();
+      try {
+        sourceImage = await loadBrowserImage(file);
+        sourceDimensions = { width: sourceImage.naturalWidth, height: sourceImage.naturalHeight };
+        if (!sourceDimensions.width || !sourceDimensions.height) throw new Error('This image has no usable dimensions.');
+        if (isLargeImage(sourceDimensions)) {
+          showStatus('Large image detected. Preparing it locally…');
+          await nextPaint();
+        }
+
+        // A canvas the size of the picture is the honest starting point: a
+        // background is added to it, and nothing has been asked for yet.
+        canvasWidth.value = String(sourceDimensions.width);
+        canvasHeight.value = String(sourceDimensions.height);
+        offsetX.value = '0';
+        offsetY.value = '0';
+        // A transparent source is the case this Gizlet exists for, so a PNG or
+        // a WebP keeps its format rather than being flattened into a JPEG.
+        const inputFormat = getInputImageFormat(file);
+        outputFormat.value = inputFormat === 'image/webp' ? 'image/webp' : 'image/png';
+        clearStatus();
+        editor.hidden = false;
+        renderPreview();
+      } catch (caughtError) {
+        selectedFile = undefined;
+        sourceImage = undefined;
+        sourceDimensions = undefined;
+        dropZone.hidden = false;
+        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be read.');
+        clearStatus();
+      }
+    };
+
+    const applyBackground = async () => {
+      if (!selectedFile || !sourceImage || !sourceDimensions || !isImageOutputFormat(outputFormat.value)) return;
+
+      const problem = validateBackgroundCanvas(currentCanvas());
+
+      if (problem) {
+        showError(problem);
+        return;
+      }
+
+      clearError();
+      resetResult();
+      applyButton.disabled = true;
+      applyButton.textContent = 'Drawing…';
+      showStatus('Drawing it locally…');
+      await nextPaint();
+
+      try {
+        const format = outputFormat.value;
+        const plan = planImageBackground(sourceDimensions, currentOptions());
+        const canvas = drawImageBackground(
+          document.createElement('canvas'),
+          sourceImage,
+          plan,
+          getEffectiveBackground(currentBackground(), format),
+        );
+        const output = await encodeBrowserImage(canvas, plan.canvas, format);
+
+        resultUrl = URL.createObjectURL(output);
+        originalDimensions.textContent = `${sourceDimensions.width} × ${sourceDimensions.height} px`;
+        resultDimensions.textContent = `${plan.canvas.width} × ${plan.canvas.height} px`;
+        resultSize.textContent = formatFileSize(output.size);
+        resultImage.src = resultUrl;
+        download.href = resultUrl;
+        download.download = getBackgroundOutputFilename(selectedFile.name, format);
+        editor.hidden = true;
+        result.hidden = false;
+      } catch (caughtError) {
+        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be drawn.');
+      } finally {
+        clearStatus();
+        applyButton.disabled = false;
+        applyButton.textContent = 'Put it on the background';
+      }
+    };
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void selectFile(fileInput.files?.[0]));
+    clearButton.addEventListener('click', resetTool);
+    resultClear.addEventListener('click', resetTool);
+    resultBack.addEventListener('click', () => {
+      resetResult();
+      editor.hidden = false;
+      renderPreview();
+    });
+    applyButton.addEventListener('click', () => void applyBackground());
+    canvasPreset.addEventListener('change', () => {
+      if (!sourceDimensions || !isBackgroundCanvasPreset(canvasPreset.value)) return;
+
+      const chosen = getBackgroundCanvasPreset(canvasPreset.value, sourceDimensions, currentCanvas());
+
+      canvasWidth.value = String(chosen.width);
+      canvasHeight.value = String(chosen.height);
+      settingsChanged();
+    });
+    for (const control of [canvasWidth, canvasHeight, offsetX, offsetY, colour]) {
+      control.addEventListener('input', settingsChanged);
+    }
+    for (const control of [fit, anchor, outputFormat, transparent]) {
+      control.addEventListener('change', settingsChanged);
+    }
+    for (const eventName of ['dragenter', 'dragover']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    for (const eventName of ['dragleave', 'drop']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    dropZone.addEventListener('drop', (event) => void selectFile(event.dataTransfer?.files[0]));
+  }
+</script>

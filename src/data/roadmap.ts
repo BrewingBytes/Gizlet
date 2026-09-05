@@ -203,7 +203,6 @@ export interface PlannedToolChain {
 }
 
 export const plannedToolChains = [
-  { slug: 'image-background', chain: ['resize-image', 'image-background', 'compress-image'] },
   { slug: 'favicon-generator', chain: ['resize-image', 'favicon-generator'] },
   { slug: 'organize-pdf', chain: ['merge-pdf', 'organize-pdf', 'split-pdf'] },
   { slug: 'watermark-pdf', chain: ['jpg-to-pdf', 'watermark-pdf', 'merge-pdf'] },
