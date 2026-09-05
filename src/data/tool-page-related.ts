@@ -18,12 +18,13 @@ import {
  */
 const relatedToolSlugs: Record<AvailableToolSlug, readonly AvailableToolSlug[]> = {
   'compress-image': ['resize-image', 'crop-image', 'convert-image', 'remove-image-metadata', 'jpg-to-pdf'],
-  'resize-image': ['crop-image', 'image-background', 'compress-image', 'convert-image', 'jpg-to-pdf'],
+  'resize-image': ['crop-image', 'image-dimensions', 'image-background', 'compress-image', 'convert-image'],
   'convert-image': ['compress-image', 'resize-image', 'image-background', 'crop-image', 'jpg-to-pdf'],
   'crop-image': ['rotate-flip-image', 'resize-image', 'compress-image', 'convert-image', 'jpg-to-pdf'],
   'rotate-flip-image': ['crop-image', 'resize-image', 'compress-image', 'convert-image', 'jpg-to-pdf'],
   'image-background': ['resize-image', 'crop-image', 'convert-image', 'collage-maker', 'jpg-to-pdf'],
   'remove-image-metadata': ['compress-image', 'resize-image', 'convert-image', 'crop-image', 'jpg-to-pdf'],
+  'image-dimensions': ['resize-image', 'crop-image', 'compress-image', 'convert-image', 'jpg-to-pdf'],
   'collage-maker': ['resize-image', 'crop-image', 'compress-image', 'convert-image', 'jpg-to-pdf'],
   'json-ld-generator': ['json-formatter'],
   'json-formatter': ['json-ld-generator'],

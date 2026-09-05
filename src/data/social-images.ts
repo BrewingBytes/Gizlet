@@ -40,6 +40,7 @@ const bespokeSocialImageSlugs: readonly string[] = [
   'rotate-flip-image',
   'image-background',
   'remove-image-metadata',
+  'image-dimensions',
   'json-ld-generator',
   'json-formatter',
   'jpg-to-pdf',
