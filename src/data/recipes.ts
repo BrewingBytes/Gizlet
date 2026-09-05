@@ -140,6 +140,9 @@ const recipeStepSettings = {
   // the state that leaves is not a setting anyone chose. A link names the one
   // turn instead, which is what a block in a chain applies.
   'rotate-flip-image': { t: orientationPresetNames },
+  // Stripping metadata is the re-encode itself, so there is nothing to set: a
+  // block either runs or is not in the chain.
+  'remove-image-metadata': {},
   'jpg-to-pdf': { p: pdfPageSizeNames, o: pdfOrientationNames },
   // A merge has nothing to name: which documents it joins, and in what order,
   // is the list of files the visitor chose rather than a setting. The entry

@@ -388,8 +388,12 @@ export const toolRegistry = [
       "photo location data",
       "clean image metadata",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "One JPEG, PNG, WebP, AVIF, or BMP image, read on-device; the page lists the EXIF, XMP and text metadata it finds, including GPS coordinates.",
+      output: "The same picture re-encoded as JPEG, PNG, or WebP with no metadata, checked by reading the result back.",
+    },
   },
   {
     id: 16,
