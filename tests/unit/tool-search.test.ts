@@ -34,6 +34,50 @@ describe('searchTools', () => {
     expect(searchTools('to')).toEqual([]);
   });
 
+  it('answers the question the field asks, verb and all', () => {
+    // The field is labelled "I need to…", so a query arrives with the words a
+    // catalogue of nouns cannot contain. Each of these returned nothing while
+    // every term had to match: the site's own JSON-LD Generator was unreachable
+    // by the most natural way to ask for it.
+    const first = (query: string) => searchTools(query).map((tool) => tool.name)[0];
+
+    expect(first('structured data')).toBe('JSON-LD Generator');
+    expect(first('schema markup')).toBe('JSON-LD Generator');
+    expect(first('make JSON-LD')).toBe('JSON-LD Generator');
+    expect(first('write JSON-LD')).toBe('JSON-LD Generator');
+    expect(first('add structured data')).toBe('JSON-LD Generator');
+    expect(first('format JSON')).toBe('JSON Formatter');
+    expect(first('format my JSON')).toBe('JSON Formatter');
+    expect(first('tidy JSON')).toBe('JSON Formatter');
+    expect(first('i need to compress a photo')).toBe('Compress Image');
+    expect(first('crop my photo')).toBe('Crop Image');
+    expect(first('make a collage')).toBe('Collage Maker');
+  });
+
+  it('keeps a loose partial match out, which is what the old rule was for', () => {
+    // Resize Image and Collage Maker both know "photo", and neither answers as
+    // much of this query as the Gizlet that knows both words.
+    expect(searchTools('compress photo').map((tool) => tool.name)).toEqual(['Compress Image']);
+    expect(searchTools('resize an image').map((tool) => tool.name)).toEqual(['Resize Image']);
+  });
+
+  it('refuses a query one weak term would otherwise carry', () => {
+    // "maker" begins with "make" and nothing here knows what a QR code is, so a
+    // single matched term out of three is not an answer to the question.
+    expect(searchTools('make a qr code')).toEqual([]);
+  });
+
+  it('matches a word rather than the letters inside one', () => {
+    // "peg" sat inside "jpeg" and "son" inside "json", which is how "a" and
+    // "an" used to match every Gizlet on the site.
+    expect(searchTools('peg')).toEqual([]);
+    expect(searchTools('son')).toEqual([]);
+    expect(searchTools('mage')).toEqual([]);
+    // A word still matches from its start, because the field is searched as it
+    // is typed and a half-typed word is the normal case.
+    expect(searchTools('compres').map((tool) => tool.name)[0]).toBe('Compress Image');
+  });
+
   it('returns no results for a blank or unmatched query', () => {
     expect(searchTools('')).toEqual([]);
     expect(searchTools('spreadsheet')).toEqual([]);

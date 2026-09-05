@@ -38,9 +38,42 @@ const queryTerms = (query: string) =>
     .filter((term) => term.length > 0 && !connectorWords.has(term));
 
 /**
+ * Whether a term begins a word in the text.
+ *
+ * Matching a raw substring made a term match for reasons nobody chose: "a" and
+ * "an" matched every Gizlet because their letters sit inside other words, while
+ * "make" matched none. A term is a word a visitor typed, so it has to line up
+ * with a word in the registry — from the start of one, because the field is
+ * searched as it is typed and "compres" is a query on its way to "compress".
+ */
+function beginsWord(text: string, term: string): boolean {
+  for (let index = text.indexOf(term); index !== -1; index = text.indexOf(term, index + 1)) {
+    if (index === 0 || text[index - 1] === ' ') {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Finds Gizlets locally using the catalog fields intended for discovery.
- * Every query term must match so short, unrelated partial matches stay out
- * of the result list.
+ *
+ * A result has to match as much of the query as anything else does: every
+ * Gizlet is scored over the terms it matches, and only those matching the
+ * largest number of them are returned. That is what keeps a loose partial match
+ * out — "compress photo" still returns only Compress Image, though Resize Image
+ * knows "photo" — while a word the registry has never heard of no longer empties
+ * the list. The field is labelled "I need to…", so it invites exactly the words
+ * a catalogue of nouns cannot contain: "make JSON-LD" asks for the Gizlet that
+ * matches both of the other two terms, not for nothing at all.
+ *
+ * Requiring every term to match was the earlier rule, and the reason it is gone
+ * rather than patched with a list of verbs to ignore: such a list has to know
+ * that "add" means nothing while "crop" does, and it stops being true the day a
+ * Gizlet ships with "add watermark" among its keywords. Counting matched terms
+ * needs no list and survives the registry growing, because the Gizlet that
+ * matches more of the query wins whatever the words are.
  *
  * The default is the available Gizlets, not the whole registry. A result is a
  * link a visitor is about to follow, so a planned Gizlet appearing here would
@@ -57,35 +90,60 @@ export function searchTools(
   }
 
   const phrase = normalise(query);
-
-  return tools
+  const scored = tools
     .map((tool) => {
       const name = normalise(tool.name);
       const description = normalise(tool.description);
       const keywords = tool.keywords.map(normalise);
+      let matched = 0;
       let score = 0;
 
       for (const term of terms) {
-        const inName = name.includes(term);
-        const inDescription = description.includes(term);
-        const inKeyword = keywords.some((keyword) => keyword.includes(term));
+        const inName = beginsWord(name, term);
+        const inDescription = beginsWord(description, term);
+        const inKeyword = keywords.some((keyword) => beginsWord(keyword, term));
 
         if (!inName && !inDescription && !inKeyword) {
-          return null;
+          continue;
         }
 
+        matched += 1;
         score += Number(inName) * 8 + Number(inDescription) * 3 + Number(inKeyword) * 5;
       }
 
-      if (name.includes(phrase)) {
+      if (matched === 0) {
+        return null;
+      }
+
+      if (beginsWord(name, phrase)) {
         score += 12;
-      } else if (keywords.some((keyword) => keyword.includes(phrase))) {
+      } else if (keywords.some((keyword) => beginsWord(keyword, phrase))) {
         score += 10;
       }
 
-      return { score, tool };
+      return { matched, score, tool };
     })
-    .filter((result): result is { score: number; tool: SearchableTool } => result !== null)
+    .filter((result): result is { matched: number; score: number; tool: SearchableTool } =>
+      result !== null,
+    );
+
+  if (scored.length === 0) {
+    return [];
+  }
+
+  const bestCoverage = Math.max(...scored.map((result) => result.matched));
+
+  // A result also has to answer at least half of what was asked. Without a
+  // floor, one weak term carries a whole query: "make a qr code" would return
+  // Collage Maker, because "maker" begins with "make" and nothing here knows
+  // what a QR code is. Half is the loosest floor that still lets "tidy JSON"
+  // through on the one word of two that means anything.
+  if (bestCoverage * 2 < terms.length) {
+    return [];
+  }
+
+  return scored
+    .filter((result) => result.matched === bestCoverage)
     .sort((left, right) => right.score - left.score || left.tool.id - right.tool.id)
     .map(({ tool }) => tool);
 }

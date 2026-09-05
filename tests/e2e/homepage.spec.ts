@@ -105,6 +105,19 @@ test("finds Gizlets from the homepage search by intent", async ({ page }) => {
   ).toHaveAttribute("href", "/tools/compress-image/");
   await expect(searchForm.getByText("1 Gizlet found.")).toBeVisible();
 
+  // The field asks "I need to…", so it is asked with a verb in front. Every one
+  // of these used to empty the list because the verb matched nothing.
+  await search.fill("make JSON-LD");
+  await expect(
+    searchForm.getByRole("link", { name: /JSON-LD Generator/ }),
+  ).toHaveAttribute("href", "/tools/json-ld-generator/");
+  await expect(searchForm.getByText("1 Gizlet found.")).toBeVisible();
+
+  await search.fill("i need to crop my photo");
+  await expect(
+    searchForm.getByRole("link", { name: /Crop Image/ }),
+  ).toHaveAttribute("href", "/tools/crop-image/");
+
   await search.fill("spreadsheet");
   await expect(
     searchForm.getByText("No Gizlets found for “spreadsheet”."),
