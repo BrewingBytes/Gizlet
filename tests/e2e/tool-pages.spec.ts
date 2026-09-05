@@ -20,6 +20,7 @@ const workspaceSignatures = {
   "image-background": "Select an image to put on a background",
   "remove-image-metadata": "Select an image to inspect",
   "image-dimensions": "Select an image to measure",
+  "image-color-picker": "Select an image to pick colours from",
   "json-ld-generator": "Schema type",
   "json-formatter": "JSON input",
   "jpg-to-pdf": "Select images to put in a PDF",
