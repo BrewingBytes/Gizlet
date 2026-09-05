@@ -419,6 +419,88 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'rotate-flip-image': {
+    what: {
+      heading: 'What Rotate & Flip Image does',
+      paragraphs: [
+        'Rotate & Flip Image turns a picture in quarter turns and mirrors it. Press the buttons until the preview looks right, then save it as JPEG, PNG, or WebP.',
+        'The preview is the transform itself, drawn on a canvas rather than tilted with a stylesheet, so what is on screen is what the download holds — including the sides swapping over after a quarter turn.',
+      ],
+    },
+    when: {
+      heading: 'When a picture arrives the wrong way up',
+      paragraphs: [
+        'Use it when a photograph comes off a phone sideways, when a scan is upside down, or when a screenshot from another device arrives rotated. Most of these are pictures whose orientation was only ever a tag in the file, and the tag did not survive the trip.',
+        'Mirroring is a different job from turning: flip a photograph of a page you shot in a mirror, or a selfie that reads back to front. Rotating and mirroring can be combined, and a picture straightened here can be cropped or resized afterwards in the same Flow.',
+      ],
+    },
+    options: {
+      heading: 'What each button does',
+      paragraphs: ['Four buttons, and the picture is only ever drawn once from the original pixels.'],
+      details: [
+        {
+          term: 'Rotate left and rotate right',
+          description:
+            'A quarter turn each way. Four presses in the same direction bring the picture back to where it started rather than stacking four transforms, and after one or three of them the width and the height swap over.',
+        },
+        {
+          term: 'Flip horizontally and flip vertically',
+          description:
+            'Mirrors what you are looking at, left to right or top to bottom. Pressing the same flip twice returns exactly to where you started, whatever rotation is already applied.',
+        },
+        {
+          term: 'Put it back',
+          description:
+            'Returns to the picture as it arrived. It is available only once something has actually changed, so the button never claims to undo nothing.',
+        },
+        {
+          term: 'Output format',
+          description:
+            'JPEG for photographs, WebP for the web, PNG for screenshots and anything with transparency. A turn is lossless in itself — no pixel is resampled — but the file is encoded again, so a JPEG saved as a JPEG is compressed a second time.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'Turned here, not somewhere else',
+      paragraphs: [
+        'The image is decoded, drawn in its new orientation, and encoded by this browser, and the result goes straight to your downloads. Gizlet is a static site with no upload endpoint, so there is nowhere for a photograph to be sent, and nothing is kept once the tab closes.',
+        'Every press redraws the preview from the original pixels rather than from the last preview, so pressing a button ten times costs the picture nothing. The file is written once, when you save it.',
+        'Because the output is drawn fresh onto a canvas, it also arrives without the metadata the original carried, including the orientation tag that may have been the whole problem, the camera model, and any GPS coordinates.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Is the photo uploaded to rotate it?',
+        answer:
+          'No. It is decoded and redrawn by this browser, and the turned file is handed straight to your downloads. There is no upload endpoint behind this page.',
+      },
+      {
+        question: 'Why did the width and height swap?',
+        answer:
+          'Because a quarter turn stands the picture on its side: a 4000 by 3000 photograph rotated left or right is 3000 by 4000. Turning it twice, or mirroring it, leaves both sides as they were.',
+      },
+      {
+        question: 'Does rotating lose quality?',
+        answer:
+          'The turn itself does not: a quarter turn moves whole pixels and resamples nothing. The file is encoded again afterwards, so saving a JPEG as a JPEG applies lossy compression a second time; choose PNG or WebP if that matters.',
+      },
+      {
+        question: 'Can I rotate by an arbitrary angle?',
+        answer:
+          'No. Quarter turns only, because any other angle has to invent pixels in the corners and decide what to do with the ones that fall outside the frame. Straightening a crooked horizon is a different job and is not this Gizlet.',
+      },
+      {
+        question: 'My phone shows it upright but everything else shows it sideways. Why?',
+        answer:
+          'The orientation was stored as a tag rather than in the pixels, and software that ignores the tag shows the picture as it was actually recorded. Turning it here writes the orientation into the pixels themselves, so it looks the same everywhere.',
+      },
+      {
+        question: 'What is the difference between flipping and rotating?',
+        answer:
+          'Rotating turns the picture; flipping mirrors it. A rotated photograph of text is still readable when you tilt your head, and a flipped one reads backwards, which is why mirroring is what fixes a picture taken in a mirror.',
+      },
+    ],
+  },
   'json-ld-generator': {
     what: {
       heading: 'What the JSON-LD Generator does',

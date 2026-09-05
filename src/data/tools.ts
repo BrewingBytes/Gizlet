@@ -347,8 +347,12 @@ export const toolRegistry = [
       "rotate 90 degrees",
       "straighten photo",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "One JPEG, PNG, WebP, AVIF, or BMP image; rotate it in quarter turns, mirror it left to right or top to bottom, and choose JPEG, PNG, or WebP output.",
+      output: "The image in its new orientation, ready to download, with its sides swapped after a quarter turn.",
+    },
   },
   {
     id: 14,

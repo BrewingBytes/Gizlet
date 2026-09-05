@@ -275,6 +275,16 @@ const [firstCategory] = categories;
   } from '../data/image-compression';
   import { getConversionOutputFilename } from '../data/image-conversion';
   import {
+    defaultOrientationPreset,
+    getOrientationOutputFilename,
+    getOrientationPreset,
+    getOrientationPresetOptions,
+    getOrientedDimensions,
+    isOrientationPresetName,
+    validateOrientedImage,
+    type OrientationPresetName,
+  } from '../data/image-orientation';
+  import {
     defaultCollageBackground,
     defaultCollageLayout,
     defaultCollageSpacing,
@@ -344,7 +354,7 @@ const [firstCategory] = categories;
   } from '../data/split-pdf';
   import { toolRegistry } from '../data/tools';
   import { createZipArchive, zipMimeType } from '../data/zip-archive';
-  import { cropBrowserImage, drawCollage, encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
+  import { cropBrowserImage, drawCollage, encodeBrowserImage, loadBrowserImage, orientBrowserImage } from '../scripts/image-processing';
   import { createImagePdf, openLocalPdfForSplit, splitLocalPdf } from '../scripts/pdf-generation';
   import { createPdfPageView } from '../scripts/pdf-page-view';
 
@@ -372,6 +382,7 @@ const [firstCategory] = categories;
     quality?: number;
     ratio?: FlowCropAspectRatioName;
     layout?: CollageLayoutName;
+    turn?: OrientationPresetName;
     pageSize?: PdfPageSizeName;
     orientation?: PdfOrientation;
     resolution?: PdfImageResolution;
@@ -572,6 +583,7 @@ const [firstCategory] = categories;
       ...(toolSlug === 'compress-image' ? { quality: 80 } : {}),
       ...(toolSlug === 'crop-image' ? { ratio: defaultFlowCropAspectRatio } : {}),
       ...(toolSlug === 'collage-maker' ? { layout: defaultCollageLayout } : {}),
+      ...(toolSlug === 'rotate-flip-image' ? { turn: defaultOrientationPreset } : {}),
       ...(toolSlug === 'jpg-to-pdf' ? { pageSize: defaultPdfPageSize, orientation: defaultPdfOrientation } : {}),
       ...(toolSlug === 'pdf-to-jpg' ? { resolution: defaultPdfImageResolution } : {}),
     });
@@ -611,6 +623,10 @@ const [firstCategory] = categories;
       if (step.toolSlug === 'crop-image') {
         const ratio = step.ratio ?? defaultFlowCropAspectRatio;
         return `<div class="flow-block__settings"><label for="step-ratio-${step.id}">Crop to</label><select id="step-ratio-${step.id}" data-step-setting="ratio" data-step-id="${step.id}" aria-label="${name} aspect ratio">${optionsMarkup(getCropAspectRatioOptions(flowCropAspectRatioNames), ratio)}</select></div><p class="flow-block__format-note">The largest rectangle of that shape, taken from the middle of the image.</p>`;
+      }
+      if (step.toolSlug === 'rotate-flip-image') {
+        const turn = step.turn ?? defaultOrientationPreset;
+        return `<div class="flow-block__settings"><label for="step-turn-${step.id}">Turn</label><select id="step-turn-${step.id}" data-step-setting="turn" data-step-id="${step.id}" aria-label="${name} turn">${optionsMarkup(getOrientationPresetOptions(), turn)}</select></div><p class="flow-block__format-note">A quarter turn swaps the sides of every image the flow is carrying.</p>`;
       }
       if (step.toolSlug === 'collage-maker') {
         const layout = step.layout ?? defaultCollageLayout;
@@ -970,6 +986,7 @@ const [firstCategory] = categories;
       if (setting === 'resolution' && isPdfImageResolution(target.value)) step.resolution = target.value;
       if (setting === 'ratio' && isFlowCropAspectRatioName(target.value)) step.ratio = target.value;
       if (setting === 'layout' && isCollageLayoutName(target.value)) step.layout = target.value;
+      if (setting === 'turn' && isOrientationPresetName(target.value)) step.turn = target.value;
       if (setting === 'width') step.width = Number(target.value);
       if (setting === 'height') step.height = Number(target.value);
       if (setting === 'quality') {
@@ -990,6 +1007,28 @@ const [firstCategory] = categories;
         dimensions = { width: Math.round(step.width ?? 0), height: Math.round(step.height ?? 0) };
         const validation = validateResizeDimensions(dimensions);
         if (validation) throw new Error(`Resize Image: ${validation}`);
+      }
+
+      // A turn keeps every pixel it was given and only moves them, so the
+      // block that does it hands on the same picture in a new orientation —
+      // with its sides swapped when the turn is a quarter one.
+      if (step.toolSlug === 'rotate-flip-image') {
+        const problem = validateOrientedImage(sourceDimensions);
+
+        if (problem) throw new Error(`${toolBySlug(step.toolSlug).name}: ${problem}`);
+
+        const turned = getOrientationPreset(step.turn ?? defaultOrientationPreset);
+        const oriented = getOrientedDimensions(sourceDimensions, turned);
+        const blob = await encodeBrowserImage(
+          orientBrowserImage(image, sourceDimensions, turned),
+          oriented,
+          outputFormat,
+        );
+
+        return {
+          file: new File([blob], getOrientationOutputFilename(payload.file.name, turned, outputFormat), { type: blob.type }),
+          ...oriented,
+        };
       }
 
       // A flow has nobody to drag a rectangle, so a crop block takes the
@@ -1454,6 +1493,7 @@ const [firstCategory] = categories;
         ...(step.toolSlug === 'compress-image' ? { quality: step.quality } : {}),
         ...(step.toolSlug === 'crop-image' ? { ratio: step.ratio } : {}),
         ...(step.toolSlug === 'collage-maker' ? { layout: step.layout } : {}),
+        ...(step.toolSlug === 'rotate-flip-image' ? { turn: step.turn } : {}),
         ...(step.toolSlug === 'jpg-to-pdf' ? { pageSize: step.pageSize, orientation: step.orientation } : {}),
         ...(step.toolSlug === 'pdf-to-jpg' ? { resolution: step.resolution } : {}),
       })),
@@ -1476,6 +1516,7 @@ const [firstCategory] = categories;
         ...(step.quality !== undefined ? { quality: step.quality } : {}),
         ...(step.ratio !== undefined ? { ratio: step.ratio } : {}),
         ...(step.layout !== undefined ? { layout: step.layout } : {}),
+        ...(step.turn !== undefined ? { turn: step.turn } : {}),
         ...(step.pageSize !== undefined ? { pageSize: step.pageSize } : {}),
         ...(step.orientation !== undefined ? { orientation: step.orientation } : {}),
         ...(step.resolution !== undefined ? { resolution: step.resolution } : {}),

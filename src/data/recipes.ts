@@ -11,6 +11,12 @@ import {
   isFlowCropAspectRatioName,
   type FlowCropAspectRatioName,
 } from './image-crop';
+import {
+  defaultOrientationPreset,
+  isOrientationPresetName,
+  orientationPresetNames,
+  type OrientationPresetName,
+} from './image-orientation';
 import { validateResizeDimensions } from './image-resize';
 import {
   defaultPdfOrientation,
@@ -55,6 +61,7 @@ export interface RecipeStep {
   readonly quality?: number;
   readonly ratio?: FlowCropAspectRatioName;
   readonly layout?: CollageLayoutName;
+  readonly turn?: OrientationPresetName;
   readonly pageSize?: PdfPageSizeName;
   readonly orientation?: PdfOrientation;
   readonly resolution?: PdfImageResolution;
@@ -129,6 +136,10 @@ const recipeStepSettings = {
   // taste rather than the shape of the flow, so a link carries the arrangement
   // and the collage uses its own defaults for the rest.
   'collage-maker': { l: collageLayoutNames },
+  // A workspace turns a picture by pressing a button until it looks right, and
+  // the state that leaves is not a setting anyone chose. A link names the one
+  // turn instead, which is what a block in a chain applies.
+  'rotate-flip-image': { t: orientationPresetNames },
   'jpg-to-pdf': { p: pdfPageSizeNames, o: pdfOrientationNames },
   // A merge has nothing to name: which documents it joins, and in what order,
   // is the list of files the visitor chose rather than a setting. The entry
@@ -251,6 +262,16 @@ function buildStep(
     if (!isCollageLayoutName(layout)) return undefined;
 
     return { toolSlug, layout };
+  }
+
+  if (toolSlug === 'rotate-flip-image') {
+    if (!Object.hasOwn(settings, 't')) return { toolSlug };
+
+    const turn = String(settings.t);
+
+    if (!isOrientationPresetName(turn)) return undefined;
+
+    return { toolSlug, turn };
   }
 
   if (toolSlug === 'jpg-to-pdf') {
@@ -424,6 +445,14 @@ export function encodeRecipe(recipe: Recipe): string | undefined {
       if (!isCollageLayoutName(layout)) return undefined;
 
       settings.push(`l=${layout}`);
+    }
+
+    if (step.toolSlug === 'rotate-flip-image') {
+      const turn = step.turn ?? defaultOrientationPreset;
+
+      if (!isOrientationPresetName(turn)) return undefined;
+
+      settings.push(`t=${turn}`);
     }
 
     if (step.toolSlug === 'jpg-to-pdf') {

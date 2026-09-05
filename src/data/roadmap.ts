@@ -203,7 +203,6 @@ export interface PlannedToolChain {
 }
 
 export const plannedToolChains = [
-  { slug: 'rotate-flip-image', chain: ['pdf-to-jpg', 'rotate-flip-image', 'jpg-to-pdf'] },
   { slug: 'image-background', chain: ['resize-image', 'image-background', 'compress-image'] },
   { slug: 'remove-image-metadata', chain: ['resize-image', 'remove-image-metadata', 'jpg-to-pdf'] },
   { slug: 'favicon-generator', chain: ['resize-image', 'favicon-generator'] },

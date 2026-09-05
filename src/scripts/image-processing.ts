@@ -1,6 +1,7 @@
 import type { ImageOutputFormat } from '../data/image-compression';
 import { getCollageSourceRectangle, type CollagePlan } from '../data/image-collage';
 import type { CropRectangle } from '../data/image-crop';
+import { getOrientationDrawing, type ImageOrientation } from '../data/image-orientation';
 import type { ImageDimensions } from '../data/image-resize';
 
 /** Decodes a local browser file without sending it anywhere. */
@@ -142,6 +143,36 @@ function canvasImageHeight(image: CanvasImageSource): number {
   if (image instanceof HTMLCanvasElement) return image.height;
   if (image instanceof HTMLVideoElement) return image.videoHeight;
   return 'height' in image ? Number(image.height) : 0;
+}
+
+/**
+ * Draws a decoded image in a given orientation, on-device.
+ *
+ * The source is drawn once, from the original pixels, however many times the
+ * visitor pressed a button: the state says where the picture ends up, and this
+ * puts it there in one transform. Like the crop, it hands back a canvas so the
+ * result goes into `encodeBrowserImage` and every image Gizlet keeps one
+ * decode-and-encode path.
+ */
+export function orientBrowserImage(
+  image: CanvasImageSource,
+  source: ImageDimensions,
+  orientation: ImageOrientation,
+): HTMLCanvasElement {
+  const drawing = getOrientationDrawing(source, orientation);
+  const canvas = document.createElement('canvas');
+  canvas.width = drawing.width;
+  canvas.height = drawing.height;
+  const context = canvas.getContext('2d');
+
+  if (!context) throw new Error('Your browser cannot prepare this image.');
+
+  context.translate(drawing.centerX, drawing.centerY);
+  context.rotate(drawing.rotationRadians);
+  context.scale(drawing.scaleX, drawing.scaleY);
+  context.drawImage(image, drawing.drawX, drawing.drawY, drawing.drawWidth, drawing.drawHeight);
+
+  return canvas;
 }
 
 /** Checks alpha pixels before a conversion warns that JPEG will flatten them. */

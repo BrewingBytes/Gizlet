@@ -1,0 +1,347 @@
+---
+---
+
+<section class="rotate-flip-tool" data-rotate-flip-tool>
+  <div class="rotate-flip-tool__picker" data-drop-zone>
+    <input
+      id="rotate-flip-file"
+      class="rotate-flip-tool__file-input"
+      type="file"
+      accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp"
+      aria-label="Select an image to rotate or flip"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">One image at a time</p>
+    <h2>Drop an image here</h2>
+    <p>JPEG, PNG, WebP, AVIF, or BMP. Nothing leaves this device.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose an image</button>
+  </div>
+
+  <p class="rotate-flip-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="rotate-flip-tool__error" data-error role="alert" hidden></p>
+
+  <div class="rotate-flip-tool__editor" data-editor hidden>
+    <figure class="rotate-flip-tool__stage">
+      <canvas data-preview-canvas aria-label="Image preview in its current orientation"></canvas>
+      <figcaption data-input-name></figcaption>
+    </figure>
+
+    <div class="rotate-flip-tool__controls" role="group" aria-label="Turn the image">
+      <button type="button" class="button-secondary" data-turn="rotate-left">
+        <span aria-hidden="true">↺</span> Rotate left
+      </button>
+      <button type="button" class="button-secondary" data-turn="rotate-right">
+        <span aria-hidden="true">↻</span> Rotate right
+      </button>
+      <button type="button" class="button-secondary" data-turn="flip-horizontal">
+        <span aria-hidden="true">⇄</span> Flip horizontally
+      </button>
+      <button type="button" class="button-secondary" data-turn="flip-vertical">
+        <span aria-hidden="true">⇅</span> Flip vertically
+      </button>
+    </div>
+
+    <div class="rotate-flip-tool__summary" aria-live="polite">
+      <span class="metadata">Orientation</span>
+      <strong data-orientation-summary></strong>
+    </div>
+
+    <div class="rotate-flip-tool__format">
+      <label for="rotate-flip-output-format">Output format</label>
+      <select id="rotate-flip-output-format" data-output-format>
+        <option value="image/jpeg">JPEG</option>
+        <option value="image/png">PNG</option>
+        <option value="image/webp">WebP</option>
+      </select>
+    </div>
+
+    <div class="rotate-flip-tool__actions">
+      <button type="button" data-save>Save it</button>
+      <button type="button" class="button-secondary" data-reset>Put it back</button>
+      <button type="button" class="button-secondary" data-clear>Choose another image</button>
+    </div>
+  </div>
+
+  <section class="rotate-flip-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2>The right way up.</h2>
+    <figure class="rotate-flip-tool__result-preview">
+      <img data-result-image alt="Turned image preview" />
+      <figcaption>Actual turned image</figcaption>
+    </figure>
+    <dl>
+      <div><dt>Original</dt><dd data-original-dimensions></dd></div>
+      <div><dt>Turned</dt><dd data-result-dimensions></dd></div>
+      <div><dt>What changed</dt><dd data-result-orientation></dd></div>
+    </dl>
+    <div class="rotate-flip-tool__result-actions">
+      <a class="rotate-flip-tool__download" data-download>Download image</a>
+      <button type="button" class="button-secondary" data-result-back>Keep turning it</button>
+      <button type="button" class="button-secondary" data-result-clear>Choose another image</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .rotate-flip-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .rotate-flip-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .rotate-flip-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .rotate-flip-tool__picker[hidden], .rotate-flip-tool__editor[hidden], .rotate-flip-tool__result[hidden] { display: none; }
+  .rotate-flip-tool__picker h2 { margin-bottom: var(--space-2); }
+  .rotate-flip-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .rotate-flip-tool__status, .rotate-flip-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .rotate-flip-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .rotate-flip-tool__editor, .rotate-flip-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .rotate-flip-tool__editor { display: grid; gap: var(--space-4); }
+  .rotate-flip-tool__stage { margin: 0; }
+  /* The preview is the transform itself rather than a CSS imitation of it, so
+     what is on screen is what the download holds. */
+  .rotate-flip-tool__stage canvas { display: block; max-width: 100%; max-height: 24rem; margin: 0 auto; border: var(--border-width) solid var(--border); }
+  .rotate-flip-tool__stage figcaption { margin-top: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-align: center; }
+  .rotate-flip-tool__controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: var(--space-2); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .rotate-flip-tool__controls button span { font-size: 1.1em; }
+  .rotate-flip-tool__summary { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); padding: var(--space-2); border-top: var(--border-width) solid var(--border); border-bottom: var(--border-width) solid var(--border); }
+  .rotate-flip-tool__summary strong { font-family: var(--font-mono); text-align: right; }
+  .rotate-flip-tool__format { max-width: 20rem; }
+  .rotate-flip-tool__format label { display: block; margin-bottom: var(--space-1); font-weight: 700; }
+  .rotate-flip-tool__actions, .rotate-flip-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .rotate-flip-tool__result h2 { margin-bottom: var(--space-4); }
+  .rotate-flip-tool__result-preview { margin: 0 0 var(--space-4); }
+  .rotate-flip-tool__result-preview img { display: block; max-width: 100%; max-height: 24rem; margin: 0 auto; border: var(--border-width) solid var(--border); }
+  .rotate-flip-tool__result-preview figcaption { margin-top: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-align: center; }
+  .rotate-flip-tool__result dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); margin: 0 0 var(--space-4); }
+  .rotate-flip-tool__result dl div { padding: var(--space-2); border-top: var(--border-width) solid var(--border); }
+  .rotate-flip-tool__result dt { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
+  .rotate-flip-tool__result dd { margin: var(--space-1) 0 0; font-weight: 700; }
+  .rotate-flip-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .rotate-flip-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+  @media (max-width: 36rem) {
+    .rotate-flip-tool__picker, .rotate-flip-tool__editor, .rotate-flip-tool__result { padding: var(--space-3); }
+    .rotate-flip-tool__result dl { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  import {
+    getInputImageFormat,
+    getPreferredOutputFormat,
+    isImageOutputFormat,
+    isSupportedImageFile,
+  } from '../data/image-compression';
+  import {
+    describeOrientation,
+    flipOrientation,
+    getOrientationOutputFilename,
+    getOrientedDimensions,
+    identityOrientation,
+    isIdentityOrientation,
+    rotateOrientation,
+    validateOrientedImage,
+    type ImageOrientation,
+  } from '../data/image-orientation';
+  import { isLargeImage, type ImageDimensions } from '../data/image-resize';
+  import { encodeBrowserImage, loadBrowserImage, orientBrowserImage } from '../scripts/image-processing';
+
+  const root = document.querySelector<HTMLElement>('[data-rotate-flip-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const editor = root.querySelector<HTMLElement>('[data-editor]');
+    const previewCanvas = root.querySelector<HTMLCanvasElement>('[data-preview-canvas]');
+    const inputName = root.querySelector<HTMLElement>('[data-input-name]');
+    const turnButtons = root.querySelectorAll<HTMLButtonElement>('[data-turn]');
+    const orientationSummary = root.querySelector<HTMLElement>('[data-orientation-summary]');
+    const outputFormat = root.querySelector<HTMLSelectElement>('[data-output-format]');
+    const saveButton = root.querySelector<HTMLButtonElement>('[data-save]');
+    const resetButton = root.querySelector<HTMLButtonElement>('[data-reset]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultImage = root.querySelector<HTMLImageElement>('[data-result-image]');
+    const originalDimensions = root.querySelector<HTMLElement>('[data-original-dimensions]');
+    const resultDimensions = root.querySelector<HTMLElement>('[data-result-dimensions]');
+    const resultOrientation = root.querySelector<HTMLElement>('[data-result-orientation]');
+    const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const resultBack = root.querySelector<HTMLButtonElement>('[data-result-back]');
+    const resultClear = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !previewCanvas || !inputName || !orientationSummary || !outputFormat || !saveButton || !resetButton || !clearButton || !result || !resultImage || !originalDimensions || !resultDimensions || !resultOrientation || !download || !resultBack || !resultClear) {
+      throw new Error('Rotate & Flip Image tool could not initialise.');
+    }
+
+    let selectedFile: File | undefined;
+    let sourceImage: HTMLImageElement | undefined;
+    let sourceDimensions: ImageDimensions | undefined;
+    let orientation: ImageOrientation = identityOrientation;
+    let resultUrl: string | undefined;
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+
+    const resetResult = () => {
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      resultUrl = undefined;
+      result.hidden = true;
+      resultImage.removeAttribute('src');
+      download.removeAttribute('href');
+      download.removeAttribute('download');
+    };
+
+    const resetTool = () => {
+      selectedFile = undefined;
+      sourceImage = undefined;
+      sourceDimensions = undefined;
+      orientation = identityOrientation;
+      fileInput.value = '';
+      resetResult();
+      dropZone.hidden = false;
+      editor.hidden = true;
+      clearError();
+      clearStatus();
+    };
+
+    /** Redraws the preview from the original pixels, in the current orientation. */
+    const renderPreview = () => {
+      if (!sourceImage || !sourceDimensions) return;
+
+      const dimensions = getOrientedDimensions(sourceDimensions, orientation);
+      const context = previewCanvas.getContext('2d');
+
+      // The canvas on the page is drawn into rather than replaced, so the
+      // preview keeps its place in the layout. What it holds is the same
+      // drawing the download will: the transform, not a CSS imitation of it.
+      previewCanvas.width = dimensions.width;
+      previewCanvas.height = dimensions.height;
+
+      if (context) {
+        context.drawImage(orientBrowserImage(sourceImage, sourceDimensions, orientation), 0, 0);
+      }
+
+      orientationSummary.textContent = `${describeOrientation(orientation)} · ${dimensions.width} × ${dimensions.height} px`;
+      saveButton.disabled = false;
+      resetButton.disabled = isIdentityOrientation(orientation);
+    };
+
+    const turn = (action: string) => {
+      if (!sourceDimensions) return;
+
+      if (action === 'rotate-left') orientation = rotateOrientation(orientation, 'left');
+      if (action === 'rotate-right') orientation = rotateOrientation(orientation, 'right');
+      if (action === 'flip-horizontal') orientation = flipOrientation(orientation, 'horizontal');
+      if (action === 'flip-vertical') orientation = flipOrientation(orientation, 'vertical');
+
+      resetResult();
+      clearError();
+      renderPreview();
+    };
+
+    const selectFile = async (file: File | undefined) => {
+      resetTool();
+      if (!file) return;
+      if (!isSupportedImageFile(file)) {
+        showError('Choose a JPEG, PNG, WebP, AVIF, or BMP image.');
+        return;
+      }
+
+      selectedFile = file;
+      dropZone.hidden = true;
+      showStatus('Reading image dimensions…');
+      await nextPaint();
+      try {
+        sourceImage = await loadBrowserImage(file);
+        sourceDimensions = { width: sourceImage.naturalWidth, height: sourceImage.naturalHeight };
+        const problem = validateOrientedImage(sourceDimensions);
+
+        if (problem) throw new Error(problem);
+        if (isLargeImage(sourceDimensions)) {
+          showStatus('Large image detected. Preparing it locally…');
+          await nextPaint();
+        }
+
+        orientation = identityOrientation;
+        inputName.textContent = `${file.name} · ${sourceDimensions.width} × ${sourceDimensions.height} px`;
+        outputFormat.value = getPreferredOutputFormat(getInputImageFormat(file));
+        clearStatus();
+        editor.hidden = false;
+        renderPreview();
+      } catch (caughtError) {
+        selectedFile = undefined;
+        sourceImage = undefined;
+        sourceDimensions = undefined;
+        dropZone.hidden = false;
+        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be read.');
+        clearStatus();
+      }
+    };
+
+    const saveImage = async () => {
+      if (!selectedFile || !sourceImage || !sourceDimensions || !isImageOutputFormat(outputFormat.value)) return;
+
+      const problem = validateOrientedImage(sourceDimensions);
+
+      if (problem) {
+        showError(problem);
+        return;
+      }
+
+      clearError();
+      resetResult();
+      saveButton.disabled = true;
+      saveButton.textContent = 'Turning…';
+      showStatus(isLargeImage(sourceDimensions) ? 'Large image: turning it locally…' : 'Turning it locally…');
+      await nextPaint();
+
+      try {
+        const format = outputFormat.value;
+        const dimensions = getOrientedDimensions(sourceDimensions, orientation);
+        const turned = orientBrowserImage(sourceImage, sourceDimensions, orientation);
+        const output = await encodeBrowserImage(turned, dimensions, format);
+
+        resultUrl = URL.createObjectURL(output);
+        originalDimensions.textContent = `${sourceDimensions.width} × ${sourceDimensions.height} px`;
+        resultDimensions.textContent = `${dimensions.width} × ${dimensions.height} px`;
+        resultOrientation.textContent = describeOrientation(orientation);
+        resultImage.src = resultUrl;
+        download.href = resultUrl;
+        download.download = getOrientationOutputFilename(selectedFile.name, orientation, format);
+        editor.hidden = true;
+        result.hidden = false;
+      } catch (caughtError) {
+        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be turned.');
+      } finally {
+        clearStatus();
+        saveButton.disabled = false;
+        saveButton.textContent = 'Save it';
+      }
+    };
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void selectFile(fileInput.files?.[0]));
+    clearButton.addEventListener('click', resetTool);
+    resultClear.addEventListener('click', resetTool);
+    resultBack.addEventListener('click', () => {
+      resetResult();
+      editor.hidden = false;
+      renderPreview();
+    });
+    saveButton.addEventListener('click', () => void saveImage());
+    resetButton.addEventListener('click', () => {
+      orientation = identityOrientation;
+      resetResult();
+      renderPreview();
+    });
+    for (const button of turnButtons) {
+      button.addEventListener('click', () => turn(button.dataset.turn ?? ''));
+    }
+    for (const eventName of ['dragenter', 'dragover']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    for (const eventName of ['dragleave', 'drop']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    dropZone.addEventListener('drop', (event) => void selectFile(event.dataTransfer?.files[0]));
+  }
+</script>
