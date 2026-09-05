@@ -12,6 +12,13 @@ import {
   type FlowCropAspectRatioName,
 } from './image-crop';
 import {
+  backgroundFitNames,
+  defaultBackgroundFit,
+  isBackgroundFit,
+  validateBackgroundCanvas,
+  type BackgroundFit,
+} from './image-background';
+import {
   defaultOrientationPreset,
   isOrientationPresetName,
   orientationPresetNames,
@@ -62,6 +69,9 @@ export interface RecipeStep {
   readonly ratio?: FlowCropAspectRatioName;
   readonly layout?: CollageLayoutName;
   readonly turn?: OrientationPresetName;
+  readonly canvasWidth?: number;
+  readonly canvasHeight?: number;
+  readonly fit?: BackgroundFit;
   readonly pageSize?: PdfPageSizeName;
   readonly orientation?: PdfOrientation;
   readonly resolution?: PdfImageResolution;
@@ -140,6 +150,11 @@ const recipeStepSettings = {
   // the state that leaves is not a setting anyone chose. A link names the one
   // turn instead, which is what a block in a chain applies.
   'rotate-flip-image': { t: orientationPresetNames },
+  // The colour, the position and the nudges are the visitor's own taste, so a
+  // link carries the canvas and how the picture is scaled into it. A colour
+  // would also be the one value here that is neither a whole number nor a name
+  // from a closed list, which is the property this format is built on.
+  'image-background': { cw: 'number', ch: 'number', f: backgroundFitNames },
   // Stripping metadata is the re-encode itself, so there is nothing to set: a
   // block either runs or is not in the chain.
   'remove-image-metadata': {},
@@ -275,6 +290,24 @@ function buildStep(
     if (!isOrientationPresetName(turn)) return undefined;
 
     return { toolSlug, turn };
+  }
+
+  if (toolSlug === 'image-background') {
+    const hasWidth = Object.hasOwn(settings, 'cw');
+    const hasHeight = Object.hasOwn(settings, 'ch');
+    const fit = Object.hasOwn(settings, 'f') ? String(settings.f) : defaultBackgroundFit;
+
+    if (!isBackgroundFit(fit)) return undefined;
+
+    // Half a canvas is a partly applied recipe, which is worse than none.
+    if (hasWidth !== hasHeight) return undefined;
+    if (!hasWidth) return Object.hasOwn(settings, 'f') ? { toolSlug, fit } : { toolSlug };
+
+    const canvas = { width: Number(settings.cw), height: Number(settings.ch) };
+
+    if (validateBackgroundCanvas(canvas)) return undefined;
+
+    return { toolSlug, canvasWidth: canvas.width, canvasHeight: canvas.height, fit };
   }
 
   if (toolSlug === 'jpg-to-pdf') {
@@ -456,6 +489,22 @@ export function encodeRecipe(recipe: Recipe): string | undefined {
       if (!isOrientationPresetName(turn)) return undefined;
 
       settings.push(`t=${turn}`);
+    }
+
+    if (step.toolSlug === 'image-background') {
+      const fit = step.fit ?? defaultBackgroundFit;
+
+      if (!isBackgroundFit(fit)) return undefined;
+
+      settings.push(`f=${fit}`);
+
+      if (step.canvasWidth !== undefined || step.canvasHeight !== undefined) {
+        const canvas = { width: step.canvasWidth ?? 0, height: step.canvasHeight ?? 0 };
+
+        if (validateBackgroundCanvas(canvas)) return undefined;
+
+        settings.push(`cw=${canvas.width}`, `ch=${canvas.height}`);
+      }
     }
 
     if (step.toolSlug === 'jpg-to-pdf') {

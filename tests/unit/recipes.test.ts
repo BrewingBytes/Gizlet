@@ -288,6 +288,39 @@ describe('a turn in a recipe', () => {
   });
 });
 
+describe('a background in a recipe', () => {
+  it('carries the canvas and the fit, and leaves the colour behind', () => {
+    const encoded = encodeRecipe({
+      steps: [
+        { toolSlug: 'image-background', canvasWidth: 1080, canvasHeight: 1080, fit: 'contain' },
+        { toolSlug: 'compress-image', quality: 70 },
+      ],
+    });
+
+    expect(encoded).toBe('#r=v1;image-background:f=contain,cw=1080,ch=1080;compress-image:q=70');
+    expect(decodeRecipe(encoded ?? '')?.steps).toEqual([
+      { toolSlug: 'image-background', canvasWidth: 1080, canvasHeight: 1080, fit: 'contain' },
+      { toolSlug: 'compress-image', quality: 70 },
+    ]);
+  });
+
+  it('refuses half a canvas, which would rebuild a different image', () => {
+    expect(decodeRecipe('#r=v1;image-background:cw=1080')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;image-background:ch=1080')).toBeUndefined();
+  });
+
+  it('refuses a canvas the Gizlet would not draw', () => {
+    expect(decodeRecipe('#r=v1;image-background:cw=0,ch=1080')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;image-background:cw=99999,ch=99999')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;image-background:f=stretch')).toBeUndefined();
+  });
+
+  it('has no key for a colour, which is the one value this format could not carry', () => {
+    expect(decodeRecipe('#r=v1;image-background:b=ffffff')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;image-background:f=contain,c=%23ffffff')).toBeUndefined();
+  });
+});
+
 describe('the settings-only guarantee', () => {
   it('cannot emit a value that would break out of its own delimiters', () => {
     // Every whitelisted value is a whole number or a closed enum, which is why
@@ -301,6 +334,7 @@ describe('the settings-only guarantee', () => {
       { steps: [{ toolSlug: 'crop-image', ratio: '9:16' }] },
       { steps: [{ toolSlug: 'collage-maker', layout: 'column' }] },
       { steps: [{ toolSlug: 'rotate-flip-image', turn: 'upside-down' }] },
+      { steps: [{ toolSlug: 'image-background', canvasWidth: 1200, canvasHeight: 630, fit: 'cover' }] },
     ];
 
     for (const recipe of recipes) {

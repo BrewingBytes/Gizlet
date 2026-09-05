@@ -276,6 +276,17 @@ const [firstCategory] = categories;
   import { getConversionOutputFilename } from '../data/image-conversion';
   import { getCleanedImageFilename } from '../data/image-metadata';
   import {
+    defaultBackgroundAnchor,
+    defaultBackgroundColour,
+    defaultBackgroundFit,
+    getBackgroundFitOptions,
+    getBackgroundOutputFilename,
+    isBackgroundFit,
+    planImageBackground,
+    validateBackgroundCanvas,
+    type BackgroundFit,
+  } from '../data/image-background';
+  import {
     defaultOrientationPreset,
     getOrientationOutputFilename,
     getOrientationPreset,
@@ -355,7 +366,7 @@ const [firstCategory] = categories;
   } from '../data/split-pdf';
   import { toolRegistry } from '../data/tools';
   import { createZipArchive, zipMimeType } from '../data/zip-archive';
-  import { cropBrowserImage, drawCollage, encodeBrowserImage, loadBrowserImage, orientBrowserImage } from '../scripts/image-processing';
+  import { cropBrowserImage, drawCollage, drawImageBackground, encodeBrowserImage, loadBrowserImage, orientBrowserImage } from '../scripts/image-processing';
   import { createImagePdf, openLocalPdfForSplit, splitLocalPdf } from '../scripts/pdf-generation';
   import { createPdfPageView } from '../scripts/pdf-page-view';
 
@@ -384,6 +395,9 @@ const [firstCategory] = categories;
     ratio?: FlowCropAspectRatioName;
     layout?: CollageLayoutName;
     turn?: OrientationPresetName;
+    canvasWidth?: number;
+    canvasHeight?: number;
+    fit?: BackgroundFit;
     pageSize?: PdfPageSizeName;
     orientation?: PdfOrientation;
     resolution?: PdfImageResolution;
@@ -585,6 +599,9 @@ const [firstCategory] = categories;
       ...(toolSlug === 'crop-image' ? { ratio: defaultFlowCropAspectRatio } : {}),
       ...(toolSlug === 'collage-maker' ? { layout: defaultCollageLayout } : {}),
       ...(toolSlug === 'rotate-flip-image' ? { turn: defaultOrientationPreset } : {}),
+      // A canvas the size of the picture would be a block that does nothing, so
+      // a flow's background starts at the square a listing asks for.
+      ...(toolSlug === 'image-background' ? { canvasWidth: 1080, canvasHeight: 1080, fit: defaultBackgroundFit } : {}),
       ...(toolSlug === 'jpg-to-pdf' ? { pageSize: defaultPdfPageSize, orientation: defaultPdfOrientation } : {}),
       ...(toolSlug === 'pdf-to-jpg' ? { resolution: defaultPdfImageResolution } : {}),
     });
@@ -624,6 +641,10 @@ const [firstCategory] = categories;
       if (step.toolSlug === 'crop-image') {
         const ratio = step.ratio ?? defaultFlowCropAspectRatio;
         return `<div class="flow-block__settings"><label for="step-ratio-${step.id}">Crop to</label><select id="step-ratio-${step.id}" data-step-setting="ratio" data-step-id="${step.id}" aria-label="${name} aspect ratio">${optionsMarkup(getCropAspectRatioOptions(flowCropAspectRatioNames), ratio)}</select></div><p class="flow-block__format-note">The largest rectangle of that shape, taken from the middle of the image.</p>`;
+      }
+      if (step.toolSlug === 'image-background') {
+        const fit = step.fit ?? defaultBackgroundFit;
+        return `<div class="flow-block__settings"><span>Canvas</span><div class="flow-block__dimensions"><input data-step-setting="canvasWidth" data-step-id="${step.id}" aria-label="${name} canvas width" type="number" min="1" value="${escapeHtml(step.canvasWidth ?? 1080)}" /><span>×</span><input data-step-setting="canvasHeight" data-step-id="${step.id}" aria-label="${name} canvas height" type="number" min="1" value="${escapeHtml(step.canvasHeight ?? 1080)}" /><span>px</span></div></div><div class="flow-block__settings"><label for="step-fit-${step.id}">Fit</label><select id="step-fit-${step.id}" data-step-setting="fit" data-step-id="${step.id}" aria-label="${name} fit">${optionsMarkup(getBackgroundFitOptions(), fit)}</select></div><p class="flow-block__format-note">Centred on a white canvas: a flow carries the canvas and the fit, not a colour nobody chose.</p>`;
       }
       if (step.toolSlug === 'rotate-flip-image') {
         const turn = step.turn ?? defaultOrientationPreset;
@@ -988,6 +1009,9 @@ const [firstCategory] = categories;
       if (setting === 'ratio' && isFlowCropAspectRatioName(target.value)) step.ratio = target.value;
       if (setting === 'layout' && isCollageLayoutName(target.value)) step.layout = target.value;
       if (setting === 'turn' && isOrientationPresetName(target.value)) step.turn = target.value;
+      if (setting === 'fit' && isBackgroundFit(target.value)) step.fit = target.value;
+      if (setting === 'canvasWidth') step.canvasWidth = Number(target.value);
+      if (setting === 'canvasHeight') step.canvasHeight = Number(target.value);
       if (setting === 'width') step.width = Number(target.value);
       if (setting === 'height') step.height = Number(target.value);
       if (setting === 'quality') {
@@ -1008,6 +1032,31 @@ const [firstCategory] = categories;
         dimensions = { width: Math.round(step.width ?? 0), height: Math.round(step.height ?? 0) };
         const validation = validateResizeDimensions(dimensions);
         if (validation) throw new Error(`Resize Image: ${validation}`);
+      }
+
+      // A background block is the one image step whose output size is neither
+      // the picture's nor a resize of it: the canvas is the size, and the
+      // picture is placed on it.
+      if (step.toolSlug === 'image-background') {
+        const canvas = { width: Math.round(step.canvasWidth ?? 0), height: Math.round(step.canvasHeight ?? 0) };
+        const problem = validateBackgroundCanvas(canvas);
+
+        if (problem) throw new Error(`${toolBySlug(step.toolSlug).name}: ${problem}`);
+
+        const plan = planImageBackground(sourceDimensions, {
+          canvas,
+          fit: step.fit ?? defaultBackgroundFit,
+          anchor: defaultBackgroundAnchor,
+          offsetX: 0,
+          offsetY: 0,
+        });
+        const drawn = drawImageBackground(document.createElement('canvas'), image, plan, defaultBackgroundColour);
+        const blob = await encodeBrowserImage(drawn, plan.canvas, outputFormat);
+
+        return {
+          file: new File([blob], getBackgroundOutputFilename(payload.file.name, outputFormat), { type: blob.type }),
+          ...plan.canvas,
+        };
       }
 
       // A turn keeps every pixel it was given and only moves them, so the
@@ -1497,6 +1546,7 @@ const [firstCategory] = categories;
         ...(step.toolSlug === 'crop-image' ? { ratio: step.ratio } : {}),
         ...(step.toolSlug === 'collage-maker' ? { layout: step.layout } : {}),
         ...(step.toolSlug === 'rotate-flip-image' ? { turn: step.turn } : {}),
+        ...(step.toolSlug === 'image-background' ? { canvasWidth: step.canvasWidth, canvasHeight: step.canvasHeight, fit: step.fit } : {}),
         ...(step.toolSlug === 'jpg-to-pdf' ? { pageSize: step.pageSize, orientation: step.orientation } : {}),
         ...(step.toolSlug === 'pdf-to-jpg' ? { resolution: step.resolution } : {}),
       })),
@@ -1520,6 +1570,9 @@ const [firstCategory] = categories;
         ...(step.ratio !== undefined ? { ratio: step.ratio } : {}),
         ...(step.layout !== undefined ? { layout: step.layout } : {}),
         ...(step.turn !== undefined ? { turn: step.turn } : {}),
+        ...(step.canvasWidth !== undefined ? { canvasWidth: step.canvasWidth } : {}),
+        ...(step.canvasHeight !== undefined ? { canvasHeight: step.canvasHeight } : {}),
+        ...(step.fit !== undefined ? { fit: step.fit } : {}),
         ...(step.pageSize !== undefined ? { pageSize: step.pageSize } : {}),
         ...(step.orientation !== undefined ? { orientation: step.orientation } : {}),
         ...(step.resolution !== undefined ? { resolution: step.resolution } : {}),
