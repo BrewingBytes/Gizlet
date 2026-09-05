@@ -258,6 +258,36 @@ describe('a collage in a recipe', () => {
   });
 });
 
+describe('a turn in a recipe', () => {
+  it('names one turn rather than carrying a state nobody chose', () => {
+    const encoded = encodeRecipe({
+      steps: [{ toolSlug: 'rotate-flip-image', turn: 'flip-horizontal' }, { toolSlug: 'compress-image', quality: 70 }],
+    });
+
+    expect(encoded).toBe('#r=v1;rotate-flip-image:t=flip-horizontal;compress-image:q=70');
+    expect(decodeRecipe(encoded ?? '')?.steps).toEqual([
+      { toolSlug: 'rotate-flip-image', turn: 'flip-horizontal' },
+      { toolSlug: 'compress-image', quality: 70 },
+    ]);
+  });
+
+  it('defaults a turn the link does not name', () => {
+    expect(encodeRecipe({ steps: [{ toolSlug: 'rotate-flip-image' }] })).toBe(
+      '#r=v1;rotate-flip-image:t=rotate-right',
+    );
+    expect(decodeRecipe('#r=v1;rotate-flip-image')?.steps).toEqual([
+      { toolSlug: 'rotate-flip-image' },
+    ]);
+  });
+
+  it('refuses a turn that is not one of the offered ones', () => {
+    expect(decodeRecipe('#r=v1;rotate-flip-image:t=rotate-45')).toBeUndefined();
+    // Degrees are not a setting this format carries; a named turn is.
+    expect(decodeRecipe('#r=v1;rotate-flip-image:t=90')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;rotate-flip-image:d=90')).toBeUndefined();
+  });
+});
+
 describe('the settings-only guarantee', () => {
   it('cannot emit a value that would break out of its own delimiters', () => {
     // Every whitelisted value is a whole number or a closed enum, which is why
@@ -270,6 +300,7 @@ describe('the settings-only guarantee', () => {
       { steps: [{ toolSlug: 'jpg-to-pdf', pageSize: 'legal', orientation: 'portrait' }] },
       { steps: [{ toolSlug: 'crop-image', ratio: '9:16' }] },
       { steps: [{ toolSlug: 'collage-maker', layout: 'column' }] },
+      { steps: [{ toolSlug: 'rotate-flip-image', turn: 'upside-down' }] },
     ];
 
     for (const recipe of recipes) {

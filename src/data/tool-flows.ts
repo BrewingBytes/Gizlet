@@ -145,6 +145,11 @@ export const toolFlowRegistry = [
     combinesInputs: true,
     combining: { limit: maximumCollageImages, describeCount: describeCollageImageCount },
   },
+  {
+    toolSlug: 'rotate-flip-image',
+    input: imageFlowInput,
+    output: imageOutput,
+  },
 ] as const satisfies readonly ToolFlowDefinition[];
 
 /**

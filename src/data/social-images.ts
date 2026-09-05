@@ -37,6 +37,7 @@ const bespokeSocialImageSlugs: readonly string[] = [
   'convert-image',
   'crop-image',
   'collage-maker',
+  'rotate-flip-image',
   'json-ld-generator',
   'json-formatter',
   'jpg-to-pdf',
