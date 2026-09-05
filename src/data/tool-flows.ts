@@ -150,6 +150,11 @@ export const toolFlowRegistry = [
     input: imageFlowInput,
     output: imageOutput,
   },
+  {
+    toolSlug: 'remove-image-metadata',
+    input: imageFlowInput,
+    output: imageOutput,
+  },
 ] as const satisfies readonly ToolFlowDefinition[];
 
 /**

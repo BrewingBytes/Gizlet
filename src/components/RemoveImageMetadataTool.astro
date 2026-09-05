@@ -1,0 +1,372 @@
+---
+---
+
+<section class="metadata-tool" data-remove-metadata-tool>
+  <div class="metadata-tool__picker" data-drop-zone>
+    <input
+      id="metadata-file"
+      class="metadata-tool__file-input"
+      type="file"
+      accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp"
+      aria-label="Select an image to inspect"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">One image at a time</p>
+    <h2>Drop an image here</h2>
+    <p>JPEG, PNG, WebP, AVIF, or BMP. It is read here, not uploaded.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose an image</button>
+  </div>
+
+  <p class="metadata-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="metadata-tool__error" data-error role="alert" hidden></p>
+
+  <div class="metadata-tool__report" data-report hidden>
+    <div class="metadata-tool__summary">
+      <figure class="metadata-tool__preview">
+        <img data-preview-image alt="Selected image preview" />
+        <figcaption data-input-name></figcaption>
+      </figure>
+      <div>
+        <p class="metadata">What this file says</p>
+        <h2 data-headline></h2>
+        <p data-summary-line></p>
+        <p class="metadata-tool__location" data-location-warning hidden>
+          <span aria-hidden="true">●</span> This photograph says where it was taken.
+        </p>
+      </div>
+    </div>
+
+    <div class="metadata-tool__fields" data-fields></div>
+
+    <!-- One group of fields, cloned per group, so no value is ever markup. -->
+    <template data-group-template>
+      <section class="metadata-group">
+        <h3 data-group-label></h3>
+        <dl data-group-list></dl>
+      </section>
+    </template>
+
+    <p class="metadata-tool__unnamed" data-unnamed hidden></p>
+
+    <div class="metadata-tool__controls">
+      <div class="metadata-tool__field">
+        <label for="metadata-output-format">Output format</label>
+        <select id="metadata-output-format" data-output-format>
+          <option value="image/jpeg">JPEG</option>
+          <option value="image/png">PNG</option>
+          <option value="image/webp">WebP</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="metadata-tool__actions">
+      <button type="button" data-clean>Strip it out</button>
+      <button type="button" class="button-secondary" data-clear>Choose another image</button>
+    </div>
+  </div>
+
+  <section class="metadata-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2>Nothing left to read.</h2>
+    <figure class="metadata-tool__result-preview">
+      <img data-result-image alt="Cleaned image preview" />
+      <figcaption>The same picture, without the file's notes about you</figcaption>
+    </figure>
+    <dl>
+      <div><dt>Removed</dt><dd data-removed-count></dd></div>
+      <div><dt>Dimensions</dt><dd data-result-dimensions></dd></div>
+      <div><dt>File size</dt><dd data-result-size></dd></div>
+    </dl>
+    <p class="metadata-tool__verified" data-verified></p>
+    <div class="metadata-tool__result-actions">
+      <a class="metadata-tool__download" data-download>Download image</a>
+      <button type="button" class="button-secondary" data-result-clear>Choose another image</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .metadata-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .metadata-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .metadata-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .metadata-tool__picker[hidden], .metadata-tool__report[hidden], .metadata-tool__result[hidden] { display: none; }
+  .metadata-tool__picker h2 { margin-bottom: var(--space-2); }
+  .metadata-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .metadata-tool__status, .metadata-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .metadata-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .metadata-tool__report, .metadata-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .metadata-tool__report { display: grid; gap: var(--space-4); }
+  .metadata-tool__summary { display: grid; grid-template-columns: minmax(0, 12rem) minmax(0, 1fr); gap: var(--space-4); align-items: start; }
+  .metadata-tool__summary h2 { margin-bottom: var(--space-2); }
+  .metadata-tool__summary p:not(.metadata) { color: var(--text-muted); }
+  .metadata-tool__preview { margin: 0; }
+  .metadata-tool__preview img { display: block; width: 100%; border: var(--border-width) solid var(--border); }
+  .metadata-tool__preview figcaption { margin-top: var(--space-2); overflow: hidden; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-overflow: ellipsis; white-space: nowrap; }
+  /* The one line that is a warning rather than a fact, so it is the one line
+     that is coloured. */
+  .metadata-tool__summary p.metadata-tool__location { display: flex; align-items: baseline; gap: var(--space-1); margin-top: var(--space-2); color: var(--color-red); font-weight: 700; }
+  .metadata-tool__location[hidden] { display: none; }
+  .metadata-tool__fields { display: grid; gap: var(--space-3); }
+  .metadata-group { padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .metadata-group h3 { margin-bottom: var(--space-2); font-size: var(--font-size-base); }
+  .metadata-group dl { display: grid; grid-template-columns: minmax(0, 14rem) minmax(0, 1fr); gap: var(--space-1) var(--space-3); margin: 0; }
+  .metadata-group dt { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-sm); }
+  .metadata-group dd { margin: 0; overflow-wrap: anywhere; }
+  .metadata-tool__unnamed { margin: 0; color: var(--text-muted); }
+  .metadata-tool__unnamed[hidden] { display: none; }
+  .metadata-tool__controls { padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .metadata-tool__field { max-width: 20rem; }
+  .metadata-tool__field label { display: block; margin-bottom: var(--space-1); font-weight: 700; }
+  .metadata-tool__actions, .metadata-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .metadata-tool__result h2 { margin-bottom: var(--space-4); }
+  .metadata-tool__result-preview { margin: 0 0 var(--space-4); }
+  .metadata-tool__result-preview img { display: block; max-width: 100%; max-height: 20rem; margin: 0 auto; border: var(--border-width) solid var(--border); }
+  .metadata-tool__result-preview figcaption { margin-top: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-align: center; }
+  .metadata-tool__result dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); margin: 0 0 var(--space-3); }
+  .metadata-tool__result dl div { padding: var(--space-2); border-top: var(--border-width) solid var(--border); }
+  .metadata-tool__result dt { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
+  .metadata-tool__result dd { margin: var(--space-1) 0 0; font-weight: 700; }
+  .metadata-tool__verified { margin: 0 0 var(--space-4); color: var(--success); font-weight: 700; }
+  .metadata-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .metadata-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+  @media (max-width: 36rem) {
+    .metadata-tool__picker, .metadata-tool__report, .metadata-tool__result { padding: var(--space-3); }
+    .metadata-tool__summary { grid-template-columns: minmax(0, 1fr); }
+    .metadata-tool__preview img { max-width: 12rem; }
+    .metadata-group dl { grid-template-columns: minmax(0, 1fr); }
+    .metadata-group dd { margin-bottom: var(--space-2); }
+    .metadata-tool__result dl { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  import {
+    formatFileSize,
+    getInputImageFormat,
+    getPreferredOutputFormat,
+    isImageOutputFormat,
+    isSupportedImageFile,
+  } from '../data/image-compression';
+  import {
+    describeMetadata,
+    getCleanedImageFilename,
+    getPopulatedMetadataGroups,
+    hasLocationMetadata,
+    hasRemovableMetadata,
+    readImageMetadata,
+    type ImageMetadata,
+  } from '../data/image-metadata';
+  import { isLargeImage, type ImageDimensions } from '../data/image-resize';
+  import { encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
+
+  const root = document.querySelector<HTMLElement>('[data-remove-metadata-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const report = root.querySelector<HTMLElement>('[data-report]');
+    const previewImage = root.querySelector<HTMLImageElement>('[data-preview-image]');
+    const inputName = root.querySelector<HTMLElement>('[data-input-name]');
+    const headline = root.querySelector<HTMLElement>('[data-headline]');
+    const summaryLine = root.querySelector<HTMLElement>('[data-summary-line]');
+    const locationWarning = root.querySelector<HTMLElement>('[data-location-warning]');
+    const fields = root.querySelector<HTMLElement>('[data-fields]');
+    const groupTemplate = root.querySelector<HTMLTemplateElement>('[data-group-template]');
+    const unnamed = root.querySelector<HTMLElement>('[data-unnamed]');
+    const outputFormat = root.querySelector<HTMLSelectElement>('[data-output-format]');
+    const cleanButton = root.querySelector<HTMLButtonElement>('[data-clean]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultImage = root.querySelector<HTMLImageElement>('[data-result-image]');
+    const removedCount = root.querySelector<HTMLElement>('[data-removed-count]');
+    const resultDimensions = root.querySelector<HTMLElement>('[data-result-dimensions]');
+    const resultSize = root.querySelector<HTMLElement>('[data-result-size]');
+    const verified = root.querySelector<HTMLElement>('[data-verified]');
+    const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const resultClear = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !report || !previewImage || !inputName || !headline || !summaryLine || !locationWarning || !fields || !groupTemplate || !unnamed || !outputFormat || !cleanButton || !clearButton || !result || !resultImage || !removedCount || !resultDimensions || !resultSize || !verified || !download || !resultClear) {
+      throw new Error('Remove Image Metadata tool could not initialise.');
+    }
+
+    let selectedFile: File | undefined;
+    let sourceImage: HTMLImageElement | undefined;
+    let sourceDimensions: ImageDimensions | undefined;
+    let metadata: ImageMetadata | undefined;
+    let previewUrl: string | undefined;
+    let resultUrl: string | undefined;
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+    const revoke = (url: string | undefined) => { if (url) URL.revokeObjectURL(url); };
+
+    const resetResult = () => {
+      revoke(resultUrl);
+      resultUrl = undefined;
+      result.hidden = true;
+      resultImage.removeAttribute('src');
+      download.removeAttribute('href');
+      download.removeAttribute('download');
+    };
+
+    const resetTool = () => {
+      selectedFile = undefined;
+      sourceImage = undefined;
+      sourceDimensions = undefined;
+      metadata = undefined;
+      fileInput.value = '';
+      revoke(previewUrl);
+      previewUrl = undefined;
+      resetResult();
+      previewImage.removeAttribute('src');
+      fields.replaceChildren();
+      dropZone.hidden = false;
+      report.hidden = true;
+      clearError();
+      clearStatus();
+    };
+
+    /** Draws the report: what the file says, grouped, with the value beside it. */
+    const renderReport = () => {
+      if (!metadata) return;
+
+      const found = hasRemovableMetadata(metadata);
+
+      headline.textContent = found
+        ? hasLocationMetadata(metadata)
+          ? 'It knows where you were.'
+          : 'It has a few things to say.'
+        : 'Nothing to remove.';
+      summaryLine.textContent = found
+        ? describeMetadata(metadata)
+        : 'This Gizlet found no metadata in the file. Cleaning it would only re-encode the picture.';
+      locationWarning.hidden = !hasLocationMetadata(metadata);
+
+      fields.replaceChildren(
+        ...getPopulatedMetadataGroups(metadata).map((group) => {
+          const item = groupTemplate.content.firstElementChild?.cloneNode(true) as HTMLElement;
+          const list = item.querySelector('[data-group-list]')!;
+
+          item.querySelector('[data-group-label]')!.textContent = group.label;
+
+          for (const field of group.fields) {
+            const term = document.createElement('dt');
+            const value = document.createElement('dd');
+
+            term.textContent = field.label;
+            value.textContent = field.value;
+            list.append(term, value);
+          }
+
+          return item;
+        }),
+      );
+
+      unnamed.hidden = metadata.unnamedCount === 0;
+      unnamed.textContent =
+        metadata.unnamedCount === 1
+          ? 'One more entry is in the file that this page does not name. It goes too.'
+          : `${metadata.unnamedCount} more entries are in the file that this page does not name. They go too.`;
+      cleanButton.textContent = found ? 'Strip it out' : 'Re-encode it anyway';
+    };
+
+    const selectFile = async (file: File | undefined) => {
+      resetTool();
+      if (!file) return;
+      if (!isSupportedImageFile(file)) {
+        showError('Choose a JPEG, PNG, WebP, AVIF, or BMP image.');
+        return;
+      }
+
+      selectedFile = file;
+      dropZone.hidden = true;
+      showStatus('Reading the file locally…');
+      await nextPaint();
+      try {
+        // The bytes are read here and parsed by a module that never touches the
+        // network: the file is never sent anywhere to be inspected.
+        metadata = readImageMetadata(await file.arrayBuffer());
+        sourceImage = await loadBrowserImage(file);
+        sourceDimensions = { width: sourceImage.naturalWidth, height: sourceImage.naturalHeight };
+        if (!sourceDimensions.width || !sourceDimensions.height) throw new Error('This image has no usable dimensions.');
+        if (isLargeImage(sourceDimensions)) {
+          showStatus('Large image detected. Reading it locally…');
+          await nextPaint();
+        }
+        previewUrl = URL.createObjectURL(file);
+        previewImage.src = previewUrl;
+        inputName.textContent = `${file.name} · ${sourceDimensions.width} × ${sourceDimensions.height} px`;
+        outputFormat.value = getPreferredOutputFormat(getInputImageFormat(file));
+        clearStatus();
+        report.hidden = false;
+        renderReport();
+      } catch (caughtError) {
+        selectedFile = undefined;
+        sourceImage = undefined;
+        sourceDimensions = undefined;
+        metadata = undefined;
+        dropZone.hidden = false;
+        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be read.');
+        clearStatus();
+      }
+    };
+
+    const cleanImage = async () => {
+      if (!selectedFile || !sourceImage || !sourceDimensions || !metadata || !isImageOutputFormat(outputFormat.value)) return;
+
+      clearError();
+      resetResult();
+      cleanButton.disabled = true;
+      const label = cleanButton.textContent;
+      cleanButton.textContent = 'Stripping…';
+      showStatus('Redrawing the picture without its metadata…');
+      await nextPaint();
+
+      try {
+        const format = outputFormat.value;
+        // The picture is drawn as the browser shows it — orientation already
+        // applied — and encoded fresh, which is what leaves the metadata behind.
+        const output = await encodeBrowserImage(sourceImage, sourceDimensions, format);
+        const cleaned = readImageMetadata(await output.arrayBuffer());
+        const removed = metadata.fields.length + metadata.unnamedCount;
+
+        resultUrl = URL.createObjectURL(output);
+        removedCount.textContent = removed === 1 ? '1 entry' : `${removed} entries`;
+        resultDimensions.textContent = `${sourceDimensions.width} × ${sourceDimensions.height} px`;
+        resultSize.textContent = formatFileSize(output.size);
+        // The claim is checked rather than asserted: the file that is about to
+        // be downloaded is read back with the same parser.
+        verified.textContent = hasRemovableMetadata(cleaned)
+          ? `Checked the file again: ${describeMetadata(cleaned)}.`
+          : 'Checked the file again: this Gizlet can read nothing in it.';
+        resultImage.src = resultUrl;
+        download.href = resultUrl;
+        download.download = getCleanedImageFilename(selectedFile.name, format);
+        report.hidden = true;
+        result.hidden = false;
+      } catch (caughtError) {
+        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be cleaned.');
+      } finally {
+        clearStatus();
+        cleanButton.disabled = false;
+        cleanButton.textContent = label;
+      }
+    };
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void selectFile(fileInput.files?.[0]));
+    clearButton.addEventListener('click', resetTool);
+    resultClear.addEventListener('click', resetTool);
+    cleanButton.addEventListener('click', () => void cleanImage());
+    for (const eventName of ['dragenter', 'dragover']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    for (const eventName of ['dragleave', 'drop']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    dropZone.addEventListener('drop', (event) => void selectFile(event.dataTransfer?.files[0]));
+  }
+</script>

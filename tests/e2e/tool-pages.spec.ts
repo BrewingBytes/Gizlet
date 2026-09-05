@@ -17,6 +17,7 @@ const workspaceSignatures = {
   "crop-image": "Select an image to crop",
   "collage-maker": "Select images for a collage",
   "rotate-flip-image": "Select an image to rotate or flip",
+  "remove-image-metadata": "Select an image to inspect",
   "json-ld-generator": "Schema type",
   "json-formatter": "JSON input",
   "jpg-to-pdf": "Select images to put in a PDF",

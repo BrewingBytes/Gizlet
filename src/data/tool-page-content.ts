@@ -501,6 +501,88 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'remove-image-metadata': {
+    what: {
+      heading: 'What Remove Image Metadata does',
+      paragraphs: [
+        'Remove Image Metadata reads the fields a picture carries about itself and shows them to you: where it was taken, what took it, when, and who it says it belongs to. Then it strips them, by decoding the picture and encoding it again with nothing but pixels.',
+        'The reading happens in this browser, by a parser that ships with the page — no upload, and no library fetched to inspect your file. After cleaning, the file that is about to be downloaded is read back with the same parser, and the page says what it found. The claim is checked rather than asserted.',
+      ],
+    },
+    when: {
+      heading: 'When to strip a file before it leaves',
+      paragraphs: [
+        'Before a photograph goes anywhere public. A picture taken on a phone can carry the coordinates of the place it was taken to five decimal places, which is a house rather than a neighbourhood, and the site you post it to may or may not remove them.',
+        'Also before sending a picture as evidence of something, or as a listing, or on a forum: the camera serial number, the software, and the exact minute are all in there, and together they link one photograph to every other photograph from the same device.',
+      ],
+    },
+    options: {
+      heading: 'What the report is showing you',
+      paragraphs: ['Everything found is grouped by what it is about, most sensitive first.'],
+      details: [
+        {
+          term: 'Where it was taken',
+          description:
+            'GPS latitude and longitude, read out of the four tags a camera writes them in and shown as one coordinate. This is the field the Gizlet exists for, and it is the one marked in red.',
+        },
+        {
+          term: 'When, what and who',
+          description:
+            'The timestamps, the camera make and model, the lens, the exposure settings, the software that last wrote the file, and any artist, copyright, owner or serial-number field it carries.',
+        },
+        {
+          term: 'Everything else',
+          description:
+            'Entries this page does not have a name for are counted rather than listed, so the summary never suggests the file carries less than it does. They are removed with the rest.',
+        },
+        {
+          term: 'Output format',
+          description:
+            'JPEG, PNG, or WebP. It defaults to the format the file already is. The picture is re-encoded, so a JPEG saved as a JPEG is compressed a second time; PNG and WebP avoid that at a larger file size.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'The file is read here, not sent',
+      paragraphs: [
+        'The bytes are read by this browser and parsed by a module on this page. Gizlet is a static site with no upload endpoint, so a photograph carrying your address in its metadata is not sent anywhere to have that pointed out to you, which would rather defeat the exercise.',
+        'The cleaned picture is drawn onto a canvas and encoded fresh, which is what leaves every field behind: canvas encoding writes pixels and nothing else. The picture is drawn exactly as the browser displays it, so a photograph that arrived upright stays upright even though the orientation tag is gone.',
+        'Removing metadata cannot be undone, and Gizlet keeps no copy — nothing survives closing the tab. Keep the original if the timestamps matter to you.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Is my photo uploaded to read its metadata?',
+        answer:
+          'No. The file is read as bytes by this browser and parsed on this page, and the cleaned copy is written straight to your downloads. There is no upload endpoint behind this page.',
+      },
+      {
+        question: 'Does a photo really contain my location?',
+        answer:
+          'Often, yes. A phone with location services on writes latitude and longitude into the file to five decimal places, which is close enough to identify a building. This page shows the coordinate if it is there.',
+      },
+      {
+        question: 'Will the picture look different afterwards?',
+        answer:
+          'No. It is drawn exactly as your browser displays it, including any rotation the orientation tag was asking for, so a photograph that arrived upright stays upright. Only the fields go.',
+      },
+      {
+        question: 'How do I know the metadata is actually gone?',
+        answer:
+          'The cleaned file is read back with the same parser that read the original, and the result panel says what that second read found. It is the same check you could run yourself on the downloaded file.',
+      },
+      {
+        question: 'Does re-encoding lose quality?',
+        answer:
+          'A JPEG saved as a JPEG is compressed a second time, which loses a little. Choose PNG or WebP to avoid it, at a larger file size. There is no way to strip metadata by re-encoding without encoding.',
+      },
+      {
+        question: 'Can I remove one field and keep the others?',
+        answer:
+          'No. This Gizlet removes everything or nothing, because a picture that keeps some of its fields is one somebody has to reason about, and the reason to be here is not wanting to.',
+      },
+    ],
+  },
   'json-ld-generator': {
     what: {
       heading: 'What the JSON-LD Generator does',
