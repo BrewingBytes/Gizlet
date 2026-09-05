@@ -203,7 +203,6 @@ export interface PlannedToolChain {
 }
 
 export const plannedToolChains = [
-  { slug: 'collage-maker', chain: ['pdf-to-jpg', 'collage-maker', 'compress-image'] },
   { slug: 'rotate-flip-image', chain: ['pdf-to-jpg', 'rotate-flip-image', 'jpg-to-pdf'] },
   { slug: 'image-background', chain: ['resize-image', 'image-background', 'compress-image'] },
   { slug: 'remove-image-metadata', chain: ['resize-image', 'remove-image-metadata', 'jpg-to-pdf'] },

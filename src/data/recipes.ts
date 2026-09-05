@@ -1,5 +1,11 @@
 import { type ImageOutputFormat } from './image-compression';
 import {
+  collageLayoutNames,
+  defaultCollageLayout,
+  isCollageLayoutName,
+  type CollageLayoutName,
+} from './image-collage';
+import {
   defaultFlowCropAspectRatio,
   flowCropAspectRatioNames,
   isFlowCropAspectRatioName,
@@ -48,6 +54,7 @@ export interface RecipeStep {
   readonly height?: number;
   readonly quality?: number;
   readonly ratio?: FlowCropAspectRatioName;
+  readonly layout?: CollageLayoutName;
   readonly pageSize?: PdfPageSizeName;
   readonly orientation?: PdfOrientation;
   readonly resolution?: PdfImageResolution;
@@ -118,6 +125,10 @@ const recipeStepSettings = {
   // carries the shape instead: a flow crops the largest centred rectangle of
   // the named ratio. Free crop has no shape to name and is not offered here.
   'crop-image': { a: cropRatioTokens },
+  // The gap, the background colour and the output width are the visitor's own
+  // taste rather than the shape of the flow, so a link carries the arrangement
+  // and the collage uses its own defaults for the rest.
+  'collage-maker': { l: collageLayoutNames },
   'jpg-to-pdf': { p: pdfPageSizeNames, o: pdfOrientationNames },
   // A merge has nothing to name: which documents it joins, and in what order,
   // is the list of files the visitor chose rather than a setting. The entry
@@ -230,6 +241,16 @@ function buildStep(
     if (!ratio) return undefined;
 
     return { toolSlug, ratio };
+  }
+
+  if (toolSlug === 'collage-maker') {
+    if (!Object.hasOwn(settings, 'l')) return { toolSlug };
+
+    const layout = String(settings.l);
+
+    if (!isCollageLayoutName(layout)) return undefined;
+
+    return { toolSlug, layout };
   }
 
   if (toolSlug === 'jpg-to-pdf') {
@@ -395,6 +416,14 @@ export function encodeRecipe(recipe: Recipe): string | undefined {
       if (!isFlowCropAspectRatioName(ratio)) return undefined;
 
       settings.push(`a=${getCropRatioToken(ratio)}`);
+    }
+
+    if (step.toolSlug === 'collage-maker') {
+      const layout = step.layout ?? defaultCollageLayout;
+
+      if (!isCollageLayoutName(layout)) return undefined;
+
+      settings.push(`l=${layout}`);
     }
 
     if (step.toolSlug === 'jpg-to-pdf') {

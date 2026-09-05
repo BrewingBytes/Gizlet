@@ -337,6 +337,88 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'collage-maker': {
+    what: {
+      heading: 'What Collage Maker does',
+      paragraphs: [
+        'Collage Maker arranges several pictures into one. Choose up to twelve images, put them in the order you want, pick an arrangement, and the composition is drawn onto a canvas in this browser at the width you set.',
+        'The preview is not a mock-up of the result: it is the result, drawn at full size and shown smaller. What you download is the same drawing encoded as JPEG, PNG, or WebP.',
+      ],
+    },
+    when: {
+      heading: 'When one picture beats several',
+      paragraphs: [
+        'Reach for it when the destination only takes one image: a listing that allows a single photograph, a message thread you do not want to send six pictures to, a before-and-after that only makes sense side by side.',
+        'It is a composition Gizlet rather than a document one. If what you want is several pictures kept separate but sent together, put them in a PDF instead — that keeps each one whole, on its own page, at its own size.',
+      ],
+    },
+    options: {
+      heading: 'What each setting changes',
+      paragraphs: ['Four settings decide the whole composition, and the order of the list decides the rest.'],
+      details: [
+        {
+          term: 'Layout',
+          description:
+            'Grid puts them in as square a block as the count allows, so four images make two rows of two. Single row and single column are the strip arrangements. Feature gives the first image two thirds of the width and stacks the others beside it, which is the arrangement for one photograph with supporting ones.',
+        },
+        {
+          term: 'Order',
+          description:
+            'Cells are filled in the order the list shows, so moving an image up moves it up in the collage. It matters most in the feature layout, where the first image is the large one.',
+        },
+        {
+          term: 'Gap and background',
+          description:
+            'The gap is the space between cells and around the edge, in output pixels, and the background colour is what shows through it. A gap of zero makes the pictures touch, and the background then shows nowhere.',
+        },
+        {
+          term: 'Width and format',
+          description:
+            'The width is the finished picture’s, and the layout works out the height from it, so a taller arrangement makes a taller file rather than a squashed one. JPEG suits photographs, WebP is the smallest for the web, and PNG keeps every pixel exactly.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'Every picture stays in the tab',
+      paragraphs: [
+        'The images are decoded, arranged, and drawn onto one canvas by this browser, and the finished collage is handed straight to your downloads. Gizlet is a static site with no upload endpoint, so there is nowhere for a photograph to be sent, and nothing survives closing the tab.',
+        'This is the Gizlet where that adds up fastest: a collage is a dozen pictures at once, usually of people, and every free collage site that takes them takes all twelve.',
+        'Because the result is drawn fresh onto a canvas, it carries none of the metadata the originals did — no camera model, no timestamps, and no GPS coordinates from any of them.',
+      ],
+    },
+    faq: [
+      {
+        question: 'How many pictures can go in one collage?',
+        answer:
+          'Up to twelve. Past that, every cell in an image small enough to share is a thumbnail, and a page of thumbnails is a contact sheet rather than a collage.',
+      },
+      {
+        question: 'Are my photos uploaded to combine them?',
+        answer:
+          'No. Each one is decoded and drawn onto a canvas by this browser, and the finished picture goes straight to your downloads. There is no upload endpoint behind this page.',
+      },
+      {
+        question: 'Why is part of a picture cut off?',
+        answer:
+          'Each cell is filled rather than fitted, so a picture is scaled until it covers its cell and the overflow is trimmed evenly from both sides. Fitting instead would leave every cell with two bars of background. Crop a picture first if you want to choose exactly what survives.',
+      },
+      {
+        question: 'Can I choose the order the images appear in?',
+        answer:
+          'Yes. The list under the picker is the order, and the arrows move an image up or down it. Cells are filled in that order, so the first image is the one the feature layout makes large.',
+      },
+      {
+        question: 'How do I make a collage with no gaps?',
+        answer:
+          'Set the gap to zero. The pictures then touch each other and the edge of the frame, and the background colour shows nowhere at all.',
+      },
+      {
+        question: 'How big will the finished picture be?',
+        answer:
+          'You set the width, and the arrangement works out the height from the shapes of the images you chose. The line under the preview shows both before you commit, and the whole composition has to stay within the same pixel limits the other image Gizlets keep.',
+      },
+    ],
+  },
   'json-ld-generator': {
     what: {
       heading: 'What the JSON-LD Generator does',
