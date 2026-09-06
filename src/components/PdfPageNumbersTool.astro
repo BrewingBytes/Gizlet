@@ -1,0 +1,598 @@
+---
+import PdfViewerSurface from './PdfViewerSurface.astro';
+import {
+  defaultPageNumberFontSize,
+  defaultPageNumberFormat,
+  defaultPageNumberMargin,
+  defaultPageNumberPosition,
+  defaultPageNumberSkip,
+  defaultPageNumberStart,
+  getPageNumberFormatOptions,
+  getPageNumberPositionOptions,
+  maximumPageNumberFontSize,
+  maximumPageNumberMargin,
+  maximumPageNumberSkip,
+  maximumPageNumberStart,
+  minimumPageNumberFontSize,
+  minimumPageNumberMargin,
+  minimumPageNumberStart,
+} from '../data/pdf-page-numbers';
+
+const formatOptions = getPageNumberFormatOptions();
+const positionOptions = getPageNumberPositionOptions();
+---
+
+<section class="page-numbers-tool" data-page-numbers-tool>
+  <div class="page-numbers-tool__picker" data-drop-zone>
+    <input
+      id="page-numbers-file"
+      class="page-numbers-tool__file-input"
+      type="file"
+      accept="application/pdf,.pdf"
+      aria-label="Select a PDF to number"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">Numbers written onto the pages</p>
+    <h2>Drop a PDF here</h2>
+    <p>The numbers are drawn onto the pages by this browser. Nothing is uploaded.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose a PDF</button>
+  </div>
+
+  <p class="page-numbers-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="page-numbers-tool__error" data-error role="alert" hidden></p>
+
+  <div class="page-numbers-tool__editor" data-editor hidden>
+    <div class="page-numbers-tool__bar">
+      <button type="button" class="button-secondary" data-clear>Choose another PDF</button>
+      <p class="page-numbers-tool__summary" data-plan-summary></p>
+    </div>
+
+    <PdfViewerSurface id="page-numbers-source" label="The PDF being numbered" zoom>
+      <!-- The number, over the page it will be written onto, in the place and
+           at the size the writer will use. Both read the same functions. -->
+      <span class="page-number-preview" slot="page-overlay" data-preview hidden></span>
+    </PdfViewerSurface>
+
+    <p class="page-numbers-tool__note" data-preview-note></p>
+
+    <div class="page-numbers-tool__controls">
+      <div class="page-numbers-tool__control">
+        <label for="page-numbers-format">Format</label>
+        <select id="page-numbers-format" data-format aria-label="Number format">
+          {
+            formatOptions.map((option) => (
+              <option value={option.value} selected={option.value === defaultPageNumberFormat}>
+                {option.label}
+              </option>
+            ))
+          }
+        </select>
+      </div>
+
+      <div class="page-numbers-tool__control">
+        <label for="page-numbers-position">Position</label>
+        <select id="page-numbers-position" data-position aria-label="Number position">
+          {
+            positionOptions.map((option) => (
+              <option value={option.value} selected={option.value === defaultPageNumberPosition}>
+                {option.label}
+              </option>
+            ))
+          }
+        </select>
+      </div>
+
+      <div class="page-numbers-tool__control">
+        <label for="page-numbers-size">Size</label>
+        <div class="page-numbers-tool__slider">
+          <input
+            id="page-numbers-size"
+            type="range"
+            min={minimumPageNumberFontSize}
+            max={maximumPageNumberFontSize}
+            value={defaultPageNumberFontSize}
+            data-size
+            aria-label="Number size"
+          />
+          <output data-size-output>{defaultPageNumberFontSize}pt</output>
+        </div>
+      </div>
+
+      <div class="page-numbers-tool__control">
+        <label for="page-numbers-margin">Margin</label>
+        <div class="page-numbers-tool__slider">
+          <input
+            id="page-numbers-margin"
+            type="range"
+            min={minimumPageNumberMargin}
+            max={maximumPageNumberMargin}
+            step="2"
+            value={defaultPageNumberMargin}
+            data-margin
+            aria-label="Margin from the edge"
+          />
+          <output data-margin-output>{defaultPageNumberMargin}pt</output>
+        </div>
+      </div>
+
+      <div class="page-numbers-tool__control">
+        <label for="page-numbers-start">Start at</label>
+        <input
+          id="page-numbers-start"
+          type="number"
+          min={minimumPageNumberStart}
+          max={maximumPageNumberStart}
+          step="1"
+          inputmode="numeric"
+          value={defaultPageNumberStart}
+          data-start
+          aria-label="Start numbering at"
+        />
+      </div>
+
+      <div class="page-numbers-tool__control">
+        <label for="page-numbers-skip">Skip the first</label>
+        <input
+          id="page-numbers-skip"
+          type="number"
+          min="0"
+          max={maximumPageNumberSkip}
+          step="1"
+          inputmode="numeric"
+          value={defaultPageNumberSkip}
+          data-skip
+          aria-label="Pages to leave unnumbered at the front"
+          aria-describedby="page-numbers-skip-hint"
+        />
+        <p class="page-numbers-tool__hint" id="page-numbers-skip-hint">
+          A cover or a title page, left alone.
+        </p>
+      </div>
+
+      <div class="page-numbers-tool__control">
+        <label for="page-numbers-pages">Pages</label>
+        <input
+          id="page-numbers-pages"
+          type="text"
+          autocomplete="off"
+          placeholder="All"
+          data-pages
+          aria-label="Pages to number"
+          aria-describedby="page-numbers-pages-hint"
+        />
+        <p class="page-numbers-tool__hint" id="page-numbers-pages-hint">
+          Leave it empty for every page, or name them: 2-9.
+        </p>
+      </div>
+    </div>
+
+    <div class="page-numbers-tool__actions">
+      <button type="button" data-apply>Add the numbers</button>
+      <button type="button" class="button-secondary" data-reset>Start over</button>
+    </div>
+  </div>
+
+  <section class="page-numbers-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2>Numbered, page by page.</h2>
+    <p class="page-numbers-tool__result-details" data-result-details></p>
+
+    <div class="page-numbers-tool__preview" data-result-preview hidden>
+      <p class="metadata">Preview</p>
+      <PdfViewerSurface id="page-numbers-result" label="The numbered document" />
+    </div>
+
+    <p class="page-numbers-tool__preview-error" data-preview-error role="status" hidden></p>
+
+    <div class="page-numbers-tool__result-actions">
+      <a class="page-numbers-tool__download" data-download>Download PDF</a>
+      <button type="button" class="button-secondary" data-result-clear>Start over</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .page-numbers-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .page-numbers-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .page-numbers-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .page-numbers-tool__picker[hidden], .page-numbers-tool__editor[hidden], .page-numbers-tool__result[hidden] { display: none; }
+  .page-numbers-tool__picker h2 { margin-bottom: var(--space-2); }
+  .page-numbers-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .page-numbers-tool__status, .page-numbers-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .page-numbers-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .page-numbers-tool__editor, .page-numbers-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .page-numbers-tool__editor { display: grid; gap: var(--space-4); }
+  .page-numbers-tool__bar { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
+  .page-numbers-tool__summary, .page-numbers-tool__note { margin: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .page-numbers-tool__note:empty { display: none; }
+  .page-numbers-tool__controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: var(--space-3); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); align-items: start; }
+  .page-numbers-tool__control label { display: block; margin-bottom: var(--space-1); font-weight: 700; }
+  .page-numbers-tool__control input[type='text'], .page-numbers-tool__control input[type='number'], .page-numbers-tool__control select { width: 100%; }
+  .page-numbers-tool__slider { display: flex; align-items: center; gap: var(--space-2); }
+  .page-numbers-tool__slider input { flex: 1; min-width: 0; }
+  .page-numbers-tool__slider output { min-width: 3.5rem; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-align: right; }
+  .page-numbers-tool__hint { margin: var(--space-1) 0 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .page-numbers-tool__actions, .page-numbers-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .page-numbers-tool__result h2 { margin-bottom: var(--space-2); }
+  .page-numbers-tool__result-details { margin-bottom: var(--space-3); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .page-numbers-tool__preview[hidden], .page-numbers-tool__preview-error[hidden] { display: none; }
+  .page-numbers-tool__preview { display: grid; gap: var(--space-2); margin-bottom: var(--space-3); }
+  .page-numbers-tool__preview-error { margin: 0 0 var(--space-3); color: var(--color-red); font-size: var(--font-size-sm); }
+  .page-numbers-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .page-numbers-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+
+  /* The number over the page. It is placed by the corner the writer draws from
+     when it sits in a corner, and by its centre when it sits in the middle of
+     an edge, which is what `--number-shift` carries. */
+  .page-number-preview[hidden] { display: none; }
+  .page-number-preview {
+    position: absolute;
+    left: var(--number-left, 50%);
+    top: var(--number-top, 90%);
+    transform: translate(var(--number-shift, -50%), -50%);
+    color: #1a1a1a;
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: var(--number-size, 0.75rem);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 36rem) {
+    .page-numbers-tool__picker, .page-numbers-tool__editor, .page-numbers-tool__result { padding: var(--space-3); }
+  }
+</style>
+
+<script>
+  import { formatFileSize } from '../data/image-compression';
+  import {
+    clampPageNumberFontSize,
+    clampPageNumberMargin,
+    clampPageNumberSkip,
+    clampPageNumberStart,
+    defaultPageNumberFormat,
+    defaultPageNumberPosition,
+    describePageNumbering,
+    getNumberedPdfFilename,
+    getPageNumberLabel,
+    getPageNumberPreviewPlacement,
+    getPageNumbersOpenErrorMessage,
+    isLargePageNumberDocument,
+    isPageNumberFormat,
+    isPageNumberPosition,
+    planPageNumbers,
+    validatePageNumberPlan,
+    validatePageNumbersPageCount,
+    validatePageNumbersSelection,
+  } from '../data/pdf-page-numbers';
+  import { getPdfPreviewErrorMessage } from '../data/pdf-viewer';
+  import type { WatermarkBox } from '../data/watermark-pdf';
+  import { createPdfViewerSurface } from '../scripts/pdf-viewer-surface';
+  import type { LocalPdfDocument } from '../scripts/pdf-rendering';
+
+  const root = document.querySelector<HTMLElement>('[data-page-numbers-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const editor = root.querySelector<HTMLElement>('[data-editor]');
+    const surfaces = root.querySelectorAll<HTMLElement>('[data-pdf-surface]');
+    const sourceSurfaceRoot = surfaces[0];
+    const resultSurfaceRoot = surfaces[1];
+    const preview = root.querySelector<HTMLElement>('[data-preview]');
+    const previewNote = root.querySelector<HTMLElement>('[data-preview-note]');
+    const planSummary = root.querySelector<HTMLElement>('[data-plan-summary]');
+    const formatField = root.querySelector<HTMLSelectElement>('[data-format]');
+    const positionField = root.querySelector<HTMLSelectElement>('[data-position]');
+    const sizeField = root.querySelector<HTMLInputElement>('[data-size]');
+    const sizeOutput = root.querySelector<HTMLOutputElement>('[data-size-output]');
+    const marginField = root.querySelector<HTMLInputElement>('[data-margin]');
+    const marginOutput = root.querySelector<HTMLOutputElement>('[data-margin-output]');
+    const startField = root.querySelector<HTMLInputElement>('[data-start]');
+    const skipField = root.querySelector<HTMLInputElement>('[data-skip]');
+    const pagesField = root.querySelector<HTMLInputElement>('[data-pages]');
+    const applyButton = root.querySelector<HTMLButtonElement>('[data-apply]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const resetButton = root.querySelector<HTMLButtonElement>('[data-reset]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultDetails = root.querySelector<HTMLElement>('[data-result-details]');
+    const resultPreview = root.querySelector<HTMLElement>('[data-result-preview]');
+    const previewError = root.querySelector<HTMLElement>('[data-preview-error]');
+    const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !sourceSurfaceRoot || !resultSurfaceRoot || !preview || !previewNote || !planSummary || !formatField || !positionField || !sizeField || !sizeOutput || !marginField || !marginOutput || !startField || !skipField || !pagesField || !applyButton || !clearButton || !resetButton || !result || !resultDetails || !resultPreview || !previewError || !download || !resultClearButton) {
+      throw new Error('PDF Page Numbers tool could not initialise.');
+    }
+
+    let openFile: File | undefined;
+    let openDocument: LocalPdfDocument | undefined;
+    let pageCount = 0;
+    let currentPage = 1;
+    /**
+     * The page on screen, as the visitor sees it. pdf.js reports a page's size
+     * with the page's own rotation already applied, so this is the visible box;
+     * the writer applies the correction against the unrotated page pdf-lib
+     * draws into.
+     */
+    let pageBox: WatermarkBox = { width: 0, height: 0 };
+    let isWriting = false;
+    let resultUrl: string | undefined;
+
+    const sourceSurface = createPdfViewerSurface(sourceSurfaceRoot, {
+      onPageChange: (pageNumber) => {
+        currentPage = pageNumber;
+        void measurePage();
+      },
+    });
+    const resultSurface = createPdfViewerSurface(resultSurfaceRoot);
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+
+    const currentFormat = () =>
+      isPageNumberFormat(formatField.value) ? formatField.value : defaultPageNumberFormat;
+    const currentPosition = () =>
+      isPageNumberPosition(positionField.value) ? positionField.value : defaultPageNumberPosition;
+    const currentFontSize = () => clampPageNumberFontSize(Number(sizeField.value));
+    const currentMargin = () => clampPageNumberMargin(Number(marginField.value));
+    const currentOptions = () => ({
+      format: currentFormat(),
+      startAt: clampPageNumberStart(Number(startField.value)),
+      skip: clampPageNumberSkip(Number(skipField.value), pageCount),
+      pages: pagesField.value,
+    });
+    const currentPlan = () => planPageNumbers(pageCount, currentOptions());
+
+    const resetResult = () => {
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      resultUrl = undefined;
+      resultSurface.reset();
+      resultPreview.hidden = true;
+      previewError.hidden = true;
+      result.hidden = true;
+      resultDetails.textContent = '';
+      download.removeAttribute('href');
+      download.removeAttribute('download');
+    };
+
+    const resetTool = () => {
+      openFile = undefined;
+      openDocument = undefined;
+      pageCount = 0;
+      currentPage = 1;
+      pageBox = { width: 0, height: 0 };
+      sourceSurface.reset();
+      resetResult();
+      fileInput.value = '';
+      pagesField.value = '';
+      editor.hidden = true;
+      dropZone.hidden = false;
+      clearError();
+      clearStatus();
+    };
+
+    /** The page currently on screen, measured as the visitor sees it. */
+    const measurePage = async () => {
+      if (!openDocument) return;
+
+      try {
+        const size = await openDocument.getPageSize(currentPage);
+
+        pageBox = { width: size.width, height: size.height };
+      } catch {
+        pageBox = { width: 0, height: 0 };
+      }
+
+      renderPreview();
+    };
+
+    /**
+     * Draws the number over the page it will be written onto.
+     *
+     * The place comes from the same function the writer uses, and the size is
+     * converted from PDF points into the pixels this page happens to be drawn
+     * at — so the preview is the number at the size it will really be rather
+     * than a symbol standing in for it.
+     */
+    const renderPreview = () => {
+      const canvas = sourceSurfaceRoot.querySelector<HTMLCanvasElement>('[data-page-canvas]');
+      const plan = currentPlan();
+      const label = getPageNumberLabel(plan, currentFormat(), currentPage);
+
+      planSummary.textContent = describePageNumbering(plan, pageCount);
+      applyButton.disabled = plan.length === 0 || isWriting;
+
+      // A page nobody asked to number shows no number: the preview says what
+      // this page will get, not what some other page will.
+      if (!canvas || !label || pageBox.width <= 0 || pageBox.height <= 0) {
+        preview.hidden = true;
+        previewNote.textContent =
+          plan.length === 0
+            ? validatePageNumberPlan(plan, pageCount, currentOptions()) ?? ''
+            : label
+              ? ''
+              : `Page ${currentPage} is not numbered.`;
+        return;
+      }
+
+      const position = currentPosition();
+      const placement = getPageNumberPreviewPlacement(pageBox, {
+        position,
+        margin: currentMargin(),
+        // The size pdf.js reports is already the visible one, so the preview
+        // needs no further correction; the writer makes it against the page.
+        pageRotation: 0,
+      });
+      const scale = canvas.clientWidth > 0 ? canvas.clientWidth / pageBox.width : 0;
+
+      preview.textContent = label;
+      preview.hidden = false;
+      preview.style.setProperty('--number-left', `${placement.left * 100}%`);
+      preview.style.setProperty('--number-top', `${placement.top * 100}%`);
+      preview.style.setProperty('--number-size', `${Math.max(6, currentFontSize() * scale)}px`);
+      // A corner number is drawn from its own corner, so the preview is shifted
+      // to match rather than centred on a point the writer never uses.
+      preview.style.setProperty(
+        '--number-shift',
+        position.endsWith('left') ? '0%' : position.endsWith('right') ? '-100%' : '-50%',
+      );
+      previewNote.textContent = '';
+    };
+
+    const settingsChanged = () => {
+      sizeOutput.textContent = `${currentFontSize()}pt`;
+      marginOutput.textContent = `${currentMargin()}pt`;
+      resetResult();
+      clearError();
+      renderPreview();
+    };
+
+    const openPdf = async (file: File | undefined) => {
+      resetTool();
+      if (!file) return;
+
+      const problem = validatePageNumbersSelection([file]);
+
+      if (problem) {
+        showError(problem);
+        return;
+      }
+
+      dropZone.hidden = true;
+      showStatus('Reading the PDF locally…');
+      await nextPaint();
+
+      try {
+        // pdf.js arrives only once there is a document to draw.
+        const { openLocalPdf } = await import('../scripts/pdf-rendering');
+        const opened = await openLocalPdf(file, { getErrorMessage: getPageNumbersOpenErrorMessage });
+        const countProblem = validatePageNumbersPageCount(opened.pageCount);
+
+        if (countProblem) {
+          await opened.close().catch(() => undefined);
+          throw new Error(countProblem);
+        }
+
+        openFile = file;
+        openDocument = opened;
+        pageCount = opened.pageCount;
+        currentPage = 1;
+        editor.hidden = false;
+        clearStatus();
+
+        await sourceSurface.show(
+          opened,
+          `${file.name} · ${formatFileSize(file.size)} · ${pageCount} ${pageCount === 1 ? 'page' : 'pages'}`,
+        );
+        await measurePage();
+      } catch (caughtError) {
+        openFile = undefined;
+        openDocument = undefined;
+        editor.hidden = true;
+        dropZone.hidden = false;
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : getPageNumbersOpenErrorMessage(undefined));
+      }
+    };
+
+    const addNumbers = async () => {
+      if (!openFile || isWriting) return;
+
+      const options = currentOptions();
+      const plan = currentPlan();
+      const problem = validatePageNumberPlan(plan, pageCount, options);
+
+      if (problem) {
+        showError(problem);
+        return;
+      }
+
+      isWriting = true;
+      clearError();
+      resetResult();
+      applyButton.disabled = true;
+      applyButton.textContent = 'Numbering…';
+      showStatus(
+        isLargePageNumberDocument(pageCount)
+          ? 'Large document: writing the numbers locally…'
+          : 'Writing the numbers locally…',
+      );
+      await nextPaint();
+
+      try {
+        // pdf-lib is loaded here rather than at the top of the module: a page
+        // that is only being read never needs the writer.
+        const { addPageNumbersToLocalPdf, openLocalPdfForPageNumbers } = await import('../scripts/pdf-generation');
+        const source = await openLocalPdfForPageNumbers(openFile);
+        const numbered = await addPageNumbersToLocalPdf(source, {
+          plan,
+          format: options.format,
+          position: currentPosition(),
+          fontSize: currentFontSize(),
+          margin: currentMargin(),
+          onPage: async (position, total) => {
+            showStatus(`Writing the numbers locally… page ${position} of ${total}`);
+            await nextPaint();
+          },
+        });
+
+        resultUrl = URL.createObjectURL(numbered);
+        resultDetails.textContent = `${describePageNumbering(plan, pageCount)} · ${formatFileSize(numbered.size)}`;
+        download.href = resultUrl;
+        download.download = getNumberedPdfFilename(openFile.name);
+        result.hidden = false;
+        clearStatus();
+
+        try {
+          const { openLocalPdf } = await import('../scripts/pdf-rendering');
+          const opened = await openLocalPdf(numbered);
+
+          resultPreview.hidden = false;
+          await resultSurface.show(opened, `${plan.length} numbered · ${formatFileSize(numbered.size)}`);
+        } catch {
+          // The document is whole whatever the preview did, and the download
+          // above is the whole document, so only the preview says anything.
+          resultPreview.hidden = true;
+          previewError.textContent = getPdfPreviewErrorMessage();
+          previewError.hidden = false;
+        }
+      } catch (caughtError) {
+        showError(caughtError instanceof Error ? caughtError.message : 'The numbers could not be written.');
+      } finally {
+        isWriting = false;
+        clearStatus();
+        applyButton.disabled = false;
+        applyButton.textContent = 'Add the numbers';
+      }
+    };
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void openPdf(fileInput.files?.[0]));
+    clearButton.addEventListener('click', resetTool);
+    resetButton.addEventListener('click', resetTool);
+    resultClearButton.addEventListener('click', resetTool);
+    applyButton.addEventListener('click', () => void addNumbers());
+
+    for (const control of [formatField, positionField]) {
+      control.addEventListener('change', settingsChanged);
+    }
+    for (const control of [sizeField, marginField, startField, skipField, pagesField]) {
+      control.addEventListener('input', settingsChanged);
+    }
+
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    }
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    }
+    dropZone.addEventListener('drop', (event) => void openPdf(event.dataTransfer?.files[0]));
+  }
+</script>

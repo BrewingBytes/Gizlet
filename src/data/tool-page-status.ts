@@ -51,6 +51,7 @@ const toolProcessingDescriptions: Partial<Record<ToolSlug, string>> = {
   'split-pdf': 'Your PDF stays on this device.',
   'organize-pdf': 'Your PDF stays on this device.',
   'watermark-pdf': 'Your PDF stays on this device.',
+  'pdf-page-numbers': 'Your PDF stays on this device.',
 };
 
 /** The tailored processing sentence for a Gizlet, where it has one. */

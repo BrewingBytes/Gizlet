@@ -64,6 +64,7 @@ test("offers a PDF category, and the Gizlets that declare they read a document",
     "Split PDF",
     "Organize PDF",
     "Watermark PDF",
+    "PDF Page Numbers",
   ]);
 
   await expect(page.getByRole("heading", { name: "Your PDF" })).toBeVisible();
@@ -251,4 +252,27 @@ test("keeps pdf.js out of the page when a document is only chosen", async ({
   );
 
   expect(requested).toEqual([]);
+});
+
+test("numbers the pages of a document inside a flow", async ({ page }) => {
+  await startPdfFlow(page);
+  await choosePdfs(page).setInputFiles([asFile("report.pdf", await samplePdf(3, "Page"))]);
+
+  await addStep(page, "pdf-page-numbers");
+  await expect(page.getByLabel("PDF Page Numbers format")).toHaveValue("number");
+  await page.getByLabel("PDF Page Numbers format").selectOption("page-number-of");
+  await page.getByLabel("PDF Page Numbers position").selectOption("top-right");
+
+  await page.getByRole("button", { name: "Run flow" }).click();
+
+  await expect(page.locator("[data-result]")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Download PDF" })).toBeVisible();
+  // Every page is numbered from one: a flow does not know which document will
+  // reach it, so a skip or a range would be a guess about somebody else's file.
+  await expect(page.locator("[data-result-details]")).toContainText("3 pages");
+
+  await page.getByRole("button", { name: "Copy recipe link" }).click();
+  await expect
+    .poll(() => page.url())
+    .toContain("pdf-page-numbers:f=page-number-of,p=top-right");
 });

@@ -20,6 +20,15 @@ import {
   type OrganizedPdfPage,
 } from '../data/organize-pdf';
 import {
+  formatPageNumber,
+  getNumberedPdfFilename,
+  getPageNumberAnchor,
+  getPageNumbersWriteErrorMessage,
+  type NumberedPage,
+  type PageNumberFormat,
+  type PageNumberPosition,
+} from '../data/pdf-page-numbers';
+import {
   clampWatermarkOpacity,
   getPdfWatermarkErrorMessage,
   getVisiblePageBox,
@@ -506,3 +515,86 @@ export async function watermarkLocalPdf(
   // A copy of the bytes, so the blob does not hold a view onto pdf-lib's buffer.
   return new Blob([bytes.slice()], { type: 'application/pdf' });
 }
+
+
+/** Opens the document a page numbering was given. */
+export async function openLocalPdfForPageNumbers(source: Blob): Promise<LocalWatermarkSource> {
+  return openLocalPdfSource(source, (reason) => new Error(getPdfWatermarkErrorMessage(reason)));
+}
+
+export interface PdfPageNumberOptions {
+  readonly plan: readonly NumberedPage[];
+  readonly format: PageNumberFormat;
+  readonly position: PageNumberPosition;
+  readonly fontSize: number;
+  readonly margin: number;
+  readonly onPage?: (position: number, total: number) => Promise<void> | void;
+}
+
+/**
+ * Writes the numbers onto the pages the plan names.
+ *
+ * Like the watermark, the pages are drawn onto rather than copied, so
+ * everything already on them is untouched and nothing is re-encoded — and
+ * every decision about where a number lands comes from `src/data`, including
+ * the correction for a page that carries its own rotation. What differs is
+ * that each page gets its own text, so the label is worked out per page rather
+ * than once for the document.
+ */
+export async function addPageNumbersToLocalPdf(
+  source: LocalWatermarkSource,
+  options: PdfPageNumberOptions,
+): Promise<Blob> {
+  if (options.plan.length === 0) throw new Error('There are no pages to number.');
+
+  const { document } = source;
+  let font: PDFFont;
+
+  try {
+    font = await document.embedFont(StandardFonts.Helvetica);
+  } catch {
+    throw new Error(getPageNumbersWriteErrorMessage());
+  }
+
+  const total = options.plan[options.plan.length - 1].value;
+
+  for (const [index, entry] of options.plan.entries()) {
+    await options.onPage?.(index + 1, options.plan.length);
+
+    try {
+      // pdf-lib counts pages from zero; a plan counts from one.
+      const page = document.getPage(entry.pageNumber - 1);
+      const media: WatermarkBox = { width: page.getWidth(), height: page.getHeight() };
+      const pageRotation = page.getRotation().angle;
+      const label = formatPageNumber(options.format, entry.value, total);
+      const box: WatermarkBox = {
+        width: font.widthOfTextAtSize(label, options.fontSize),
+        height: font.heightAtSize(options.fontSize, { descender: false }),
+      };
+      const anchor = getPageNumberAnchor(media, box, {
+        position: options.position,
+        margin: options.margin,
+        pageRotation,
+      });
+
+      page.drawText(label, {
+        x: anchor.x,
+        y: anchor.y,
+        size: options.fontSize,
+        font,
+        color: rgb(0.1, 0.1, 0.1),
+        // The page's own rotation turns everything drawn on it, so the number
+        // is drawn turned by the same amount to be read level.
+        rotate: degrees(pageRotation),
+      });
+    } catch {
+      throw new Error(getPageNumbersWriteErrorMessage());
+    }
+  }
+
+  const bytes = await document.save();
+
+  return new Blob([bytes.slice()], { type: 'application/pdf' });
+}
+
+export { getNumberedPdfFilename };

@@ -30,6 +30,7 @@ const workspaceSignatures = {
   "split-pdf": "Select a PDF to split",
   "organize-pdf": "Select a PDF to organize",
   "watermark-pdf": "Select a PDF to watermark",
+  "pdf-page-numbers": "Select a PDF to number",
 } as const satisfies Record<AvailableToolSlug, string>;
 
 for (const tool of getAvailableTools()) {

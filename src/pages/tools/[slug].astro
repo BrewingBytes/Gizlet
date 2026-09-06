@@ -12,6 +12,7 @@ import JpgToPdfTool from '../../components/JpgToPdfTool.astro';
 import JsonFormatterTool from '../../components/JsonFormatterTool.astro';
 import MergePdfTool from '../../components/MergePdfTool.astro';
 import OrganizePdfTool from '../../components/OrganizePdfTool.astro';
+import PdfPageNumbersTool from '../../components/PdfPageNumbersTool.astro';
 import PdfToJpgTool from '../../components/PdfToJpgTool.astro';
 import PdfViewerTool from '../../components/PdfViewerTool.astro';
 import RemoveImageMetadataTool from '../../components/RemoveImageMetadataTool.astro';
@@ -75,6 +76,7 @@ const toolWorkspaces = {
   'split-pdf': SplitPdfTool,
   'organize-pdf': OrganizePdfTool,
   'watermark-pdf': WatermarkPdfTool,
+  'pdf-page-numbers': PdfPageNumbersTool,
 } as const satisfies Record<AvailableToolSlug, unknown>;
 
 const { tool, relatedTools } = Astro.props;

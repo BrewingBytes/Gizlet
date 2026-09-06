@@ -35,7 +35,8 @@ const relatedToolSlugs: Record<AvailableToolSlug, readonly AvailableToolSlug[]> 
   'pdf-to-jpg': ['split-pdf', 'organize-pdf', 'pdf-viewer', 'jpg-to-pdf'],
   'split-pdf': ['organize-pdf', 'merge-pdf', 'pdf-to-jpg', 'pdf-viewer'],
   'organize-pdf': ['split-pdf', 'merge-pdf', 'watermark-pdf', 'pdf-viewer', 'pdf-to-jpg'],
-  'watermark-pdf': ['organize-pdf', 'merge-pdf', 'pdf-viewer', 'jpg-to-pdf'],
+  'watermark-pdf': ['organize-pdf', 'pdf-page-numbers', 'merge-pdf', 'pdf-viewer'],
+  'pdf-page-numbers': ['organize-pdf', 'merge-pdf', 'watermark-pdf', 'pdf-viewer'],
 };
 
 function getToolBySlug(slug: AvailableToolSlug): ToolRegistryEntry {

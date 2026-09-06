@@ -374,6 +374,20 @@ const [firstCategory] = categories;
     type WatermarkWord,
   } from '../data/watermark-pdf';
   import {
+    defaultPageNumberFontSize,
+    defaultPageNumberFormat,
+    defaultPageNumberMargin,
+    defaultPageNumberPosition,
+    getPageNumberFormatOptions,
+    getPageNumberPositionOptions,
+    isPageNumberFormat,
+    isPageNumberPosition,
+    planPageNumbers,
+    validatePageNumbersPageCount,
+    type PageNumberFormat,
+    type PageNumberPosition,
+  } from '../data/pdf-page-numbers';
+  import {
     createOrganizePdfPlan,
     defaultPdfPageTurn,
     getPdfPageTurnOptions,
@@ -429,6 +443,8 @@ const [firstCategory] = categories;
     word?: WatermarkWord;
     markPosition?: WatermarkPosition;
     strength?: number;
+    numberFormat?: PageNumberFormat;
+    numberPosition?: PageNumberPosition;
   }
 
   /**
@@ -633,6 +649,9 @@ const [firstCategory] = categories;
       ...(toolSlug === 'jpg-to-pdf' ? { pageSize: defaultPdfPageSize, orientation: defaultPdfOrientation } : {}),
       ...(toolSlug === 'pdf-to-jpg' ? { resolution: defaultPdfImageResolution } : {}),
       ...(toolSlug === 'organize-pdf' ? { pageTurn: defaultPdfPageTurn } : {}),
+      ...(toolSlug === 'pdf-page-numbers'
+        ? { numberFormat: defaultPageNumberFormat, numberPosition: defaultPageNumberPosition }
+        : {}),
       ...(toolSlug === 'watermark-pdf'
         ? { word: defaultWatermarkWord, markPosition: defaultWatermarkPosition, strength: defaultWatermarkOpacity }
         : {}),
@@ -701,6 +720,11 @@ const [firstCategory] = categories;
         const markPosition = step.markPosition ?? defaultWatermarkPosition;
         const strength = step.strength ?? defaultWatermarkOpacity;
         return `<div class="flow-block__settings flow-block__settings--pdf"><label for="step-word-${step.id}"><span>Stamp</span><select id="step-word-${step.id}" data-step-setting="word" data-step-id="${step.id}" aria-label="${name} word">${optionsMarkup(getWatermarkWordOptions(), word)}</select></label><label for="step-mark-position-${step.id}"><span>Position</span><select id="step-mark-position-${step.id}" data-step-setting="markPosition" data-step-id="${step.id}" aria-label="${name} position">${optionsMarkup(getWatermarkPositionOptions(), markPosition)}</select></label></div><div class="flow-block__settings"><label for="step-strength-${step.id}">Strength</label><div class="flow-block__quality"><input id="step-strength-${step.id}" data-step-setting="strength" data-step-id="${step.id}" aria-label="${name} strength" type="range" min="${minimumWatermarkOpacity}" max="${maximumWatermarkOpacity}" value="${escapeHtml(strength)}" /><output data-strength-output="${step.id}">${escapeHtml(strength)}%</output></div></div><p class="flow-block__format-note">A link carries one of five words rather than text somebody typed, which is why the workspace takes any text and this block does not.</p>`;
+      }
+      if (step.toolSlug === 'pdf-page-numbers') {
+        const numberFormat = step.numberFormat ?? defaultPageNumberFormat;
+        const numberPosition = step.numberPosition ?? defaultPageNumberPosition;
+        return `<div class="flow-block__settings flow-block__settings--pdf"><label for="step-number-format-${step.id}"><span>Numbers</span><select id="step-number-format-${step.id}" data-step-setting="numberFormat" data-step-id="${step.id}" aria-label="${name} format">${optionsMarkup(getPageNumberFormatOptions(), numberFormat)}</select></label><label for="step-number-position-${step.id}"><span>Position</span><select id="step-number-position-${step.id}" data-step-setting="numberPosition" data-step-id="${step.id}" aria-label="${name} position">${optionsMarkup(getPageNumberPositionOptions(), numberPosition)}</select></label></div><p class="flow-block__format-note">Every page is numbered, from one. Skipping a cover or naming a range is about a particular document, which a link cannot know.</p>`;
       }
       if (step.toolSlug === 'organize-pdf') {
         const pageTurn = step.pageTurn ?? defaultPdfPageTurn;
@@ -1054,6 +1078,8 @@ const [firstCategory] = categories;
       if (setting === 'pageTurn' && isPdfPageTurn(target.value)) step.pageTurn = target.value;
       if (setting === 'word' && isWatermarkWord(target.value)) step.word = target.value;
       if (setting === 'markPosition' && isWatermarkPosition(target.value)) step.markPosition = target.value;
+      if (setting === 'numberFormat' && isPageNumberFormat(target.value)) step.numberFormat = target.value;
+      if (setting === 'numberPosition' && isPageNumberPosition(target.value)) step.numberPosition = target.value;
       if (setting === 'strength') {
         step.strength = Number(target.value);
         const output = stepList.querySelector<HTMLOutputElement>(`[data-strength-output="${step.id}"]`);
@@ -1403,6 +1429,50 @@ const [firstCategory] = categories;
             continue;
           }
 
+          if (step.toolSlug === 'pdf-page-numbers') {
+            if (pdfResults.length === 0) throw new Error(`${tool.name} needs a PDF from the block before it.`);
+
+            const numbered: FlowPdf[] = [];
+            setSourceName ??= pdfResults[0].name;
+
+            for (const pdf of pdfResults) {
+              showStatus(`Running ${position}: ${tool.name}, reading the document locally…`);
+              await nextFrame();
+
+              const { addPageNumbersToLocalPdf, openLocalPdfForPageNumbers } = await import('../scripts/pdf-generation');
+              const source = await openLocalPdfForPageNumbers(pdf.blob);
+              const countProblem = validatePageNumbersPageCount(source.pageCount);
+
+              if (countProblem) throw new Error(countProblem);
+
+              // A flow numbers the whole document from one: a skip or a range
+              // is about a particular document, and a chain does not know which
+              // document will reach it.
+              const plan = planPageNumbers(source.pageCount, {
+                format: step.numberFormat ?? defaultPageNumberFormat,
+                startAt: 1,
+                skip: 0,
+                pages: '',
+              });
+              const written = await addPageNumbersToLocalPdf(source, {
+                plan,
+                format: step.numberFormat ?? defaultPageNumberFormat,
+                position: step.numberPosition ?? defaultPageNumberPosition,
+                fontSize: defaultPageNumberFontSize,
+                margin: defaultPageNumberMargin,
+                onPage: async (pagePosition, total) => {
+                  showStatus(`Running ${position}: ${tool.name}, page ${pagePosition} of ${total} locally…`);
+                  await nextFrame();
+                },
+              });
+
+              numbered.push({ blob: written, pages: source.pageCount, pageSize: pdf.pageSize, name: pdf.name });
+            }
+
+            pdfResults = numbered;
+            continue;
+          }
+
           if (step.toolSlug === 'organize-pdf') {
             if (pdfResults.length === 0) throw new Error(`${tool.name} needs a PDF from the block before it.`);
 
@@ -1679,6 +1749,7 @@ const [firstCategory] = categories;
         ...(step.toolSlug === 'pdf-to-jpg' ? { resolution: step.resolution } : {}),
         ...(step.toolSlug === 'organize-pdf' ? { pageTurn: step.pageTurn } : {}),
         ...(step.toolSlug === 'watermark-pdf' ? { word: step.word, markPosition: step.markPosition, strength: step.strength } : {}),
+        ...(step.toolSlug === 'pdf-page-numbers' ? { numberFormat: step.numberFormat, numberPosition: step.numberPosition } : {}),
       })),
     });
     const applyRecipe = (recipe: Recipe) => {
@@ -1709,6 +1780,8 @@ const [firstCategory] = categories;
         ...(step.pageTurn !== undefined ? { pageTurn: step.pageTurn } : {}),
         ...(step.word !== undefined ? { word: step.word } : {}),
         ...(step.markPosition !== undefined ? { markPosition: step.markPosition } : {}),
+        ...(step.numberFormat !== undefined ? { numberFormat: step.numberFormat } : {}),
+        ...(step.numberPosition !== undefined ? { numberPosition: step.numberPosition } : {}),
         ...(step.strength !== undefined ? { strength: step.strength } : {}),
       }));
       if (recipe.outputFormat) {
