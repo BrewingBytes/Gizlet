@@ -124,18 +124,19 @@ export const roadmapPhases: readonly RoadmapPhase[] = [
   {
     number: 3,
     title: 'The PDF page tree',
-    status: 'next',
+    status: 'shipped',
     when: 'After the PDF viewer becomes a surface the other PDF Gizlets can reuse. Every Gizlet here needs to show a visitor a page before it can ask them where to put something on it.',
     what: 'The page-level document jobs, all of which are the same two pieces wearing different hats: pick pages, then write something onto them. Reordering and rotating, a watermark, page numbers, a signature you drew yourself, and clearing the fields a document carries about whoever made it.',
     toolSlugs: ['organize-pdf', 'watermark-pdf', 'pdf-page-numbers', 'sign-pdf', 'clean-pdf-metadata'],
     sharedMachinery: ['one PDF page tree', 'the shared PDF viewer and its thumbnails', 'one page-range parser', 'no second PDF dependency'],
     signal: 'Issues naming a PDF page job, and pageviews on the PDF routes that already exist.',
     killCriterion: 'If the PDF routes that shipped in the phase above stop growing and no filed issue names a page job, the page tree work does not start: five Gizlets sharing machinery nobody has asked for is still five Gizlets nobody asked for.',
+    standing: 'Shipped whole, all five, and the dependency it was waiting on arrived first as the order above said it would: the viewer became a surface, and every Gizlet here reads its document through it. The reuse argument held where it counted — a page carrying its own rotation is displayed with its sides swapped, and the correction for that is written once and used by the watermark, the page numbers and the signature alike, rather than three times slightly differently. No second PDF dependency was added. The phase also made work for itself: a document whose pages this phase can turn is a document every Gizlet after it has to expect sideways.',
   },
   {
     number: 4,
     title: 'Text in, text out',
-    status: 'later',
+    status: 'next',
     when: 'Whenever a phase ahead of it is blocked. These need no file handling, no new dependency worth arguing about, and no shared surface, so they are the work that fits in the gaps.',
     what: 'The small conversions and inspections that are a single pure function each: percent-encoding, Base64, a token read without being verified, a file digest, records moved between JSON and CSV, a delimited file read as a table, a timestamp read as a date, identifiers, and a link turned into a scannable square.',
     toolSlugs: [
@@ -156,8 +157,8 @@ export const roadmapPhases: readonly RoadmapPhase[] = [
   {
     number: 5,
     title: 'One archive, three uses',
-    status: 'later',
-    when: 'After a Gizlet needs to hand back a folder rather than a file. The ZIP writer that already bundles many images from one document is the seed; this phase generalises it.',
+    status: 'next',
+    when: 'Started ahead of its place in this order, because two of the three turned out to need nothing that was not already here: the ZIP writer that bundles many images from one document was the seed, and generalising it was the whole of the work. What is left is the half that reads an archive rather than writes one, and that half waits on the question in the stopping condition below.',
     what: 'Bundling files into an archive, reading one apart again, and the icon set that only makes sense as a folder of files with a snippet beside it.',
     toolSlugs: ['create-zip', 'extract-archive', 'favicon-generator'],
     sharedMachinery: ['one browser archive layer', 'path-safety and size guards shared by every format', 'the existing image encoder'],
