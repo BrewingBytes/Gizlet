@@ -203,11 +203,17 @@ export const toolFlowRegistry = [
  * files already hands them back as one archive, so a block that did only that
  * would be a step which does nothing the flow does not already do. It bundles
  * files from a device, and a flow's files are not on one.
+ *
+ * Favicon Generator is the third kind: it reads an image and writes an archive
+ * of them, and an archive is not a payload any Gizlet here reads. A block that
+ * ended every chain it was in is a chain's last step by accident rather than by
+ * design, and a flow already hands back an archive when it makes several files.
  */
 export const flowlessToolSlugs = [
   'pdf-viewer',
   'image-dimensions',
   'image-color-picker',
+  'favicon-generator',
   'sign-pdf',
   'create-zip',
 ] as const satisfies readonly ToolRegistryEntry['slug'][];

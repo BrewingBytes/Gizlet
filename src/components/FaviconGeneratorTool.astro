@@ -1,0 +1,463 @@
+---
+import {
+  defaultFaviconBackground,
+  defaultFaviconFit,
+  faviconAssets,
+  getFaviconFitOptions,
+} from '../data/favicon';
+
+const fitOptions = getFaviconFitOptions();
+---
+
+<section class="favicon-tool" data-favicon-tool>
+  <div class="favicon-tool__picker" data-drop-zone>
+    <input
+      id="favicon-source"
+      class="favicon-tool__file-input"
+      type="file"
+      accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp"
+      aria-label="Select an image to make icons from"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">One square picture, {faviconAssets.length + 1} files back</p>
+    <h2>Drop an image here</h2>
+    <p>A logo or a mark, ideally 512 pixels or more. Nothing leaves this device.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose an image</button>
+  </div>
+
+  <p class="favicon-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="favicon-tool__error" data-error role="alert" hidden></p>
+  <p class="favicon-tool__warning" data-warning role="status" hidden></p>
+
+  <div class="favicon-tool__editor" data-editor hidden>
+    <div class="favicon-tool__preview">
+      <p class="metadata" data-source-name></p>
+      <!-- The icons at the sizes they will really be, drawn from the same crop
+           the files are written from: a 16-pixel icon is only honestly judged
+           at 16 pixels. -->
+      <ul class="favicon-tool__sizes" data-size-list></ul>
+      <template data-size-template>
+        <li>
+          <canvas data-size-canvas></canvas>
+          <span data-size-label></span>
+          <span data-size-purpose></span>
+        </li>
+      </template>
+    </div>
+
+    <div class="favicon-tool__controls">
+      <div class="favicon-tool__control" data-fit-control hidden>
+        <label for="favicon-fit">This picture is not square</label>
+        <select id="favicon-fit" data-fit aria-label="How to make it square">
+          {
+            fitOptions.map((option) => (
+              <option value={option.value} selected={option.value === defaultFaviconFit}>
+                {option.label}
+              </option>
+            ))
+          }
+        </select>
+      </div>
+
+      <div class="favicon-tool__control" data-background-control hidden>
+        <label for="favicon-background">Background</label>
+        <select id="favicon-background" data-background aria-label="Background behind the picture">
+          <option value="#ffffff" selected={defaultFaviconBackground === '#ffffff'}>White</option>
+          <option value="#000000">Black</option>
+          <option value="#f3efe6">Paper</option>
+          <option value="transparent">Transparent</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="favicon-tool__actions">
+      <button type="button" data-generate>Make the icon set</button>
+      <button type="button" class="button-secondary" data-clear>Choose another image</button>
+    </div>
+  </div>
+
+  <section class="favicon-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2>Your icon set is ready.</h2>
+    <p class="favicon-tool__result-details" data-result-details></p>
+
+    <ul class="favicon-tool__files" data-file-list></ul>
+    <template data-file-template>
+      <li>
+        <span data-file-name></span>
+        <span data-file-size></span>
+      </li>
+    </template>
+
+    <div class="favicon-tool__snippet">
+      <div class="favicon-tool__snippet-heading">
+        <h3>Put this in your <code>&lt;head&gt;</code></h3>
+        <button type="button" class="button-secondary" data-copy-snippet>Copy</button>
+      </div>
+      <pre data-snippet></pre>
+      <p class="favicon-tool__snippet-note" data-copy-status role="status" aria-live="polite"></p>
+    </div>
+
+    <div class="favicon-tool__snippet">
+      <div class="favicon-tool__snippet-heading">
+        <h3>And this in your web app manifest</h3>
+        <button type="button" class="button-secondary" data-copy-manifest>Copy</button>
+      </div>
+      <pre data-manifest></pre>
+    </div>
+
+    <div class="favicon-tool__result-actions">
+      <a class="favicon-tool__download" data-download>Download ZIP</a>
+      <button type="button" class="button-secondary" data-result-clear>Start over</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .favicon-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .favicon-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .favicon-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .favicon-tool__picker[hidden], .favicon-tool__editor[hidden], .favicon-tool__result[hidden], .favicon-tool__control[hidden] { display: none; }
+  .favicon-tool__picker h2 { margin-bottom: var(--space-2); }
+  .favicon-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .favicon-tool__status, .favicon-tool__error, .favicon-tool__warning { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .favicon-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .favicon-tool__warning { border-left-color: var(--color-amber); }
+  .favicon-tool__editor, .favicon-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .favicon-tool__editor { display: grid; gap: var(--space-4); }
+  .favicon-tool__preview { display: grid; gap: var(--space-2); }
+  .favicon-tool__sizes { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-4); margin: 0; padding: 0; list-style: none; }
+  .favicon-tool__sizes li { display: grid; justify-items: center; gap: var(--space-1); max-width: 8rem; text-align: center; }
+  .favicon-tool__sizes canvas { display: block; border: var(--border-width) solid var(--border); background: repeating-conic-gradient(var(--surface) 0% 25%, var(--background) 0% 50%) 50% / 12px 12px; image-rendering: pixelated; }
+  .favicon-tool__sizes span { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .favicon-tool__sizes span:first-of-type { color: var(--text); font-weight: 700; }
+  .favicon-tool__controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: var(--space-3); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); align-items: start; }
+  .favicon-tool__control label { display: block; margin-bottom: var(--space-1); font-weight: 700; }
+  .favicon-tool__control select { width: 100%; }
+  .favicon-tool__actions, .favicon-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .favicon-tool__result h2 { margin-bottom: var(--space-2); }
+  .favicon-tool__result-details { margin-bottom: var(--space-3); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .favicon-tool__files { display: grid; gap: var(--space-1); margin: 0 0 var(--space-4); padding: 0; list-style: none; }
+  .favicon-tool__files li { display: flex; justify-content: space-between; gap: var(--space-2); padding: var(--space-1) var(--space-2); border-bottom: var(--border-width) solid var(--border); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .favicon-tool__snippet { margin-bottom: var(--space-4); }
+  .favicon-tool__snippet-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-2); }
+  .favicon-tool__snippet-heading h3 { margin: 0; font-size: var(--font-size-lg); }
+  .favicon-tool__snippet pre { overflow-x: auto; margin: 0; padding: var(--space-3); border: var(--border-width) solid var(--border); background: var(--background); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .favicon-tool__snippet-note { margin: var(--space-1) 0 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .favicon-tool__snippet-note:empty { display: none; }
+  .favicon-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .favicon-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+  @media (max-width: 36rem) {
+    .favicon-tool__picker, .favicon-tool__editor, .favicon-tool__result { padding: var(--space-3); }
+  }
+</style>
+
+<script>
+  import {
+    defaultFaviconBackground,
+    defaultFaviconFit,
+    describeFaviconSet,
+    faviconArchiveName,
+    faviconAssets,
+    faviconIcoFilename,
+    faviconIcoSizes,
+    getFaviconCrop,
+    getFaviconManifestSnippet,
+    getFaviconSnippet,
+    getFaviconSourceWarning,
+    isFaviconBackground,
+    isFaviconFit,
+    isSquareEnough,
+    validateFaviconDimensions,
+    validateFaviconSource,
+  } from '../data/favicon';
+  import { createIcoFile } from '../data/ico-file';
+  import { formatFileSize } from '../data/image-compression';
+  import { createZipArchive, zipMimeType } from '../data/zip-archive';
+  import { loadBrowserImage } from '../scripts/image-processing';
+
+  const root = document.querySelector<HTMLElement>('[data-favicon-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const warning = root.querySelector<HTMLElement>('[data-warning]');
+    const editor = root.querySelector<HTMLElement>('[data-editor]');
+    const sourceName = root.querySelector<HTMLElement>('[data-source-name]');
+    const sizeList = root.querySelector<HTMLUListElement>('[data-size-list]');
+    const sizeTemplate = root.querySelector<HTMLTemplateElement>('[data-size-template]');
+    const fitControl = root.querySelector<HTMLElement>('[data-fit-control]');
+    const fitField = root.querySelector<HTMLSelectElement>('[data-fit]');
+    const backgroundControl = root.querySelector<HTMLElement>('[data-background-control]');
+    const backgroundField = root.querySelector<HTMLSelectElement>('[data-background]');
+    const generateButton = root.querySelector<HTMLButtonElement>('[data-generate]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultDetails = root.querySelector<HTMLElement>('[data-result-details]');
+    const fileList = root.querySelector<HTMLUListElement>('[data-file-list]');
+    const fileTemplate = root.querySelector<HTMLTemplateElement>('[data-file-template]');
+    const snippet = root.querySelector<HTMLElement>('[data-snippet]');
+    const manifest = root.querySelector<HTMLElement>('[data-manifest]');
+    const copySnippetButton = root.querySelector<HTMLButtonElement>('[data-copy-snippet]');
+    const copyManifestButton = root.querySelector<HTMLButtonElement>('[data-copy-manifest]');
+    const copyStatus = root.querySelector<HTMLElement>('[data-copy-status]');
+    const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !warning || !editor || !sourceName || !sizeList || !sizeTemplate || !fitControl || !fitField || !backgroundControl || !backgroundField || !generateButton || !clearButton || !result || !resultDetails || !fileList || !fileTemplate || !snippet || !manifest || !copySnippetButton || !copyManifestButton || !copyStatus || !download || !resultClearButton) {
+      throw new Error('Favicon Generator tool could not initialise.');
+    }
+
+    let source: { readonly file: File; readonly image: HTMLImageElement; readonly width: number; readonly height: number } | undefined;
+    let isWriting = false;
+    let resultUrl: string | undefined;
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+
+    const currentFit = () => (isFaviconFit(fitField.value) ? fitField.value : defaultFaviconFit);
+    const currentBackground = () =>
+      isFaviconBackground(backgroundField.value) ? backgroundField.value : defaultFaviconBackground;
+
+    const resetResult = () => {
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      resultUrl = undefined;
+      result.hidden = true;
+      fileList.replaceChildren();
+      copyStatus.textContent = '';
+      download.removeAttribute('href');
+      download.removeAttribute('download');
+    };
+
+    const resetTool = () => {
+      source = undefined;
+      fileInput.value = '';
+      sizeList.replaceChildren();
+      editor.hidden = true;
+      dropZone.hidden = false;
+      warning.hidden = true;
+      resetResult();
+      clearError();
+      clearStatus();
+    };
+
+    /**
+     * Draws one icon at one size.
+     *
+     * Where the square comes from is `data/favicon`, so the preview canvases
+     * and the written files are the same drawing at different sizes rather than
+     * two implementations that happen to agree today.
+     */
+    const drawIcon = (canvas: HTMLCanvasElement, size: number) => {
+      if (!source) return;
+
+      const context = canvas.getContext('2d');
+
+      if (!context) return;
+
+      canvas.width = size;
+      canvas.height = size;
+      context.clearRect(0, 0, size, size);
+
+      const background = currentBackground();
+
+      if (background !== 'transparent') {
+        context.fillStyle = background;
+        context.fillRect(0, 0, size, size);
+      }
+
+      const crop = getFaviconCrop({ width: source.width, height: source.height }, currentFit());
+
+      context.imageSmoothingQuality = 'high';
+      context.drawImage(source.image, crop.x, crop.y, crop.size, crop.size, 0, 0, size, size);
+    };
+
+    const renderPreview = () => {
+      if (!source) return;
+
+      resetResult();
+      sizeList.replaceChildren(
+        ...faviconAssets.map((asset) => {
+          const fragment = sizeTemplate.content.cloneNode(true) as DocumentFragment;
+          const canvas = fragment.querySelector<HTMLCanvasElement>('[data-size-canvas]');
+          const label = fragment.querySelector<HTMLElement>('[data-size-label]');
+          const purpose = fragment.querySelector<HTMLElement>('[data-size-purpose]');
+
+          if (canvas) {
+            drawIcon(canvas, asset.size);
+            // Drawn at its real size, and shown at its real size up to a point:
+            // a 512 pixel square would be the whole page.
+            canvas.style.width = `${Math.min(asset.size, 96)}px`;
+            canvas.style.height = `${Math.min(asset.size, 96)}px`;
+            canvas.setAttribute('aria-label', `${asset.size} by ${asset.size} preview`);
+          }
+          if (label) label.textContent = `${asset.size}px`;
+          if (purpose) purpose.textContent = asset.purpose;
+
+          return fragment;
+        }),
+      );
+
+      const square = isSquareEnough({ width: source.width, height: source.height });
+
+      fitControl.hidden = square;
+      backgroundControl.hidden = square && currentFit() === 'cover';
+    };
+
+    const chooseFile = async (file: File | undefined) => {
+      resetTool();
+      if (!file) return;
+
+      const problem = validateFaviconSource([file]);
+
+      if (problem) {
+        showError(problem);
+        return;
+      }
+
+      dropZone.hidden = true;
+      showStatus('Reading the image locally…');
+      await nextPaint();
+
+      try {
+        const image = await loadBrowserImage(file);
+        const dimensions = { width: image.naturalWidth, height: image.naturalHeight };
+        const invalid = validateFaviconDimensions(dimensions);
+
+        if (invalid) throw new Error(invalid);
+
+        source = { file, image, ...dimensions };
+        sourceName.textContent = `${file.name} · ${dimensions.width} × ${dimensions.height} px`;
+        editor.hidden = false;
+        clearStatus();
+
+        const soft = getFaviconSourceWarning(dimensions);
+
+        warning.hidden = soft === undefined;
+        warning.textContent = soft ?? '';
+        renderPreview();
+      } catch (caughtError) {
+        source = undefined;
+        editor.hidden = true;
+        dropZone.hidden = false;
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be read.');
+      }
+    };
+
+    /** One PNG at one size, drawn the way the preview draws it. */
+    const encodeIcon = async (size: number): Promise<Uint8Array> => {
+      const canvas = document.createElement('canvas');
+
+      drawIcon(canvas, size);
+
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+
+      if (!blob) throw new Error('This browser could not encode the icons.');
+
+      return new Uint8Array(await blob.arrayBuffer());
+    };
+
+    const generate = async () => {
+      if (!source || isWriting) return;
+
+      isWriting = true;
+      clearError();
+      resetResult();
+      generateButton.disabled = true;
+      generateButton.textContent = 'Making…';
+      showStatus('Drawing the icons locally…');
+      await nextPaint();
+
+      try {
+        const files: { readonly name: string; readonly data: Uint8Array }[] = [];
+
+        for (const asset of faviconAssets) {
+          showStatus(`Drawing ${asset.size}px locally…`);
+          await nextPaint();
+          files.push({ name: asset.filename, data: await encodeIcon(asset.size) });
+        }
+
+        // The ICO is the same drawings again, in the container an older browser
+        // asks for. It is assembled from PNGs, which is what keeps it small.
+        showStatus('Packing the ICO locally…');
+        await nextPaint();
+
+        const icoImages = [];
+
+        for (const size of faviconIcoSizes) {
+          icoImages.push({ size, png: await encodeIcon(size) });
+        }
+
+        files.unshift({ name: faviconIcoFilename, data: createIcoFile(icoImages) });
+
+        const archive = new Blob([createZipArchive([...files])], { type: zipMimeType });
+
+        resultUrl = URL.createObjectURL(archive);
+        resultDetails.textContent = describeFaviconSet(files.length, formatFileSize, archive.size);
+        fileList.replaceChildren(
+          ...files.map((file) => {
+            const fragment = fileTemplate.content.cloneNode(true) as DocumentFragment;
+            const name = fragment.querySelector<HTMLElement>('[data-file-name]');
+            const size = fragment.querySelector<HTMLElement>('[data-file-size]');
+
+            if (name) name.textContent = file.name;
+            if (size) size.textContent = formatFileSize(file.data.length);
+
+            return fragment;
+          }),
+        );
+        snippet.textContent = getFaviconSnippet();
+        manifest.textContent = getFaviconManifestSnippet();
+        download.href = resultUrl;
+        download.download = faviconArchiveName;
+        download.textContent = `Download ${faviconArchiveName}`;
+        download.setAttribute('aria-label', `Download ${faviconArchiveName}`);
+        result.hidden = false;
+        clearStatus();
+      } catch (caughtError) {
+        resetResult();
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : 'These icons could not be made.');
+      } finally {
+        isWriting = false;
+        generateButton.disabled = false;
+        generateButton.textContent = 'Make the icon set';
+      }
+    };
+
+    const copy = async (text: string) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        copyStatus.textContent = 'Copied.';
+      } catch {
+        copyStatus.textContent = 'This browser would not let the page copy. Select the text and copy it.';
+      }
+    };
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void chooseFile(fileInput.files?.[0]));
+    clearButton.addEventListener('click', resetTool);
+    resultClearButton.addEventListener('click', resetTool);
+    generateButton.addEventListener('click', () => void generate());
+    fitField.addEventListener('change', renderPreview);
+    backgroundField.addEventListener('change', renderPreview);
+    copySnippetButton.addEventListener('click', () => void copy(getFaviconSnippet()));
+    copyManifestButton.addEventListener('click', () => void copy(getFaviconManifestSnippet()));
+
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    }
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    }
+    dropZone.addEventListener('drop', (event) => void chooseFile(event.dataTransfer?.files[0]));
+  }
+</script>

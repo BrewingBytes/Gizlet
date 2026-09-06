@@ -18,6 +18,7 @@ const workspaceSignatures = {
   "collage-maker": "Select images for a collage",
   "rotate-flip-image": "Select an image to rotate or flip",
   "image-background": "Select an image to put on a background",
+  "favicon-generator": "Select an image to make icons from",
   "remove-image-metadata": "Select an image to inspect",
   "image-dimensions": "Select an image to measure",
   "image-color-picker": "Select an image to pick colours from",

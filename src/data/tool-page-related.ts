@@ -24,6 +24,7 @@ const relatedToolSlugs: Record<AvailableToolSlug, readonly AvailableToolSlug[]> 
   'rotate-flip-image': ['crop-image', 'resize-image', 'compress-image', 'convert-image', 'jpg-to-pdf'],
   'image-background': ['resize-image', 'crop-image', 'convert-image', 'collage-maker', 'jpg-to-pdf'],
   'remove-image-metadata': ['clean-pdf-metadata', 'compress-image', 'resize-image', 'convert-image', 'crop-image'],
+  'favicon-generator': ['resize-image', 'crop-image', 'convert-image', 'image-background', 'compress-image'],
   'image-dimensions': ['resize-image', 'crop-image', 'compress-image', 'convert-image', 'jpg-to-pdf'],
   'image-color-picker': ['crop-image', 'resize-image', 'convert-image', 'compress-image', 'jpg-to-pdf'],
   'collage-maker': ['resize-image', 'crop-image', 'compress-image', 'convert-image', 'jpg-to-pdf'],

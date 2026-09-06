@@ -458,8 +458,12 @@ export const toolRegistry = [
       "ico file",
       "app icon sizes",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "One local image, ideally square and at least 512 pixels. A picture that is not square gets a choice: fill the square and crop the edges, or fit the whole picture on a background colour.",
+      output: "A ZIP holding favicon.ico and five PNGs — 16, 32, 180, 192 and 512 pixels — drawn from the same crop the preview shows, with the HTML for the page head and the icons fragment for a web app manifest, both written from the same list the archive is.",
+    },
   },
   {
     id: 19,
