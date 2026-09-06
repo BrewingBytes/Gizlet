@@ -10,12 +10,13 @@
       accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp"
       aria-label="Select an image to convert"
       data-file-input
+      multiple
       hidden
     />
-    <p class="metadata">One image at a time</p>
-    <h2>Drop an image here</h2>
+    <p class="metadata">One image, or a batch of them</p>
+    <h2>Drop images here</h2>
     <p>JPEG, PNG, WebP, AVIF, or BMP. Nothing leaves this device.</p>
-    <button type="button" class="button-secondary" data-select-file>Choose an image</button>
+    <button type="button" class="button-secondary" data-select-file>Choose images</button>
   </div>
 
   <p class="convert-image-tool__status" data-status role="status" aria-live="polite" hidden></p>
@@ -48,20 +49,43 @@
 
     <div class="convert-image-tool__actions">
       <button type="button" data-convert>Convert it</button>
-      <button type="button" class="button-secondary" data-clear>Choose another image</button>
+      <button type="button" class="button-secondary" data-clear>Choose other images</button>
     </div>
   </div>
 
   <section class="convert-image-tool__result" data-result aria-live="polite" hidden>
     <p class="metadata">Ready to download</p>
-    <h2>Your image is ready.</h2>
-    <figure class="convert-image-tool__result-preview">
+    <h2 data-result-title>Your image is ready.</h2>
+    <p class="convert-image-tool__result-summary" data-result-summary hidden></p>
+    <figure class="convert-image-tool__result-preview" data-result-figure>
       <img data-result-image alt="Converted image preview" />
       <figcaption data-result-caption></figcaption>
     </figure>
+
+    <!-- A batch is a list of rows: every picture that worked is a download of
+         its own, and every one that did not says why beside it. -->
+    <ul class="convert-image-tool__result-list" data-result-list hidden></ul>
+    <template data-result-item-template>
+      <li>
+        <img data-item-image alt="" />
+        <div>
+          <p data-item-name></p>
+          <a data-item-download>Download</a>
+        </div>
+      </li>
+    </template>
+    <template data-failure-item-template>
+      <li data-failed>
+        <div>
+          <p data-item-name></p>
+          <p data-item-reason></p>
+        </div>
+      </li>
+    </template>
+
     <div class="convert-image-tool__result-actions">
       <a class="convert-image-tool__download" data-download>Download image</a>
-      <button type="button" class="button-secondary" data-result-clear>Choose another image</button>
+      <button type="button" class="button-secondary" data-result-clear>Choose other images</button>
     </div>
   </section>
 </section>
@@ -91,6 +115,15 @@
   .convert-image-tool__actions, .convert-image-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
   .convert-image-tool__result h2 { margin-bottom: var(--space-4); }
   .convert-image-tool__result-preview { margin-bottom: var(--space-4); }
+  .convert-image-tool__result-figure[hidden], .convert-image-tool__result-list[hidden], .convert-image-tool__result-summary[hidden] { display: none; }
+  .convert-image-tool__result-summary { margin: 0 0 var(--space-3); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .convert-image-tool__result-list { display: grid; gap: var(--space-2); margin: 0 0 var(--space-4); padding: 0; list-style: none; }
+  .convert-image-tool__result-list li { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2); border: var(--border-width) solid var(--border); background: var(--background); }
+  .convert-image-tool__result-list li[data-failed] { border-left: var(--border-strong-width) solid var(--color-red); }
+  .convert-image-tool__result-list img { width: 3.5rem; height: 3.5rem; object-fit: contain; background: var(--surface); }
+  .convert-image-tool__result-list p { margin: 0; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .convert-image-tool__result-list li[data-failed] p + p { color: var(--color-red); }
+  .convert-image-tool__result-list a { display: inline-block; margin-top: var(--space-1); font-size: var(--font-size-sm); font-weight: 700; }
   .convert-image-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
   .convert-image-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
   @media (max-width: 36rem) { .convert-image-tool__picker, .convert-image-tool__editor, .convert-image-tool__result { padding: var(--space-3); } }
@@ -105,11 +138,21 @@
     losesTransparency,
   } from '../data/image-conversion';
   import {
+    formatFileSize,
     getPreferredOutputFormat,
     isImageOutputFormat,
-    isSupportedImageFile,
   } from '../data/image-compression';
-  import { encodeBrowserImage, imageHasTransparency, loadBrowserImage } from '../scripts/image-processing';
+  import {
+    describeBatchCount,
+    getBatchArchiveName,
+    getBatchFailures,
+    getBatchSuccesses,
+    hasBatchOutput,
+    summariseBatch,
+    validateBatchSelection,
+  } from '../data/image-batches';
+  import { checkBatchSize, packImageArchive, readBatchSources, releaseBatch, runImageBatch, type BatchSource } from '../scripts/image-batch';
+  import { encodeBrowserImage, imageHasTransparency } from '../scripts/image-processing';
 
   const root = document.querySelector<HTMLElement>('[data-convert-image-tool]');
 
@@ -128,20 +171,34 @@
     const convertButton = root.querySelector<HTMLButtonElement>('[data-convert]');
     const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
     const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultTitle = root.querySelector<HTMLElement>('[data-result-title]');
+    const resultFigure = root.querySelector<HTMLElement>('[data-result-figure]');
+    const resultSummary = root.querySelector<HTMLElement>('[data-result-summary]');
     const resultImage = root.querySelector<HTMLImageElement>('[data-result-image]');
     const resultCaption = root.querySelector<HTMLElement>('[data-result-caption]');
+    const resultList = root.querySelector<HTMLUListElement>('[data-result-list]');
+    const resultItemTemplate = root.querySelector<HTMLTemplateElement>('[data-result-item-template]');
+    const failureItemTemplate = root.querySelector<HTMLTemplateElement>('[data-failure-item-template]');
     const download = root.querySelector<HTMLAnchorElement>('[data-download]');
     const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
 
-    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !previewImage || !inputName || !sourceFormat || !outputFormat || !transparencyWarning || !convertButton || !clearButton || !result || !resultImage || !resultCaption || !download || !resultClearButton) {
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !previewImage || !inputName || !sourceFormat || !outputFormat || !transparencyWarning || !convertButton || !clearButton || !result || !resultTitle || !resultFigure || !resultSummary || !resultImage || !resultCaption || !resultList || !resultItemTemplate || !failureItemTemplate || !download || !resultClearButton) {
       throw new Error('Convert Image tool could not initialise.');
     }
 
-    let selectedFile: File | undefined;
-    let sourceImage: HTMLImageElement | undefined;
+    /**
+     * The batch, which is one picture long in the ordinary case.
+     *
+     * Everything below works on this list rather than on a chosen file, so the
+     * single-image path and the batch are the same path: one takes the first
+     * row's shortcuts for the preview and the panel, and neither has a second
+     * implementation to drift from the other.
+     */
+    let sources: readonly BatchSource[] = [];
     let sourceHasTransparency = false;
-    let previewUrl: string | undefined;
     let resultUrl: string | undefined;
+    /** The object URLs the result rows point at, revoked when the panel resets. */
+    let itemUrls: string[] = [];
 
     const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     const revoke = (url: string | undefined) => { if (url) URL.revokeObjectURL(url); };
@@ -153,7 +210,14 @@
     const resetResult = () => {
       revoke(resultUrl);
       resultUrl = undefined;
+      for (const url of itemUrls) URL.revokeObjectURL(url);
+      itemUrls = [];
       result.hidden = true;
+      resultFigure.hidden = false;
+      resultSummary.hidden = true;
+      resultSummary.textContent = '';
+      resultList.hidden = true;
+      resultList.replaceChildren();
       resultImage.removeAttribute('src');
       resultCaption.textContent = '';
       download.removeAttribute('href');
@@ -161,12 +225,10 @@
     };
 
     const resetTool = () => {
-      selectedFile = undefined;
-      sourceImage = undefined;
+      releaseBatch(sources);
+      sources = [];
       sourceHasTransparency = false;
       fileInput.value = '';
-      revoke(previewUrl);
-      previewUrl = undefined;
       resetResult();
       previewImage.removeAttribute('src');
       dropZone.hidden = false;
@@ -180,85 +242,198 @@
       transparencyWarning.hidden = !losesTransparency(sourceHasTransparency, format);
     };
 
-    const selectFile = async (file: File | undefined) => {
+    const selectFiles = async (chosen: readonly File[]) => {
       resetTool();
-      if (!file) return;
-      if (!isSupportedImageFile(file)) {
-        showError('Choose a JPEG, PNG, WebP, AVIF, or BMP image.');
+      if (chosen.length === 0) return;
+
+      const problem = validateBatchSelection(chosen);
+      if (problem) {
+        showError(chosen.length === 1 ? 'Choose a JPEG, PNG, WebP, AVIF, or BMP image.' : problem);
         return;
       }
 
-      const detectedFormat = getSourceFormat(file);
-      if (!detectedFormat) {
-        showError('This image format could not be detected. Choose a JPEG, PNG, WebP, AVIF, or BMP image.');
+      const undetected = chosen.find((file) => !getSourceFormat(file));
+      if (undetected) {
+        showError(`${chosen.length === 1 ? 'This image format' : `The format of ${undetected.name}`} could not be detected. Choose a JPEG, PNG, WebP, AVIF, or BMP image.`);
         return;
       }
 
-      selectedFile = file;
       dropZone.hidden = true;
-      showStatus('Reading image locally…');
+      showStatus(chosen.length === 1 ? 'Reading image locally…' : `Reading ${describeBatchCount(chosen.length)} locally…`);
       await nextPaint();
-      try {
-        sourceImage = await loadBrowserImage(file);
-        if (!sourceImage.naturalWidth || !sourceImage.naturalHeight) throw new Error('This image has no usable dimensions.');
-        sourceHasTransparency = imageHasTransparency(sourceImage);
-        previewUrl = URL.createObjectURL(file);
-        previewImage.src = previewUrl;
-        inputName.textContent = `${file.name} · ${sourceImage.naturalWidth} × ${sourceImage.naturalHeight} px`;
-        sourceFormat.textContent = getSourceFormatLabel(detectedFormat);
-        outputFormat.value = getPreferredOutputFormat(detectedFormat);
-        updateOutputControls();
-        clearStatus();
-        editor.hidden = false;
-      } catch (caughtError) {
-        selectedFile = undefined;
-        sourceImage = undefined;
-        sourceHasTransparency = false;
+
+      const { sources: read, failures } = await readBatchSources(chosen, (position, total) => {
+        if (total > 1) showStatus(`Reading image ${position} of ${total} locally…`);
+      });
+
+      // A file that will not decode is one row lost, not the whole batch — but
+      // a batch where nothing decoded is an error like any other.
+      if (read.length === 0) {
+        releaseBatch(read);
         dropZone.hidden = false;
-        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be read.');
         clearStatus();
+        showError(failures[0]?.reason ?? 'This image could not be read.');
+        return;
+      }
+
+      const tooMuch = checkBatchSize(read);
+      if (tooMuch) {
+        releaseBatch(read);
+        dropZone.hidden = false;
+        clearStatus();
+        showError(tooMuch);
+        return;
+      }
+
+      sources = read;
+
+      const [first] = sources;
+      const detectedFormat = getSourceFormat(first.file);
+
+      sourceHasTransparency = sources.some((source) => imageHasTransparency(source.image));
+      previewImage.src = first.previewUrl;
+      inputName.textContent = sources.length === 1
+        ? `${first.file.name} · ${first.width} × ${first.height} px`
+        : `${describeBatchCount(sources.length)} · first: ${first.file.name} · ${first.width} × ${first.height} px`;
+      sourceFormat.textContent = sources.length === 1 && detectedFormat
+        ? getSourceFormatLabel(detectedFormat)
+        : `${describeBatchCount(sources.length)}`;
+      if (detectedFormat) outputFormat.value = getPreferredOutputFormat(detectedFormat);
+      convertButton.textContent = sources.length === 1 ? 'Convert it' : `Convert ${describeBatchCount(sources.length)}`;
+      updateOutputControls();
+      clearStatus();
+      editor.hidden = false;
+
+      if (failures.length > 0) {
+        showError(`${failures.length} of the chosen files could not be read: ${failures.map((failure) => failure.name).join(', ')}.`);
       }
     };
 
-    const convertImage = async () => {
-      if (!selectedFile || !sourceImage || !isImageOutputFormat(outputFormat.value)) return;
+    /** One finished row: the file, and the line the list shows beside it. */
+    const renderRow = (file: File, detail: string, thumbnail: string) => {
+      const fragment = resultItemTemplate.content.cloneNode(true) as DocumentFragment;
+      const image = fragment.querySelector<HTMLImageElement>('[data-item-image]');
+      const name = fragment.querySelector<HTMLElement>('[data-item-name]');
+      const link = fragment.querySelector<HTMLAnchorElement>('[data-item-download]');
+
+      if (image) image.src = thumbnail;
+      if (name) name.textContent = `${file.name} · ${detail}`;
+      if (link) {
+        link.href = thumbnail;
+        link.download = file.name;
+        link.setAttribute('aria-label', `Download ${file.name}`);
+      }
+
+      return fragment;
+    };
+
+    const renderFailure = (failure: { readonly name: string; readonly reason: string }) => {
+      const fragment = failureItemTemplate.content.cloneNode(true) as DocumentFragment;
+      const name = fragment.querySelector<HTMLElement>('[data-item-name]');
+      const reason = fragment.querySelector<HTMLElement>('[data-item-reason]');
+
+      if (name) name.textContent = failure.name;
+      if (reason) reason.textContent = failure.reason;
+
+      return fragment;
+    };
+
+    const convertImages = async () => {
+      if (sources.length === 0 || !isImageOutputFormat(outputFormat.value)) return;
+
+      const format = outputFormat.value;
+      const many = sources.length > 1;
+
       clearError();
       resetResult();
       convertButton.disabled = true;
       convertButton.textContent = 'Converting…';
-      showStatus('Converting locally…');
+      showStatus(many ? `Converting ${describeBatchCount(sources.length)} locally…` : 'Converting locally…');
       await nextPaint();
+
       try {
-        const format = outputFormat.value;
-        const output = await encodeBrowserImage(
-          sourceImage,
-          { width: sourceImage.naturalWidth, height: sourceImage.naturalHeight },
-          format,
+        const outcomes = await runImageBatch(
+          sources,
+          async (source) => {
+            const blob = await encodeBrowserImage(
+              source.image,
+              { width: source.width, height: source.height },
+              format,
+            );
+
+            return {
+              file: new File([blob], getConversionOutputFilename(source.file.name, format), { type: blob.type }),
+              width: source.width,
+              height: source.height,
+            };
+          },
+          (position, total) => {
+            if (total > 1) showStatus(`Converting image ${position} of ${total} locally…`);
+          },
         );
-        resultUrl = URL.createObjectURL(output);
-        resultImage.src = resultUrl;
-        resultCaption.textContent = `${getOutputFormatLabel(format)} · ${sourceImage.naturalWidth} × ${sourceImage.naturalHeight} px`;
-        download.href = resultUrl;
-        download.download = getConversionOutputFilename(selectedFile.name, format);
+        const outputs = getBatchSuccesses(outcomes);
+        const failures = getBatchFailures(outcomes);
+
+        if (!hasBatchOutput(outcomes)) {
+          throw new Error(failures[0]?.reason ?? 'This image could not be converted.');
+        }
+
         editor.hidden = true;
         result.hidden = false;
+
+        if (!many) {
+          const [output] = outputs;
+
+          resultUrl = URL.createObjectURL(output.file);
+          resultTitle.textContent = 'Your image is ready.';
+          resultImage.src = resultUrl;
+          resultCaption.textContent = `${getOutputFormatLabel(format)} · ${output.width} × ${output.height} px`;
+          download.href = resultUrl;
+          download.download = output.file.name;
+          download.textContent = 'Download image';
+          return;
+        }
+
+        // A batch hands back one archive and the rows it was packed from, so a
+        // visitor can take the lot or just the one they wanted.
+        itemUrls = outputs.map((output) => URL.createObjectURL(output.file));
+        resultFigure.hidden = true;
+        resultList.hidden = false;
+        resultList.replaceChildren(
+          ...outputs.map((output, index) =>
+            renderRow(output.file, `${getOutputFormatLabel(format)} · ${formatFileSize(output.file.size)}`, itemUrls[index]),
+          ),
+          ...failures.map(renderFailure),
+        );
+
+        const archive = await packImageArchive(outputs.map((output) => output.file));
+        const bytes = outputs.reduce((total, output) => total + output.file.size, 0);
+
+        resultUrl = URL.createObjectURL(archive);
+        resultTitle.textContent = 'Your images are ready.';
+        resultCaption.textContent = '';
+        download.href = resultUrl;
+        download.download = getBatchArchiveName('converted');
+        download.textContent = `Download all ${outputs.length} as a ZIP`;
+        resultSummary.hidden = false;
+        resultSummary.textContent = summariseBatch(outcomes, bytes);
       } catch (caughtError) {
         showError(caughtError instanceof Error ? caughtError.message : 'This image could not be converted.');
       } finally {
         clearStatus();
         convertButton.disabled = false;
-        convertButton.textContent = 'Convert it';
+        convertButton.textContent = sources.length > 1 ? `Convert ${describeBatchCount(sources.length)}` : 'Convert it';
       }
     };
 
     selectFileButton.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', () => void selectFile(fileInput.files?.[0]));
+    fileInput.addEventListener('change', () => void selectFiles([...(fileInput.files ?? [])]));
     clearButton.addEventListener('click', resetTool);
     resultClearButton.addEventListener('click', resetTool);
     outputFormat.addEventListener('change', updateOutputControls);
-    convertButton.addEventListener('click', () => void convertImage());
+    convertButton.addEventListener('click', () => void convertImages());
     for (const eventName of ['dragenter', 'dragover']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
     for (const eventName of ['dragleave', 'drop']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
-    dropZone.addEventListener('drop', (event) => void selectFile(event.dataTransfer?.files[0]));
+    dropZone.addEventListener('drop', (event) => void selectFiles([...(event.dataTransfer?.files ?? [])]));
   }
 </script>

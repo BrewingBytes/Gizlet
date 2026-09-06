@@ -17,7 +17,7 @@ test("compresses a selected image locally and offers it for download", async ({
 
   await expect(page.getByAltText("Selected image preview")).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Drop an image here" }),
+    page.getByRole("heading", { name: "Drop images here" }),
   ).not.toBeVisible();
   await expect(page.getByLabel("Output format")).toHaveValue("image/png");
   await page.getByLabel("Output format").selectOption("image/jpeg");
@@ -42,9 +42,9 @@ test("compresses a selected image locally and offers it for download", async ({
     page.getByRole("link", { name: "Download image" }),
   ).toHaveAttribute("download", "tiny-compressed.jpg");
 
-  await page.getByRole("button", { name: "Choose another image" }).click();
+  await page.getByRole("button", { name: "Choose other images" }).click();
   await expect(
-    page.getByRole("heading", { name: "Drop an image here" }),
+    page.getByRole("heading", { name: "Drop images here" }),
   ).toBeVisible();
 });
 
@@ -61,13 +61,16 @@ test("explains unsupported and corrupt image files", async ({ page }) => {
     "Choose a JPEG, PNG, WebP, AVIF, or BMP image.",
   );
 
+  // A file with an image's name that no browser will decode is refused as it is
+  // chosen rather than after the button is pressed: reading it is now part of
+  // taking it on, because a batch has to know which of its files are real.
   await fileInput.setInputFiles({
     name: "broken.png",
     mimeType: "image/png",
     buffer: Buffer.from("not an image"),
   });
-  await page.getByRole("button", { name: "Compress it" }).click();
   await expect(page.getByRole("alert")).toHaveText(
     "This image could not be read.",
   );
+  await expect(page.getByRole("heading", { name: "Drop images here" })).toBeVisible();
 });

@@ -270,9 +270,16 @@ const [firstCategory] = categories;
     getInputImageFormat,
     getOutputFilename,
     getPreferredOutputFormat,
-    isSupportedImageFile,
     type ImageOutputFormat,
   } from '../data/image-compression';
+  import {
+    describeBatchCount,
+    getBatchArchiveName,
+    maximumBatchImages,
+    summariseBatch,
+    validateBatchPixels,
+    validateBatchSelection,
+  } from '../data/image-batches';
   import { getConversionOutputFilename } from '../data/image-conversion';
   import { getCleanedImageFilename } from '../data/image-metadata';
   import {
@@ -575,6 +582,17 @@ const [firstCategory] = categories;
     /** A chain with a combining step makes one file out of several sources. */
     const combines = () => combinesFlowInputs(stepSlugs());
     /**
+     * Whether this flow takes more than one starting file.
+     *
+     * A combining chain always does — that is what combining means. An image
+     * chain does as well, whatever its steps: running the same settings over a
+     * folder of photographs is the job people arrive with, and every image step
+     * already runs over each picture in turn. A document chain that is not a
+     * merge still takes one, because a chain over several documents is a
+     * different feature and not one this claims to have.
+     */
+    const takesSeveral = () => combines() || categoryId === 'images';
+    /**
      * Whether an image format applies, what it is called, and which formats it
      * offers — one answer from one place, so a chain that ends in a document
      * cannot be asked for a format it would re-encode away.
@@ -588,7 +606,8 @@ const [firstCategory] = categories;
      * different numbers of pictures, because they are different jobs.
      */
     const combiningLimit = () => getFlowCombiningLimit(category(), stepSlugs());
-    const sourceLimit = () => (combines() ? combiningLimit().limit : 1);
+    const sourceLimit = () =>
+      combines() ? combiningLimit().limit : categoryId === 'images' ? maximumBatchImages : 1;
     /**
      * Why this chain cannot run yet, if it cannot.
      *
@@ -733,10 +752,15 @@ const [firstCategory] = categories;
       return '';
     };
     const renderSources = () => {
-      const showList = combines() && sources.length > 0;
-      const many = combines();
+      const showList = takesSeveral() && sources.length > 0;
+      const many = takesSeveral();
       const { sourceTitle: titles, sourceDetails: details, chooseLabel, addLabel } = category();
-      const { limit, describeCount: describeSourceCount } = combiningLimit();
+      const { describeCount } = combiningLimit();
+      const limit = sourceLimit();
+      // A combining chain counts its sources the way that Gizlet does — pages
+      // for a document, pictures for a collage. A batch counts pictures,
+      // because that is what they still are.
+      const describeSourceCount = combines() ? describeCount : describeBatchCount;
 
       sourceList.hidden = !showList;
       sourceList.replaceChildren(...(showList ? sources.map(renderSource) : []));
@@ -837,6 +861,31 @@ const [firstCategory] = categories;
       return item;
     };
     /**
+     * A picture a step could not do, in the same list as the ones it could.
+     *
+     * It is a row rather than an error box because that is what it is: one job
+     * of a batch that did not come off, beside the ones that did.
+     */
+    const renderFailedItem = (failure: { readonly name: string; readonly reason: string }): HTMLLIElement => {
+      const item = resultTemplate.content.firstElementChild?.cloneNode(true);
+      if (!(item instanceof HTMLLIElement)) throw new Error('The result template is missing.');
+
+      const thumbnail = item.querySelector<HTMLImageElement>('[data-result-thumbnail]');
+      const name = item.querySelector<HTMLElement>('[data-result-name]');
+      const meta = item.querySelector<HTMLElement>('[data-result-meta]');
+      const link = item.querySelector<HTMLAnchorElement>('[data-result-download]');
+
+      if (!thumbnail || !name || !meta || !link) throw new Error('The result template is incomplete.');
+
+      item.dataset.failed = 'true';
+      thumbnail.remove();
+      link.remove();
+      name.textContent = failure.name;
+      meta.textContent = failure.reason;
+
+      return item;
+    };
+    /**
      * One PDF of a set, cloned from the same template. Its thumbnail is dropped
      * rather than left empty: a PDF has no picture of itself to show without
      * drawing it, and a set of documents is a list rather than a contact sheet.
@@ -908,7 +957,7 @@ const [firstCategory] = categories;
         const { sourceTitle: titles } = category();
         const prior = index > 0
           ? `${toolBySlug(steps[index - 1].toolSlug).name} result`
-          : (combines() ? titles.many : titles.one);
+          : (takesSeveral() ? titles.many : titles.one);
         const contract = getFlowTool(step.toolSlug);
         // What a block hands on comes from its contract rather than from what
         // combining used to mean: the first combining Gizlet made a document,
@@ -929,9 +978,12 @@ const [firstCategory] = categories;
       copyRecipe.hidden = steps.length === 0;
     };
     /**
-     * A chain without a combining step makes one file, so it carries one source.
-     * Dropping the combining step therefore has to resolve the extra ones, and
-     * say which it kept rather than losing them quietly.
+     * A chain may carry fewer files than are chosen, and has to say so.
+     *
+     * A document chain without a merge reads one document, and dropping the
+     * merge therefore has to resolve the extra ones rather than losing them
+     * quietly. An image chain keeps them all — every image step runs over each
+     * picture in turn — so this only trims one down to the batch ceiling.
      */
     const applySourceLimit = () => {
       const limit = sourceLimit();
@@ -942,7 +994,9 @@ const [firstCategory] = categories;
       const noun = dropped[0].kind === 'pdf' ? 'PDF' : 'image';
       for (const source of dropped) releaseSource(source);
       sources = sources.slice(0, limit);
-      showStatus(`This flow makes one file, so it kept ${sources[0].file.name} and removed ${dropped.length} other ${noun}${dropped.length === 1 ? '' : 's'}.`);
+      showStatus(limit === 1
+        ? `This flow makes one file, so it kept ${sources[0].file.name} and removed ${dropped.length} other ${noun}${dropped.length === 1 ? '' : 's'}.`
+        : `This flow takes ${describeBatchCount(limit)} at a time, so it removed ${dropped.length} of them.`);
     };
     const addSources = async (selected: readonly File[]) => {
       sourceInput.value = '';
@@ -951,7 +1005,7 @@ const [firstCategory] = categories;
       clearError();
       resetResult();
 
-      const multiple = combines();
+      const multiple = takesSeveral();
       const incoming = multiple ? selected : selected.slice(0, 1);
       const isPdfFlow = categoryId === 'pdf';
 
@@ -963,12 +1017,20 @@ const [firstCategory] = categories;
           showError('Choose a PDF to start this flow.');
           return;
         }
-      } else if (multiple) {
+      } else if (combines()) {
+        // A combining image chain is held to what the combining Gizlet takes,
+        // which is a different ceiling from a batch running the same chain
+        // over each picture in turn.
         const problem = validatePdfSelection([...sources.map((source) => source.file), ...incoming]);
         if (problem) { showError(problem); return; }
-      } else if (!isSupportedImageFile(incoming[0])) {
-        showError('Choose a JPEG, PNG, WebP, AVIF, or BMP image to start this flow.');
-        return;
+      } else {
+        const problem = validateBatchSelection(incoming, sources.length);
+        if (problem) {
+          showError(incoming.length === 1 && sources.length === 0
+            ? 'Choose a JPEG, PNG, WebP, AVIF, or BMP image to start this flow.'
+            : problem);
+          return;
+        }
       }
 
       const readingNoun = isPdfFlow ? 'document' : 'image';
@@ -1008,6 +1070,17 @@ const [firstCategory] = categories;
             height: dimensions.height,
             previewUrl: URL.createObjectURL(file),
           });
+        }
+
+        if (!isPdfFlow && !combines()) {
+          // The batch as a whole, not each picture: the pictures are worked
+          // through one at a time, and what the tab has to survive is the run.
+          const problem = validateBatchPixels([
+            ...sources.flatMap((source) => (source.kind === 'image' ? [{ width: source.width, height: source.height }] : [])),
+            ...added.flatMap((source) => (source.kind === 'image' ? [{ width: source.width, height: source.height }] : [])),
+          ]);
+
+          if (problem) throw new Error(problem);
         }
 
         if (isPdfFlow && multiple) {
@@ -1244,6 +1317,14 @@ const [firstCategory] = categories;
       // earliest such document rather than the latest: a split followed by a
       // conversion has taken the same original apart twice over.
       let setSourceName: string | undefined;
+      /**
+       * The pictures a step could not do, kept rather than thrown.
+       *
+       * A batch of twenty photographs with one broken file in it should finish
+       * nineteen and say which one it did not, instead of discarding the work
+       * and reporting the single failure as the outcome of the run.
+       */
+      const failed: { readonly name: string; readonly reason: string }[] = [];
 
       try {
         for (const [index, step] of steps.entries()) {
@@ -1559,8 +1640,29 @@ const [firstCategory] = categories;
               ? `Running ${position}: ${tool.name} locally…`
               : `Running ${position}: ${tool.name} on image ${payloadIndex + 1} of ${payloads.length} locally…`);
             await nextFrame();
-            processed.push(await runImageStep(step, payload));
+
+            // A batch is a set of independent jobs: a picture this step cannot
+            // do is dropped, named, and the rest go on. A flow over one picture
+            // has nothing to go on with, so its failure is still the run's.
+            if (payloads.length === 1 && failed.length === 0) {
+              processed.push(await runImageStep(step, payload));
+              continue;
+            }
+
+            try {
+              processed.push(await runImageStep(step, payload));
+            } catch (caughtError) {
+              failed.push({
+                name: payload.file.name,
+                reason: caughtError instanceof Error ? caughtError.message : `${tool.name} could not process this image.`,
+              });
+            }
           }
+
+          if (processed.length === 0) {
+            throw new Error(failed[0]?.reason ?? `${tool.name} could not process these images.`);
+          }
+
           payloads = processed;
         }
 
@@ -1606,7 +1708,7 @@ const [firstCategory] = categories;
           download.download = getSplitPdfArchiveName(setSourceName ?? 'document.pdf');
           result.hidden = false;
           showStatus('Done. Your PDFs are ready to download.');
-        } else if (payloads.length > 1) {
+        } else if (payloads.length > 1 || (payloads.length === 1 && failed.length > 0)) {
           showStatus(`Packing ${describePdfImageCount(payloads.length)} into one archive locally…`);
           await nextFrame();
 
@@ -1622,14 +1724,32 @@ const [firstCategory] = categories;
           const total = payloads.reduce((bytes, payload) => bytes + payload.file.size, 0);
 
           resultUrl = URL.createObjectURL(archive);
+          // A set that came out of a document is named for that document; a
+          // batch that started as a folder of pictures has no such name, and is
+          // named for what it is instead.
+          const fromDocument = setSourceName !== undefined;
+          const outcomes = [
+            ...payloads.map((payload) => ({ status: 'done', name: payload.file.name, output: payload }) as const),
+            ...failed.map((failure) => ({ status: 'failed', name: failure.name, reason: failure.reason }) as const),
+          ];
+
           resultTitle.textContent = 'Your images are ready.';
-          resultDetails.textContent = `${describePdfImageCount(payloads.length)} · ${getFormatLabel(outputFormat)} · ${formatFileSize(total)}`;
+          resultDetails.textContent = fromDocument && failed.length === 0
+            ? `${describePdfImageCount(payloads.length)} · ${getFormatLabel(outputFormat)} · ${formatFileSize(total)}`
+            : `${summariseBatch(outcomes, total)} · ${getFormatLabel(outputFormat)}`;
           resultFigure.hidden = true;
-          resultList.replaceChildren(...payloads.map(renderResultItem));
+          resultList.replaceChildren(
+            ...payloads.map(renderResultItem),
+            ...failed.map(renderFailedItem),
+          );
           resultList.hidden = false;
-          download.textContent = `Download all ${payloads.length} pages`;
+          download.textContent = fromDocument
+            ? `Download all ${payloads.length} pages`
+            : `Download all ${payloads.length} as a ZIP`;
           download.href = resultUrl;
-          download.download = getPdfImageArchiveName(setSourceName ?? 'document.pdf');
+          download.download = fromDocument
+            ? getPdfImageArchiveName(setSourceName ?? 'document.pdf')
+            : getBatchArchiveName('flow');
           result.hidden = false;
           showStatus('Done. Your images are ready to download.');
         } else {

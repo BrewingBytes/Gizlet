@@ -40,8 +40,8 @@ test("resizes an image by dimensions or percentage and offers a local download",
     page.getByRole("link", { name: "Download image" }),
   ).toHaveAttribute("download", "tiny-resized.jpg");
 
-  await page.getByRole("button", { name: "Choose another image" }).click();
+  await page.getByRole("button", { name: "Choose other images" }).click();
   await expect(
-    page.getByRole("heading", { name: "Drop an image here" }),
+    page.getByRole("heading", { name: "Drop images here" }),
   ).toBeVisible();
 });

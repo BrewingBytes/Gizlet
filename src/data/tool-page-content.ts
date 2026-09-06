@@ -46,6 +46,7 @@ const toolPageContent: Record<string, ToolPageContent> = {
       paragraphs: [
         'Compress Image re-encodes a picture so the file gets smaller while the picture still looks like the picture. Your browser decodes the image, redraws it at its original dimensions, and encodes it again as JPEG, PNG, or WebP at the quality you pick.',
         'The result arrives next to the original with a drag-to-compare slider and the size difference in plain numbers, so you can see what a quality setting actually cost before you download anything.',
+        'It also takes a batch. Choose or drop a folder of photographs, set the format and the quality once, and every one of them is compressed here in turn — each with its own download, and all of them as one ZIP.',
       ],
     },
     when: {
@@ -68,6 +69,11 @@ const toolPageContent: Record<string, ToolPageContent> = {
           term: 'Quality',
           description:
             'The slider runs from 40% to 100% and starts at 82%, a good default for photographs. Below roughly 60% the artefacts start to show around hard edges and in flat areas like skies. It has no effect on PNG, which is lossless and has no quality to trade away.',
+        },
+        {
+          term: 'Several images at once',
+          description:
+            'Up to 25 in one batch, all with the same settings. They are worked through one at a time rather than all at once, which is what keeps a tab responsive on a set of large photographs, and one file the browser cannot decode costs that one row rather than the batch. The comparison slider belongs to a single picture, so a batch shows a list of results instead.',
         },
       ],
     },
@@ -112,6 +118,7 @@ const toolPageContent: Record<string, ToolPageContent> = {
       paragraphs: [
         'Resize Image changes how many pixels a picture has. Your browser decodes the file, draws it at the dimensions you ask for, and encodes the result as JPEG, PNG, or WebP.',
         'You can set an exact width or height in pixels, with an aspect-ratio lock so the other side follows, or scale by percentage when you only want the image to be half or a quarter of what it was.',
+        'It also takes a batch. Choose a folder of pictures, set the size once, and every one of them is resized here in turn — each with its own download, and all of them as one ZIP.',
       ],
     },
     when: {
@@ -141,9 +148,14 @@ const toolPageContent: Record<string, ToolPageContent> = {
             'JPEG for photographs, WebP for the web, PNG when you need lossless pixels or transparency. Resizing a photograph into PNG can easily produce a larger file than the original.',
         },
         {
+          term: 'Several images at once',
+          description:
+            'Up to 25 in one batch. A percentage means the same thing to every picture already; an exact size does not, so with the lock on the width is the instruction and each picture works out its own height, and with the lock off every picture is forced to the same box — which is what a set of thumbnails wants. The note under the fields says which of those is about to happen.',
+        },
+        {
           term: 'Limits',
           description:
-            'Each side can be up to 16,384 pixels and the result up to 40 million pixels. Anything larger is refused with an explanation instead of a failed download, and results above roughly 16 megapixels are flagged as a big image before you commit to them.',
+            'Each side can be up to 16,384 pixels and the result up to 40 million pixels. Anything larger is refused with an explanation instead of a failed download, and results above roughly 16 megapixels are flagged as a big image before you commit to them. A batch is held to 320 million pixels in total, because the work is sequential rather than simultaneous.',
         },
       ],
     },
@@ -188,6 +200,7 @@ const toolPageContent: Record<string, ToolPageContent> = {
       paragraphs: [
         'Convert Image reads a picture in one format and writes it out in another. It detects the source format from the file itself, then encodes a new JPEG, PNG, or WebP using your browser’s own image support.',
         'Dimensions are left exactly as they were. If a conversion would lose something, such as JPEG discarding transparency, the Gizlet says so before you convert rather than after you download.',
+        'It also takes a batch. Choose a folder of pictures, pick the output format once, and every one of them is converted here in turn — each with its own download, and all of them as one ZIP.',
       ],
     },
     when: {
