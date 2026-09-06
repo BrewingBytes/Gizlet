@@ -62,6 +62,7 @@ test("offers a PDF category, and the Gizlets that declare they read a document",
     "Merge PDF",
     "PDF to Image",
     "Split PDF",
+    "Organize PDF",
   ]);
 
   await expect(page.getByRole("heading", { name: "Your PDF" })).toBeVisible();
@@ -87,6 +88,40 @@ test("splits a chosen document and converts every piece, all on this device", as
   const results = page.locator("[data-result-list] > li");
   await expect(results).toHaveCount(3, { timeout: 15000 });
   await expect(page.locator("[data-result-title]")).toContainText("ready");
+});
+
+test("turns every page of a document a flow is carrying", async ({ page }) => {
+  await startPdfFlow(page);
+
+  await addStep(page, "organize-pdf");
+
+  // A flow has no page to drag, so the block offers the one page job that needs
+  // no field: the turn every page gets.
+  const turn = page.getByLabel("Organize PDF page turn");
+  await expect(turn).toHaveValue("right");
+  await turn.selectOption("half");
+
+  await choosePdfs(page).setInputFiles([asFile("report.pdf", await samplePdf(2, "page"))]);
+  await page.getByRole("button", { name: "Run flow" }).click();
+
+  const download = page.getByRole("link", { name: "Download PDF" });
+  await expect(download).toBeVisible({ timeout: 15000 });
+  await expect(page.locator("[data-result-details]")).toContainText("2 pages");
+
+  // The document the flow hands back is a PDF another reader can open, with
+  // every page recorded upside down.
+  const base64 = await download.evaluate(async (element) => {
+    const response = await fetch((element as HTMLAnchorElement).href);
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    let binary = "";
+
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+
+    return btoa(binary);
+  });
+  const written = await PDFDocument.load(Buffer.from(base64, "base64"));
+
+  expect(written.getPages().map((written) => written.getRotation().angle)).toEqual([180, 180]);
 });
 
 test("merges the documents it was given, and says why one is not a merge yet", async ({

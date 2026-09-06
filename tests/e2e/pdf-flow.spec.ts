@@ -61,13 +61,15 @@ test("offers a block only when it accepts what the block before it produces", as
   await addStep(page, "jpg-to-pdf");
 
   // A PDF is followed by exactly the Gizlets that declare they read one: the
-  // converter and the splitter. Merge PDF is not among them, because the one
-  // document the block before it made is already a single payload, and a block
-  // that would only look at what the result panel already shows is not offered.
+  // converter, the splitter and the organizer. Merge PDF is not among them,
+  // because the one document the block before it made is already a single
+  // payload, and a block that would only look at what the result panel already
+  // shows is not offered.
   await expect(options).toHaveText([
     "Choose the next Gizlet",
     "PDF to Image",
     "Split PDF",
+    "Organize PDF",
   ]);
 
   await addStep(page, "pdf-to-jpg");

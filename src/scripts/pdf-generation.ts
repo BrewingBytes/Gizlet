@@ -1,4 +1,4 @@
-import { PDFDocument, type PDFImage } from 'pdf-lib';
+import { PDFDocument, degrees, type PDFImage } from 'pdf-lib';
 
 import {
   getPdfEmbedStrategy,
@@ -15,6 +15,11 @@ import {
   type PdfMergeFailure,
 } from '../data/merge-pdf';
 import {
+  getOrganizePdfWriteErrorMessage,
+  getPdfOrganizeErrorMessage,
+  type OrganizedPdfPage,
+} from '../data/organize-pdf';
+import {
   getPdfSplitErrorMessage,
   getSplitPdfFilename,
   getSplitPdfPartErrorMessage,
@@ -24,17 +29,19 @@ import { encodeBrowserImage, loadBrowserImage } from './image-processing';
 
 /**
  * Writes PDFs on this device, without an upload: one built from local images,
- * one joined from local PDFs, and a set taken back out of a local PDF.
+ * one joined from local PDFs, a set taken back out of a local PDF, and one
+ * written back from a local PDF's pages in the order a visitor put them in.
  *
  * pdf-lib is used here rather than in a `src/data` module because it is a
  * browser-side dependency: there is no platform API that writes a PDF, but
  * every decision about *where* the image lands stays in `data/jpg-to-pdf`,
- * every decision about what may be merged stays in `data/merge-pdf`, and every
+ * every decision about what may be merged stays in `data/merge-pdf`, every
  * decision about which pages come out and under what name stays in
- * `data/split-pdf` — including how each refusal is worded, so all three can be
- * tested without a document.
+ * `data/split-pdf`, and every decision about where a page ends up and which way
+ * up it is stays in `data/organize-pdf` — including how each refusal is worded,
+ * so all four can be tested without a document.
  *
- * The three jobs share this one module so the library is imported in one place
+ * The four jobs share this one module so the library is imported in one place
  * and the page pays for it once.
  */
 
@@ -121,9 +128,9 @@ export interface PdfMergeOptions {
 }
 
 /**
- * Why a document cannot contribute its pages. The two jobs that copy pages out
- * of a document fail in exactly these three ways and word them differently, so
- * the shape is shared here and the wording stays in each Gizlet's own module.
+ * Why a document cannot contribute its pages. Every job that copies pages out
+ * of a document fails in exactly these three ways and words them differently,
+ * so the shape is shared here and the wording stays in each Gizlet's own module.
  */
 type PdfSourceFailure = 'encrypted' | 'empty' | 'unreadable';
 
@@ -293,4 +300,71 @@ export async function splitLocalPdf(
   }
 
   return parts;
+}
+
+/** A local PDF opened to be rearranged, parsed once and kept for the write. */
+export interface LocalOrganizeSource {
+  readonly pageCount: number;
+  /** The parsed document. Held so organizing does not re-read the same bytes. */
+  readonly document: PDFDocument;
+}
+
+export interface PdfOrganizeOptions {
+  /** Called before each page, so a long document can report its progress. */
+  readonly onPage?: (position: number, total: number) => Promise<void> | void;
+}
+
+/** Opens the document an organize was given. */
+export async function openLocalPdfForOrganize(source: Blob): Promise<LocalOrganizeSource> {
+  return openLocalPdfSource(source, (reason) => new Error(getPdfOrganizeErrorMessage(reason)));
+}
+
+/**
+ * Writes the planned pages as one local PDF, in the order the plan holds them.
+ *
+ * The source is never modified: every page in the plan is copied into a fresh
+ * document, which is what lets one source page appear twice, in two different
+ * places, turned two different ways. A turn is composed onto the rotation the
+ * page already carried rather than replacing it, so a page that arrived
+ * sideways and was turned once ends up upright rather than back where it began.
+ */
+export async function organizeLocalPdf(
+  source: LocalOrganizeSource,
+  pages: readonly OrganizedPdfPage[],
+  options: PdfOrganizeOptions = {},
+): Promise<Blob> {
+  if (pages.length === 0) throw new Error('A PDF needs at least one page, so choose the pages to keep.');
+
+  const organized = await PDFDocument.create();
+  let copied: Awaited<ReturnType<PDFDocument['copyPages']>>;
+
+  try {
+    // pdf-lib counts pages from zero; a plan counts from one, as the visitor
+    // reads them. A page named twice is copied twice, into two pages of their
+    // own, which is what makes a duplicate independently turnable.
+    copied = await organized.copyPages(
+      source.document,
+      pages.map((page) => page.sourcePage - 1),
+    );
+  } catch {
+    throw new Error(getOrganizePdfWriteErrorMessage());
+  }
+
+  for (const [index, page] of copied.entries()) {
+    await options.onPage?.(index + 1, copied.length);
+
+    try {
+      const turned = (((page.getRotation().angle + pages[index].rotation) % 360) + 360) % 360;
+
+      page.setRotation(degrees(turned));
+      organized.addPage(page);
+    } catch {
+      throw new Error(getOrganizePdfWriteErrorMessage());
+    }
+  }
+
+  const bytes = await organized.save();
+
+  // A copy of the bytes, so the blob does not hold a view onto pdf-lib's buffer.
+  return new Blob([bytes.slice()], { type: 'application/pdf' });
 }

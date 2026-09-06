@@ -476,9 +476,14 @@ export const toolRegistry = [
       "rearrange pdf",
       "move pdf pages",
       "duplicate pdf page",
+      "extract pdf pages",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "One PDF file; drag its pages into a new order, turn them in quarter turns, copy them, drop them, and tick the ones to take out on their own. A password-protected PDF is refused rather than rearranged.",
+      output: "One PDF holding the pages in the order and orientation they were left in, or a second document holding only the ticked pages. The pages are copied rather than redrawn, so nothing is re-encoded.",
+    },
   },
   {
     id: 20,
