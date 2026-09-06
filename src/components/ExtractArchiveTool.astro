@@ -1,0 +1,436 @@
+---
+import { maximumArchiveEntries } from '../data/extract-archive';
+---
+
+<section class="extract-archive-tool" data-extract-archive-tool>
+  <div class="extract-archive-tool__picker" data-drop-zone>
+    <input
+      id="extract-archive-file"
+      class="extract-archive-tool__file-input"
+      type="file"
+      accept=".zip,application/zip,application/x-zip-compressed"
+      aria-label="Select an archive to look inside"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">ZIP archives, up to {maximumArchiveEntries.toLocaleString()} files</p>
+    <h2>Drop an archive here</h2>
+    <p>It is opened on this device. Nothing in it is uploaded, including the names of what is inside.</p>
+    <div class="extract-archive-tool__picker-actions">
+      <button type="button" class="button-secondary" data-select-file>Choose an archive</button>
+    </div>
+  </div>
+
+  <p class="extract-archive-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="extract-archive-tool__error" data-error role="alert" hidden></p>
+
+  <div class="extract-archive-tool__viewer" data-viewer hidden>
+    <div class="extract-archive-tool__bar">
+      <p class="extract-archive-tool__summary" data-summary></p>
+      <div class="extract-archive-tool__bar-actions">
+        <button type="button" class="button-secondary" data-select-all>Tick everything</button>
+        <button type="button" class="button-secondary" data-select-none>Untick everything</button>
+        <button type="button" class="button-secondary" data-clear>Open another</button>
+      </div>
+    </div>
+
+    <ul class="extract-archive-tool__tree" data-tree aria-label="What is inside this archive"></ul>
+    <template data-folder-template>
+      <li class="extract-archive-tool__row extract-archive-tool__row--folder">
+        <label class="extract-archive-tool__tick">
+          <input type="checkbox" data-folder-tick />
+          <span class="extract-archive-tool__name" data-node-name></span>
+        </label>
+        <span class="extract-archive-tool__detail" data-node-detail></span>
+      </li>
+    </template>
+    <template data-file-template>
+      <li class="extract-archive-tool__row">
+        <label class="extract-archive-tool__tick">
+          <input type="checkbox" data-file-tick />
+          <span class="extract-archive-tool__name" data-node-name></span>
+        </label>
+        <span class="extract-archive-tool__detail" data-node-detail></span>
+        <span class="extract-archive-tool__renamed" data-node-renamed hidden></span>
+      </li>
+    </template>
+
+    <p class="extract-archive-tool__note" data-note></p>
+
+    <div class="extract-archive-tool__actions">
+      <button type="button" data-extract>Extract the ticked files</button>
+    </div>
+  </div>
+
+  <section class="extract-archive-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2>Your files are ready.</h2>
+    <p class="extract-archive-tool__result-details" data-result-details></p>
+    <div class="extract-archive-tool__result-actions">
+      <a class="extract-archive-tool__download" data-download>Download</a>
+      <button type="button" class="button-secondary" data-result-back>Back to the archive</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .extract-archive-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .extract-archive-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .extract-archive-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .extract-archive-tool__picker[hidden], .extract-archive-tool__viewer[hidden], .extract-archive-tool__result[hidden] { display: none; }
+  .extract-archive-tool__picker h2 { margin-bottom: var(--space-2); }
+  .extract-archive-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .extract-archive-tool__picker-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); }
+  .extract-archive-tool__status, .extract-archive-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .extract-archive-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .extract-archive-tool__viewer, .extract-archive-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .extract-archive-tool__viewer { display: grid; gap: var(--space-3); }
+  .extract-archive-tool__bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
+  .extract-archive-tool__bar-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .extract-archive-tool__summary, .extract-archive-tool__detail, .extract-archive-tool__result-details { margin: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .extract-archive-tool__note { margin: 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .extract-archive-tool__note:empty { display: none; }
+  .extract-archive-tool__tree { display: grid; gap: var(--space-1); max-height: 28rem; overflow-y: auto; margin: 0; padding: 0; list-style: none; }
+  .extract-archive-tool__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); padding: var(--space-2); padding-left: calc(var(--space-2) + var(--depth, 0) * var(--space-4)); border: var(--border-width) solid var(--border); background: var(--background); }
+  .extract-archive-tool__row--folder { background: var(--surface); }
+  .extract-archive-tool__row--folder .extract-archive-tool__name { font-weight: 700; }
+  .extract-archive-tool__tick { display: flex; align-items: center; gap: var(--space-2); min-width: 0; min-height: 2rem; }
+  .extract-archive-tool__tick input { width: 1.125rem; height: 1.125rem; flex: none; }
+  .extract-archive-tool__name { overflow-wrap: anywhere; }
+  .extract-archive-tool__tick input:disabled + .extract-archive-tool__name { color: var(--text-muted); }
+  .extract-archive-tool__renamed { grid-column: 1 / -1; color: var(--color-red); font-family: var(--font-mono); font-size: var(--font-size-xs); overflow-wrap: anywhere; }
+  .extract-archive-tool__renamed[hidden] { display: none; }
+  .extract-archive-tool__actions, .extract-archive-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .extract-archive-tool__result h2 { margin-bottom: var(--space-2); }
+  .extract-archive-tool__result-details { margin-bottom: var(--space-3); }
+  .extract-archive-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .extract-archive-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+  @media (max-width: 40rem) {
+    .extract-archive-tool__picker, .extract-archive-tool__viewer, .extract-archive-tool__result { padding: var(--space-3); }
+    .extract-archive-tool__row { grid-template-columns: minmax(0, 1fr); }
+    .extract-archive-tool__detail { grid-column: 1; justify-self: start; }
+  }
+</style>
+
+<script>
+  import {
+    buildArchiveTree,
+    describeArchive,
+    describeArchiveSelection,
+    describeEntry,
+    describeExtractionProgress,
+    detectArchiveFormat,
+    getArchiveBlockedMessage,
+    getArchiveFiles,
+    getArchiveFormatMessage,
+    getArchiveReadErrorMessage,
+    getEntryBlocker,
+    getExtractionErrorMessage,
+    getFileIndexesUnder,
+    getFolderSelectionState,
+    largeExtractionFiles,
+    readArchiveEntries,
+    validateArchiveFile,
+    type ArchiveEntry,
+    type ArchiveTreeNode,
+  } from '../data/extract-archive';
+  import { formatFileSize } from '../data/image-compression';
+
+  const root = document.querySelector<HTMLElement>('[data-extract-archive-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const viewer = root.querySelector<HTMLElement>('[data-viewer]');
+    const summary = root.querySelector<HTMLElement>('[data-summary]');
+    const tree = root.querySelector<HTMLUListElement>('[data-tree]');
+    const folderTemplate = root.querySelector<HTMLTemplateElement>('[data-folder-template]');
+    const fileTemplate = root.querySelector<HTMLTemplateElement>('[data-file-template]');
+    const note = root.querySelector<HTMLElement>('[data-note]');
+    const selectAllButton = root.querySelector<HTMLButtonElement>('[data-select-all]');
+    const selectNoneButton = root.querySelector<HTMLButtonElement>('[data-select-none]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const extractButton = root.querySelector<HTMLButtonElement>('[data-extract]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultDetails = root.querySelector<HTMLElement>('[data-result-details]');
+    const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const resultBackButton = root.querySelector<HTMLButtonElement>('[data-result-back]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !viewer || !summary || !tree || !folderTemplate || !fileTemplate || !note || !selectAllButton || !selectNoneButton || !clearButton || !extractButton || !result || !resultDetails || !download || !resultBackButton) {
+      throw new Error('Extract Archive tool could not initialise.');
+    }
+
+    /** The archive itself, held so an entry can be read out of it on demand. */
+    let archive: Uint8Array | undefined;
+    let archiveName = '';
+    let files: readonly ArchiveEntry[] = [];
+    let nodes: readonly ArchiveTreeNode[] = [];
+    /** Which files are ticked, by their index into `files`. */
+    let selected = new Set<number>();
+    let isWorking = false;
+    let resultUrl: string | undefined;
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+
+    const resetResult = () => {
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      resultUrl = undefined;
+      result.hidden = true;
+      resultDetails.textContent = '';
+      download.removeAttribute('href');
+      download.removeAttribute('download');
+    };
+
+    const resetTool = () => {
+      archive = undefined;
+      archiveName = '';
+      files = [];
+      nodes = [];
+      selected = new Set();
+      fileInput.value = '';
+      tree.replaceChildren();
+      viewer.hidden = true;
+      dropZone.hidden = false;
+      resetResult();
+      clearError();
+      clearStatus();
+    };
+
+    /** Whether a file can be ticked at all, which is whether it can come out. */
+    const isExtractable = (index: number) => getEntryBlocker(files[index]) === undefined;
+
+    const render = () => {
+      tree.replaceChildren(
+        ...nodes.map((node) => {
+          const isFolder = node.kind === 'folder';
+          const template = isFolder ? folderTemplate : fileTemplate;
+          const fragment = template.content.cloneNode(true) as DocumentFragment;
+          const row = fragment.querySelector<HTMLElement>('li');
+          const tick = fragment.querySelector<HTMLInputElement>('input');
+          const name = fragment.querySelector<HTMLElement>('[data-node-name]');
+          const detail = fragment.querySelector<HTMLElement>('[data-node-detail]');
+
+          if (row) row.style.setProperty('--depth', String(node.depth));
+          if (name) name.textContent = isFolder ? `${node.name}/` : node.name;
+
+          if (isFolder) {
+            const under = getFileIndexesUnder(nodes, node.path).filter(isExtractable);
+            const state = getFolderSelectionState(under, selected);
+
+            if (detail) {
+              detail.textContent = `${node.fileCount.toLocaleString()} ${node.fileCount === 1 ? 'file' : 'files'} · ${formatFileSize(node.size)}`;
+            }
+
+            if (tick) {
+              tick.checked = state === 'all';
+              tick.indeterminate = state === 'some';
+              tick.disabled = isWorking || under.length === 0;
+              tick.dataset.path = node.path;
+              tick.setAttribute('aria-label', `Tick everything in ${node.path}`);
+            }
+
+            return fragment;
+          }
+
+          const index = node.fileIndex as number;
+          const entry = files[index];
+          const renamed = fragment.querySelector<HTMLElement>('[data-node-renamed]');
+
+          if (detail) detail.textContent = describeEntry(entry, formatFileSize);
+
+          // An entry whose stored path had to be corrected is worth showing as
+          // it was stored: it is the archive saying something about itself.
+          if (renamed && entry.renamed) {
+            renamed.textContent = `Stored as ${entry.storedPath} — written under ${entry.path} so it stays inside the folder.`;
+            renamed.hidden = false;
+          }
+
+          if (tick) {
+            tick.checked = selected.has(index);
+            tick.disabled = isWorking || !isExtractable(index);
+            tick.dataset.index = String(index);
+            tick.setAttribute('aria-label', `Tick ${node.path}`);
+          }
+
+          return fragment;
+        }),
+      );
+
+      summary.textContent = `${describeArchive(files, formatFileSize)} · ${describeArchiveSelection(files, selected, formatFileSize)}`;
+
+      const blocked = files.filter((_, index) => !isExtractable(index)).length;
+      const renamedCount = files.filter((entry) => entry.renamed).length;
+      const lines = [];
+
+      if (blocked > 0) {
+        lines.push(`${blocked} ${blocked === 1 ? 'file cannot' : 'files cannot'} be unpacked here and ${blocked === 1 ? 'is' : 'are'} not tickable — the reason is on the row.`);
+      }
+
+      if (renamedCount > 0) {
+        lines.push(`${renamedCount} ${renamedCount === 1 ? 'path was' : 'paths were'} written to unpack outside the folder, so ${renamedCount === 1 ? 'it has' : 'they have'} been corrected.`);
+      }
+
+      note.textContent = lines.join(' ');
+      extractButton.disabled = isWorking || selected.size === 0;
+      extractButton.textContent = selected.size > 1 ? 'Extract the ticked files as a ZIP' : 'Extract the ticked file';
+      selectAllButton.disabled = isWorking;
+      selectNoneButton.disabled = isWorking || selected.size === 0;
+    };
+
+    const open = async (file: File) => {
+      resetResult();
+      clearError();
+
+      const problem = validateArchiveFile(file);
+
+      if (problem) {
+        showError(problem);
+        return;
+      }
+
+      showStatus('Reading the archive locally…');
+      await nextPaint();
+
+      try {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const formatProblem = getArchiveFormatMessage(detectArchiveFormat(bytes));
+
+        if (formatProblem) {
+          clearStatus();
+          showError(formatProblem);
+          return;
+        }
+
+        const entries = readArchiveEntries(bytes);
+        const blockedMessage = getArchiveBlockedMessage(entries);
+
+        if (blockedMessage) {
+          clearStatus();
+          showError(blockedMessage);
+          return;
+        }
+
+        archive = bytes;
+        archiveName = file.name;
+        files = getArchiveFiles(entries);
+        nodes = buildArchiveTree(files);
+        // Everything that can come out starts ticked: opening an archive to
+        // take all of it is the common case, and unticking is the easier edit.
+        selected = new Set(files.map((_, index) => index).filter(isExtractable));
+        dropZone.hidden = true;
+        viewer.hidden = false;
+        clearStatus();
+        render();
+      } catch (caughtError) {
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : getArchiveReadErrorMessage());
+      }
+    };
+
+    const extract = async () => {
+      if (!archive || selected.size === 0 || isWorking) return;
+
+      const indexes = [...selected].sort((left, right) => left - right);
+
+      isWorking = true;
+      clearError();
+      resetResult();
+      render();
+      extractButton.textContent = 'Unpacking…';
+      showStatus('Unpacking the files locally…');
+      await nextPaint();
+
+      const isLarge = indexes.length >= largeExtractionFiles;
+
+      try {
+        // The decompressor is imported here rather than up front: a visitor who
+        // only opens the page has nothing to unpack.
+        const { extractEntries } = await import('../scripts/archive-reading');
+        const extraction = await extractEntries(archive, archiveName, files, indexes, {
+          onFile: (position, total) => {
+            if (isLarge) showStatus(describeExtractionProgress(position, total));
+          },
+        });
+
+        resultUrl = URL.createObjectURL(extraction.blob);
+        resultDetails.textContent = `${indexes.length.toLocaleString()} ${indexes.length === 1 ? 'file' : 'files'} · ${formatFileSize(extraction.bytes)} unpacked`;
+        download.href = resultUrl;
+        download.download = extraction.name;
+        download.textContent = `Download ${extraction.name}`;
+        download.setAttribute('aria-label', `Download ${extraction.name}`);
+        result.hidden = false;
+        clearStatus();
+      } catch (caughtError) {
+        resetResult();
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : getExtractionErrorMessage());
+      } finally {
+        isWorking = false;
+        render();
+      }
+    };
+
+    tree.addEventListener('change', (event) => {
+      const tick = (event.target as HTMLElement).closest<HTMLInputElement>('input[type="checkbox"]');
+
+      if (!tick || isWorking) return;
+
+      resetResult();
+
+      if (tick.dataset.path !== undefined) {
+        for (const index of getFileIndexesUnder(nodes, tick.dataset.path).filter(isExtractable)) {
+          if (tick.checked) selected.add(index);
+          else selected.delete(index);
+        }
+      } else {
+        const index = Number(tick.dataset.index);
+
+        if (!Number.isInteger(index)) return;
+        if (tick.checked) selected.add(index);
+        else selected.delete(index);
+      }
+
+      render();
+    });
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+      const [file] = fileInput.files ?? [];
+
+      if (file) void open(file);
+      fileInput.value = '';
+    });
+    selectAllButton.addEventListener('click', () => {
+      resetResult();
+      selected = new Set(files.map((_, index) => index).filter(isExtractable));
+      render();
+    });
+    selectNoneButton.addEventListener('click', () => {
+      resetResult();
+      selected = new Set();
+      render();
+    });
+    extractButton.addEventListener('click', () => void extract());
+    clearButton.addEventListener('click', resetTool);
+    resultBackButton.addEventListener('click', () => { resetResult(); render(); });
+
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    }
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    }
+    dropZone.addEventListener('drop', (event) => {
+      const [file] = (event as DragEvent).dataTransfer?.files ?? [];
+
+      if (file) void open(file);
+    });
+  }
+</script>

@@ -4,6 +4,7 @@ import CleanPdfMetadataTool from '../../components/CleanPdfMetadataTool.astro';
 import CollageMakerTool from '../../components/CollageMakerTool.astro';
 import CreateZipTool from '../../components/CreateZipTool.astro';
 import CompressImageTool from '../../components/CompressImageTool.astro';
+import ExtractArchiveTool from '../../components/ExtractArchiveTool.astro';
 import FaviconGeneratorTool from '../../components/FaviconGeneratorTool.astro';
 import ConvertImageTool from '../../components/ConvertImageTool.astro';
 import CropImageTool from '../../components/CropImageTool.astro';
@@ -85,6 +86,7 @@ const toolWorkspaces = {
   'sign-pdf': SignPdfTool,
   'clean-pdf-metadata': CleanPdfMetadataTool,
   'create-zip': CreateZipTool,
+  'extract-archive': ExtractArchiveTool,
 } as const satisfies Record<AvailableToolSlug, unknown>;
 
 const { tool, relatedTools } = Astro.props;

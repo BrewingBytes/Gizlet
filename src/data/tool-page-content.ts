@@ -1858,6 +1858,99 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'extract-archive': {
+    what: {
+      heading: 'What Extract Archive does',
+      paragraphs: [
+        'Extract Archive opens a ZIP and shows you what is in it: every file, in its folders, with its size and how it was packed. Tick the ones you want and take them out — one file comes back as itself, several come back as an archive of just those.',
+        'It reads the archive in this browser, using the decompressor the browser already has. Nothing about the archive leaves the device: not the files, not the folder structure, and not the list of names, which is often the part that says the most.',
+      ],
+    },
+    when: {
+      heading: 'When you only wanted one file out of it',
+      paragraphs: [
+        'When somebody sent forty photographs and you need the third. When a download came as an archive and you want to see what is inside before you trust it with your file system. When you are on a device whose archive tool is missing, awkward, or somebody else’s — a locked-down work laptop, a borrowed machine, a phone.',
+        'It is the reading half of Create ZIP, and the two are deliberately the same machinery pointed in opposite directions: what this one takes apart, that one puts together, and neither of them uploads anything to do it.',
+      ],
+    },
+    options: {
+      heading: 'What the list shows you',
+      paragraphs: [
+        'There is nothing to configure. What there is to read is what the archive says about itself, which this page shows rather than summarises.',
+      ],
+      details: [
+        {
+          term: 'The tree',
+          description:
+            'Folders come from the paths of the files rather than from the archive’s own folder entries, so an archive written without them still shows its shape. Ticking a folder ticks everything under it at any depth, and a folder holding something that cannot come out shows as partly ticked rather than pretending otherwise.',
+        },
+        {
+          term: 'What cannot come out',
+          description:
+            'An encrypted entry, or one packed with a method no browser has a decompressor for, is listed with the reason on its row and cannot be ticked. That is deliberate: an archive tool that quietly skipped a file would leave you believing you had it.',
+        },
+        {
+          term: 'Paths that escape',
+          description:
+            'An entry called ../../etc/passwd is the oldest trick in archives, and an unpacker that trusted it would write outside the folder you unpacked into. Nothing here writes to your file system, so it cannot happen — but the path is corrected anyway, and the row shows both, because an archive carrying one is telling you something about itself.',
+        },
+        {
+          term: 'Two files with one name',
+          description:
+            'Once paths are corrected, two entries can end up wanting the same one. Both are kept and the second is numbered, by the same rule Create ZIP uses, rather than one silently replacing the other inside the download.',
+        },
+        {
+          term: 'Checked on the way out',
+          description:
+            'Every file is checked against the checksum the archive recorded for it before it is handed over. A file that does not match means a damaged archive, and it is reported as one instead of arriving as something that will not open.',
+        },
+        {
+          term: 'Limits',
+          description:
+            'Up to 5,000 files and 512 MB, and an entry claiming to unpack to a thousand times its packed size is refused rather than attempted. Archives designed to fill a machine’s memory are a real thing, and the limit is what stops one from doing it to your tab.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'The archive is opened here, not somewhere else',
+      paragraphs: [
+        'The file is read in this browser and unpacked by the browser’s own decompressor. Not one byte is sent anywhere, because there is nowhere to send it: this page has no upload endpoint behind it.',
+        'An archive is a particularly bad thing to hand to a website. It is usually somebody’s whole folder — a project, a set of documents, an export — and even the list of names inside it can describe a person’s work, their clients, or their affairs quite completely. That list is read here and stays here.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Is my archive uploaded?',
+        answer:
+          'No. It is read from your device, opened here, and what you take out goes straight to your downloads. Nothing is sent anywhere, including the names of the files inside.',
+      },
+      {
+        question: 'Can it open a RAR or a 7z?',
+        answer:
+          'Not yet. Both need a decoder that is not part of this site, and adding one is a decision about a dependency rather than a small change, so it has not been made quietly. A RAR or a 7z is recognised and named rather than failing vaguely, and the tool that made it will open it.',
+      },
+      {
+        question: 'What about a password-protected archive?',
+        answer:
+          'Encrypted entries are shown with everything else and marked as encrypted, and that is as far as it goes. This Gizlet does not ask for passwords and does not try to get around them.',
+      },
+      {
+        question: 'Why does it give me a ZIP back when I asked for several files?',
+        answer:
+          'A browser download is one file, and there is no way to hand a folder to your downloads. One ticked file comes back as itself; several come back as one archive holding exactly those, named after the archive they came out of so it does not overwrite it.',
+      },
+      {
+        question: 'Can I extract just one folder?',
+        answer:
+          'Yes. Tick the folder and everything under it is ticked, at any depth. Untick anything you do not want, then extract.',
+      },
+      {
+        question: 'It says a file cannot be unpacked. Is the archive broken?',
+        answer:
+          'Usually not. ZIP allows compression methods beyond the two that every reader supports, and a browser has a decompressor for only the standard one. The row says which method it is, and an archive tool on your device will have it.',
+      },
+    ],
+  },
   'organize-pdf': {
     what: {
       heading: 'What Organize PDF does',

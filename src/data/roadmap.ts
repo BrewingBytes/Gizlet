@@ -157,13 +157,14 @@ export const roadmapPhases: readonly RoadmapPhase[] = [
   {
     number: 5,
     title: 'One archive, three uses',
-    status: 'next',
-    when: 'Started ahead of its place in this order, because two of the three turned out to need nothing that was not already here: the ZIP writer that bundles many images from one document was the seed, and generalising it was the whole of the work. What is left is the half that reads an archive rather than writes one, and that half waits on the question in the stopping condition below.',
+    status: 'shipped',
+    when: 'Done, and ahead of its place in this order, because none of the three needed anything that was not already here. The ZIP writer that already bundled many images from one document was the seed, and generalising it was the whole of the work.',
     what: 'Bundling files into an archive, reading one apart again, and the icon set that only makes sense as a folder of files with a snippet beside it.',
     toolSlugs: ['create-zip', 'extract-archive', 'favicon-generator'],
     sharedMachinery: ['one browser archive layer', 'path-safety and size guards shared by every format', 'the existing image encoder'],
     signal: 'Issues naming an archive job, and pageviews on the Gizlets that already hand back a bundle.',
     killCriterion: 'If reading a RAR needs a decoder that cannot be lazily loaded and audited, or if no filed issue names an archive job, this phase ships the ZIP half only and the rest is dropped rather than carried.',
+    standing: 'Shipped, and the kill criterion above is the one on this page that actually ran. Reading a RAR needs a decoder this project has not adopted, so the phase shipped the ZIP half only, exactly as the criterion said it would — and Extract Archive names a RAR and says what it cannot do with it rather than failing vaguely. The archive layer is one layer: the reading half and the writing half share a CRC, a path rule and a container, so the two Gizlets cannot disagree about what a ZIP is. Nothing was added to read one; the decompressor is the browser’s own.',
   },
   {
     number: 6,
@@ -205,7 +206,6 @@ export interface PlannedToolChain {
 }
 
 export const plannedToolChains = [
-  { slug: 'extract-archive', chain: ['extract-archive', 'compress-image'] },
   { slug: 'video-to-frames', chain: ['video-to-frames', 'compress-image'] },
 ] as const satisfies readonly PlannedToolChain[];
 

@@ -208,6 +208,11 @@ export const toolFlowRegistry = [
  * of them, and an archive is not a payload any Gizlet here reads. A block that
  * ended every chain it was in is a chain's last step by accident rather than by
  * design, and a flow already hands back an archive when it makes several files.
+ *
+ * Extract Archive is Create ZIP's reason read backwards. It takes an archive,
+ * which is not a payload kind here, and gives back whatever happened to be
+ * inside — which could be anything, so there is no kind to declare on either
+ * end. A block whose output no other block can be sure it reads is not a step.
  */
 export const flowlessToolSlugs = [
   'pdf-viewer',
@@ -216,6 +221,7 @@ export const flowlessToolSlugs = [
   'favicon-generator',
   'sign-pdf',
   'create-zip',
+  'extract-archive',
 ] as const satisfies readonly ToolRegistryEntry['slug'][];
 
 /** The registry's own entries, with their payload kinds preserved. */
