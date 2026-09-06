@@ -359,6 +359,21 @@ const [firstCategory] = categories;
     validateMergedPageCount,
   } from '../data/merge-pdf';
   import {
+    defaultWatermarkOpacity,
+    defaultWatermarkPosition,
+    defaultWatermarkWord,
+    getWatermarkPositionOptions,
+    getWatermarkWordOptions,
+    getWatermarkWordText,
+    isWatermarkPosition,
+    isWatermarkWord,
+    maximumWatermarkOpacity,
+    minimumWatermarkOpacity,
+    validateWatermarkPdfPageCount,
+    type WatermarkPosition,
+    type WatermarkWord,
+  } from '../data/watermark-pdf';
+  import {
     createOrganizePdfPlan,
     defaultPdfPageTurn,
     getPdfPageTurnOptions,
@@ -376,7 +391,7 @@ const [firstCategory] = categories;
   import { toolRegistry } from '../data/tools';
   import { createZipArchive, zipMimeType } from '../data/zip-archive';
   import { cropBrowserImage, drawCollage, drawImageBackground, encodeBrowserImage, loadBrowserImage, orientBrowserImage } from '../scripts/image-processing';
-  import { createImagePdf, openLocalPdfForOrganize, openLocalPdfForSplit, organizeLocalPdf, splitLocalPdf } from '../scripts/pdf-generation';
+  import { createImagePdf, openLocalPdfForOrganize, openLocalPdfForSplit, openLocalPdfForWatermark, organizeLocalPdf, splitLocalPdf, watermarkLocalPdf } from '../scripts/pdf-generation';
   import { createPdfPageView } from '../scripts/pdf-page-view';
 
   // Chainable, published, and derived: adding a Gizlet with an image or PDF
@@ -411,6 +426,9 @@ const [firstCategory] = categories;
     orientation?: PdfOrientation;
     resolution?: PdfImageResolution;
     pageTurn?: PdfPageTurn;
+    word?: WatermarkWord;
+    markPosition?: WatermarkPosition;
+    strength?: number;
   }
 
   /**
@@ -615,6 +633,9 @@ const [firstCategory] = categories;
       ...(toolSlug === 'jpg-to-pdf' ? { pageSize: defaultPdfPageSize, orientation: defaultPdfOrientation } : {}),
       ...(toolSlug === 'pdf-to-jpg' ? { resolution: defaultPdfImageResolution } : {}),
       ...(toolSlug === 'organize-pdf' ? { pageTurn: defaultPdfPageTurn } : {}),
+      ...(toolSlug === 'watermark-pdf'
+        ? { word: defaultWatermarkWord, markPosition: defaultWatermarkPosition, strength: defaultWatermarkOpacity }
+        : {}),
     });
     const canReorder = (fromIndex: number, toIndex: number): boolean => {
       return canReorderFlowStep(flowInput(), stepSlugs(), fromIndex, toIndex);
@@ -674,6 +695,12 @@ const [firstCategory] = categories;
       if (step.toolSlug === 'pdf-to-jpg') {
         const resolution = step.resolution ?? defaultPdfImageResolution;
         return `<div class="flow-block__settings"><label for="step-resolution-${step.id}">Resolution</label><select id="step-resolution-${step.id}" data-step-setting="resolution" data-step-id="${step.id}" aria-label="${name} resolution">${optionsMarkup(getPdfImageResolutionOptions(), resolution)}</select></div><p class="flow-block__format-note">Every page of the document becomes an image, in the format chosen below.</p>`;
+      }
+      if (step.toolSlug === 'watermark-pdf') {
+        const word = step.word ?? defaultWatermarkWord;
+        const markPosition = step.markPosition ?? defaultWatermarkPosition;
+        const strength = step.strength ?? defaultWatermarkOpacity;
+        return `<div class="flow-block__settings flow-block__settings--pdf"><label for="step-word-${step.id}"><span>Stamp</span><select id="step-word-${step.id}" data-step-setting="word" data-step-id="${step.id}" aria-label="${name} word">${optionsMarkup(getWatermarkWordOptions(), word)}</select></label><label for="step-mark-position-${step.id}"><span>Position</span><select id="step-mark-position-${step.id}" data-step-setting="markPosition" data-step-id="${step.id}" aria-label="${name} position">${optionsMarkup(getWatermarkPositionOptions(), markPosition)}</select></label></div><div class="flow-block__settings"><label for="step-strength-${step.id}">Strength</label><div class="flow-block__quality"><input id="step-strength-${step.id}" data-step-setting="strength" data-step-id="${step.id}" aria-label="${name} strength" type="range" min="${minimumWatermarkOpacity}" max="${maximumWatermarkOpacity}" value="${escapeHtml(strength)}" /><output data-strength-output="${step.id}">${escapeHtml(strength)}%</output></div></div><p class="flow-block__format-note">A link carries one of five words rather than text somebody typed, which is why the workspace takes any text and this block does not.</p>`;
       }
       if (step.toolSlug === 'organize-pdf') {
         const pageTurn = step.pageTurn ?? defaultPdfPageTurn;
@@ -1025,6 +1052,13 @@ const [firstCategory] = categories;
       if (setting === 'layout' && isCollageLayoutName(target.value)) step.layout = target.value;
       if (setting === 'turn' && isOrientationPresetName(target.value)) step.turn = target.value;
       if (setting === 'pageTurn' && isPdfPageTurn(target.value)) step.pageTurn = target.value;
+      if (setting === 'word' && isWatermarkWord(target.value)) step.word = target.value;
+      if (setting === 'markPosition' && isWatermarkPosition(target.value)) step.markPosition = target.value;
+      if (setting === 'strength') {
+        step.strength = Number(target.value);
+        const output = stepList.querySelector<HTMLOutputElement>(`[data-strength-output="${step.id}"]`);
+        if (output) output.textContent = `${step.strength}%`;
+      }
       if (setting === 'fit' && isBackgroundFit(target.value)) step.fit = target.value;
       if (setting === 'canvasWidth') step.canvasWidth = Number(target.value);
       if (setting === 'canvasHeight') step.canvasHeight = Number(target.value);
@@ -1331,6 +1365,44 @@ const [firstCategory] = categories;
             continue;
           }
 
+          if (step.toolSlug === 'watermark-pdf') {
+            if (pdfResults.length === 0) throw new Error(`${tool.name} needs a PDF from the block before it.`);
+
+            const stamped: FlowPdf[] = [];
+            setSourceName ??= pdfResults[0].name;
+
+            for (const pdf of pdfResults) {
+              showStatus(`Running ${position}: ${tool.name}, reading the document locally…`);
+              await nextFrame();
+
+              const source = await openLocalPdfForWatermark(pdf.blob);
+              const countProblem = validateWatermarkPdfPageCount(source.pageCount);
+              if (countProblem) throw new Error(countProblem);
+
+              const written = await watermarkLocalPdf(
+                source,
+                { kind: 'text', text: getWatermarkWordText(step.word ?? defaultWatermarkWord), fontSize: 64 },
+                {
+                  // A flow stamps the whole document: naming pages needs a field
+                  // holding free text, which this format deliberately has none of.
+                  pages: Array.from({ length: source.pageCount }, (_, page) => page + 1),
+                  position: step.markPosition ?? defaultWatermarkPosition,
+                  rotation: 45,
+                  opacity: step.strength ?? defaultWatermarkOpacity,
+                  onPage: async (pagePosition, total) => {
+                    showStatus(`Running ${position}: ${tool.name}, page ${pagePosition} of ${total} locally…`);
+                    await nextFrame();
+                  },
+                },
+              );
+
+              stamped.push({ blob: written, pages: source.pageCount, pageSize: pdf.pageSize, name: pdf.name });
+            }
+
+            pdfResults = stamped;
+            continue;
+          }
+
           if (step.toolSlug === 'organize-pdf') {
             if (pdfResults.length === 0) throw new Error(`${tool.name} needs a PDF from the block before it.`);
 
@@ -1606,6 +1678,7 @@ const [firstCategory] = categories;
         ...(step.toolSlug === 'jpg-to-pdf' ? { pageSize: step.pageSize, orientation: step.orientation } : {}),
         ...(step.toolSlug === 'pdf-to-jpg' ? { resolution: step.resolution } : {}),
         ...(step.toolSlug === 'organize-pdf' ? { pageTurn: step.pageTurn } : {}),
+        ...(step.toolSlug === 'watermark-pdf' ? { word: step.word, markPosition: step.markPosition, strength: step.strength } : {}),
       })),
     });
     const applyRecipe = (recipe: Recipe) => {
@@ -1634,6 +1707,9 @@ const [firstCategory] = categories;
         ...(step.orientation !== undefined ? { orientation: step.orientation } : {}),
         ...(step.resolution !== undefined ? { resolution: step.resolution } : {}),
         ...(step.pageTurn !== undefined ? { pageTurn: step.pageTurn } : {}),
+        ...(step.word !== undefined ? { word: step.word } : {}),
+        ...(step.markPosition !== undefined ? { markPosition: step.markPosition } : {}),
+        ...(step.strength !== undefined ? { strength: step.strength } : {}),
       }));
       if (recipe.outputFormat) {
         // A link may name a format the chain cannot honour — every image flow

@@ -18,6 +18,7 @@ import RemoveImageMetadataTool from '../../components/RemoveImageMetadataTool.as
 import ResizeImageTool from '../../components/ResizeImageTool.astro';
 import RotateFlipImageTool from '../../components/RotateFlipImageTool.astro';
 import SplitPdfTool from '../../components/SplitPdfTool.astro';
+import WatermarkPdfTool from '../../components/WatermarkPdfTool.astro';
 import { getPlannedGizletRequestPath } from '../../data/gizlet-request';
 import {
   getPhaseForPlannedTool,
@@ -73,6 +74,7 @@ const toolWorkspaces = {
   'pdf-to-jpg': PdfToJpgTool,
   'split-pdf': SplitPdfTool,
   'organize-pdf': OrganizePdfTool,
+  'watermark-pdf': WatermarkPdfTool,
 } as const satisfies Record<AvailableToolSlug, unknown>;
 
 const { tool, relatedTools } = Astro.props;

@@ -1,0 +1,756 @@
+---
+import PdfViewerSurface from './PdfViewerSurface.astro';
+import {
+  defaultWatermarkFontSize,
+  defaultWatermarkOpacity,
+  defaultWatermarkPosition,
+  defaultWatermarkRotation,
+  defaultWatermarkScale,
+  getWatermarkPositionOptions,
+  maximumWatermarkFontSize,
+  maximumWatermarkOpacity,
+  maximumWatermarkRotation,
+  maximumWatermarkScale,
+  maximumWatermarkTextLength,
+  minimumWatermarkFontSize,
+  minimumWatermarkOpacity,
+  minimumWatermarkScale,
+} from '../data/watermark-pdf';
+
+const positionOptions = getWatermarkPositionOptions();
+---
+
+<section class="watermark-pdf-tool" data-watermark-pdf-tool>
+  <div class="watermark-pdf-tool__picker" data-drop-zone>
+    <input
+      id="watermark-pdf-file"
+      class="watermark-pdf-tool__file-input"
+      type="file"
+      accept="application/pdf,.pdf"
+      aria-label="Select a PDF to watermark"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">Text or a picture, on the pages you name</p>
+    <h2>Drop a PDF here</h2>
+    <p>The mark is drawn onto the pages by this browser. Nothing is uploaded.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose a PDF</button>
+  </div>
+
+  <p class="watermark-pdf-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="watermark-pdf-tool__error" data-error role="alert" hidden></p>
+
+  <div class="watermark-pdf-tool__editor" data-editor hidden>
+    <div class="watermark-pdf-tool__bar">
+      <button type="button" class="button-secondary" data-clear>Choose another PDF</button>
+      <p class="watermark-pdf-tool__pages-summary" data-pages-summary></p>
+    </div>
+
+    <PdfViewerSurface id="watermark-pdf-source" label="The PDF being watermarked" zoom>
+      <!-- The mark, drawn over the page it will be drawn onto. Its position
+           comes from the same function the writer uses, so what is shown here
+           and what lands in the document cannot disagree. -->
+      <div class="watermark-preview" slot="page-overlay" data-preview hidden>
+        <span class="watermark-preview__text" data-preview-text hidden></span>
+        <img class="watermark-preview__image" data-preview-image alt="" hidden />
+      </div>
+    </PdfViewerSurface>
+
+    <p class="watermark-pdf-tool__preview-note" data-preview-note></p>
+
+    <div class="watermark-pdf-tool__controls">
+      <div class="watermark-pdf-tool__control">
+        <label for="watermark-pdf-kind">Mark</label>
+        <select id="watermark-pdf-kind" data-kind aria-label="Watermark kind">
+          <option value="text" selected>Text</option>
+          <option value="image">A picture</option>
+        </select>
+      </div>
+
+      <div class="watermark-pdf-tool__control" data-text-control>
+        <label for="watermark-pdf-text">Text</label>
+        <input
+          id="watermark-pdf-text"
+          type="text"
+          autocomplete="off"
+          maxlength={maximumWatermarkTextLength}
+          value="DRAFT"
+          data-text
+          aria-label="Watermark text"
+        />
+      </div>
+
+      <div class="watermark-pdf-tool__control" data-size-control>
+        <label for="watermark-pdf-size">Size</label>
+        <div class="watermark-pdf-tool__slider">
+          <input
+            id="watermark-pdf-size"
+            type="range"
+            min={minimumWatermarkFontSize}
+            max={maximumWatermarkFontSize}
+            value={defaultWatermarkFontSize}
+            data-size
+            aria-label="Watermark text size"
+          />
+          <output data-size-output>{defaultWatermarkFontSize}pt</output>
+        </div>
+      </div>
+
+      <div class="watermark-pdf-tool__control" data-image-control hidden>
+        <label for="watermark-pdf-image">Picture</label>
+        <input
+          id="watermark-pdf-image"
+          type="file"
+          accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+          data-image-input
+          aria-label="Watermark picture"
+        />
+      </div>
+
+      <div class="watermark-pdf-tool__control" data-scale-control hidden>
+        <label for="watermark-pdf-scale">Width</label>
+        <div class="watermark-pdf-tool__slider">
+          <input
+            id="watermark-pdf-scale"
+            type="range"
+            min={minimumWatermarkScale}
+            max={maximumWatermarkScale}
+            value={defaultWatermarkScale}
+            data-scale
+            aria-label="Watermark picture width"
+          />
+          <output data-scale-output>{defaultWatermarkScale}%</output>
+        </div>
+      </div>
+
+      <div class="watermark-pdf-tool__control">
+        <label for="watermark-pdf-position">Position</label>
+        <select id="watermark-pdf-position" data-position aria-label="Watermark position">
+          {
+            positionOptions.map((option) => (
+              <option value={option.value} selected={option.value === defaultWatermarkPosition}>
+                {option.label}
+              </option>
+            ))
+          }
+        </select>
+      </div>
+
+      <div class="watermark-pdf-tool__control">
+        <label for="watermark-pdf-rotation">Turn</label>
+        <div class="watermark-pdf-tool__slider">
+          <input
+            id="watermark-pdf-rotation"
+            type="range"
+            min="0"
+            max={maximumWatermarkRotation}
+            step="5"
+            value={defaultWatermarkRotation}
+            data-rotation
+            aria-label="Watermark turn"
+          />
+          <output data-rotation-output>{defaultWatermarkRotation}°</output>
+        </div>
+      </div>
+
+      <div class="watermark-pdf-tool__control">
+        <label for="watermark-pdf-opacity">Strength</label>
+        <div class="watermark-pdf-tool__slider">
+          <input
+            id="watermark-pdf-opacity"
+            type="range"
+            min={minimumWatermarkOpacity}
+            max={maximumWatermarkOpacity}
+            value={defaultWatermarkOpacity}
+            data-opacity
+            aria-label="Watermark strength"
+          />
+          <output data-opacity-output>{defaultWatermarkOpacity}%</output>
+        </div>
+      </div>
+
+      <div class="watermark-pdf-tool__control">
+        <label for="watermark-pdf-pages">Pages</label>
+        <input
+          id="watermark-pdf-pages"
+          type="text"
+          autocomplete="off"
+          placeholder="All"
+          data-pages
+          aria-label="Pages to watermark"
+          aria-describedby="watermark-pdf-pages-hint"
+        />
+        <p class="watermark-pdf-tool__hint" id="watermark-pdf-pages-hint">
+          Leave it empty for every page, or name them: 1-3, 5.
+        </p>
+      </div>
+    </div>
+
+    <div class="watermark-pdf-tool__actions">
+      <button type="button" data-apply>Add the watermark</button>
+      <button type="button" class="button-secondary" data-reset>Start over</button>
+    </div>
+  </div>
+
+  <section class="watermark-pdf-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2 data-result-title>Your PDF is ready.</h2>
+    <p class="watermark-pdf-tool__result-details" data-result-details></p>
+
+    <div class="watermark-pdf-tool__preview" data-result-preview hidden>
+      <p class="metadata">Preview</p>
+      <PdfViewerSurface id="watermark-pdf-result" label="The watermarked document" />
+    </div>
+
+    <p class="watermark-pdf-tool__preview-error" data-preview-error role="status" hidden></p>
+
+    <div class="watermark-pdf-tool__result-actions">
+      <a class="watermark-pdf-tool__download" data-download>Download PDF</a>
+      <button type="button" class="button-secondary" data-result-clear>Start over</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .watermark-pdf-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .watermark-pdf-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .watermark-pdf-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .watermark-pdf-tool__picker[hidden], .watermark-pdf-tool__editor[hidden], .watermark-pdf-tool__result[hidden] { display: none; }
+  .watermark-pdf-tool__picker h2 { margin-bottom: var(--space-2); }
+  .watermark-pdf-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .watermark-pdf-tool__status, .watermark-pdf-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .watermark-pdf-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .watermark-pdf-tool__editor, .watermark-pdf-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .watermark-pdf-tool__editor { display: grid; gap: var(--space-4); }
+  .watermark-pdf-tool__bar { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
+  .watermark-pdf-tool__pages-summary, .watermark-pdf-tool__preview-note { margin: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .watermark-pdf-tool__preview-note:empty { display: none; }
+  .watermark-pdf-tool__controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: var(--space-3); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); align-items: start; }
+  .watermark-pdf-tool__control[hidden] { display: none; }
+  .watermark-pdf-tool__control label { display: block; margin-bottom: var(--space-1); font-weight: 700; }
+  .watermark-pdf-tool__control input[type='text'], .watermark-pdf-tool__control select, .watermark-pdf-tool__control input[type='file'] { width: 100%; }
+  .watermark-pdf-tool__slider { display: flex; align-items: center; gap: var(--space-2); }
+  .watermark-pdf-tool__slider input { flex: 1; min-width: 0; }
+  .watermark-pdf-tool__slider output { min-width: 3.5rem; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-align: right; }
+  .watermark-pdf-tool__hint { margin: var(--space-1) 0 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .watermark-pdf-tool__actions, .watermark-pdf-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .watermark-pdf-tool__result h2 { margin-bottom: var(--space-2); }
+  .watermark-pdf-tool__result-details { margin-bottom: var(--space-3); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .watermark-pdf-tool__preview[hidden], .watermark-pdf-tool__preview-error[hidden] { display: none; }
+  .watermark-pdf-tool__preview { display: grid; gap: var(--space-2); margin-bottom: var(--space-3); }
+  .watermark-pdf-tool__preview-error { margin: 0 0 var(--space-3); color: var(--color-red); font-size: var(--font-size-sm); }
+  .watermark-pdf-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .watermark-pdf-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+
+  /* The mark over the page. It is placed by its centre, because that is the
+     point the writer turns it about. */
+  .watermark-preview[hidden] { display: none; }
+  .watermark-preview__text, .watermark-preview__image { position: absolute; left: var(--mark-left, 50%); top: var(--mark-top, 50%); transform: translate(-50%, -50%) rotate(var(--mark-turn, 0deg)); transform-origin: center; opacity: var(--mark-opacity, 0.3); }
+  .watermark-preview__text { color: #666; font-family: Helvetica, Arial, sans-serif; font-size: var(--mark-size, 1rem); font-weight: 700; line-height: 1; white-space: nowrap; }
+  .watermark-preview__image { width: var(--mark-width, 40%); height: auto; }
+  .watermark-preview__text[hidden], .watermark-preview__image[hidden] { display: none; }
+
+  @media (max-width: 36rem) {
+    .watermark-pdf-tool__picker, .watermark-pdf-tool__editor, .watermark-pdf-tool__result { padding: var(--space-3); }
+  }
+</style>
+
+<script>
+  import { formatFileSize } from '../data/image-compression';
+  import { getPdfPageSelectionErrorMessage, parsePdfPageSelection } from '../data/pdf-to-jpg';
+  import { getPdfPreviewErrorMessage } from '../data/pdf-viewer';
+  import {
+    clampWatermarkFontSize,
+    clampWatermarkOpacity,
+    clampWatermarkRotation,
+    clampWatermarkScale,
+    defaultWatermarkKind,
+    defaultWatermarkPosition,
+    describeWatermarkedPages,
+    getWatermarkImageErrorMessage,
+    getWatermarkImageSize,
+    getWatermarkPdfOpenErrorMessage,
+    getWatermarkPreviewPlacement,
+    getWatermarkedPdfFilename,
+    isWatermarkKind,
+    isWatermarkPosition,
+    largeWatermarkPdfPages,
+    validateWatermarkPdfPageCount,
+    validateWatermarkPdfSelection,
+    validateWatermarkText,
+    type WatermarkBox,
+  } from '../data/watermark-pdf';
+  import { createPdfViewerSurface } from '../scripts/pdf-viewer-surface';
+  import type { LocalPdfDocument } from '../scripts/pdf-rendering';
+
+  const root = document.querySelector<HTMLElement>('[data-watermark-pdf-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const editor = root.querySelector<HTMLElement>('[data-editor]');
+    const surfaces = root.querySelectorAll<HTMLElement>('[data-pdf-surface]');
+    const sourceSurfaceRoot = surfaces[0];
+    const resultSurfaceRoot = surfaces[1];
+    const preview = root.querySelector<HTMLElement>('[data-preview]');
+    const previewText = root.querySelector<HTMLElement>('[data-preview-text]');
+    const previewImage = root.querySelector<HTMLImageElement>('[data-preview-image]');
+    const previewNote = root.querySelector<HTMLElement>('[data-preview-note]');
+    const pagesSummary = root.querySelector<HTMLElement>('[data-pages-summary]');
+    const kindField = root.querySelector<HTMLSelectElement>('[data-kind]');
+    const textField = root.querySelector<HTMLInputElement>('[data-text]');
+    const sizeField = root.querySelector<HTMLInputElement>('[data-size]');
+    const sizeOutput = root.querySelector<HTMLOutputElement>('[data-size-output]');
+    const imageInput = root.querySelector<HTMLInputElement>('[data-image-input]');
+    const scaleField = root.querySelector<HTMLInputElement>('[data-scale]');
+    const scaleOutput = root.querySelector<HTMLOutputElement>('[data-scale-output]');
+    const positionField = root.querySelector<HTMLSelectElement>('[data-position]');
+    const rotationField = root.querySelector<HTMLInputElement>('[data-rotation]');
+    const rotationOutput = root.querySelector<HTMLOutputElement>('[data-rotation-output]');
+    const opacityField = root.querySelector<HTMLInputElement>('[data-opacity]');
+    const opacityOutput = root.querySelector<HTMLOutputElement>('[data-opacity-output]');
+    const pagesField = root.querySelector<HTMLInputElement>('[data-pages]');
+    const textControl = root.querySelector<HTMLElement>('[data-text-control]');
+    const sizeControl = root.querySelector<HTMLElement>('[data-size-control]');
+    const imageControl = root.querySelector<HTMLElement>('[data-image-control]');
+    const scaleControl = root.querySelector<HTMLElement>('[data-scale-control]');
+    const applyButton = root.querySelector<HTMLButtonElement>('[data-apply]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const resetButton = root.querySelector<HTMLButtonElement>('[data-reset]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultTitle = root.querySelector<HTMLElement>('[data-result-title]');
+    const resultDetails = root.querySelector<HTMLElement>('[data-result-details]');
+    const resultPreview = root.querySelector<HTMLElement>('[data-result-preview]');
+    const previewError = root.querySelector<HTMLElement>('[data-preview-error]');
+    const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !sourceSurfaceRoot || !resultSurfaceRoot || !preview || !previewText || !previewImage || !previewNote || !pagesSummary || !kindField || !textField || !sizeField || !sizeOutput || !imageInput || !scaleField || !scaleOutput || !positionField || !rotationField || !rotationOutput || !opacityField || !opacityOutput || !pagesField || !textControl || !sizeControl || !imageControl || !scaleControl || !applyButton || !clearButton || !resetButton || !result || !resultTitle || !resultDetails || !resultPreview || !previewError || !download || !resultClearButton) {
+      throw new Error('Watermark PDF tool could not initialise.');
+    }
+
+    let openFile: File | undefined;
+    let openDocument: LocalPdfDocument | undefined;
+    let pageCount = 0;
+    let currentPage = 1;
+    /**
+     * The page on screen, as the visitor sees it.
+     *
+     * pdf.js reports a page's size with the page's own rotation already
+     * applied, so this is the visible box and the preview needs no correction
+     * of its own — the writer applies that, against the unrotated page pdf-lib
+     * draws into.
+     */
+    let pageBox: WatermarkBox = { width: 0, height: 0 };
+    let markImage: { readonly file: File; readonly width: number; readonly height: number; readonly url: string } | undefined;
+    let isWriting = false;
+    let resultUrl: string | undefined;
+
+    const sourceSurface = createPdfViewerSurface(sourceSurfaceRoot, {
+      onPageChange: (pageNumber) => {
+        currentPage = pageNumber;
+        void measurePage();
+      },
+    });
+    const resultSurface = createPdfViewerSurface(resultSurfaceRoot);
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+
+    const currentKind = () => (isWatermarkKind(kindField.value) ? kindField.value : defaultWatermarkKind);
+    const currentPosition = () =>
+      isWatermarkPosition(positionField.value) ? positionField.value : defaultWatermarkPosition;
+    const currentRotation = () => clampWatermarkRotation(Number(rotationField.value));
+    const currentOpacity = () => clampWatermarkOpacity(Number(opacityField.value));
+    const currentFontSize = () => clampWatermarkFontSize(Number(sizeField.value));
+    const currentScale = () => clampWatermarkScale(Number(scaleField.value));
+    const currentPages = () => parsePdfPageSelection(pagesField.value, pageCount);
+
+    const releaseImage = () => {
+      if (markImage) URL.revokeObjectURL(markImage.url);
+      markImage = undefined;
+    };
+
+    const resetResult = () => {
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      resultUrl = undefined;
+      resultSurface.reset();
+      resultPreview.hidden = true;
+      previewError.hidden = true;
+      result.hidden = true;
+      resultDetails.textContent = '';
+      download.removeAttribute('href');
+      download.removeAttribute('download');
+    };
+
+    /** The page currently on screen, measured as the visitor sees it. */
+    const measurePage = async () => {
+      if (!openDocument) return;
+
+      try {
+        const size = await openDocument.getPageSize(currentPage);
+
+        pageBox = { width: size.width, height: size.height };
+      } catch {
+        pageBox = { width: 0, height: 0 };
+      }
+
+      renderControls();
+      renderPreview();
+    };
+
+    /**
+     * Draws the mark over the page.
+     *
+     * The size is converted from PDF points into the pixels the page happens to
+     * be drawn at, so the preview is the mark at the size it will really be
+     * rather than a symbol standing in for it.
+     */
+    const renderPreview = () => {
+      const canvas = sourceSurfaceRoot.querySelector<HTMLCanvasElement>('[data-page-canvas]');
+      const visible = pageBox;
+      const pages = currentPages();
+
+      // A page nobody asked to mark shows no mark. This is the one place that
+      // decides whether the overlay is drawn, so turning the page and changing
+      // the selection cannot end up disagreeing about it.
+      if (!canvas || visible.width <= 0 || (pages && !pages.includes(currentPage))) {
+        preview.hidden = true;
+        return;
+      }
+
+      const drawnWidth = canvas.getBoundingClientRect().width;
+      const pointsToPixels = drawnWidth > 0 ? drawnWidth / visible.width : 0;
+      const kind = currentKind();
+
+      if (pointsToPixels <= 0) {
+        preview.hidden = true;
+        return;
+      }
+
+      preview.hidden = false;
+      preview.style.setProperty('--mark-opacity', String(currentOpacity() / 100));
+      // A PDF turn reads counter-clockwise and a CSS one clockwise, so the
+      // preview turns the other way to look like the same turn.
+      preview.style.setProperty('--mark-turn', `${-currentRotation()}deg`);
+
+      if (kind === 'text') {
+        previewImage.hidden = true;
+        previewText.hidden = false;
+        previewText.textContent = textField.value;
+        previewText.style.fontSize = `${currentFontSize() * pointsToPixels}px`;
+
+        // The text's own drawn box is what decides where it can sit, and only
+        // the browser knows it, so it is measured rather than assumed.
+        const box = previewText.getBoundingClientRect();
+        const mark = {
+          width: box.width / pointsToPixels,
+          height: box.height / pointsToPixels,
+        };
+        const placement = getWatermarkPreviewPlacement(pageBox, mark, {
+          position: currentPosition(),
+          pageRotation: 0,
+        });
+
+        previewText.style.setProperty('--mark-left', `${placement.left * 100}%`);
+        previewText.style.setProperty('--mark-top', `${placement.top * 100}%`);
+        return;
+      }
+
+      previewText.hidden = true;
+
+      if (!markImage) {
+        previewImage.hidden = true;
+        return;
+      }
+
+      const mark = getWatermarkImageSize(visible, { width: markImage.width, height: markImage.height }, currentScale());
+      const placement = getWatermarkPreviewPlacement(pageBox, mark, {
+        position: currentPosition(),
+        pageRotation: 0,
+      });
+
+      previewImage.hidden = false;
+      previewImage.src = markImage.url;
+      previewImage.style.setProperty('--mark-width', `${currentScale()}%`);
+      previewImage.style.setProperty('--mark-left', `${placement.left * 100}%`);
+      previewImage.style.setProperty('--mark-top', `${placement.top * 100}%`);
+    };
+
+    /** The controls that apply to the kind of mark chosen, and only those. */
+    const renderControls = () => {
+      const isText = currentKind() === 'text';
+
+      textControl.hidden = !isText;
+      sizeControl.hidden = !isText;
+      imageControl.hidden = isText;
+      scaleControl.hidden = isText;
+      sizeOutput.textContent = `${currentFontSize()}pt`;
+      scaleOutput.textContent = `${currentScale()}%`;
+      rotationOutput.textContent = `${currentRotation()}°`;
+      opacityOutput.textContent = `${currentOpacity()}%`;
+
+      const pages = currentPages();
+
+      pagesSummary.textContent = pages ? describeWatermarkedPages(pages, pageCount) : '';
+      previewNote.textContent =
+        pages && !pages.includes(currentPage)
+          ? `Page ${currentPage} is not in the selection, so it keeps no mark.`
+          : '';
+    };
+
+    const update = () => {
+      resetResult();
+      clearError();
+      renderControls();
+      renderPreview();
+    };
+
+    const resetTool = () => {
+      openFile = undefined;
+      openDocument = undefined;
+      pageCount = 0;
+      currentPage = 1;
+      pageBox = { width: 0, height: 0 };
+      releaseImage();
+      sourceSurface.reset();
+      fileInput.value = '';
+      imageInput.value = '';
+      pagesField.value = '';
+      preview.hidden = true;
+      editor.hidden = true;
+      dropZone.hidden = false;
+      resetResult();
+      clearError();
+      clearStatus();
+      renderControls();
+    };
+
+    const chooseFile = async (file: File | undefined) => {
+      resetTool();
+      if (!file) return;
+
+      const problem = validateWatermarkPdfSelection([file]);
+      if (problem) {
+        showError(problem);
+        return;
+      }
+
+      dropZone.hidden = true;
+      showStatus('Reading the PDF locally…');
+      await nextPaint();
+
+      try {
+        // pdf.js is reached only by dynamic import: the library and its worker
+        // are over a megabyte between them, and this page has no use for either
+        // until a PDF is actually chosen. It draws the page the mark is placed
+        // on; drawing the mark into the document is pdf-lib's job.
+        const { openLocalPdf } = await import('../scripts/pdf-rendering');
+        const opened = await openLocalPdf(file, { getErrorMessage: getWatermarkPdfOpenErrorMessage });
+        const countProblem = validateWatermarkPdfPageCount(opened.pageCount);
+
+        if (countProblem) {
+          await opened.close().catch(() => undefined);
+          throw new Error(countProblem);
+        }
+
+        openFile = file;
+        openDocument = opened;
+        pageCount = opened.pageCount;
+        currentPage = 1;
+        editor.hidden = false;
+        clearStatus();
+        renderControls();
+
+        await sourceSurface.show(opened, `${file.name} · ${formatFileSize(file.size)} · ${pageCount} pages`);
+        await measurePage();
+      } catch (caughtError) {
+        openFile = undefined;
+        openDocument = undefined;
+        editor.hidden = true;
+        dropZone.hidden = false;
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : getWatermarkPdfOpenErrorMessage(undefined));
+      }
+    };
+
+    /** Reads the picture far enough to know its shape, which sizes the mark. */
+    const chooseImage = async (file: File | undefined) => {
+      releaseImage();
+
+      if (!file) {
+        update();
+        return;
+      }
+
+      const url = URL.createObjectURL(file);
+
+      try {
+        const image = new Image();
+
+        await new Promise<void>((resolve, reject) => {
+          image.addEventListener('load', () => resolve(), { once: true });
+          image.addEventListener('error', () => reject(new Error('unreadable')), { once: true });
+          image.src = url;
+        });
+
+        // A file the browser will not decode reaches `load` with no dimensions
+        // on some browsers rather than failing outright, and a mark with no size
+        // is one the writer would be asked to draw and could not.
+        if (image.naturalWidth < 1 || image.naturalHeight < 1) throw new Error('unreadable');
+
+        markImage = { file, width: image.naturalWidth, height: image.naturalHeight, url };
+        update();
+      } catch {
+        URL.revokeObjectURL(url);
+        showError(getWatermarkImageErrorMessage(file.name));
+      }
+    };
+
+    const apply = async () => {
+      if (!openFile || isWriting) return;
+
+      const pages = currentPages();
+
+      if (!pages) {
+        resetResult();
+        showError(getPdfPageSelectionErrorMessage(pageCount));
+        return;
+      }
+
+      const kind = currentKind();
+      const text = textField.value.trim();
+
+      if (kind === 'text') {
+        const textProblem = validateWatermarkText(textField.value);
+
+        if (textProblem) {
+          resetResult();
+          showError(textProblem);
+          return;
+        }
+      } else if (!markImage) {
+        resetResult();
+        showError('Choose the picture you want stamped on the pages.');
+        return;
+      }
+
+      isWriting = true;
+      clearError();
+      resetResult();
+      applyButton.disabled = true;
+      applyButton.textContent = 'Adding…';
+
+      const isLarge = pages.length >= largeWatermarkPdfPages;
+
+      try {
+        // pdf-lib draws the mark. It is loaded here rather than up front for the
+        // same reason pdf.js is: a visitor who only opens the page needs neither.
+        const { openLocalPdfForWatermark, watermarkLocalPdf } = await import('../scripts/pdf-generation');
+
+        showStatus('Reading the document locally…');
+        await nextPaint();
+
+        const source = await openLocalPdfForWatermark(openFile);
+        const stamped = await watermarkLocalPdf(
+          source,
+          kind === 'text'
+            ? { kind: 'text', text, fontSize: currentFontSize() }
+            : {
+                kind: 'image',
+                source: { file: markImage!.file, width: markImage!.width, height: markImage!.height },
+                scale: currentScale(),
+              },
+          {
+            pages,
+            position: currentPosition(),
+            rotation: currentRotation(),
+            opacity: currentOpacity(),
+            onPage: async (position, total) => {
+              showStatus(
+                isLarge
+                  ? `Long document: stamping page ${position} of ${total} locally…`
+                  : `Stamping page ${position} of ${total} locally…`,
+              );
+              await nextPaint();
+            },
+          },
+        );
+
+        const filename = getWatermarkedPdfFilename(openFile.name);
+
+        resultUrl = URL.createObjectURL(stamped);
+        resultTitle.textContent = 'Your PDF is ready.';
+        resultDetails.textContent = `${describeWatermarkedPages(pages, pageCount)} · ${formatFileSize(stamped.size)}`;
+        download.href = resultUrl;
+        download.download = filename;
+        download.textContent = `Download ${filename}`;
+        download.setAttribute('aria-label', `Download ${filename}`);
+        result.hidden = false;
+        clearStatus();
+
+        // The panel is complete before the preview is drawn, so the download is
+        // there to be used whether or not the drawing succeeds.
+        try {
+          const { openLocalPdf } = await import('../scripts/pdf-rendering');
+          const opened = await openLocalPdf(stamped);
+
+          resultPreview.hidden = false;
+          await resultSurface.show(opened, `${filename} · ${formatFileSize(stamped.size)}`);
+        } catch {
+          resultPreview.hidden = true;
+          previewError.textContent = getPdfPreviewErrorMessage();
+          previewError.hidden = false;
+        }
+      } catch (caughtError) {
+        resetResult();
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : 'This PDF could not be watermarked.');
+      } finally {
+        isWriting = false;
+        applyButton.disabled = false;
+        applyButton.textContent = 'Add the watermark';
+      }
+    };
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void chooseFile(fileInput.files?.[0]));
+    imageInput.addEventListener('change', () => void chooseImage(imageInput.files?.[0]));
+    clearButton.addEventListener('click', resetTool);
+    resetButton.addEventListener('click', resetTool);
+    resultClearButton.addEventListener('click', resetTool);
+    applyButton.addEventListener('click', () => void apply());
+
+    for (const field of [kindField, positionField]) {
+      field.addEventListener('change', update);
+    }
+
+    for (const field of [textField, pagesField]) {
+      field.addEventListener('input', update);
+    }
+
+    for (const field of [sizeField, scaleField, rotationField, opacityField]) {
+      field.addEventListener('input', update);
+    }
+
+    // The page is redrawn at whatever size the column gives it, so the mark
+    // drawn over it has to be measured again when that size changes.
+    window.addEventListener('resize', renderPreview);
+
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    }
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    }
+    dropZone.addEventListener('drop', (event) => void chooseFile(event.dataTransfer?.files[0]));
+
+    renderControls();
+  }
+</script>

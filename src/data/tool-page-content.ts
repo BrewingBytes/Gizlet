@@ -1313,6 +1313,99 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'watermark-pdf': {
+    what: {
+      heading: 'What Watermark PDF does',
+      paragraphs: [
+        'Watermark PDF draws a mark onto the pages of a document: a word like DRAFT or CONFIDENTIAL, or a picture from your device such as a logo. You place it on the page you are looking at — position, size, turn and strength — and the preview shows it exactly where it will land before anything is written.',
+        'The mark is drawn onto the pages rather than the pages being rebuilt, so everything already on them is untouched: the text stays selectable, the fonts stay embedded, and nothing is re-encoded. Name the pages you want it on, or leave the field empty and it goes on all of them.',
+      ],
+    },
+    when: {
+      heading: 'When a mark on the page is the point',
+      paragraphs: [
+        'When a document is going somewhere before it is final, and everyone who opens it should know that without being told: a draft contract, a quote that has not been approved, a sample of a report, a copy of something whose original lives elsewhere. A word across the page says it on every screen it is opened on and every desk it is printed onto.',
+        'A picture mark is the other half of this: a logo in a corner, on every page, on a document assembled from pieces that did not have one. Build the document with Merge PDF or Image to PDF first, and stamp the result.',
+      ],
+    },
+    options: {
+      heading: 'What the watermark controls do',
+      paragraphs: [
+        'The preview over the page is drawn from the same placement the document is written with, so what you see is where it goes.',
+      ],
+      details: [
+        {
+          term: 'Mark',
+          description:
+            'Text, or a picture from your device. Text is drawn in the document itself, so it stays crisp at any zoom and on any printer. A picture is embedded as the file you chose — a PNG with transparency stays transparent, which is usually what a logo wants.',
+        },
+        {
+          term: 'Size and width',
+          description:
+            'Text is sized in points, the same unit the document itself uses, so 64pt here is 64pt there. A picture is sized as a share of the page width instead, because a percentage of the page is the thing anyone actually means when they place a logo, and it lands the same way on a portrait page and a landscape one.',
+        },
+        {
+          term: 'Position and turn',
+          description:
+            'Nine places rather than a pair of coordinates: a mark goes onto every page at once, and only a named position means the same thing on pages of different shapes and orientations. The turn runs anticlockwise in whole degrees, and a page carrying its own rotation is corrected for — a mark placed in the corner of a sideways page lands in that corner, not off the edge.',
+        },
+        {
+          term: 'Strength',
+          description:
+            'How solid the mark is, from 5% to 100%. A watermark meant to be read through wants to be faint; one meant to be read wants not to be. It applies to a picture as much as to text.',
+        },
+        {
+          term: 'Pages',
+          description:
+            'Empty means every page. Otherwise name them the way you would say them: 1-3, 5. A page past the end of the document, or a range that runs backwards, is refused rather than guessed at, and the page you are looking at says whether it is in the selection.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'The mark is drawn here',
+      paragraphs: [
+        'Reading the PDF, drawing the pages, and writing the marked document all happen in this browser. The picture you stamp is read from your device and embedded here; it is never uploaded, and there is no library of watermark images on a server somewhere, because there is no server.',
+        'The documents that get watermarked are drafts, quotes and contracts — things that are marked precisely because they are not finished and not public. Handing one to a website to have a word drawn on it is the opposite of what the word is for.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Is the PDF uploaded to watermark it?',
+        answer:
+          'No. The document and the picture are both read on this device, the mark is drawn here, and the result is handed straight to your downloads. There is no upload endpoint behind this page.',
+      },
+      {
+        question: 'Does a watermark stop anyone copying the document?',
+        answer:
+          'No, and nothing here will claim it does. A visible watermark marks a document — it says what the document is to anyone who opens it. It is not protection: it can be cropped, covered, or removed by software made for that, and the text under it is still ordinary selectable text. If a document must not be reusable, a watermark is the wrong tool.',
+      },
+      {
+        question: 'Can I put my logo on every page?',
+        answer:
+          'Yes. Choose A picture, pick a PNG or JPEG from your device, set its width as a share of the page and put it where you want it. A transparent PNG keeps its transparency.',
+      },
+      {
+        question: 'Can I watermark only some of the pages?',
+        answer:
+          'Yes. Name them in Pages, like 1-3, 5. Leaving the field empty marks every page, and the note under the preview tells you whether the page on screen is one of the ones being marked.',
+      },
+      {
+        question: 'Will the text under the watermark still be selectable?',
+        answer:
+          'Yes. The mark is drawn on top of the page rather than the page being flattened into a picture, so everything that was selectable before still is. That is also why the file barely grows.',
+      },
+      {
+        question: 'Why can a shared flow only stamp certain words?',
+        answer:
+          'A Gizlet Flow can be shared as a link, and a link never carries anything you typed — every setting in that format is a whole number or one of a closed list of names. So a flow block stamps DRAFT, CONFIDENTIAL, COPY, SAMPLE or VOID, and this page takes any text you like.',
+      },
+      {
+        question: 'Can it watermark a password-protected PDF?',
+        answer:
+          'No. A protected document cannot be read without its password, and this Gizlet does not ask for one. Open it in an application that can, save an unlocked copy, and watermark that instead.',
+      },
+    ],
+  },
   'organize-pdf': {
     what: {
       heading: 'What Organize PDF does',

@@ -11,6 +11,12 @@
  * It reads and navigates a document and nothing else. Merge ordering, split
  * ranges, page selections and generation settings belong to the Gizlet around
  * it, so nothing here knows what the document is for.
+ *
+ * The `page-overlay` slot is the one exception, and it is deliberately a hole
+ * rather than a feature: a Gizlet that puts something *onto* a page has to show
+ * where it will land, and the only place that can be shown is over the drawn
+ * page. The surface lays the slot exactly over the canvas and knows nothing
+ * about what goes in it.
  */
 interface Props {
   /** Unique on the page: a Gizlet may show a source and a result at once. */
@@ -54,6 +60,9 @@ const { id, label, thumbnails = false, zoom = false } = Astro.props;
 
     <div class="pdf-surface__page" data-page-area>
       <canvas data-page-canvas aria-label="Current PDF page"></canvas>
+      <div class="pdf-surface__overlay" data-page-overlay>
+        <slot name="page-overlay" />
+      </div>
       <p class="pdf-surface__page-error" data-page-error role="alert" hidden></p>
     </div>
   </div>
@@ -104,7 +113,12 @@ const { id, label, thumbnails = false, zoom = false } = Astro.props;
   .pdf-thumbnail[aria-current='true'] { border-color: var(--text); border-width: var(--border-strong-width); color: var(--text); }
   .pdf-thumbnail canvas { display: block; width: 4rem; height: auto; background: #fff; }
   .pdf-surface__page { display: grid; justify-items: center; align-content: start; gap: var(--space-2); min-width: 0; padding: var(--space-3); border: var(--border-width) solid var(--border); background: var(--background); overflow: auto; }
-  .pdf-surface__page canvas { display: block; max-width: 100%; height: auto; background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 18%); }
+  /* The canvas and the overlay share one grid cell, so the overlay is exactly
+     the drawn page: the same box, whatever size the page is drawn at. */
+  .pdf-surface__page canvas { grid-area: 1 / 1; display: block; max-width: 100%; height: auto; background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 18%); }
+  .pdf-surface__overlay { grid-area: 1 / 1; position: relative; justify-self: stretch; align-self: stretch; overflow: hidden; pointer-events: none; }
+  .pdf-surface__overlay:empty { display: none; }
+  .pdf-surface__page-error { grid-row: 2; }
   .pdf-surface__page-error { margin: 0; color: var(--color-red); font-size: var(--font-size-sm); }
   .pdf-surface__page-error[hidden] { display: none; }
   .pdf-surface__controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }

@@ -63,6 +63,7 @@ test("offers a PDF category, and the Gizlets that declare they read a document",
     "PDF to Image",
     "Split PDF",
     "Organize PDF",
+    "Watermark PDF",
   ]);
 
   await expect(page.getByRole("heading", { name: "Your PDF" })).toBeVisible();
@@ -122,6 +123,29 @@ test("turns every page of a document a flow is carrying", async ({ page }) => {
   const written = await PDFDocument.load(Buffer.from(base64, "base64"));
 
   expect(written.getPages().map((written) => written.getRotation().angle)).toEqual([180, 180]);
+});
+
+test("stamps a word a link can carry onto a document a flow is holding", async ({ page }) => {
+  await startPdfFlow(page);
+
+  await addStep(page, "watermark-pdf");
+
+  // The block offers the five words rather than a text field: a recipe link
+  // carries names from a closed list and never anything somebody typed.
+  const word = page.getByLabel("Watermark PDF word");
+  await expect(word.locator("option")).toHaveText(["DRAFT", "CONFIDENTIAL", "COPY", "SAMPLE", "VOID"]);
+  await word.selectOption("confidential");
+
+  await choosePdfs(page).setInputFiles([asFile("report.pdf", await samplePdf(2, "page"))]);
+  await page.getByRole("button", { name: "Run flow" }).click();
+
+  await expect(page.getByRole("link", { name: "Download PDF" })).toBeVisible({ timeout: 15000 });
+  await expect(page.locator("[data-result-details]")).toContainText("2 pages");
+
+  // The link a visitor would share carries the word, the position and the
+  // strength, and nothing else about the document.
+  await page.getByRole("button", { name: "Copy recipe link" }).click();
+  await expect.poll(() => page.url()).toContain("watermark-pdf:w=confidential");
 });
 
 test("merges the documents it was given, and says why one is not a merge yet", async ({

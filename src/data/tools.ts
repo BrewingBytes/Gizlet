@@ -499,9 +499,14 @@ export const toolRegistry = [
       "draft watermark",
       "confidential stamp",
       "overlay text on pdf",
+      "logo on every page",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "One PDF file; text or a local picture to stamp, with a position, size, turn, strength and the pages to put it on. A password-protected PDF is refused rather than stamped.",
+      output: "The same PDF with the mark drawn onto the pages named, at the position shown in the preview. The pages are drawn onto rather than rebuilt, so nothing already on them is re-encoded. A visible watermark marks a document; it does not protect it.",
+    },
   },
   {
     id: 21,

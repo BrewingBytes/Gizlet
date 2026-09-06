@@ -29,12 +29,13 @@ const relatedToolSlugs: Record<AvailableToolSlug, readonly AvailableToolSlug[]> 
   'collage-maker': ['resize-image', 'crop-image', 'compress-image', 'convert-image', 'jpg-to-pdf'],
   'json-ld-generator': ['json-formatter'],
   'json-formatter': ['json-ld-generator'],
-  'jpg-to-pdf': ['pdf-to-jpg', 'merge-pdf', 'pdf-viewer'],
+  'jpg-to-pdf': ['pdf-to-jpg', 'merge-pdf', 'watermark-pdf', 'pdf-viewer'],
   'pdf-viewer': ['organize-pdf', 'pdf-to-jpg', 'merge-pdf', 'jpg-to-pdf'],
   'merge-pdf': ['split-pdf', 'organize-pdf', 'pdf-viewer', 'jpg-to-pdf'],
   'pdf-to-jpg': ['split-pdf', 'organize-pdf', 'pdf-viewer', 'jpg-to-pdf'],
   'split-pdf': ['organize-pdf', 'merge-pdf', 'pdf-to-jpg', 'pdf-viewer'],
-  'organize-pdf': ['split-pdf', 'merge-pdf', 'pdf-viewer', 'pdf-to-jpg'],
+  'organize-pdf': ['split-pdf', 'merge-pdf', 'watermark-pdf', 'pdf-viewer', 'pdf-to-jpg'],
+  'watermark-pdf': ['organize-pdf', 'merge-pdf', 'pdf-viewer', 'jpg-to-pdf'],
 };
 
 function getToolBySlug(slug: AvailableToolSlug): ToolRegistryEntry {
