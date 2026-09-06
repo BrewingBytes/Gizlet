@@ -55,6 +55,7 @@ const bespokeSocialImageSlugs: readonly string[] = [
   'sign-pdf',
   'clean-pdf-metadata',
   'create-zip',
+  'favicon-generator',
 ];
 
 /** The image file name a slug's bespoke card is committed under. */

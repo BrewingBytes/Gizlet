@@ -514,6 +514,89 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'favicon-generator': {
+    what: {
+      heading: 'What Favicon Generator does',
+      paragraphs: [
+        'Favicon Generator turns one picture into the set of icons a website needs: a favicon.ico for browsers that still ask for one, PNGs at 16 and 32 pixels for the tab, a 180 pixel Apple touch icon for a phone home screen, and 192 and 512 pixel icons for a web app manifest. They arrive as one ZIP, with the HTML that points at them.',
+        'Every icon is drawn from the same square of your picture, in this browser, at the size it will really be — and the previews are those drawings rather than one big icon scaled down, because a 16 pixel icon is only honestly judged at 16 pixels.',
+      ],
+    },
+    when: {
+      heading: 'When a site needs its icon',
+      paragraphs: [
+        'When you have a logo and a site that is still showing the browser’s blank page symbol in its tab. It is a five-minute job that most people put off for months, largely because the advice about it is a page of conflicting file names.',
+        'It is also worth redoing when a logo changes. The file names here are the conventional ones, so a new set drops over the old one and the markup does not change.',
+      ],
+    },
+    options: {
+      heading: 'What you get, and what to do with it',
+      paragraphs: [
+        'Six files and two snippets. The snippets are generated from the same list the archive is written from, so a file mentioned in one is a file in the other.',
+      ],
+      details: [
+        {
+          term: 'favicon.ico',
+          description:
+            'The old container, holding 16, 32 and 48 pixel versions. It is written with PNGs inside it rather than bitmaps, which every browser and operating system in use has read since Windows Vista and which keeps it a few kilobytes instead of tens. Put it at the root of the site; some browsers ask for /favicon.ico without being told to.',
+        },
+        {
+          term: 'The PNGs',
+          description:
+            '16 and 32 for the tab, 180 for an iPhone home screen, and 192 and 512 for a web app manifest and the splash screens built from it. Five files, all conventional names, no set of thirty for devices that stopped existing.',
+        },
+        {
+          term: 'A picture that is not square',
+          description:
+            'You choose: fill the square and crop the edges, or fit the whole picture and put a background behind it. There is no third option where the picture is squashed, because a squashed logo is never what anybody wanted.',
+        },
+        {
+          term: 'The snippets',
+          description:
+            'Four link tags for the head of the page, and the icons fragment for a web app manifest. The paths are root-relative because that is where these files nearly always go.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'The picture never leaves this device',
+      paragraphs: [
+        'Your logo is decoded, drawn six times and packed into an archive in this browser. It is not uploaded, and there is no server behind this page to upload it to.',
+        'Most favicon generators are upload forms. A logo is usually not secret — but it is also not something that needs to be sent to a stranger’s server to be resized six times by code that could just as easily run here.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Where do the files go?',
+        answer:
+          'At the root of your site, next to index.html, and the snippet in the head of every page. Some browsers request /favicon.ico directly without being told to, which is why the ICO belongs at the root rather than in an assets folder.',
+      },
+      {
+        question: 'How big should my source picture be?',
+        answer:
+          'At least 512 pixels square, so the largest icon is drawn from real pixels rather than invented ones. Anything smaller still works and the Gizlet says so before you make the set, because a 512 pixel icon drawn from a 64 pixel logo looks exactly like that.',
+      },
+      {
+        question: 'What if my logo is not square?',
+        answer:
+          'Choose whether to fill the square and crop the edges, or fit the whole picture on a background colour. Both are shown in the previews before you commit, at the sizes the icons will really be.',
+      },
+      {
+        question: 'Do I still need a .ico file?',
+        answer:
+          'For most sites, yes but barely. Current browsers all use the PNGs when the markup points at them; the ICO is for the ones that ask for /favicon.ico regardless, and for the times something requests it without reading your HTML at all. It is a few kilobytes.',
+      },
+      {
+        question: 'Is my logo uploaded?',
+        answer:
+          'No. It is read from your device, drawn here, and packed into an archive that goes straight to your downloads. There is no upload endpoint behind this page.',
+      },
+      {
+        question: 'Why not more sizes?',
+        answer:
+          'Because every extra file is weight in somebody’s repository forever, and most of the sizes the older generators produce are for devices and browsers nobody runs any more. These six cover current browsers, iPhones, Android home screens and web app manifests.',
+      },
+    ],
+  },
   'remove-image-metadata': {
     what: {
       heading: 'What Remove Image Metadata does',
