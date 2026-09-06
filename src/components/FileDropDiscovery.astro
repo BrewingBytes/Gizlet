@@ -1,0 +1,221 @@
+---
+/**
+ * Start from the file, not from the name of a Gizlet.
+ *
+ * The search box asks a visitor what this site calls the thing they want. This
+ * asks nothing: the file says what it is, and the Gizlets that read that kind
+ * of file are derived from the same contracts the flow builder uses.
+ */
+---
+
+<section class="file-drop" aria-labelledby="file-drop-title" data-file-drop>
+  <div class="file-drop__zone" data-drop-zone>
+    <input
+      id="file-drop-input"
+      class="file-drop__input"
+      type="file"
+      accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,application/pdf,.jpg,.jpeg,.png,.webp,.avif,.bmp,.pdf"
+      aria-label="Choose a file to see which Gizlets take it"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">Or start from the file</p>
+    <h2 id="file-drop-title">Drop a file here</h2>
+    <p class="file-drop__copy">
+      An image or a PDF. It is read on this device to work out which Gizlets take it, and it is
+      never uploaded.
+    </p>
+    <button type="button" class="button-secondary" data-select-file>Choose a file</button>
+  </div>
+
+  <div class="file-drop__match" data-match hidden>
+    <div class="file-drop__match-heading">
+      <p class="metadata" data-summary></p>
+      <h3 data-file-line></h3>
+    </div>
+
+    <ol class="file-drop__destinations" data-destinations></ol>
+    <template data-destination-template>
+      <li>
+        <a data-destination-link>
+          <span class="file-drop__destination-number" data-destination-number></span>
+          <span class="file-drop__destination-name" data-destination-name></span>
+          <span class="file-drop__destination-description" data-destination-description></span>
+        </a>
+      </li>
+    </template>
+
+    <p class="file-drop__note" data-note></p>
+    <button type="button" class="button-secondary" data-clear>Choose another file</button>
+  </div>
+
+  <p class="file-drop__error" data-error role="alert" hidden></p>
+</section>
+
+<style>
+  .file-drop { margin-bottom: var(--space-5); border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .file-drop__zone { padding: var(--space-4); border: 2px dashed var(--border); text-align: center; }
+  .file-drop__zone[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .file-drop__zone[hidden], .file-drop__match[hidden], .file-drop__error[hidden] { display: none; }
+  .file-drop__zone h2 { margin-bottom: var(--space-2); }
+  .file-drop__copy { margin-bottom: var(--space-3); color: var(--text-muted); }
+  .file-drop__match { display: grid; gap: var(--space-3); padding: var(--space-4); }
+  .file-drop__match-heading h3 { margin: var(--space-1) 0 0; overflow-wrap: anywhere; font-size: var(--font-size-lg); }
+  .file-drop__destinations { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+  .file-drop__destinations a { display: grid; gap: var(--space-1); padding: var(--space-2) var(--space-3); border: var(--border-width) solid var(--border); background: var(--background); text-decoration: none; }
+  .file-drop__destinations a:hover { border-color: var(--text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+  .file-drop__destination-number { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .file-drop__destination-name { font-family: var(--font-display); font-weight: 700; }
+  .file-drop__destination-description { color: var(--text-muted); font-size: var(--font-size-sm); }
+  .file-drop__note, .file-drop__error { margin: 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .file-drop__error { padding: var(--space-3); border-left: var(--border-strong-width) solid var(--color-red); color: var(--color-red); }
+  .file-drop__match button { justify-self: start; }
+  @media (max-width: 36rem) { .file-drop__zone, .file-drop__match { padding: var(--space-3); } }
+</style>
+
+<script>
+  import {
+    describeDroppedFile,
+    describeDroppedFileDestinations,
+    getDroppedFileCountMessage,
+    getDroppedFileKind,
+    getGizletsForDroppedFile,
+    getUnsupportedDroppedFileMessage,
+  } from '../data/file-drop';
+  import { getHandoffPath } from '../data/file-handoff';
+  import { formatFileSize } from '../data/image-compression';
+
+  const root = document.querySelector<HTMLElement>('[data-file-drop]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const match = root.querySelector<HTMLElement>('[data-match]');
+    const summary = root.querySelector<HTMLElement>('[data-summary]');
+    const fileLine = root.querySelector<HTMLElement>('[data-file-line]');
+    const destinations = root.querySelector<HTMLOListElement>('[data-destinations]');
+    const destinationTemplate = root.querySelector<HTMLTemplateElement>('[data-destination-template]');
+    const note = root.querySelector<HTMLElement>('[data-note]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+
+    if (fileInput && selectFileButton && dropZone && match && summary && fileLine && destinations && destinationTemplate && note && clearButton && error) {
+      const clearError = () => { error.hidden = true; error.textContent = ''; };
+      const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+
+      const reset = () => {
+        fileInput.value = '';
+        match.hidden = true;
+        dropZone.hidden = false;
+        destinations.replaceChildren();
+        clearError();
+      };
+
+      /** An image's shape, which is worth knowing and cheap to read. */
+      const readDimensions = (file: File) =>
+        new Promise<{ readonly width: number; readonly height: number } | undefined>((resolve) => {
+          const url = URL.createObjectURL(file);
+          const image = new Image();
+
+          image.addEventListener('load', () => {
+            URL.revokeObjectURL(url);
+            resolve(
+              image.naturalWidth && image.naturalHeight
+                ? { width: image.naturalWidth, height: image.naturalHeight }
+                : undefined,
+            );
+          }, { once: true });
+          image.addEventListener('error', () => {
+            URL.revokeObjectURL(url);
+            resolve(undefined);
+          }, { once: true });
+          image.src = url;
+        });
+
+      const show = async (files: readonly File[]) => {
+        reset();
+
+        if (files.length === 0) return;
+
+        if (files.length > 1) {
+          showError(getDroppedFileCountMessage());
+          return;
+        }
+
+        const [file] = files;
+        const kind = getDroppedFileKind(file);
+
+        if (!kind) {
+          showError(getUnsupportedDroppedFileMessage(file.name));
+          return;
+        }
+
+        const tools = getGizletsForDroppedFile(kind);
+        // A page count would mean fetching a PDF library to read a file the
+        // visitor has not chosen a Gizlet for yet, which is a megabyte spent on
+        // a line of text. An image's dimensions are free, so those are shown.
+        const dimensions = kind === 'image-file' ? await readDimensions(file) : undefined;
+
+        dropZone.hidden = true;
+        match.hidden = false;
+        summary.textContent = describeDroppedFileDestinations(kind, tools.length);
+        fileLine.textContent = describeDroppedFile(file, kind, formatFileSize, dimensions);
+
+        // The list is drawn before the file is put anywhere: every link works
+        // as an ordinary link to that Gizlet from the moment it appears, and
+        // keeping the file is an improvement on top rather than a thing to wait
+        // for.
+        destinations.replaceChildren(
+          ...tools.map((tool) => {
+            const fragment = destinationTemplate.content.cloneNode(true) as DocumentFragment;
+            const link = fragment.querySelector<HTMLAnchorElement>('[data-destination-link]');
+            const number = fragment.querySelector<HTMLElement>('[data-destination-number]');
+            const name = fragment.querySelector<HTMLElement>('[data-destination-name]');
+            const description = fragment.querySelector<HTMLElement>('[data-destination-description]');
+
+            if (link) {
+              link.href = tool.path;
+              link.dataset.toolPath = tool.path;
+            }
+            if (number) number.textContent = String(tool.id).padStart(3, '0');
+            if (name) name.textContent = tool.name;
+            if (description) description.textContent = tool.description;
+
+            return fragment;
+          }),
+        );
+        note.textContent = '';
+
+        // The file is handed over rather than described: the Gizlet the visitor
+        // picks opens with it already chosen. If this browser will not keep it,
+        // the links stay as they are and the picker is simply empty — which is
+        // why the note says which of the two happened.
+        const { putHandoffFile } = await import('../scripts/file-handoff');
+        const handoff = await putHandoffFile(file);
+
+        if (handoff) {
+          for (const link of destinations.querySelectorAll<HTMLAnchorElement>('[data-tool-path]')) {
+            link.href = getHandoffPath(link.dataset.toolPath ?? link.href, handoff);
+          }
+        }
+
+        note.textContent = handoff
+          ? `${file.name} goes with you: the Gizlet you pick opens with it already chosen, on this device.`
+          : `This browser will not hold a file between pages, so the Gizlet you pick will ask for ${file.name} again.`;
+      };
+
+      selectFileButton.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', () => void show([...(fileInput.files ?? [])]));
+      clearButton.addEventListener('click', reset);
+
+      for (const eventName of ['dragenter', 'dragover']) {
+        dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+      }
+      for (const eventName of ['dragleave', 'drop']) {
+        dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+      }
+      dropZone.addEventListener('drop', (event) => void show([...(event.dataTransfer?.files ?? [])]));
+    }
+  }
+</script>
