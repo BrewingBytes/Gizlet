@@ -1096,6 +1096,94 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'url-encode-decode': {
+    what: {
+      heading: 'What URL Encode & Decode does',
+      paragraphs: [
+        'It turns text into the percent-encoded form a URL can carry, and turns that form back into text. Type in one box and the answer appears in the other as you go; swap them round to check that a round trip gives you back what you started with.',
+        'There is no such thing as one URL encoding, so this asks which one you want: a value going inside a URL, a whole address that is already assembled, or a form field. They disagree about characters people actually type, and picking one silently is how an ampersand ends up splitting a query string in half.',
+      ],
+    },
+    when: {
+      heading: 'When a character means something it should not',
+      paragraphs: [
+        'When a link works for you and not for anyone else. When a search term with a space or a slash in it breaks the URL it was put into. When something arrived as %E2%80%99 and you need to know what it says. When an API wants a value escaped and you would rather see the result than trust it.',
+        'It is also the quickest way to find out which of the three encodings a system is using: encode the same string three ways and compare it with what that system produced.',
+      ],
+    },
+    options: {
+      heading: 'The three encodings, and what they disagree about',
+      paragraphs: [
+        'All three escape a character by writing a per-cent sign and the hexadecimal of its bytes in UTF-8. What separates them is the list of characters they consider safe to leave alone.',
+      ],
+      details: [
+        {
+          term: 'One piece of a URL',
+          description:
+            'For a value going inside a URL: a query parameter, a path segment, a fragment. Everything with a structural job — & = / ? # : and the rest — is escaped, so an ampersand in your text stays part of your text rather than starting the next parameter. This is what you want most of the time.',
+        },
+        {
+          term: 'A whole URL',
+          description:
+            'For an address that is already assembled. The characters that hold a URL together are left alone, because here they are doing their job, and only what would break the address — a space, an angle bracket, a curly brace — is escaped. Use it on a complete link, never on a value going into one.',
+        },
+        {
+          term: 'A form field',
+          description:
+            'What a browser sends when a form is submitted, and what a query string usually holds in practice. A space becomes a plus rather than %20, and a few more characters are escaped than strictly need to be. Decoding this way is the only case where a plus is read back as a space.',
+        },
+        {
+          term: 'Why the plus matters',
+          description:
+            'A plus means a space in a form field and means a plus everywhere else. A tool that turned every plus into a space would quietly corrupt every base64 string it was given, so this one only does it where a plus really is a space.',
+        },
+        {
+          term: 'When decoding goes wrong',
+          description:
+            'The browser’s own decoder throws the same error for every kind of broken input and never says where. This one walks the text and tells you the character position and what is wrong: an escape cut off by the end of the text, a per-cent sign followed by something that is not hexadecimal, or bytes that are perfectly legal escapes and still not a character in UTF-8.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'The text does not go anywhere',
+      paragraphs: [
+        'The conversion is a function running in this browser, on the text in the box. Nothing is sent anywhere, because there is nowhere to send it: this page has no endpoint behind it, no request is made when you type, and what you paste is never uploaded.',
+        'That is worth saying for this one. The things people percent-encode are query strings, tokens, callback URLs and identifiers — the contents of a URL that was already sensitive enough to be worth checking twice.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Is my text sent anywhere?',
+        answer:
+          'No. It is converted in this browser as you type. Nothing leaves the page, and nothing is stored.',
+      },
+      {
+        question: 'Which of the three should I pick?',
+        answer:
+          'If you are putting a value into a URL, pick one piece of a URL. If you already have a complete address and want to make it safe to use, pick a whole URL. If you are matching what an HTML form sends, or reading a query string somebody else produced, pick a form field.',
+      },
+      {
+        question: 'Why did my plus sign become a space?',
+        answer:
+          'Because the form field mode was selected, and in that encoding a plus is how a space is written. Switch to one piece of a URL and a plus stays a plus. An escaped plus, %2B, is read back as a plus in every mode.',
+      },
+      {
+        question: 'What does “not a character in UTF-8” mean?',
+        answer:
+          'The escapes were well formed but the bytes behind them do not spell a character. Usually the text was encoded twice, or it was encoded from a different character set — a Latin-1 é, for instance, is a single byte that UTF-8 does not accept on its own.',
+      },
+      {
+        question: 'Does it handle emoji and other languages?',
+        answer:
+          'Yes. A character outside ASCII is written as the bytes of its UTF-8, which is several escapes for one character, and read back the same way. The count under the result says characters rather than escapes, because that is what you are looking at.',
+      },
+      {
+        question: 'Can I check that encoding and decoding agree?',
+        answer:
+          'That is what Swap is for. It puts the result into the input box and turns the direction round, so what comes back should be exactly what you started with.',
+      },
+    ],
+  },
   'json-formatter': {
     what: {
       heading: 'What the JSON Formatter does',

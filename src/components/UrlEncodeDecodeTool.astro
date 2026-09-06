@@ -1,0 +1,217 @@
+---
+import { urlEncodingModeDetails } from '../data/url-encode-decode';
+---
+
+<section class="url-tool" data-url-tool>
+  <div class="url-tool__controls">
+    <fieldset class="url-tool__direction">
+      <legend>Direction</legend>
+      <label>
+        <input type="radio" name="url-direction" value="encode" data-direction checked />
+        <span>Encode</span>
+      </label>
+      <label>
+        <input type="radio" name="url-direction" value="decode" data-direction />
+        <span>Decode</span>
+      </label>
+    </fieldset>
+
+    <fieldset class="url-tool__mode">
+      <legend>What the text is</legend>
+      {
+        urlEncodingModeDetails.map((detail, index) => (
+          <label>
+            <input
+              type="radio"
+              name="url-mode"
+              value={detail.mode}
+              data-mode
+              checked={index === 0}
+            />
+            <span>{detail.label}</span>
+          </label>
+        ))
+      }
+    </fieldset>
+  </div>
+
+  <p class="url-tool__mode-summary" data-mode-summary></p>
+
+  <div class="url-tool__panel">
+    <div class="url-tool__panel-heading">
+      <div>
+        <p class="metadata">Your text</p>
+        <label for="url-tool-input" data-input-label>Text to encode</label>
+      </div>
+      <div class="url-tool__panel-actions">
+        <button type="button" class="button-secondary" data-swap disabled>Swap</button>
+        <button type="button" class="button-secondary" data-clear>Clear</button>
+      </div>
+    </div>
+    <textarea
+      id="url-tool-input"
+      data-input
+      autocapitalize="off"
+      autocomplete="off"
+      autocorrect="off"
+      spellcheck="false"
+      placeholder="tea & biscuits?"></textarea>
+  </div>
+
+  <section class="url-tool__panel url-tool__panel--result" aria-labelledby="url-tool-output-title">
+    <div class="url-tool__panel-heading">
+      <div>
+        <p class="metadata">Result</p>
+        <h2 id="url-tool-output-title" data-output-label>Encoded</h2>
+      </div>
+      <div class="url-tool__panel-actions">
+        <button type="button" class="button-secondary" data-copy disabled>Copy result</button>
+      </div>
+    </div>
+    <p class="url-tool__status" data-status data-state="empty" role="status" aria-live="polite"></p>
+    <pre tabindex="0"><code data-output></code></pre>
+  </section>
+</section>
+
+<style>
+  .url-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .url-tool__controls { display: flex; flex-wrap: wrap; gap: var(--space-4); padding: var(--space-4); padding-bottom: var(--space-3); }
+  .url-tool fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+  .url-tool legend { margin-bottom: var(--space-2); padding: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.08em; }
+  .url-tool fieldset label { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 2.5rem; margin-right: var(--space-3); }
+  .url-tool fieldset input { width: 1.125rem; height: 1.125rem; flex: none; }
+  .url-tool__mode-summary { margin: 0 var(--space-4) var(--space-3); padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--border); color: var(--text-muted); }
+  .url-tool__panel { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .url-tool__panel-heading { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-3); }
+  .url-tool__panel-heading .metadata, .url-tool__panel-heading label, .url-tool__panel-heading h2 { margin: 0; }
+  .url-tool__panel-heading label, .url-tool__panel-heading h2 { display: block; font-family: var(--font-display); font-size: var(--font-size-xl); font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; }
+  .url-tool__panel-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .url-tool textarea { min-height: 12rem; font-family: var(--font-mono); font-size: var(--font-size-sm); line-height: 1.5; }
+  .url-tool__status { min-height: 1.5rem; margin: 0 0 var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); overflow-wrap: anywhere; }
+  .url-tool__status[data-state='invalid'] { color: var(--color-red); font-weight: 700; }
+  .url-tool__status[data-state='copied'] { color: var(--success); font-weight: 700; }
+  .url-tool pre { max-height: 24rem; margin: 0; padding: var(--space-3); overflow: auto; border: var(--border-width) solid var(--border); background: var(--color-ink); color: #fffdf7; font-family: var(--font-mono); font-size: var(--font-size-sm); line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  .url-tool pre:empty, .url-tool code:empty::before { content: 'The result appears here as you type.'; color: #b9b3a4; }
+  @media (max-width: 40rem) {
+    .url-tool__controls, .url-tool__panel { padding: var(--space-3); }
+    .url-tool__mode-summary { margin: 0 var(--space-3) var(--space-3); }
+    .url-tool__panel-heading { align-items: start; flex-direction: column; }
+  }
+</style>
+
+<script>
+  import {
+    convertUrlText,
+    defaultUrlEncodingMode,
+    describeUrlConversion,
+    describeUrlDecodeError,
+    getUrlEncodingModeDetail,
+    isUrlEncodingDirection,
+    isUrlEncodingMode,
+    type UrlEncodingDirection,
+    type UrlEncodingMode,
+  } from '../data/url-encode-decode';
+
+  const root = document.querySelector<HTMLElement>('[data-url-tool]');
+
+  if (root) {
+    const input = root.querySelector<HTMLTextAreaElement>('[data-input]');
+    const inputLabel = root.querySelector<HTMLElement>('[data-input-label]');
+    const outputLabel = root.querySelector<HTMLElement>('[data-output-label]');
+    const output = root.querySelector<HTMLElement>('[data-output]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const modeSummary = root.querySelector<HTMLElement>('[data-mode-summary]');
+    const copyButton = root.querySelector<HTMLButtonElement>('[data-copy]');
+    const swapButton = root.querySelector<HTMLButtonElement>('[data-swap]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const directionInputs = [...root.querySelectorAll<HTMLInputElement>('[data-direction]')];
+    const modeInputs = [...root.querySelectorAll<HTMLInputElement>('[data-mode]')];
+
+    if (!input || !inputLabel || !outputLabel || !output || !status || !modeSummary || !copyButton || !swapButton || !clearButton || directionInputs.length === 0 || modeInputs.length === 0) {
+      throw new Error('URL Encode & Decode could not initialise.');
+    }
+
+    let direction: UrlEncodingDirection = 'encode';
+    let mode: UrlEncodingMode = defaultUrlEncodingMode;
+    /** The last good result, which is what Copy and Swap act on. */
+    let result = '';
+
+    const render = () => {
+      const converted = convertUrlText(input.value, direction, mode);
+
+      inputLabel.textContent = direction === 'encode' ? 'Text to encode' : 'Text to decode';
+      outputLabel.textContent = direction === 'encode' ? 'Encoded' : 'Decoded';
+      modeSummary.textContent = getUrlEncodingModeDetail(mode).summary;
+
+      if (!converted.ok) {
+        result = '';
+        output.textContent = '';
+        status.dataset.state = 'invalid';
+        status.textContent = describeUrlDecodeError(converted.error);
+      } else {
+        result = converted.output;
+        output.textContent = result;
+        status.dataset.state = input.value === '' ? 'empty' : 'valid';
+        status.textContent = describeUrlConversion(input.value, result, direction, mode);
+      }
+
+      copyButton.disabled = result === '';
+      swapButton.disabled = result === '';
+    };
+
+    const copy = async (text: string) => {
+      if (!navigator.clipboard?.writeText) throw new Error('Copy is unavailable in this browser.');
+
+      await navigator.clipboard.writeText(text);
+    };
+
+    input.addEventListener('input', render);
+
+    for (const control of directionInputs) {
+      control.addEventListener('change', () => {
+        if (control.checked && isUrlEncodingDirection(control.value)) direction = control.value;
+        render();
+      });
+    }
+
+    for (const control of modeInputs) {
+      control.addEventListener('change', () => {
+        if (control.checked && isUrlEncodingMode(control.value)) mode = control.value;
+        render();
+      });
+    }
+
+    // Swapping is how a round trip is checked: the answer becomes the question
+    // and the direction turns around, so the text you get back should be the
+    // text you started with.
+    swapButton.addEventListener('click', () => {
+      input.value = result;
+      direction = direction === 'encode' ? 'decode' : 'encode';
+
+      for (const control of directionInputs) control.checked = control.value === direction;
+
+      render();
+      input.focus();
+    });
+
+    clearButton.addEventListener('click', () => {
+      input.value = '';
+      render();
+      input.focus();
+    });
+
+    copyButton.addEventListener('click', () => {
+      void copy(result)
+        .then(() => {
+          status.dataset.state = 'copied';
+          status.textContent = 'Result copied to your clipboard.';
+        })
+        .catch(() => {
+          status.dataset.state = 'invalid';
+          status.textContent = 'Could not copy automatically. Select the result and copy it manually.';
+        });
+    });
+
+    render();
+  }
+</script>

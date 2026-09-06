@@ -213,6 +213,12 @@ export const toolFlowRegistry = [
  * which is not a payload kind here, and gives back whatever happened to be
  * inside — which could be anything, so there is no kind to declare on either
  * end. A block whose output no other block can be sure it reads is not a step.
+ *
+ * URL Encode & Decode is the fourth kind, and the plainest: it takes text a
+ * person typed and gives back text. A flow here carries files between Gizlets,
+ * and text is not one of the kinds it carries — the text Gizlets are their own
+ * neighbourhood, and joining them to this graph would mean inventing a payload
+ * that no Gizlet in it produces.
  */
 export const flowlessToolSlugs = [
   'pdf-viewer',
@@ -222,6 +228,7 @@ export const flowlessToolSlugs = [
   'sign-pdf',
   'create-zip',
   'extract-archive',
+  'url-encode-decode',
 ] as const satisfies readonly ToolRegistryEntry['slug'][];
 
 /** The registry's own entries, with their payload kinds preserved. */
