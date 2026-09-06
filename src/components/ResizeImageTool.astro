@@ -10,12 +10,13 @@
       accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp"
       aria-label="Select an image to resize"
       data-file-input
+      multiple
       hidden
     />
-    <p class="metadata">One image at a time</p>
-    <h2>Drop an image here</h2>
+    <p class="metadata">One image, or a batch of them</p>
+    <h2>Drop images here</h2>
     <p>JPEG, PNG, WebP, AVIF, or BMP. Nothing leaves this device.</p>
-    <button type="button" class="button-secondary" data-select-file>Choose an image</button>
+    <button type="button" class="button-secondary" data-select-file>Choose images</button>
   </div>
 
   <p class="resize-image-tool__status" data-status role="status" aria-live="polite" hidden></p>
@@ -58,6 +59,8 @@
         <strong data-dimension-preview></strong>
       </div>
 
+      <p class="resize-image-tool__batch-note" data-batch-note hidden></p>
+
       <div class="resize-image-tool__format">
         <label for="resize-output-format">Output format</label>
         <select id="resize-output-format" data-output-format>
@@ -70,24 +73,47 @@
 
     <div class="resize-image-tool__actions">
       <button type="button" data-resize>Resize it</button>
-      <button type="button" class="button-secondary" data-clear>Choose another image</button>
+      <button type="button" class="button-secondary" data-clear>Choose other images</button>
     </div>
   </div>
 
   <section class="resize-image-tool__result" data-result aria-live="polite" hidden>
     <p class="metadata">Ready to download</p>
-    <h2>Right size. Ready to go.</h2>
-    <figure class="resize-image-tool__result-preview">
+    <h2 data-result-title>Right size. Ready to go.</h2>
+    <p class="resize-image-tool__result-summary" data-result-summary hidden></p>
+    <figure class="resize-image-tool__result-preview" data-result-figure>
       <img data-result-image alt="Resized image preview" />
       <figcaption>Actual resized image</figcaption>
     </figure>
-    <dl>
+    <dl data-result-dl>
       <div><dt>Original</dt><dd data-original-dimensions></dd></div>
       <div><dt>Resized</dt><dd data-result-dimensions></dd></div>
     </dl>
+
+    <!-- A batch is a list of rows: every picture that worked is a download of
+         its own, and every one that did not says why beside it. -->
+    <ul class="resize-image-tool__result-list" data-result-list hidden></ul>
+    <template data-result-item-template>
+      <li>
+        <img data-item-image alt="" />
+        <div>
+          <p data-item-name></p>
+          <a data-item-download>Download</a>
+        </div>
+      </li>
+    </template>
+    <template data-failure-item-template>
+      <li data-failed>
+        <div>
+          <p data-item-name></p>
+          <p data-item-reason></p>
+        </div>
+      </li>
+    </template>
+
     <div class="resize-image-tool__result-actions">
       <a class="resize-image-tool__download" data-download>Download image</a>
-      <button type="button" class="button-secondary" data-result-clear>Choose another image</button>
+      <button type="button" class="button-secondary" data-result-clear>Choose other images</button>
     </div>
   </section>
 </section>
@@ -129,6 +155,17 @@
   .resize-image-tool__result dl div { padding: var(--space-2); border-top: var(--border-width) solid var(--border); }
   .resize-image-tool__result dt { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
   .resize-image-tool__result dd { margin: var(--space-1) 0 0; font-weight: 700; }
+  .resize-image-tool__result-figure[hidden], .resize-image-tool__result-list[hidden], .resize-image-tool__result-summary[hidden] { display: none; }
+  .resize-image-tool__result-summary { margin: 0 0 var(--space-3); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .resize-image-tool__result-list { display: grid; gap: var(--space-2); margin: 0 0 var(--space-4); padding: 0; list-style: none; }
+  .resize-image-tool__result-list li { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2); border: var(--border-width) solid var(--border); background: var(--background); }
+  .resize-image-tool__result-list li[data-failed] { border-left: var(--border-strong-width) solid var(--color-red); }
+  .resize-image-tool__result-list img { width: 3.5rem; height: 3.5rem; object-fit: contain; background: var(--surface); }
+  .resize-image-tool__result-list p { margin: 0; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .resize-image-tool__result-list li[data-failed] p + p { color: var(--color-red); }
+  .resize-image-tool__result-list a { display: inline-block; margin-top: var(--space-1); font-size: var(--font-size-sm); font-weight: 700; }
+  .resize-image-tool__batch-note { margin: 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .resize-image-tool__batch-note[hidden] { display: none; }
   .resize-image-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
   .resize-image-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
   @media (max-width: 36rem) { .resize-image-tool__picker, .resize-image-tool__editor, .resize-image-tool__result { padding: var(--space-3); } .resize-image-tool__dimensions { grid-template-columns: auto minmax(0, 1fr); } .resize-image-tool__dimensions label:nth-of-type(2) { grid-column: 1; } .resize-image-tool__dimensions input[data-height] { grid-column: 2; } .resize-image-tool__percentage { grid-template-columns: 1fr; } .resize-image-tool__result dl { grid-template-columns: 1fr; } }
@@ -136,21 +173,32 @@
 
 <script>
   import {
+    formatFileSize,
     getInputImageFormat,
     getPreferredOutputFormat,
     isImageOutputFormat,
-    isSupportedImageFile,
   } from '../data/image-compression';
   import {
+    describeBatchCount,
+    getBatchArchiveName,
+    getBatchFailures,
+    getBatchSuccesses,
+    hasBatchOutput,
+    summariseBatch,
+    validateBatchSelection,
+  } from '../data/image-batches';
+  import {
     dimensionsFromHeight,
-    dimensionsFromPercentage,
     dimensionsFromWidth,
+    getBatchResizeDimensions,
     getResizeOutputFilename,
     isLargeImage,
     validateResizeDimensions,
+    type BatchResizeRequest,
     type ImageDimensions,
   } from '../data/image-resize';
-  import { encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
+  import { checkBatchSize, packImageArchive, readBatchSources, releaseBatch, runImageBatch, type BatchSource } from '../scripts/image-batch';
+  import { encodeBrowserImage } from '../scripts/image-processing';
 
   const root = document.querySelector<HTMLElement>('[data-resize-image-tool]');
 
@@ -174,22 +222,34 @@
     const outputFormat = root.querySelector<HTMLSelectElement>('[data-output-format]');
     const resizeButton = root.querySelector<HTMLButtonElement>('[data-resize]');
     const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const batchNote = root.querySelector<HTMLElement>('[data-batch-note]');
     const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultTitle = root.querySelector<HTMLElement>('[data-result-title]');
+    const resultSummary = root.querySelector<HTMLElement>('[data-result-summary]');
+    const resultFigure = root.querySelector<HTMLElement>('[data-result-figure]');
+    const resultDl = root.querySelector<HTMLElement>('[data-result-dl]');
+    const resultList = root.querySelector<HTMLUListElement>('[data-result-list]');
+    const resultItemTemplate = root.querySelector<HTMLTemplateElement>('[data-result-item-template]');
+    const failureItemTemplate = root.querySelector<HTMLTemplateElement>('[data-failure-item-template]');
     const resultImage = root.querySelector<HTMLImageElement>('[data-result-image]');
     const originalDimensions = root.querySelector<HTMLElement>('[data-original-dimensions]');
     const resultDimensions = root.querySelector<HTMLElement>('[data-result-dimensions]');
     const download = root.querySelector<HTMLAnchorElement>('[data-download]');
     const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
 
-    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !previewImage || !inputName || !dimensionFields || !percentageFields || !widthInput || !heightInput || !aspectLock || !percentageInput || !dimensionPreview || !outputFormat || !resizeButton || !clearButton || !result || !resultImage || !originalDimensions || !resultDimensions || !download || !resultClearButton) {
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !previewImage || !inputName || !dimensionFields || !percentageFields || !widthInput || !heightInput || !aspectLock || !percentageInput || !dimensionPreview || !outputFormat || !resizeButton || !clearButton || !batchNote || !result || !resultTitle || !resultSummary || !resultFigure || !resultDl || !resultList || !resultItemTemplate || !failureItemTemplate || !resultImage || !originalDimensions || !resultDimensions || !download || !resultClearButton) {
       throw new Error('Resize Image tool could not initialise.');
     }
 
-    let selectedFile: File | undefined;
-    let sourceImage: HTMLImageElement | undefined;
+    /**
+     * The batch, which is one picture long in the ordinary case. The fields
+     * above are filled from the first row, and every row is resized against its
+     * own dimensions rather than against those.
+     */
+    let sources: readonly BatchSource[] = [];
     let sourceDimensions: ImageDimensions | undefined;
-    let previewUrl: string | undefined;
     let resultUrl: string | undefined;
+    let itemUrls: string[] = [];
 
     const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     const clearError = () => { error.hidden = true; error.textContent = ''; };
@@ -202,45 +262,67 @@
     const resetResult = () => {
       revoke(resultUrl);
       resultUrl = undefined;
+      for (const url of itemUrls) URL.revokeObjectURL(url);
+      itemUrls = [];
       result.hidden = true;
+      resultFigure.hidden = false;
+      resultDl.hidden = false;
+      resultSummary.hidden = true;
+      resultSummary.textContent = '';
+      resultList.hidden = true;
+      resultList.replaceChildren();
       resultImage.removeAttribute('src');
       download.removeAttribute('href');
       download.removeAttribute('download');
     };
 
     const resetTool = () => {
-      selectedFile = undefined;
-      sourceImage = undefined;
+      releaseBatch(sources);
+      sources = [];
       sourceDimensions = undefined;
       fileInput.value = '';
-      revoke(previewUrl);
-      previewUrl = undefined;
       resetResult();
       previewImage.removeAttribute('src');
+      batchNote.hidden = true;
       dropZone.hidden = false;
       editor.hidden = true;
       clearError();
       clearStatus();
     };
 
-    const getRequestedDimensions = (): ImageDimensions | undefined => {
-      if (!sourceDimensions) return undefined;
-      if (currentMode() === 'percentage') {
-        const percentage = Number(percentageInput.value);
-        if (!Number.isFinite(percentage) || percentage <= 0) return undefined;
-        return dimensionsFromPercentage(sourceDimensions, percentage);
-      }
+    /** What the panel is asking for, in a form every picture can answer. */
+    const currentRequest = (): BatchResizeRequest =>
+      currentMode() === 'percentage'
+        ? { mode: 'percentage', percentage: Number(percentageInput.value) }
+        : {
+            mode: 'dimensions',
+            width: Number(widthInput.value),
+            height: Number(heightInput.value),
+            keepProportions: aspectLock.checked,
+          };
 
-      const width = Number(widthInput.value);
-      const height = Number(heightInput.value);
-      if (!Number.isFinite(width) || !Number.isFinite(height)) return undefined;
-      return { width, height };
-    };
+    const getRequestedDimensions = (source = sourceDimensions): ImageDimensions | undefined =>
+      source ? getBatchResizeDimensions(source, currentRequest()) : undefined;
 
     const updateDimensionPreview = () => {
       const dimensions = getRequestedDimensions();
       const validation = dimensions && validateResizeDimensions(dimensions);
-      dimensionPreview.textContent = dimensions && !validation ? `${dimensions.width} × ${dimensions.height} px` : 'Enter valid dimensions';
+      const many = sources.length > 1;
+
+      dimensionPreview.textContent = dimensions && !validation
+        ? `${dimensions.width} × ${dimensions.height} px${many ? ' (first image)' : ''}`
+        : 'Enter valid dimensions';
+
+      // What one set of numbers means to a set of pictures, said rather than
+      // left to be discovered in the downloads folder.
+      batchNote.hidden = !many;
+      batchNote.textContent = !many
+        ? ''
+        : currentMode() === 'percentage'
+          ? `Every one of the ${describeBatchCount(sources.length)} is scaled by this percentage.`
+          : aspectLock.checked
+            ? `Every one of the ${describeBatchCount(sources.length)} is set to this width and keeps its own proportions.`
+            : `Every one of the ${describeBatchCount(sources.length)} is forced to exactly these dimensions.`;
     };
 
     const updateMode = () => {
@@ -250,86 +332,206 @@
       updateDimensionPreview();
     };
 
-    const selectFile = async (file: File | undefined) => {
+    const selectFiles = async (chosen: readonly File[]) => {
       resetTool();
-      if (!file) return;
-      if (!isSupportedImageFile(file)) {
-        showError('Choose a JPEG, PNG, WebP, AVIF, or BMP image.');
+      if (chosen.length === 0) return;
+
+      const problem = validateBatchSelection(chosen);
+      if (problem) {
+        showError(chosen.length === 1 ? 'Choose a JPEG, PNG, WebP, AVIF, or BMP image.' : problem);
         return;
       }
 
-      selectedFile = file;
       dropZone.hidden = true;
-      showStatus('Reading image dimensions…');
+      showStatus(chosen.length === 1 ? 'Reading image dimensions…' : `Reading ${describeBatchCount(chosen.length)} locally…`);
       await nextPaint();
-      try {
-        sourceImage = await loadBrowserImage(file);
-        sourceDimensions = { width: sourceImage.naturalWidth, height: sourceImage.naturalHeight };
-        if (!sourceDimensions.width || !sourceDimensions.height) throw new Error('This image has no usable dimensions.');
-        if (isLargeImage(sourceDimensions)) {
-          showStatus('Large image detected. Preparing it locally…');
-          await nextPaint();
-        }
-        previewUrl = URL.createObjectURL(file);
-        previewImage.src = previewUrl;
-        inputName.textContent = `${file.name} · ${sourceDimensions.width} × ${sourceDimensions.height} px`;
-        widthInput.value = String(sourceDimensions.width);
-        heightInput.value = String(sourceDimensions.height);
-        percentageInput.value = '100';
-        outputFormat.value = getPreferredOutputFormat(getInputImageFormat(file));
-        updateDimensionPreview();
-        clearStatus();
-        editor.hidden = false;
-      } catch (caughtError) {
-        selectedFile = undefined;
-        sourceImage = undefined;
-        sourceDimensions = undefined;
+
+      const { sources: read, failures } = await readBatchSources(chosen, (position, total) => {
+        if (total > 1) showStatus(`Reading image ${position} of ${total} locally…`);
+      });
+
+      // A file that will not decode is one row lost, not the whole batch — but
+      // a batch where nothing decoded is an error like any other.
+      if (read.length === 0) {
+        releaseBatch(read);
         dropZone.hidden = false;
-        showError(caughtError instanceof Error ? caughtError.message : 'This image could not be read.');
         clearStatus();
+        showError(failures[0]?.reason ?? 'This image could not be read.');
+        return;
+      }
+
+      const tooMuch = checkBatchSize(read);
+      if (tooMuch) {
+        releaseBatch(read);
+        dropZone.hidden = false;
+        clearStatus();
+        showError(tooMuch);
+        return;
+      }
+
+      sources = read;
+
+      const [first] = sources;
+
+      sourceDimensions = { width: first.width, height: first.height };
+      previewImage.src = first.previewUrl;
+      inputName.textContent = sources.length === 1
+        ? `${first.file.name} · ${first.width} × ${first.height} px`
+        : `${describeBatchCount(sources.length)} · first: ${first.file.name} · ${first.width} × ${first.height} px`;
+      widthInput.value = String(first.width);
+      heightInput.value = String(first.height);
+      percentageInput.value = '100';
+      outputFormat.value = getPreferredOutputFormat(getInputImageFormat(first.file));
+      resizeButton.textContent = sources.length === 1 ? 'Resize it' : `Resize ${describeBatchCount(sources.length)}`;
+      updateDimensionPreview();
+      clearStatus();
+      editor.hidden = false;
+
+      if (failures.length > 0) {
+        showError(`${failures.length} of the chosen files could not be read: ${failures.map((failure) => failure.name).join(', ')}.`);
       }
     };
 
-    const resizeImage = async () => {
-      if (!selectedFile || !sourceImage || !sourceDimensions || !isImageOutputFormat(outputFormat.value)) return;
-      const dimensions = getRequestedDimensions();
-      const validation = dimensions && validateResizeDimensions(dimensions);
-      if (!dimensions || validation) {
-        showError(validation ?? 'Enter valid dimensions before resizing.');
+    /** One finished row: the file, and the line the list shows beside it. */
+    const renderRow = (file: File, detail: string, thumbnail: string) => {
+      const fragment = resultItemTemplate.content.cloneNode(true) as DocumentFragment;
+      const image = fragment.querySelector<HTMLImageElement>('[data-item-image]');
+      const name = fragment.querySelector<HTMLElement>('[data-item-name]');
+      const link = fragment.querySelector<HTMLAnchorElement>('[data-item-download]');
+
+      if (image) image.src = thumbnail;
+      if (name) name.textContent = `${file.name} · ${detail}`;
+      if (link) {
+        link.href = thumbnail;
+        link.download = file.name;
+        link.setAttribute('aria-label', `Download ${file.name}`);
+      }
+
+      return fragment;
+    };
+
+    const renderFailure = (failure: { readonly name: string; readonly reason: string }) => {
+      const fragment = failureItemTemplate.content.cloneNode(true) as DocumentFragment;
+      const name = fragment.querySelector<HTMLElement>('[data-item-name]');
+      const reason = fragment.querySelector<HTMLElement>('[data-item-reason]');
+
+      if (name) name.textContent = failure.name;
+      if (reason) reason.textContent = failure.reason;
+
+      return fragment;
+    };
+
+    const resizeImages = async () => {
+      if (sources.length === 0 || !sourceDimensions || !isImageOutputFormat(outputFormat.value)) return;
+
+      // The numbers are checked against every picture before any of them is
+      // resized: a batch that stops halfway because the fifth picture would
+      // come out too large is a batch nobody can act on.
+      const planned = sources.map((source) => getRequestedDimensions(source));
+      const invalid = planned.find((dimensions) => !dimensions || validateResizeDimensions(dimensions));
+
+      if (planned.some((dimensions) => !dimensions) || invalid) {
+        showError((invalid && validateResizeDimensions(invalid)) ?? 'Enter valid dimensions before resizing.');
         return;
       }
+
+      const format = outputFormat.value;
+      const many = sources.length > 1;
 
       clearError();
       resetResult();
       resizeButton.disabled = true;
       resizeButton.textContent = 'Resizing…';
-      showStatus(isLargeImage(sourceDimensions) ? 'Large image: resizing locally…' : 'Resizing locally…');
+      showStatus(many
+        ? `Resizing ${describeBatchCount(sources.length)} locally…`
+        : isLargeImage(sourceDimensions) ? 'Large image: resizing locally…' : 'Resizing locally…');
       await nextPaint();
+
       try {
-        const format = outputFormat.value;
-        const output = await encodeBrowserImage(sourceImage, dimensions, format);
-        resultUrl = URL.createObjectURL(output);
-        originalDimensions.textContent = `${sourceDimensions.width} × ${sourceDimensions.height} px`;
-        resultDimensions.textContent = `${dimensions.width} × ${dimensions.height} px`;
-        resultImage.src = resultUrl;
-        download.href = resultUrl;
-        download.download = getResizeOutputFilename(selectedFile.name, format);
+        const outcomes = await runImageBatch(
+          sources,
+          async (source) => {
+            const dimensions = getRequestedDimensions(source);
+
+            if (!dimensions) throw new Error('This image could not be resized to those dimensions.');
+
+            const blob = await encodeBrowserImage(source.image, dimensions, format);
+
+            return {
+              file: new File([blob], getResizeOutputFilename(source.file.name, format), { type: blob.type }),
+              source: { width: source.width, height: source.height },
+              dimensions,
+            };
+          },
+          (position, total) => {
+            if (total > 1) showStatus(`Resizing image ${position} of ${total} locally…`);
+          },
+        );
+        const outputs = getBatchSuccesses(outcomes);
+        const failures = getBatchFailures(outcomes);
+
+        if (!hasBatchOutput(outcomes)) {
+          throw new Error(failures[0]?.reason ?? 'This image could not be resized.');
+        }
+
         editor.hidden = true;
         result.hidden = false;
+
+        if (!many) {
+          const [output] = outputs;
+
+          resultUrl = URL.createObjectURL(output.file);
+          resultTitle.textContent = 'Right size. Ready to go.';
+          originalDimensions.textContent = `${output.source.width} × ${output.source.height} px`;
+          resultDimensions.textContent = `${output.dimensions.width} × ${output.dimensions.height} px`;
+          resultImage.src = resultUrl;
+          download.href = resultUrl;
+          download.download = output.file.name;
+          download.textContent = 'Download image';
+          return;
+        }
+
+        // A batch hands back one archive and the rows it was packed from, so a
+        // visitor can take the lot or just the one they wanted.
+        itemUrls = outputs.map((output) => URL.createObjectURL(output.file));
+        resultFigure.hidden = true;
+        resultDl.hidden = true;
+        resultList.hidden = false;
+        resultList.replaceChildren(
+          ...outputs.map((output, index) =>
+            renderRow(
+              output.file,
+              `${output.dimensions.width} × ${output.dimensions.height} px · ${formatFileSize(output.file.size)}`,
+              itemUrls[index],
+            ),
+          ),
+          ...failures.map(renderFailure),
+        );
+
+        const archive = await packImageArchive(outputs.map((output) => output.file));
+        const bytes = outputs.reduce((total, output) => total + output.file.size, 0);
+
+        resultUrl = URL.createObjectURL(archive);
+        resultTitle.textContent = 'Right size. Ready to go.';
+        resultSummary.hidden = false;
+        resultSummary.textContent = summariseBatch(outcomes, bytes);
+        download.href = resultUrl;
+        download.download = getBatchArchiveName('resized');
+        download.textContent = `Download all ${outputs.length} as a ZIP`;
       } catch (caughtError) {
         showError(caughtError instanceof Error ? caughtError.message : 'This image could not be resized.');
       } finally {
         clearStatus();
         resizeButton.disabled = false;
-        resizeButton.textContent = 'Resize it';
+        resizeButton.textContent = sources.length > 1 ? `Resize ${describeBatchCount(sources.length)}` : 'Resize it';
       }
     };
 
     selectFileButton.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', () => void selectFile(fileInput.files?.[0]));
+    fileInput.addEventListener('change', () => void selectFiles([...(fileInput.files ?? [])]));
     clearButton.addEventListener('click', resetTool);
     resultClearButton.addEventListener('click', resetTool);
-    resizeButton.addEventListener('click', () => void resizeImage());
+    resizeButton.addEventListener('click', () => void resizeImages());
     resizeModes.forEach((mode) => mode.addEventListener('change', updateMode));
     widthInput.addEventListener('input', () => {
       if (aspectLock.checked && sourceDimensions && Number(widthInput.value) > 0) heightInput.value = String(dimensionsFromWidth(sourceDimensions, Number(widthInput.value)).height);
@@ -340,9 +542,10 @@
       updateDimensionPreview();
     });
     percentageInput.addEventListener('input', updateDimensionPreview);
+    aspectLock.addEventListener('change', updateDimensionPreview);
     for (const eventName of ['dragenter', 'dragover']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
     for (const eventName of ['dragleave', 'drop']) dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
-    dropZone.addEventListener('drop', (event) => void selectFile(event.dataTransfer?.files[0]));
+    dropZone.addEventListener('drop', (event) => void selectFiles([...(event.dataTransfer?.files ?? [])]));
     updateMode();
   }
 </script>

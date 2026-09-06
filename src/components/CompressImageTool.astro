@@ -10,12 +10,13 @@
       accept="image/jpeg,image/png,image/webp,image/avif,image/bmp,.jpg,.jpeg,.png,.webp,.avif,.bmp"
       aria-label="Select an image to compress"
       data-file-input
+      multiple
       hidden
     />
-    <p class="metadata">One image at a time</p>
-    <h2>Drop an image here</h2>
+    <p class="metadata">One image, or a batch of them</p>
+    <h2>Drop images here</h2>
     <p>JPEG, PNG, WebP, AVIF, or BMP. Nothing leaves this device.</p>
-    <button type="button" class="button-secondary" data-select-file>Choose an image</button>
+    <button type="button" class="button-secondary" data-select-file>Choose images</button>
   </div>
 
   <p class="compress-image-tool__error" data-error role="alert" hidden></p>
@@ -44,19 +45,42 @@
 
     <div class="compress-image-tool__actions">
       <button type="button" data-compress>Compress it</button>
-      <button type="button" class="button-secondary" data-clear>Choose another image</button>
+      <button type="button" class="button-secondary" data-clear>Choose other images</button>
     </div>
   </div>
 
   <section class="compress-image-tool__result" data-result aria-live="polite" hidden>
     <p class="metadata">Ready to download</p>
-    <h2>Your image is ready.</h2>
-    <dl>
+    <h2 data-result-title>Your image is ready.</h2>
+    <dl data-result-dl>
       <div><dt>Before</dt><dd data-before-size></dd></div>
       <div><dt>After</dt><dd data-after-size></dd></div>
       <div><dt>Change</dt><dd data-size-change></dd></div>
     </dl>
-    <section class="compress-image-tool__comparison" aria-labelledby="comparison-title">
+
+    <!-- A batch is a list of rows: every picture that worked is a download of
+         its own, and every one that did not says why beside it. The comparison
+         slider belongs to a single picture and is put away for a batch. -->
+    <ul class="compress-image-tool__result-list" data-result-list hidden></ul>
+    <template data-result-item-template>
+      <li>
+        <img data-item-image alt="" />
+        <div>
+          <p data-item-name></p>
+          <a data-item-download>Download</a>
+        </div>
+      </li>
+    </template>
+    <template data-failure-item-template>
+      <li data-failed>
+        <div>
+          <p data-item-name></p>
+          <p data-item-reason></p>
+        </div>
+      </li>
+    </template>
+
+    <section class="compress-image-tool__comparison" aria-labelledby="comparison-title" data-comparison>
       <div class="compress-image-tool__comparison-heading">
         <div>
           <p class="metadata">Look closer</p>
@@ -86,7 +110,7 @@
     </section>
     <div class="compress-image-tool__result-actions">
       <a class="compress-image-tool__download" data-download>Download image</a>
-      <button type="button" class="button-secondary" data-result-clear>Choose another image</button>
+      <button type="button" class="button-secondary" data-result-clear>Choose other images</button>
     </div>
   </section>
 </section>
@@ -113,6 +137,15 @@
   .compress-image-tool__picker[hidden] {
     display: none;
   }
+
+  .compress-image-tool__result-list[hidden] { display: none; }
+  .compress-image-tool__result-list { display: grid; gap: var(--space-2); margin: 0 0 var(--space-4); padding: 0; list-style: none; }
+  .compress-image-tool__result-list li { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2); border: var(--border-width) solid var(--border); background: var(--background); }
+  .compress-image-tool__result-list li[data-failed] { border-left: var(--border-strong-width) solid var(--color-red); }
+  .compress-image-tool__result-list img { width: 3.5rem; height: 3.5rem; object-fit: contain; background: var(--surface); }
+  .compress-image-tool__result-list p { margin: 0; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .compress-image-tool__result-list li[data-failed] p + p { color: var(--color-red); }
+  .compress-image-tool__result-list a { display: inline-block; margin-top: var(--space-1); font-size: var(--font-size-sm); font-weight: 700; }
 
   .compress-image-tool__picker h2 {
     margin-bottom: var(--space-2);
@@ -401,9 +434,18 @@
     getOutputFilename,
     getPreferredOutputFormat,
     isImageOutputFormat,
-    isSupportedImageFile,
   } from '../data/image-compression';
-  import { encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
+  import {
+    describeBatchCount,
+    getBatchArchiveName,
+    getBatchFailures,
+    getBatchSuccesses,
+    hasBatchOutput,
+    summariseBatch,
+    validateBatchSelection,
+  } from '../data/image-batches';
+  import { checkBatchSize, packImageArchive, readBatchSources, releaseBatch, runImageBatch, type BatchSource } from '../scripts/image-batch';
+  import { encodeBrowserImage } from '../scripts/image-processing';
 
   const root = document.querySelector<HTMLElement>('[data-compress-image-tool]');
 
@@ -422,6 +464,12 @@
     const compressButton = root.querySelector<HTMLButtonElement>('[data-compress]');
     const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
     const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultTitle = root.querySelector<HTMLElement>('[data-result-title]');
+    const resultDl = root.querySelector<HTMLElement>('[data-result-dl]');
+    const resultList = root.querySelector<HTMLUListElement>('[data-result-list]');
+    const resultItemTemplate = root.querySelector<HTMLTemplateElement>('[data-result-item-template]');
+    const failureItemTemplate = root.querySelector<HTMLTemplateElement>('[data-failure-item-template]');
+    const comparison = root.querySelector<HTMLElement>('[data-comparison]');
     const beforeSize = root.querySelector<HTMLElement>('[data-before-size]');
     const afterSize = root.querySelector<HTMLElement>('[data-after-size]');
     const sizeChange = root.querySelector<HTMLElement>('[data-size-change]');
@@ -450,6 +498,12 @@
       !compressButton ||
       !clearButton ||
       !result ||
+      !resultTitle ||
+      !resultDl ||
+      !resultList ||
+      !resultItemTemplate ||
+      !failureItemTemplate ||
+      !comparison ||
       !beforeSize ||
       !afterSize ||
       !sizeChange ||
@@ -466,9 +520,15 @@
       throw new Error('Compress Image tool could not initialise.');
     }
 
-    let selectedFile: File | undefined;
-    let previewUrl: string | undefined;
+    /**
+     * The batch, which is one picture long in the ordinary case. One picture
+     * keeps the comparison slider it always had; several get a list of rows and
+     * one archive, and both come out of the same loop.
+     */
+    let sources: readonly BatchSource[] = [];
     let resultUrl: string | undefined;
+    let itemUrls: string[] = [];
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
     const updateComparison = () => {
       const position = Number(comparisonSlider.value);
@@ -486,13 +546,6 @@
       error.hidden = false;
     };
 
-    const revokePreviewUrl = () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-        previewUrl = undefined;
-      }
-    };
-
     const revokeResultUrl = () => {
       if (resultUrl) {
         URL.revokeObjectURL(resultUrl);
@@ -508,7 +561,13 @@
 
     const resetResult = () => {
       revokeResultUrl();
+      for (const url of itemUrls) URL.revokeObjectURL(url);
+      itemUrls = [];
       result.hidden = true;
+      resultDl.hidden = false;
+      comparison.hidden = false;
+      resultList.hidden = true;
+      resultList.replaceChildren();
       download.removeAttribute('href');
       download.removeAttribute('download');
       comparisonOriginal.removeAttribute('src');
@@ -520,9 +579,9 @@
     };
 
     const resetTool = () => {
-      selectedFile = undefined;
+      releaseBatch(sources);
+      sources = [];
       fileInput.value = '';
-      revokePreviewUrl();
       resetResult();
       previewImage.removeAttribute('src');
       dropZone.hidden = false;
@@ -530,74 +589,192 @@
       clearError();
     };
 
-    const selectFile = (file: File | undefined) => {
+    const selectFiles = async (chosen: readonly File[]) => {
       resetTool();
 
-      if (!file) {
+      if (chosen.length === 0) return;
+
+      const problem = validateBatchSelection(chosen);
+
+      if (problem) {
+        showError(chosen.length === 1 ? 'Choose a JPEG, PNG, WebP, AVIF, or BMP image.' : problem);
         return;
       }
 
-      if (!isSupportedImageFile(file)) {
-        showError('Choose a JPEG, PNG, WebP, AVIF, or BMP image.');
-        return;
-      }
-
-      selectedFile = file;
-      previewUrl = URL.createObjectURL(file);
-      previewImage.src = previewUrl;
-      inputName.textContent = `${file.name} · ${formatFileSize(file.size)}`;
-      outputFormat.value = getPreferredOutputFormat(getInputImageFormat(file));
-      updateQualityControl();
       dropZone.hidden = true;
+
+      const { sources: read, failures } = await readBatchSources(chosen);
+
+      // A file that will not decode is one row lost, not the whole batch — but
+      // a batch where nothing decoded is an error like any other.
+      if (read.length === 0) {
+        releaseBatch(read);
+        dropZone.hidden = false;
+        showError(failures[0]?.reason ?? 'This image could not be read.');
+        return;
+      }
+
+      const tooMuch = checkBatchSize(read);
+
+      if (tooMuch) {
+        releaseBatch(read);
+        dropZone.hidden = false;
+        showError(tooMuch);
+        return;
+      }
+
+      sources = read;
+
+      const [first] = sources;
+      const totalBytes = sources.reduce((bytes, source) => bytes + source.file.size, 0);
+
+      previewImage.src = first.previewUrl;
+      inputName.textContent = sources.length === 1
+        ? `${first.file.name} · ${formatFileSize(first.file.size)}`
+        : `${describeBatchCount(sources.length)} · ${formatFileSize(totalBytes)}`;
+      outputFormat.value = getPreferredOutputFormat(getInputImageFormat(first.file));
+      compressButton.textContent = sources.length === 1 ? 'Compress it' : `Compress ${describeBatchCount(sources.length)}`;
+      updateQualityControl();
       editor.hidden = false;
+
+      if (failures.length > 0) {
+        showError(`${failures.length} of the chosen files could not be read: ${failures.map((failure) => failure.name).join(', ')}.`);
+      }
     };
 
-    const compressImage = async () => {
-      if (!selectedFile || !isImageOutputFormat(outputFormat.value)) {
+    /** One finished row: the file, and the line the list shows beside it. */
+    const renderRow = (file: File, detail: string, thumbnail: string) => {
+      const fragment = resultItemTemplate.content.cloneNode(true) as DocumentFragment;
+      const image = fragment.querySelector<HTMLImageElement>('[data-item-image]');
+      const name = fragment.querySelector<HTMLElement>('[data-item-name]');
+      const link = fragment.querySelector<HTMLAnchorElement>('[data-item-download]');
+
+      if (image) image.src = thumbnail;
+      if (name) name.textContent = `${file.name} · ${detail}`;
+      if (link) {
+        link.href = thumbnail;
+        link.download = file.name;
+        link.setAttribute('aria-label', `Download ${file.name}`);
+      }
+
+      return fragment;
+    };
+
+    const renderFailure = (failure: { readonly name: string; readonly reason: string }) => {
+      const fragment = failureItemTemplate.content.cloneNode(true) as DocumentFragment;
+      const name = fragment.querySelector<HTMLElement>('[data-item-name]');
+      const reason = fragment.querySelector<HTMLElement>('[data-item-reason]');
+
+      if (name) name.textContent = failure.name;
+      if (reason) reason.textContent = failure.reason;
+
+      return fragment;
+    };
+
+    const compressImages = async () => {
+      if (sources.length === 0 || !isImageOutputFormat(outputFormat.value)) {
         return;
       }
+
+      const format = outputFormat.value;
+      const many = sources.length > 1;
 
       clearError();
       resetResult();
       compressButton.disabled = true;
       compressButton.textContent = 'Compressing…';
+      await nextPaint();
 
       try {
-        const image = await loadBrowserImage(selectedFile);
-        const format = outputFormat.value;
-        const output = await encodeBrowserImage(
-          image,
-          { width: image.naturalWidth, height: image.naturalHeight },
-          format,
-          Number(quality.value) / 100,
-        );
+        const outcomes = await runImageBatch(
+          sources,
+          async (source) => {
+            const blob = await encodeBrowserImage(
+              source.image,
+              { width: source.width, height: source.height },
+              format,
+              Number(quality.value) / 100,
+            );
 
-        resultUrl = URL.createObjectURL(output);
-        beforeSize.textContent = formatFileSize(selectedFile.size);
-        afterSize.textContent = formatFileSize(output.size);
-        sizeChange.textContent = formatSizeChange(selectedFile.size, output.size);
-        comparisonOriginal.src = previewUrl ?? '';
-        comparisonResult.src = resultUrl;
-        comparisonDimensions.textContent = `${image.naturalWidth} × ${image.naturalHeight} px`;
-        comparisonStage.style.aspectRatio = `${image.naturalWidth} / ${image.naturalHeight}`;
-        updateComparison();
-        download.href = resultUrl;
-        download.download = getOutputFilename(selectedFile.name, format);
+            return {
+              file: new File([blob], getOutputFilename(source.file.name, format), { type: blob.type }),
+              source,
+            };
+          },
+          (position, total) => {
+            if (total > 1) compressButton.textContent = `Compressing ${position} of ${total}…`;
+          },
+        );
+        const outputs = getBatchSuccesses(outcomes);
+        const failures = getBatchFailures(outcomes);
+
+        if (!hasBatchOutput(outcomes)) {
+          throw new Error(failures[0]?.reason ?? 'This image could not be compressed.');
+        }
+
         editor.hidden = true;
         result.hidden = false;
+
+        if (!many) {
+          const [output] = outputs;
+
+          resultUrl = URL.createObjectURL(output.file);
+          resultTitle.textContent = 'Your image is ready.';
+          beforeSize.textContent = formatFileSize(output.source.file.size);
+          afterSize.textContent = formatFileSize(output.file.size);
+          sizeChange.textContent = formatSizeChange(output.source.file.size, output.file.size);
+          comparisonOriginal.src = output.source.previewUrl;
+          comparisonResult.src = resultUrl;
+          comparisonDimensions.textContent = `${output.source.width} × ${output.source.height} px`;
+          comparisonStage.style.aspectRatio = `${output.source.width} / ${output.source.height}`;
+          updateComparison();
+          download.href = resultUrl;
+          download.download = output.file.name;
+          download.textContent = 'Download image';
+          return;
+        }
+
+        // A batch hands back one archive and the rows it was packed from, so a
+        // visitor can take the lot or just the one they wanted.
+        itemUrls = outputs.map((output) => URL.createObjectURL(output.file));
+        comparison.hidden = true;
+        resultList.hidden = false;
+        resultList.replaceChildren(
+          ...outputs.map((output, index) =>
+            renderRow(
+              output.file,
+              `${formatFileSize(output.file.size)} · ${formatSizeChange(output.source.file.size, output.file.size)}`,
+              itemUrls[index],
+            ),
+          ),
+          ...failures.map(renderFailure),
+        );
+
+        const before = outputs.reduce((bytes, output) => bytes + output.source.file.size, 0);
+        const after = outputs.reduce((bytes, output) => bytes + output.file.size, 0);
+        const archive = await packImageArchive(outputs.map((output) => output.file));
+
+        resultUrl = URL.createObjectURL(archive);
+        resultTitle.textContent = `${summariseBatch(outcomes)} ready.`;
+        beforeSize.textContent = formatFileSize(before);
+        afterSize.textContent = formatFileSize(after);
+        sizeChange.textContent = formatSizeChange(before, after);
+        download.href = resultUrl;
+        download.download = getBatchArchiveName('compressed');
+        download.textContent = `Download all ${outputs.length} as a ZIP`;
       } catch (caughtError) {
         showError(caughtError instanceof Error ? caughtError.message : 'This image could not be compressed.');
       } finally {
         compressButton.disabled = false;
-        compressButton.textContent = 'Compress it';
+        compressButton.textContent = sources.length > 1 ? `Compress ${describeBatchCount(sources.length)}` : 'Compress it';
       }
     };
 
     selectFileButton.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', () => selectFile(fileInput.files?.[0]));
+    fileInput.addEventListener('change', () => void selectFiles([...(fileInput.files ?? [])]));
     clearButton.addEventListener('click', resetTool);
     resultClearButton.addEventListener('click', resetTool);
-    compressButton.addEventListener('click', compressImage);
+    compressButton.addEventListener('click', () => void compressImages());
     outputFormat.addEventListener('change', updateQualityControl);
     quality.addEventListener('input', () => {
       qualityValue.value = `${quality.value}%`;
@@ -619,7 +796,7 @@
       });
     }
 
-    dropZone.addEventListener('drop', (event) => selectFile(event.dataTransfer?.files[0]));
+    dropZone.addEventListener('drop', (event) => void selectFiles([...(event.dataTransfer?.files ?? [])]));
     updateQualityControl();
   }
 </script>

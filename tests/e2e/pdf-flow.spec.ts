@@ -97,8 +97,9 @@ test("turns several local images into one PDF in the order shown", async ({
 }) => {
   await page.goto("/flows/");
 
-  // The source takes one image until a combining block asks for more.
-  await expect(chooseImages(page)).not.toHaveJSProperty("multiple", true);
+  // An image flow takes several pictures whatever its chain: without a
+  // combining block they are a batch, and with one they are its pages.
+  await expect(chooseImages(page)).toHaveJSProperty("multiple", true);
   await chooseImages(page).setInputFiles(asFile("wide.jpg", wideJpeg));
 
   await addStep(page, "jpg-to-pdf");
@@ -285,7 +286,7 @@ test("shares a PDF flow as a settings-only recipe link and reopens it", async ({
   await expect(chooseImages(page)).toHaveJSProperty("multiple", true);
 });
 
-test("resolves the extra pages when the combining block is removed", async ({
+test("keeps the images as a batch when the combining block is removed", async ({
   page,
 }) => {
   await page.goto("/flows/");
@@ -300,13 +301,14 @@ test("resolves the extra pages when the combining block is removed", async ({
 
   await page.getByRole("button", { name: "Remove", exact: true }).click();
 
-  // Nothing is dropped quietly: the flow says which image it kept.
-  await expect(page.locator("[data-status]")).toHaveText(
-    "This flow makes one file, so it kept first.jpg and removed 2 other images.",
-  );
-  await expect(page.locator("[data-source-details]")).toContainText("first.jpg");
-  await expect(page.getByRole("list", { name: "Starting files" })).toBeHidden();
-  await expect(chooseImages(page)).not.toHaveJSProperty("multiple", true);
+  // Nothing is dropped: without the block that made them pages they are three
+  // pictures a chain can be run over, which is what a batch is.
+  await expect(page.getByRole("list", { name: "Starting files" })).toBeVisible();
+  await expect(
+    page.getByRole("list", { name: "Starting files" }).getByRole("listitem"),
+  ).toHaveCount(3);
+  await expect(page.locator("[data-source-details]")).toContainText("3 images");
+  await expect(chooseImages(page)).toHaveJSProperty("multiple", true);
 });
 
 test("refuses a non-image and a selection larger than one document", async ({

@@ -58,6 +58,46 @@ export function validateResizeDimensions(dimensions: ImageDimensions): string | 
   return undefined;
 }
 
+/**
+ * What one settings panel means when it is pointed at several pictures.
+ *
+ * A percentage means the same thing to every picture already. Exact dimensions
+ * do not: 800 x 600 is the right answer for the picture the visitor was looking
+ * at when they typed it and the wrong shape for the landscape one three rows
+ * down. So with proportions kept, the width is the instruction and each picture
+ * works its own height out; with proportions off, the pair is the instruction
+ * and every picture is forced to it, which is what a set of thumbnails wants.
+ */
+export type BatchResizeRequest =
+  | { readonly mode: 'percentage'; readonly percentage: number }
+  | {
+      readonly mode: 'dimensions';
+      readonly width: number;
+      readonly height: number;
+      readonly keepProportions: boolean;
+    };
+
+export function getBatchResizeDimensions(
+  source: ImageDimensions,
+  request: BatchResizeRequest,
+): ImageDimensions | undefined {
+  if (source.width < 1 || source.height < 1) return undefined;
+
+  if (request.mode === 'percentage') {
+    if (!Number.isFinite(request.percentage) || request.percentage <= 0) return undefined;
+
+    return dimensionsFromPercentage(source, request.percentage);
+  }
+
+  const { width, height, keepProportions } = request;
+
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width < 1 || height < 1) {
+    return undefined;
+  }
+
+  return keepProportions ? dimensionsFromWidth(source, width) : { width, height };
+}
+
 export function isLargeImage(dimensions: ImageDimensions): boolean {
   return dimensions.width * dimensions.height >= largeImagePixels;
 }
