@@ -17,6 +17,15 @@
 export interface ZipEntry {
   readonly name: string;
   readonly data: Uint8Array;
+  /**
+   * A deflated payload, for an entry whose caller had a compressor.
+   *
+   * `data` stays the file as it is, because the entry's CRC and its
+   * uncompressed size are both about that, and this is what is written in its
+   * place. A caller with nothing to compress with omits it and the entry is
+   * stored, which is what every Gizlet did before one had.
+   */
+  readonly deflated?: Uint8Array;
 }
 
 export const zipMimeType = 'application/zip';
@@ -31,8 +40,9 @@ export const zipExtension = 'zip';
 const dosTime = 0;
 const dosDate = 0x0021;
 
-/** Stored, not deflated. */
+/** The two methods written here: stored as it is, or deflated by the caller. */
 const storedMethod = 0;
+const deflatedMethod = 8;
 
 /** PKZIP 2.0, which is what a stored entry needs. */
 const zipVersion = 20;
@@ -86,7 +96,11 @@ export function crc32(bytes: Uint8Array): number {
 
 interface PreparedEntry {
   readonly name: Uint8Array;
-  readonly data: Uint8Array;
+  /** What is written into the archive: the deflated bytes, or the file itself. */
+  readonly payload: Uint8Array;
+  /** What the entry says it is worth once unpacked, whichever was written. */
+  readonly size: number;
+  readonly method: number;
   readonly crc: number;
   readonly offset: number;
 }
@@ -104,9 +118,20 @@ function prepare(entries: readonly ZipEntry[]): readonly PreparedEntry[] {
 
     seen.add(entry.name);
     const name = encoder.encode(entry.name);
+    // Deflating a file that came out larger is a compressor being honest about
+    // an already-compressed file, and storing it is the better archive.
+    const useDeflate = entry.deflated !== undefined && entry.deflated.length < entry.data.length;
+    const payload = useDeflate && entry.deflated ? entry.deflated : entry.data;
 
-    prepared.push({ name, data: entry.data, crc: crc32(entry.data), offset });
-    offset += localHeaderSize + name.length + entry.data.length;
+    prepared.push({
+      name,
+      payload,
+      size: entry.data.length,
+      method: useDeflate ? deflatedMethod : storedMethod,
+      crc: crc32(entry.data),
+      offset,
+    });
+    offset += localHeaderSize + name.length + payload.length;
   }
 
   return prepared;
@@ -115,8 +140,9 @@ function prepare(entries: readonly ZipEntry[]): readonly PreparedEntry[] {
 /**
  * Writes the entries as one archive.
  *
- * Names are taken as given: a Gizlet composes them from its own output, so
- * there is no path to sanitise and no directory to create.
+ * Names are taken as given. A Gizlet that composes them from its own output has
+ * no path to sanitise; one that takes them from the visitor's device does that
+ * before it gets here, in `data/create-zip`, where it can be tested.
  */
 export function createZipArchive(entries: readonly ZipEntry[]): Uint8Array<ArrayBuffer> {
   if (entries.length > maximumZipEntries) {
@@ -125,7 +151,7 @@ export function createZipArchive(entries: readonly ZipEntry[]): Uint8Array<Array
 
   const prepared = prepare(entries);
   const directoryOffset = prepared.reduce(
-    (total, entry) => total + localHeaderSize + entry.name.length + entry.data.length,
+    (total, entry) => total + localHeaderSize + entry.name.length + entry.payload.length,
     0,
   );
   const directorySize = prepared.reduce(
@@ -146,21 +172,22 @@ export function createZipArchive(entries: readonly ZipEntry[]): Uint8Array<Array
     view.setUint32(position, localHeaderSignature, true);
     view.setUint16(position + 4, zipVersion, true);
     view.setUint16(position + 6, utf8NameFlag, true);
-    view.setUint16(position + 8, storedMethod, true);
+    view.setUint16(position + 8, entry.method, true);
     view.setUint16(position + 10, dosTime, true);
     view.setUint16(position + 12, dosDate, true);
     view.setUint32(position + 14, entry.crc, true);
-    // Stored, so the compressed and uncompressed sizes are the same number.
-    view.setUint32(position + 18, entry.data.length, true);
-    view.setUint32(position + 22, entry.data.length, true);
+    // The compressed size is what was written; the uncompressed size is what
+    // the reader will get back. They are the same number for a stored entry.
+    view.setUint32(position + 18, entry.payload.length, true);
+    view.setUint32(position + 22, entry.size, true);
     view.setUint16(position + 26, entry.name.length, true);
     view.setUint16(position + 28, 0, true);
     position += localHeaderSize;
 
     archive.set(entry.name, position);
     position += entry.name.length;
-    archive.set(entry.data, position);
-    position += entry.data.length;
+    archive.set(entry.payload, position);
+    position += entry.payload.length;
   }
 
   for (const entry of prepared) {
@@ -168,12 +195,12 @@ export function createZipArchive(entries: readonly ZipEntry[]): Uint8Array<Array
     view.setUint16(position + 4, zipVersion, true);
     view.setUint16(position + 6, zipVersion, true);
     view.setUint16(position + 8, utf8NameFlag, true);
-    view.setUint16(position + 10, storedMethod, true);
+    view.setUint16(position + 10, entry.method, true);
     view.setUint16(position + 12, dosTime, true);
     view.setUint16(position + 14, dosDate, true);
     view.setUint32(position + 16, entry.crc, true);
-    view.setUint32(position + 20, entry.data.length, true);
-    view.setUint32(position + 24, entry.data.length, true);
+    view.setUint32(position + 20, entry.payload.length, true);
+    view.setUint32(position + 24, entry.size, true);
     view.setUint16(position + 28, entry.name.length, true);
     view.setUint16(position + 30, 0, true);
     view.setUint16(position + 32, 0, true);

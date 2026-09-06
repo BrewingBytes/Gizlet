@@ -198,12 +198,18 @@ export const toolFlowRegistry = [
  * signature is a drawing or a picture. A flow is shared as a link, and a link
  * carries whole numbers and names from closed lists — never a drawing. A block
  * that could only ever sign nothing is not a step either.
+ *
+ * Create ZIP is here for the neighbouring reason: a flow that ends with several
+ * files already hands them back as one archive, so a block that did only that
+ * would be a step which does nothing the flow does not already do. It bundles
+ * files from a device, and a flow's files are not on one.
  */
 export const flowlessToolSlugs = [
   'pdf-viewer',
   'image-dimensions',
   'image-color-picker',
   'sign-pdf',
+  'create-zip',
 ] as const satisfies readonly ToolRegistryEntry['slug'][];
 
 /** The registry's own entries, with their payload kinds preserved. */

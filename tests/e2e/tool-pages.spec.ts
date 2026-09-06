@@ -33,6 +33,7 @@ const workspaceSignatures = {
   "pdf-page-numbers": "Select a PDF to number",
   "sign-pdf": "Select a PDF to sign",
   "clean-pdf-metadata": "Select a PDF to read",
+  "create-zip": "Select files to put in the archive",
 } as const satisfies Record<AvailableToolSlug, string>;
 
 for (const tool of getAvailableTools()) {
