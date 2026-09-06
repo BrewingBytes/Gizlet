@@ -1,4 +1,4 @@
-import { PDFDocument, degrees, type PDFImage } from 'pdf-lib';
+import { PDFDocument, StandardFonts, degrees, rgb, type PDFFont, type PDFImage } from 'pdf-lib';
 
 import {
   getPdfEmbedStrategy,
@@ -19,6 +19,16 @@ import {
   getPdfOrganizeErrorMessage,
   type OrganizedPdfPage,
 } from '../data/organize-pdf';
+import {
+  clampWatermarkOpacity,
+  getPdfWatermarkErrorMessage,
+  getVisiblePageBox,
+  getWatermarkImageSize,
+  getWatermarkPlacement,
+  getWatermarkWriteErrorMessage,
+  type WatermarkBox,
+  type WatermarkPosition,
+} from '../data/watermark-pdf';
 import {
   getPdfSplitErrorMessage,
   getSplitPdfFilename,
@@ -364,6 +374,134 @@ export async function organizeLocalPdf(
   }
 
   const bytes = await organized.save();
+
+  // A copy of the bytes, so the blob does not hold a view onto pdf-lib's buffer.
+  return new Blob([bytes.slice()], { type: 'application/pdf' });
+}
+
+/** A local PDF opened to be stamped, parsed once and kept for the write. */
+export interface LocalWatermarkSource {
+  readonly pageCount: number;
+  /** The parsed document. Held so stamping does not re-read the same bytes. */
+  readonly document: PDFDocument;
+}
+
+/** What the mark is made of, already measured so its box is known. */
+export type WatermarkContent =
+  | { readonly kind: 'text'; readonly text: string; readonly fontSize: number }
+  | { readonly kind: 'image'; readonly source: PdfSourceImage; readonly scale: number };
+
+export interface PdfWatermarkOptions {
+  /** The pages to stamp, counted from one as the visitor reads them. */
+  readonly pages: readonly number[];
+  readonly position: WatermarkPosition;
+  /** The turn the mark is read at, in degrees counter-clockwise. */
+  readonly rotation: number;
+  /** How solid the mark is, as the percentage the controls carry. */
+  readonly opacity: number;
+  /** Called before each page, so a long document can report its progress. */
+  readonly onPage?: (position: number, total: number) => Promise<void> | void;
+}
+
+/** Opens the document a watermark was given. */
+export async function openLocalPdfForWatermark(source: Blob): Promise<LocalWatermarkSource> {
+  return openLocalPdfSource(source, (reason) => new Error(getPdfWatermarkErrorMessage(reason)));
+}
+
+/**
+ * The mark's box in PDF points.
+ *
+ * A text box is measured from the font's own metrics rather than guessed, and
+ * deliberately excludes the descender: the box's bottom edge is then the
+ * baseline, which is the y `drawText` actually takes, so the placement
+ * arithmetic and the library agree about what the box is.
+ */
+function getTextWatermarkBox(font: PDFFont, text: string, fontSize: number): WatermarkBox {
+  return {
+    width: font.widthOfTextAtSize(text, fontSize),
+    height: font.heightAtSize(fontSize, { descender: false }),
+  };
+}
+
+/**
+ * Draws the mark onto the named pages and returns the document as a local blob.
+ *
+ * The pages are drawn onto rather than copied, so everything already on them is
+ * untouched and nothing is re-encoded. Where the mark lands, and which way up,
+ * comes entirely from `data/watermark-pdf` — including the correction for a
+ * page carrying its own rotation, which is the difference between a mark in the
+ * corner of a sideways page and a mark off the edge of it.
+ */
+export async function watermarkLocalPdf(
+  source: LocalWatermarkSource,
+  content: WatermarkContent,
+  options: PdfWatermarkOptions,
+): Promise<Blob> {
+  if (options.pages.length === 0) throw new Error('Choose the pages you want the watermark on.');
+
+  const { document } = source;
+  const opacity = clampWatermarkOpacity(options.opacity) / 100;
+
+  let font: PDFFont | undefined;
+  let image: PDFImage | undefined;
+
+  try {
+    if (content.kind === 'text') font = await document.embedFont(StandardFonts.HelveticaBold);
+    else image = await embedImage(document, content.source);
+  } catch {
+    throw new Error(getWatermarkWriteErrorMessage());
+  }
+
+  for (const [index, pageNumber] of options.pages.entries()) {
+    await options.onPage?.(index + 1, options.pages.length);
+
+    try {
+      // pdf-lib counts pages from zero; a selection counts from one.
+      const page = document.getPage(pageNumber - 1);
+      const media: WatermarkBox = { width: page.getWidth(), height: page.getHeight() };
+      const pageRotation = page.getRotation().angle;
+      const mark =
+        content.kind === 'text'
+          ? getTextWatermarkBox(font as PDFFont, content.text, content.fontSize)
+          : getWatermarkImageSize(
+              // An image is sized against the page as the visitor sees it, so a
+              // half-width mark is half the width they are looking at.
+              getVisiblePageBox(media, pageRotation),
+              { width: content.source.width, height: content.source.height },
+              content.scale,
+            );
+      const placement = getWatermarkPlacement(media, mark, {
+        position: options.position,
+        rotation: options.rotation,
+        pageRotation,
+      });
+
+      if (content.kind === 'text' && font) {
+        page.drawText(content.text, {
+          x: placement.anchor.x,
+          y: placement.anchor.y,
+          size: content.fontSize,
+          font,
+          color: rgb(0.4, 0.4, 0.4),
+          opacity,
+          rotate: degrees(placement.rotation),
+        });
+      } else if (image) {
+        page.drawImage(image, {
+          x: placement.anchor.x,
+          y: placement.anchor.y,
+          width: mark.width,
+          height: mark.height,
+          opacity,
+          rotate: degrees(placement.rotation),
+        });
+      }
+    } catch {
+      throw new Error(getWatermarkWriteErrorMessage());
+    }
+  }
+
+  const bytes = await document.save();
 
   // A copy of the bytes, so the blob does not hold a view onto pdf-lib's buffer.
   return new Blob([bytes.slice()], { type: 'application/pdf' });

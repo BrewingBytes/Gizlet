@@ -165,6 +165,11 @@ export const toolFlowRegistry = [
     input: pdfPayload,
     output: pdfPayload,
   },
+  {
+    toolSlug: 'watermark-pdf',
+    input: pdfPayload,
+    output: pdfPayload,
+  },
 ] as const satisfies readonly ToolFlowDefinition[];
 
 /**

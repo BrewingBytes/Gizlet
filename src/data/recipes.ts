@@ -34,6 +34,19 @@ import {
   type PdfPageSizeName,
 } from './jpg-to-pdf';
 import {
+  defaultWatermarkOpacity,
+  defaultWatermarkPosition,
+  defaultWatermarkWord,
+  isWatermarkPosition,
+  isWatermarkWord,
+  maximumWatermarkOpacity,
+  minimumWatermarkOpacity,
+  watermarkPositions,
+  watermarkWords,
+  type WatermarkPosition,
+  type WatermarkWord,
+} from './watermark-pdf';
+import {
   defaultPdfPageTurn,
   isPdfPageTurn,
   pdfPageTurns,
@@ -82,6 +95,9 @@ export interface RecipeStep {
   readonly orientation?: PdfOrientation;
   readonly resolution?: PdfImageResolution;
   readonly pageTurn?: PdfPageTurn;
+  readonly word?: WatermarkWord;
+  readonly markPosition?: WatermarkPosition;
+  readonly strength?: number;
 }
 
 export interface Recipe {
@@ -183,6 +199,10 @@ const recipeStepSettings = {
   // link carries the one page job that needs no field: the turn every page
   // gets. A chain that rearranges pages is a chain that cannot be shared.
   'organize-pdf': { t: pdfPageTurns },
+  // The workspace stamps any text; a link stamps one of five words. Every value
+  // this format carries is a whole number or a name from a closed list, which
+  // is exactly what stops a shared flow from carrying something somebody typed.
+  'watermark-pdf': { w: watermarkWords, p: watermarkPositions, o: 'number' },
 } as const satisfies Record<RecipeToolSlug, Readonly<Record<string, 'number' | readonly string[]>>>;
 
 const recipeToolSlugs = Object.keys(recipeStepSettings) as readonly RecipeToolSlug[];
@@ -341,6 +361,21 @@ function buildStep(
     if (!Object.hasOwn(settings, 'r')) return { toolSlug };
 
     return { toolSlug, resolution: settings.r as PdfImageResolution };
+  }
+
+  if (toolSlug === 'watermark-pdf') {
+    const word = Object.hasOwn(settings, 'w') ? String(settings.w) : defaultWatermarkWord;
+    const markPosition = Object.hasOwn(settings, 'p') ? String(settings.p) : defaultWatermarkPosition;
+
+    if (!isWatermarkWord(word) || !isWatermarkPosition(markPosition)) return undefined;
+
+    if (!Object.hasOwn(settings, 'o')) return { toolSlug, word, markPosition };
+
+    const strength = Number(settings.o);
+
+    if (strength < minimumWatermarkOpacity || strength > maximumWatermarkOpacity) return undefined;
+
+    return { toolSlug, word, markPosition, strength };
   }
 
   if (toolSlug === 'organize-pdf') {
@@ -544,6 +579,18 @@ export function encodeRecipe(recipe: Recipe): string | undefined {
       if (!pdfImageResolutionNames.includes(resolution)) return undefined;
 
       settings.push(`r=${resolution}`);
+    }
+
+    if (step.toolSlug === 'watermark-pdf') {
+      const word = step.word ?? defaultWatermarkWord;
+      const markPosition = step.markPosition ?? defaultWatermarkPosition;
+      const strength = step.strength ?? defaultWatermarkOpacity;
+
+      if (!isWatermarkWord(word) || !isWatermarkPosition(markPosition)) return undefined;
+      if (!Number.isInteger(strength)) return undefined;
+      if (strength < minimumWatermarkOpacity || strength > maximumWatermarkOpacity) return undefined;
+
+      settings.push(`w=${word}`, `p=${markPosition}`, `o=${strength}`);
     }
 
     if (step.toolSlug === 'organize-pdf') {
