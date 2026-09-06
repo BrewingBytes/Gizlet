@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AdvertisementSlot from '../components/AdvertisementSlot.astro';
+import FileDropDiscovery from '../components/FileDropDiscovery.astro';
 import { homePageDescription, homePageTitle } from '../data/home-page';
 import { getPageMetadata } from '../data/metadata';
 import { homeSocialImagePath } from '../data/social-images';
@@ -43,6 +44,8 @@ const metadata = getPageMetadata({
       <ol class="tool-search__results" data-tool-search-results></ol>
     </form>
   </section>
+
+  <FileDropDiscovery />
 
   <AdvertisementSlot variant="banner" />
 

@@ -87,6 +87,8 @@ const shouldShowRail = showRail && advertising.enabled && advertising.slots.rail
           <slot name="workspace" />
         </section>
 
+        <p class="tool-page__handoff" data-handoff-note role="status" hidden></p>
+
         <slot name="result" />
 
         {shouldShowPostResultAd && <AdvertisementSlot variant="inline" />}
@@ -349,9 +351,70 @@ const shouldShowRail = showRail && advertising.enabled && advertising.slots.rail
     color: var(--text-muted);
   }
 
+  .tool-page__handoff {
+    margin: var(--space-3) 0 0;
+    padding: var(--space-2) var(--space-3);
+    border-left: var(--border-strong-width) solid var(--success);
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .tool-page__handoff[hidden] {
+    display: none;
+  }
+
   @media (max-width: 56rem) {
     .tool-page__body--with-rail {
       grid-template-columns: minmax(0, 1fr);
     }
   }
 </style>
+
+<script>
+  import { readHandoffId } from '../data/file-handoff';
+
+  /**
+   * A file chosen on another page of this site, put into this workspace's own
+   * picker.
+   *
+   * It goes in through the file input rather than through each workspace's
+   * internals: every workspace already reads its picker and reacts to it
+   * changing, so one script here works for all of them and no Gizlet needs to
+   * know that a handoff exists. The fragment is cleared afterwards, so a reload
+   * is an ordinary page load rather than a second attempt at a record that has
+   * already been read and deleted.
+   */
+  const handoffId = readHandoffId(window.location.hash);
+
+  if (handoffId) {
+    const note = document.querySelector<HTMLElement>('[data-handoff-note]');
+    const input = document.querySelector<HTMLInputElement>('[data-file-input]:not([data-handoff-skip])');
+
+    void (async () => {
+      history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+
+      if (!input) return;
+
+      const { takeHandoffFile } = await import('../scripts/file-handoff');
+      const file = await takeHandoffFile(handoffId);
+
+      if (!file) return;
+
+      try {
+        const transfer = new DataTransfer();
+
+        transfer.items.add(file);
+        input.files = transfer.files;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+
+        if (note) {
+          note.textContent = `${file.name} came with you from the file you dropped. It never left this device.`;
+          note.hidden = false;
+        }
+      } catch {
+        // A browser that will not let a file be put into a picker leaves the
+        // workspace exactly as it would have been: empty, and waiting.
+      }
+    })();
+  }
+</script>
