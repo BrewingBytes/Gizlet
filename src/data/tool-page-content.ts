@@ -1493,6 +1493,94 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'sign-pdf': {
+    what: {
+      heading: 'What Sign PDF does',
+      paragraphs: [
+        'Sign PDF puts a signature onto a page of a document. Draw it with a mouse, a trackpad or a finger, type your name, or choose a picture of a signature you already have. Then drag it to the line it belongs on, size it against the page, and save a new PDF with it drawn there.',
+        'The signature is drawn onto the page rather than the page being rebuilt, so everything already on the document is untouched: the text stays selectable, the fonts stay embedded, and nothing is re-encoded. What lands in the document is what the page on screen showed, because both come from the same placement.',
+      ],
+    },
+    when: {
+      heading: 'When a signature on the page is all that is needed',
+      paragraphs: [
+        'Most documents that need signing need exactly this: a delivery note, a school form, a rental inventory, a letter that has to look signed rather than prove who signed it. The page comes as a PDF, it goes back as a PDF, and printing it, signing it and scanning it again is three steps and a worse copy of the same page.',
+        'This is not the tool for a contract whose signature has to be verifiable. A visible signature is a picture on a page: anyone can copy it off one document and put it onto another. If what you need is proof of who signed and that nothing changed afterwards, that is certificate-based signing, and it needs a certificate and software that holds one.',
+      ],
+    },
+    options: {
+      heading: 'What the signature controls do',
+      paragraphs: [
+        'The signature over the page is placed by the same function the document is written with, so where it sits on screen is where it lands.',
+      ],
+      details: [
+        {
+          term: 'Draw it',
+          description:
+            'A box to sign in with whatever you are pointing with. A trackpad gives a rougher line than a finger on a phone, and both are usually enough. The drawing is cropped to the ink before it is placed, so the signature is your signature rather than your signature in the middle of an empty box.',
+        },
+        {
+          term: 'Type it',
+          description:
+            'Your name in an italic serif face, drawn into the document as text rather than as a picture, so it stays crisp at any zoom and on any printer. It looks like a typed name, because that is what it is.',
+        },
+        {
+          term: 'Use a picture',
+          description:
+            'A PNG, JPEG or WebP from your device — a signature you signed on paper and photographed, usually. A transparent PNG stays transparent, which is what you want over a printed line.',
+        },
+        {
+          term: 'Placement and size',
+          description:
+            'Drag the signature where it belongs, or move it with the arrow keys and resize it with plus and minus. It is placed as a share of the page rather than in points, so the same placement means the same thing on A4 and on US Letter, and a page that carries its own rotation is corrected for.',
+        },
+        {
+          term: 'Pages',
+          description:
+            'Empty signs the page you are looking at, which is the usual case. Otherwise name them the way you would say them: 1-3, 5. The note under the page tells you whether the page on screen is one of the ones being signed.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'Your signature never leaves this device',
+      paragraphs: [
+        'Reading the PDF, drawing the pages, and writing the signed document all happen in this browser. The signature you draw is a drawing in this page and nothing else: it is not saved, not stored between visits, and not sent anywhere, because there is nowhere to send it.',
+        'A signature is worth stealing in a way a holiday photo is not. A site that keeps a library of your signatures for next time keeps a library of them for everyone else too, which is why this one does not offer that and could not do it if it wanted to.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Is this a legally binding signature?',
+        answer:
+          'This places a visible signature onto a page. It is not certificate-based or cryptographic signing, and nothing here verifies who drew it. Whether a picture of a signature is enough is a question about the document and where you are, not about this Gizlet, and it is not one this page can answer for you.',
+      },
+      {
+        question: 'Does it use a digital certificate?',
+        answer:
+          'No. There is no certificate, no key, no timestamp and no identity check. A document signed here carries a drawing, not a cryptographic signature, and a reader that checks signatures will report that it has none.',
+      },
+      {
+        question: 'Is my signature uploaded or stored?',
+        answer:
+          'No. The drawing, the typed name and any picture you choose are all read and used in this browser, and they are gone when you leave the page. There is no account, no signature library and no upload endpoint behind this page.',
+      },
+      {
+        question: 'Can I sign more than one page?',
+        answer:
+          'Yes. Name the pages, like 1-3, 5, and the same signature is drawn in the same place on each of them. Leaving the field empty signs the page you are looking at.',
+      },
+      {
+        question: 'Will the text under the signature still be selectable?',
+        answer:
+          'Yes. The signature is drawn on top of the page rather than the page being flattened into a picture, so everything that was selectable before still is. That is also why the file barely grows.',
+      },
+      {
+        question: 'Can it sign a password-protected PDF?',
+        answer:
+          'No. A protected document cannot be read without its password, and this Gizlet does not ask for one. Open it in an application that can, save an unlocked copy, and sign that instead.',
+      },
+    ],
+  },
   'organize-pdf': {
     what: {
       heading: 'What Organize PDF does',

@@ -15,6 +15,13 @@ import {
   type PdfMergeFailure,
 } from '../data/merge-pdf';
 import {
+  getSignPdfSourceErrorMessage,
+  getSignPdfWriteErrorMessage,
+  getSignaturePlan,
+  getSignedPdfFilename,
+  type SignaturePlacement,
+} from '../data/sign-pdf';
+import {
   getOrganizePdfWriteErrorMessage,
   getPdfOrganizeErrorMessage,
   type OrganizedPdfPage,
@@ -598,3 +605,114 @@ export async function addPageNumbersToLocalPdf(
 }
 
 export { getNumberedPdfFilename };
+
+/** A local PDF opened to be signed, parsed once and kept for the write. */
+export interface LocalSignatureSource {
+  readonly pageCount: number;
+  readonly document: PDFDocument;
+}
+
+/** Opens the document a signature is going onto. */
+export async function openLocalPdfForSigning(source: Blob): Promise<LocalSignatureSource> {
+  return openLocalPdfSource(source, (reason) => new Error(getSignPdfSourceErrorMessage(reason)));
+}
+
+/**
+ * What is drawn onto the page.
+ *
+ * A drawn signature and an imported picture are both pictures by the time they
+ * reach here — the workspace turns its canvas into a PNG — so the writer has
+ * two cases rather than three.
+ */
+export type SignatureContent =
+  | { readonly kind: 'image'; readonly source: PdfSourceImage }
+  | { readonly kind: 'text'; readonly text: string };
+
+export interface PdfSignatureOptions {
+  readonly pages: readonly number[];
+  readonly placement: SignaturePlacement;
+  readonly onPage?: (position: number, total: number) => Promise<void> | void;
+}
+
+/**
+ * Draws the signature onto the pages named and returns the document.
+ *
+ * The pages are drawn onto rather than copied, so everything already on them is
+ * untouched. Where the signature lands comes entirely from `data/sign-pdf`,
+ * including the correction for a page carrying its own rotation.
+ *
+ * Nothing here signs anything cryptographically: it puts a picture on a page.
+ */
+export async function signLocalPdf(
+  source: LocalSignatureSource,
+  content: SignatureContent,
+  options: PdfSignatureOptions,
+): Promise<Blob> {
+  if (options.pages.length === 0) throw new Error('Choose the pages to sign.');
+
+  const { document } = source;
+  let font: PDFFont | undefined;
+  let image: PDFImage | undefined;
+
+  try {
+    if (content.kind === 'text') {
+      // The one standard face that reads as a signature rather than a label.
+      font = await document.embedFont(StandardFonts.TimesRomanItalic);
+    } else {
+      image = await embedImage(document, content.source);
+    }
+  } catch {
+    throw new Error(getSignPdfWriteErrorMessage());
+  }
+
+  // A typed signature's shape is the shape of the words at a nominal size; the
+  // placement then scales it to the width the visitor set.
+  const nominalSize = 48;
+  let textWidth = 1;
+  let aspect = 1;
+
+  if (content.kind === 'text' && font) {
+    textWidth = Math.max(1, font.widthOfTextAtSize(content.text, nominalSize));
+    aspect = Math.max(0.1, textWidth / Math.max(1, font.heightAtSize(nominalSize, { descender: false })));
+  } else if (content.kind === 'image') {
+    aspect = Math.max(0.1, content.source.width / Math.max(1, content.source.height));
+  }
+
+  for (const [index, pageNumber] of options.pages.entries()) {
+    await options.onPage?.(index + 1, options.pages.length);
+
+    try {
+      // pdf-lib counts pages from zero; a selection counts from one.
+      const page = document.getPage(pageNumber - 1);
+      const media: WatermarkBox = { width: page.getWidth(), height: page.getHeight() };
+      const plan = getSignaturePlan(media, options.placement, aspect, page.getRotation().angle);
+
+      if (content.kind === 'text' && font) {
+        page.drawText(content.text, {
+          x: plan.anchor.x,
+          y: plan.anchor.y,
+          size: (plan.width / textWidth) * nominalSize,
+          font,
+          color: rgb(0.05, 0.09, 0.25),
+          rotate: degrees(plan.rotation),
+        });
+      } else if (image) {
+        page.drawImage(image, {
+          x: plan.anchor.x,
+          y: plan.anchor.y,
+          width: plan.width,
+          height: plan.height,
+          rotate: degrees(plan.rotation),
+        });
+      }
+    } catch {
+      throw new Error(getSignPdfWriteErrorMessage());
+    }
+  }
+
+  const bytes = await document.save();
+
+  return new Blob([bytes.slice()], { type: 'application/pdf' });
+}
+
+export { getSignedPdfFilename };

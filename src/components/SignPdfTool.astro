@@ -1,0 +1,939 @@
+---
+import PdfViewerSurface from './PdfViewerSurface.astro';
+import {
+  defaultSignaturePlacement,
+  getSignatureKindOptions,
+  maximumSignatureTextLength,
+  maximumSignatureWidth,
+  minimumSignatureWidth,
+  signatureDisclaimer,
+} from '../data/sign-pdf';
+
+const kindOptions = getSignatureKindOptions();
+const widthPercent = Math.round(defaultSignaturePlacement.width * 100);
+---
+
+<section class="sign-pdf-tool" data-sign-pdf-tool>
+  <div class="sign-pdf-tool__picker" data-drop-zone>
+    <input
+      id="sign-pdf-file"
+      class="sign-pdf-tool__file-input"
+      type="file"
+      accept="application/pdf,.pdf"
+      aria-label="Select a PDF to sign"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">A visible signature, drawn on this device</p>
+    <h2>Drop a PDF here</h2>
+    <p>The signature is drawn onto the page by this browser. Nothing is uploaded.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose a PDF</button>
+  </div>
+
+  <p class="sign-pdf-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="sign-pdf-tool__error" data-error role="alert" hidden></p>
+
+  <div class="sign-pdf-tool__editor" data-editor hidden>
+    <div class="sign-pdf-tool__bar">
+      <button type="button" class="button-secondary" data-clear>Choose another PDF</button>
+      <p class="sign-pdf-tool__pages-summary" data-pages-summary></p>
+    </div>
+
+    <p class="sign-pdf-tool__disclaimer" data-disclaimer>{signatureDisclaimer}</p>
+
+    <PdfViewerSurface id="sign-pdf-source" label="The PDF being signed" zoom>
+      <!-- The signature, over the page it is going onto. It is dragged here,
+           and where it lands comes from the same function the writer uses, so
+           the page on screen and the page written cannot disagree. -->
+      <div class="signature-preview" slot="page-overlay" data-preview hidden>
+        <button
+          type="button"
+          class="signature-preview__handle"
+          data-handle
+          aria-label="Signature placement. Drag it, or use the arrow keys to move it and plus and minus to resize it."
+        >
+          <img class="signature-preview__image" data-preview-image alt="" hidden />
+          <span class="signature-preview__text" data-preview-text hidden></span>
+        </button>
+      </div>
+    </PdfViewerSurface>
+
+    <p class="sign-pdf-tool__preview-note" data-preview-note></p>
+
+    <div class="sign-pdf-tool__signature">
+      <div class="sign-pdf-tool__control">
+        <label for="sign-pdf-kind">Signature</label>
+        <select id="sign-pdf-kind" data-kind aria-label="Signature kind">
+          {
+            kindOptions.map((option) => (
+              <option value={option.value} selected={option.value === kindOptions[0].value}>
+                {option.label}
+              </option>
+            ))
+          }
+        </select>
+      </div>
+
+      <div class="sign-pdf-tool__pad-control" data-pad-control>
+        <p class="sign-pdf-tool__pad-label" id="sign-pdf-pad-label">Draw your signature</p>
+        <canvas
+          class="sign-pdf-tool__pad"
+          width="720"
+          height="240"
+          data-pad
+          role="img"
+          aria-labelledby="sign-pdf-pad-label"
+        ></canvas>
+        <button type="button" class="button-secondary" data-pad-clear>Clear the drawing</button>
+      </div>
+
+      <div class="sign-pdf-tool__control" data-text-control hidden>
+        <label for="sign-pdf-text">Name</label>
+        <input
+          id="sign-pdf-text"
+          type="text"
+          autocomplete="off"
+          maxlength={maximumSignatureTextLength}
+          data-text
+          aria-label="Signature name"
+        />
+      </div>
+
+      <div class="sign-pdf-tool__control" data-image-control hidden>
+        <label for="sign-pdf-image">Picture</label>
+        <input
+          id="sign-pdf-image"
+          type="file"
+          accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+          data-image-input
+          aria-label="Signature picture"
+        />
+      </div>
+    </div>
+
+    <div class="sign-pdf-tool__controls">
+      <div class="sign-pdf-tool__control">
+        <label for="sign-pdf-width">Size</label>
+        <div class="sign-pdf-tool__slider">
+          <input
+            id="sign-pdf-width"
+            type="range"
+            min={Math.round(minimumSignatureWidth * 100)}
+            max={Math.round(maximumSignatureWidth * 100)}
+            value={widthPercent}
+            data-width
+            aria-label="Signature size"
+          />
+          <output data-width-output>{widthPercent}%</output>
+        </div>
+      </div>
+
+      <div class="sign-pdf-tool__control">
+        <label for="sign-pdf-pages">Pages</label>
+        <input
+          id="sign-pdf-pages"
+          type="text"
+          autocomplete="off"
+          placeholder="This page"
+          data-pages
+          aria-label="Pages to sign"
+          aria-describedby="sign-pdf-pages-hint"
+        />
+        <p class="sign-pdf-tool__hint" id="sign-pdf-pages-hint">
+          Leave it empty to sign the page on screen, or name them: 1-3, 5.
+        </p>
+      </div>
+    </div>
+
+    <div class="sign-pdf-tool__actions">
+      <button type="button" data-apply>Sign the PDF</button>
+      <button type="button" class="button-secondary" data-reset>Start over</button>
+    </div>
+  </div>
+
+  <section class="sign-pdf-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2 data-result-title>Your signed PDF is ready.</h2>
+    <p class="sign-pdf-tool__result-details" data-result-details></p>
+    <p class="sign-pdf-tool__result-disclaimer">{signatureDisclaimer}</p>
+
+    <div class="sign-pdf-tool__preview" data-result-preview hidden>
+      <p class="metadata">Preview</p>
+      <PdfViewerSurface id="sign-pdf-result" label="The signed document" />
+    </div>
+
+    <p class="sign-pdf-tool__preview-error" data-preview-error role="status" hidden></p>
+
+    <div class="sign-pdf-tool__result-actions">
+      <a class="sign-pdf-tool__download" data-download>Download PDF</a>
+      <button type="button" class="button-secondary" data-result-clear>Start over</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .sign-pdf-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .sign-pdf-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .sign-pdf-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .sign-pdf-tool__picker[hidden], .sign-pdf-tool__editor[hidden], .sign-pdf-tool__result[hidden] { display: none; }
+  .sign-pdf-tool__picker h2 { margin-bottom: var(--space-2); }
+  .sign-pdf-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .sign-pdf-tool__status, .sign-pdf-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .sign-pdf-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .sign-pdf-tool__editor, .sign-pdf-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .sign-pdf-tool__editor { display: grid; gap: var(--space-4); }
+  .sign-pdf-tool__bar { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
+  .sign-pdf-tool__pages-summary, .sign-pdf-tool__preview-note { margin: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .sign-pdf-tool__preview-note:empty { display: none; }
+  .sign-pdf-tool__disclaimer, .sign-pdf-tool__result-disclaimer { margin: 0 0 var(--space-3); padding: var(--space-2) var(--space-3); border-left: var(--border-strong-width) solid var(--color-amber); color: var(--text-muted); font-size: var(--font-size-sm); }
+  .sign-pdf-tool__disclaimer { margin-bottom: 0; }
+  .sign-pdf-tool__signature, .sign-pdf-tool__controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: var(--space-3); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); align-items: start; }
+  .sign-pdf-tool__control[hidden], .sign-pdf-tool__pad-control[hidden] { display: none; }
+  .sign-pdf-tool__control label, .sign-pdf-tool__pad-label { display: block; margin: 0 0 var(--space-1); font-weight: 700; }
+  .sign-pdf-tool__control input[type='text'], .sign-pdf-tool__control select, .sign-pdf-tool__control input[type='file'] { width: 100%; }
+  .sign-pdf-tool__pad-control { display: grid; gap: var(--space-2); justify-items: start; }
+  .sign-pdf-tool__pad { width: 100%; max-width: 24rem; height: auto; border: var(--border-width) solid var(--border); background: #fff; touch-action: none; cursor: crosshair; }
+  .sign-pdf-tool__slider { display: flex; align-items: center; gap: var(--space-2); }
+  .sign-pdf-tool__slider input { flex: 1; min-width: 0; }
+  .sign-pdf-tool__slider output { min-width: 3.5rem; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-align: right; }
+  .sign-pdf-tool__hint { margin: var(--space-1) 0 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .sign-pdf-tool__actions, .sign-pdf-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .sign-pdf-tool__result h2 { margin-bottom: var(--space-2); }
+  .sign-pdf-tool__result-details { margin-bottom: var(--space-3); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .sign-pdf-tool__preview[hidden], .sign-pdf-tool__preview-error[hidden] { display: none; }
+  .sign-pdf-tool__preview { display: grid; gap: var(--space-2); margin-bottom: var(--space-3); }
+  .sign-pdf-tool__preview-error { margin: 0 0 var(--space-3); color: var(--color-red); font-size: var(--font-size-sm); }
+  .sign-pdf-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .sign-pdf-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+
+  /* The signature over the page. It is placed by its centre, because that is
+     the point a drag moves and the point the writer measures from. */
+  .signature-preview[hidden] { display: none; }
+  .signature-preview__handle { position: absolute; left: var(--signature-left, 50%); top: var(--signature-top, 50%); width: var(--signature-width, 30%); padding: 0; border: 1px dashed var(--color-amber); background: transparent; transform: translate(-50%, -50%); pointer-events: auto; cursor: grab; }
+  .signature-preview__handle:focus-visible { outline: var(--border-strong-width) solid var(--text); outline-offset: 2px; }
+  .signature-preview__handle[data-dragging='true'] { cursor: grabbing; }
+  .signature-preview__image { display: block; width: 100%; height: auto; pointer-events: none; }
+  .signature-preview__text { display: block; color: #0d1740; font-family: 'Times New Roman', Times, serif; font-size: var(--signature-size, 1rem); font-style: italic; line-height: 1; white-space: nowrap; pointer-events: none; }
+  .signature-preview__image[hidden], .signature-preview__text[hidden] { display: none; }
+
+  @media (max-width: 36rem) {
+    .sign-pdf-tool__picker, .sign-pdf-tool__editor, .sign-pdf-tool__result { padding: var(--space-3); }
+  }
+</style>
+
+<script>
+  import { formatFileSize } from '../data/image-compression';
+  import { getPdfPageSelectionErrorMessage, parsePdfPageSelection } from '../data/pdf-to-jpg';
+  import { getPdfPreviewErrorMessage } from '../data/pdf-viewer';
+  import {
+    clampSignaturePlacement,
+    clampSignatureWidth,
+    defaultSignatureKind,
+    defaultSignaturePlacement,
+    describeSignedPages,
+    getSignPdfOpenErrorMessage,
+    getSignatureImageErrorMessage,
+    getSignedPdfFilename,
+    isSignatureKind,
+    moveSignature,
+    resizeSignature,
+    validateDrawnSignature,
+    validateSignPdfPageCount,
+    validateSignPdfSelection,
+    validateSignatureText,
+    type SignaturePlacement,
+  } from '../data/sign-pdf';
+  import type { WatermarkBox } from '../data/watermark-pdf';
+  import { createPdfViewerSurface } from '../scripts/pdf-viewer-surface';
+  import type { LocalPdfDocument } from '../scripts/pdf-rendering';
+
+  const root = document.querySelector<HTMLElement>('[data-sign-pdf-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const editor = root.querySelector<HTMLElement>('[data-editor]');
+    const surfaces = root.querySelectorAll<HTMLElement>('[data-pdf-surface]');
+    const sourceSurfaceRoot = surfaces[0];
+    const resultSurfaceRoot = surfaces[1];
+    const preview = root.querySelector<HTMLElement>('[data-preview]');
+    const handle = root.querySelector<HTMLButtonElement>('[data-handle]');
+    const previewImage = root.querySelector<HTMLImageElement>('[data-preview-image]');
+    const previewText = root.querySelector<HTMLElement>('[data-preview-text]');
+    const previewNote = root.querySelector<HTMLElement>('[data-preview-note]');
+    const pagesSummary = root.querySelector<HTMLElement>('[data-pages-summary]');
+    const kindField = root.querySelector<HTMLSelectElement>('[data-kind]');
+    const padControl = root.querySelector<HTMLElement>('[data-pad-control]');
+    const pad = root.querySelector<HTMLCanvasElement>('[data-pad]');
+    const padClearButton = root.querySelector<HTMLButtonElement>('[data-pad-clear]');
+    const textControl = root.querySelector<HTMLElement>('[data-text-control]');
+    const textField = root.querySelector<HTMLInputElement>('[data-text]');
+    const imageControl = root.querySelector<HTMLElement>('[data-image-control]');
+    const imageInput = root.querySelector<HTMLInputElement>('[data-image-input]');
+    const widthField = root.querySelector<HTMLInputElement>('[data-width]');
+    const widthOutput = root.querySelector<HTMLOutputElement>('[data-width-output]');
+    const pagesField = root.querySelector<HTMLInputElement>('[data-pages]');
+    const applyButton = root.querySelector<HTMLButtonElement>('[data-apply]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const resetButton = root.querySelector<HTMLButtonElement>('[data-reset]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultTitle = root.querySelector<HTMLElement>('[data-result-title]');
+    const resultDetails = root.querySelector<HTMLElement>('[data-result-details]');
+    const resultPreview = root.querySelector<HTMLElement>('[data-result-preview]');
+    const previewError = root.querySelector<HTMLElement>('[data-preview-error]');
+    const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !sourceSurfaceRoot || !resultSurfaceRoot || !preview || !handle || !previewImage || !previewText || !previewNote || !pagesSummary || !kindField || !padControl || !pad || !padClearButton || !textControl || !textField || !imageControl || !imageInput || !widthField || !widthOutput || !pagesField || !applyButton || !clearButton || !resetButton || !result || !resultTitle || !resultDetails || !resultPreview || !previewError || !download || !resultClearButton) {
+      throw new Error('Sign PDF tool could not initialise.');
+    }
+
+    let openFile: File | undefined;
+    let openDocument: LocalPdfDocument | undefined;
+    let pageCount = 0;
+    let currentPage = 1;
+    /**
+     * The page on screen, as the visitor sees it.
+     *
+     * pdf.js reports a page's size with its own rotation already applied, so
+     * this is the visible box and the placement needs no correction here. The
+     * writer applies that, against the unrotated page pdf-lib draws into.
+     */
+    let pageBox: WatermarkBox = { width: 0, height: 0 };
+    let placement: SignaturePlacement = defaultSignaturePlacement;
+    /** The signature's own shape, which decides how tall the placement is. */
+    let signatureAspect = 3;
+    let strokeCount = 0;
+    let signatureImage: { readonly file: File; readonly width: number; readonly height: number; readonly url: string } | undefined;
+    let isWriting = false;
+    let resultUrl: string | undefined;
+
+    const sourceSurface = createPdfViewerSurface(sourceSurfaceRoot, {
+      onPageChange: (pageNumber) => {
+        currentPage = pageNumber;
+        void measurePage();
+      },
+    });
+    const resultSurface = createPdfViewerSurface(resultSurfaceRoot);
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+
+    const currentKind = () => (isSignatureKind(kindField.value) ? kindField.value : defaultSignatureKind);
+    const currentWidth = () => clampSignatureWidth(Number(widthField.value) / 100);
+    /** Empty means the page on screen: the common case is one signature, once. */
+    const currentPages = () =>
+      pagesField.value.trim() === '' ? [currentPage] : parsePdfPageSelection(pagesField.value, pageCount);
+
+    const releaseImage = () => {
+      if (signatureImage) URL.revokeObjectURL(signatureImage.url);
+      signatureImage = undefined;
+    };
+
+    const resetResult = () => {
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      resultUrl = undefined;
+      resultSurface.reset();
+      resultPreview.hidden = true;
+      previewError.hidden = true;
+      result.hidden = true;
+      resultDetails.textContent = '';
+      download.removeAttribute('href');
+      download.removeAttribute('download');
+    };
+
+    const padContext = () => {
+      const context = pad.getContext('2d');
+
+      if (context) {
+        context.lineWidth = 4;
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+        context.strokeStyle = '#0d1740';
+      }
+
+      return context;
+    };
+
+    const clearPad = () => {
+      const context = pad.getContext('2d');
+
+      context?.clearRect(0, 0, pad.width, pad.height);
+      strokeCount = 0;
+    };
+
+    /**
+     * The drawing, cropped to the ink in it.
+     *
+     * A pad is mostly empty, and a signature placed as the whole pad would sit
+     * in the middle of a wide transparent box rather than where it was put. So
+     * what leaves here is the ink's own box, which is also the shape the
+     * placement is measured against.
+     */
+    const readPadInk = (): { readonly canvas: HTMLCanvasElement; readonly width: number; readonly height: number } | undefined => {
+      const context = pad.getContext('2d');
+
+      if (!context || strokeCount === 0) return undefined;
+
+      const { data } = context.getImageData(0, 0, pad.width, pad.height);
+      let left = pad.width;
+      let top = pad.height;
+      let right = -1;
+      let bottom = -1;
+
+      for (let y = 0; y < pad.height; y += 1) {
+        for (let x = 0; x < pad.width; x += 1) {
+          if (data[(y * pad.width + x) * 4 + 3] > 8) {
+            if (x < left) left = x;
+            if (x > right) right = x;
+            if (y < top) top = y;
+            if (y > bottom) bottom = y;
+          }
+        }
+      }
+
+      if (right < left || bottom < top) return undefined;
+
+      // A little room around the ink, so a stroke is not cut off at its own edge.
+      const padding = 8;
+      const x = Math.max(0, left - padding);
+      const y = Math.max(0, top - padding);
+      const width = Math.min(pad.width, right + padding) - x;
+      const height = Math.min(pad.height, bottom + padding) - y;
+      const cropped = document.createElement('canvas');
+
+      cropped.width = width;
+      cropped.height = height;
+      cropped.getContext('2d')?.drawImage(pad, x, y, width, height, 0, 0, width, height);
+
+      return { canvas: cropped, width, height };
+    };
+
+    /** The signature's aspect, which is whatever it is made of. */
+    const measureSignature = () => {
+      const kind = currentKind();
+
+      if (kind === 'image' && signatureImage) {
+        signatureAspect = signatureImage.width / Math.max(1, signatureImage.height);
+        return;
+      }
+
+      if (kind === 'drawn') {
+        const ink = readPadInk();
+
+        if (ink) signatureAspect = ink.width / Math.max(1, ink.height);
+        return;
+      }
+
+      if (kind === 'typed') {
+        const box = previewText.getBoundingClientRect();
+
+        if (box.width > 0 && box.height > 0) signatureAspect = box.width / box.height;
+      }
+    };
+
+    /** The page currently on screen, measured as the visitor sees it. */
+    const measurePage = async () => {
+      if (!openDocument) return;
+
+      try {
+        const size = await openDocument.getPageSize(currentPage);
+
+        pageBox = { width: size.width, height: size.height };
+      } catch {
+        pageBox = { width: 0, height: 0 };
+      }
+
+      renderControls();
+      renderPreview();
+    };
+
+    /**
+     * Draws the signature over the page.
+     *
+     * The placement is a pair of fractions of the visible page, so the overlay
+     * is those fractions and nothing else: whatever size the page is drawn at,
+     * the signature is in the same place on it as it will be in the document.
+     */
+    const renderPreview = () => {
+      const pages = currentPages();
+      const kind = currentKind();
+      const hasSignature = kind === 'typed' ? textField.value.trim() !== '' : kind === 'drawn' ? strokeCount > 0 : Boolean(signatureImage);
+
+      // A page nobody asked to sign shows no signature, and neither does a
+      // signature that has not been made yet.
+      if (pageBox.width <= 0 || !hasSignature || (pages && !pages.includes(currentPage))) {
+        preview.hidden = true;
+        return;
+      }
+
+      preview.hidden = false;
+      placement = clampSignaturePlacement({ ...placement, width: currentWidth() }, signatureAspect, pageBox);
+      handle.style.setProperty('--signature-left', `${placement.x * 100}%`);
+      handle.style.setProperty('--signature-top', `${placement.y * 100}%`);
+      handle.style.setProperty('--signature-width', `${placement.width * 100}%`);
+
+      if (kind === 'typed') {
+        previewImage.hidden = true;
+        previewText.hidden = false;
+        previewText.textContent = textField.value;
+
+        // The typed signature is the words scaled to the width the visitor set,
+        // which is exactly what the writer does with the same face.
+        const canvas = sourceSurfaceRoot.querySelector<HTMLCanvasElement>('[data-page-canvas]');
+        const drawnWidth = canvas?.getBoundingClientRect().width ?? 0;
+
+        if (drawnWidth > 0) {
+          const nominal = 48;
+
+          previewText.style.setProperty('--signature-size', `${nominal}px`);
+
+          const measured = previewText.getBoundingClientRect().width;
+
+          if (measured > 0) {
+            previewText.style.setProperty('--signature-size', `${(nominal * placement.width * drawnWidth) / measured}px`);
+          }
+        }
+
+        measureSignature();
+        return;
+      }
+
+      previewText.hidden = true;
+      previewImage.hidden = false;
+
+      if (kind === 'image' && signatureImage) {
+        previewImage.src = signatureImage.url;
+      } else if (kind === 'drawn') {
+        const ink = readPadInk();
+
+        if (ink) previewImage.src = ink.canvas.toDataURL('image/png');
+      }
+    };
+
+    /** The controls that belong to the kind of signature chosen, and only those. */
+    const renderControls = () => {
+      const kind = currentKind();
+
+      padControl.hidden = kind !== 'drawn';
+      textControl.hidden = kind !== 'typed';
+      imageControl.hidden = kind !== 'image';
+      widthOutput.textContent = `${Math.round(currentWidth() * 100)}%`;
+
+      const pages = currentPages();
+
+      pagesSummary.textContent = pages ? describeSignedPages(pages, pageCount) : '';
+      previewNote.textContent =
+        pages && !pages.includes(currentPage)
+          ? `Page ${currentPage} is not in the selection, so it gets no signature.`
+          : '';
+    };
+
+    const update = () => {
+      resetResult();
+      clearError();
+      measureSignature();
+      renderControls();
+      renderPreview();
+    };
+
+    const resetTool = () => {
+      openFile = undefined;
+      openDocument = undefined;
+      pageCount = 0;
+      currentPage = 1;
+      pageBox = { width: 0, height: 0 };
+      placement = defaultSignaturePlacement;
+      releaseImage();
+      clearPad();
+      sourceSurface.reset();
+      fileInput.value = '';
+      imageInput.value = '';
+      textField.value = '';
+      pagesField.value = '';
+      widthField.value = String(Math.round(defaultSignaturePlacement.width * 100));
+      preview.hidden = true;
+      editor.hidden = true;
+      dropZone.hidden = false;
+      resetResult();
+      clearError();
+      clearStatus();
+      renderControls();
+    };
+
+    const chooseFile = async (file: File | undefined) => {
+      resetTool();
+      if (!file) return;
+
+      const problem = validateSignPdfSelection([file]);
+      if (problem) {
+        showError(problem);
+        return;
+      }
+
+      dropZone.hidden = true;
+      showStatus('Reading the PDF locally…');
+      await nextPaint();
+
+      try {
+        // pdf.js arrives only once a document is actually being opened: it
+        // draws the page the signature is placed on, and putting the signature
+        // into the document is pdf-lib's job.
+        const { openLocalPdf } = await import('../scripts/pdf-rendering');
+        const opened = await openLocalPdf(file, { getErrorMessage: getSignPdfOpenErrorMessage });
+        const countProblem = validateSignPdfPageCount(opened.pageCount);
+
+        if (countProblem) {
+          await opened.close().catch(() => undefined);
+          throw new Error(countProblem);
+        }
+
+        openFile = file;
+        openDocument = opened;
+        pageCount = opened.pageCount;
+        currentPage = 1;
+        editor.hidden = false;
+        clearStatus();
+        renderControls();
+
+        await sourceSurface.show(opened, `${file.name} · ${formatFileSize(file.size)} · ${pageCount} pages`);
+        await measurePage();
+      } catch (caughtError) {
+        openFile = undefined;
+        openDocument = undefined;
+        editor.hidden = true;
+        dropZone.hidden = false;
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : getSignPdfOpenErrorMessage(undefined));
+      }
+    };
+
+    /** Reads the picture far enough to know its shape, which sizes the signature. */
+    const chooseImage = async (file: File | undefined) => {
+      releaseImage();
+
+      if (!file) {
+        update();
+        return;
+      }
+
+      const url = URL.createObjectURL(file);
+
+      try {
+        const image = new Image();
+
+        await new Promise<void>((resolve, reject) => {
+          image.addEventListener('load', () => resolve(), { once: true });
+          image.addEventListener('error', () => reject(new Error('unreadable')), { once: true });
+          image.src = url;
+        });
+
+        // A file the browser will not decode reaches `load` with no dimensions
+        // on some browsers rather than failing outright, and a signature with
+        // no size is one the writer would be asked to draw and could not.
+        if (image.naturalWidth < 1 || image.naturalHeight < 1) throw new Error('unreadable');
+
+        signatureImage = { file, width: image.naturalWidth, height: image.naturalHeight, url };
+        update();
+      } catch {
+        URL.revokeObjectURL(url);
+        showError(getSignatureImageErrorMessage(file.name));
+      }
+    };
+
+    /** Where a pointer is on the drawn page, as fractions of it. */
+    const pointOnPage = (event: PointerEvent) => {
+      const overlay = handle.parentElement?.parentElement;
+      const box = overlay?.getBoundingClientRect();
+
+      if (!box || box.width <= 0 || box.height <= 0) return undefined;
+
+      return { x: (event.clientX - box.left) / box.width, y: (event.clientY - box.top) / box.height };
+    };
+
+    let dragFrom: { readonly x: number; readonly y: number } | undefined;
+
+    const startDrag = (event: PointerEvent) => {
+      const point = pointOnPage(event);
+
+      if (!point) return;
+
+      dragFrom = point;
+      handle.dataset.dragging = 'true';
+      handle.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    };
+
+    const continueDrag = (event: PointerEvent) => {
+      if (!dragFrom) return;
+
+      const point = pointOnPage(event);
+
+      if (!point) return;
+
+      placement = moveSignature(placement, { x: point.x - dragFrom.x, y: point.y - dragFrom.y }, signatureAspect, pageBox);
+      dragFrom = point;
+      resetResult();
+      renderPreview();
+    };
+
+    const endDrag = (event: PointerEvent) => {
+      if (!dragFrom) return;
+
+      dragFrom = undefined;
+      delete handle.dataset.dragging;
+      handle.releasePointerCapture(event.pointerId);
+    };
+
+    /** The same placement, from the keyboard: a step is one percent of the page. */
+    const nudge = (event: KeyboardEvent) => {
+      const step = event.shiftKey ? 0.05 : 0.01;
+      const moves: Record<string, { readonly x: number; readonly y: number }> = {
+        ArrowLeft: { x: -step, y: 0 },
+        ArrowRight: { x: step, y: 0 },
+        ArrowUp: { x: 0, y: -step },
+        ArrowDown: { x: 0, y: step },
+      };
+      const move = moves[event.key];
+
+      if (move) {
+        placement = moveSignature(placement, move, signatureAspect, pageBox);
+      } else if (event.key === '+' || event.key === '=' || event.key === '-') {
+        placement = resizeSignature(placement, event.key === '-' ? -0.02 : 0.02, signatureAspect, pageBox);
+        widthField.value = String(Math.round(placement.width * 100));
+      } else {
+        return;
+      }
+
+      event.preventDefault();
+      resetResult();
+      renderControls();
+      renderPreview();
+    };
+
+    const apply = async () => {
+      if (!openFile || isWriting) return;
+
+      const pages = currentPages();
+
+      if (!pages) {
+        resetResult();
+        showError(getPdfPageSelectionErrorMessage(pageCount));
+        return;
+      }
+
+      const kind = currentKind();
+      let content: { kind: 'text'; text: string } | { kind: 'image'; source: { file: File; width: number; height: number } };
+
+      if (kind === 'typed') {
+        const textProblem = validateSignatureText(textField.value);
+
+        if (textProblem) {
+          resetResult();
+          showError(textProblem);
+          return;
+        }
+
+        content = { kind: 'text', text: textField.value.trim() };
+      } else if (kind === 'image') {
+        if (!signatureImage) {
+          resetResult();
+          showError('Choose the picture of your signature.');
+          return;
+        }
+
+        content = {
+          kind: 'image',
+          source: { file: signatureImage.file, width: signatureImage.width, height: signatureImage.height },
+        };
+      } else {
+        const drawnProblem = validateDrawnSignature(strokeCount);
+        const ink = drawnProblem ? undefined : readPadInk();
+
+        if (drawnProblem || !ink) {
+          resetResult();
+          showError(drawnProblem ?? 'Draw your signature in the box first.');
+          return;
+        }
+
+        const blob = await new Promise<Blob | null>((resolve) => ink.canvas.toBlob(resolve, 'image/png'));
+
+        if (!blob) {
+          resetResult();
+          showError('This browser could not read the drawing back. Try typing a signature instead.');
+          return;
+        }
+
+        content = {
+          kind: 'image',
+          source: {
+            file: new File([blob], 'signature.png', { type: 'image/png' }),
+            width: ink.width,
+            height: ink.height,
+          },
+        };
+      }
+
+      isWriting = true;
+      clearError();
+      resetResult();
+      applyButton.disabled = true;
+      applyButton.textContent = 'Signing…';
+
+      try {
+        // pdf-lib draws the signature. It is loaded here rather than up front
+        // for the same reason pdf.js is: a visitor who only opens the page
+        // needs neither.
+        const { openLocalPdfForSigning, signLocalPdf } = await import('../scripts/pdf-generation');
+
+        showStatus('Reading the document locally…');
+        await nextPaint();
+
+        const source = await openLocalPdfForSigning(openFile);
+        const signed = await signLocalPdf(source, content, {
+          pages,
+          placement: clampSignaturePlacement(placement, signatureAspect, pageBox),
+          onPage: async (position, total) => {
+            showStatus(`Signing page ${position} of ${total} locally…`);
+            await nextPaint();
+          },
+        });
+        const filename = getSignedPdfFilename(openFile.name);
+
+        resultUrl = URL.createObjectURL(signed);
+        resultTitle.textContent = 'Your signed PDF is ready.';
+        resultDetails.textContent = `${describeSignedPages(pages, pageCount)} · ${formatFileSize(signed.size)}`;
+        download.href = resultUrl;
+        download.download = filename;
+        download.textContent = `Download ${filename}`;
+        download.setAttribute('aria-label', `Download ${filename}`);
+        result.hidden = false;
+        clearStatus();
+
+        // The panel is complete before the preview is drawn, so the download is
+        // there to be used whether or not the drawing succeeds.
+        try {
+          const { openLocalPdf } = await import('../scripts/pdf-rendering');
+          const opened = await openLocalPdf(signed);
+
+          resultPreview.hidden = false;
+          await resultSurface.show(opened, `${filename} · ${formatFileSize(signed.size)}`);
+        } catch {
+          resultPreview.hidden = true;
+          previewError.textContent = getPdfPreviewErrorMessage();
+          previewError.hidden = false;
+        }
+      } catch (caughtError) {
+        resetResult();
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : 'This PDF could not be signed.');
+      } finally {
+        isWriting = false;
+        applyButton.disabled = false;
+        applyButton.textContent = 'Sign the PDF';
+      }
+    };
+
+    let drawing = false;
+
+    const padPoint = (event: PointerEvent) => {
+      const box = pad.getBoundingClientRect();
+
+      return {
+        x: ((event.clientX - box.left) / box.width) * pad.width,
+        y: ((event.clientY - box.top) / box.height) * pad.height,
+      };
+    };
+
+    pad.addEventListener('pointerdown', (event) => {
+      const context = padContext();
+
+      if (!context) return;
+
+      drawing = true;
+      strokeCount += 1;
+      pad.setPointerCapture(event.pointerId);
+      context.beginPath();
+
+      const point = padPoint(event);
+
+      context.moveTo(point.x, point.y);
+      // A tap is a dot rather than nothing: a signature has them.
+      context.lineTo(point.x + 0.01, point.y);
+      context.stroke();
+      event.preventDefault();
+    });
+
+    pad.addEventListener('pointermove', (event) => {
+      if (!drawing) return;
+
+      const context = padContext();
+
+      if (!context) return;
+
+      const point = padPoint(event);
+
+      context.lineTo(point.x, point.y);
+      context.stroke();
+    });
+
+    for (const eventName of ['pointerup', 'pointercancel', 'pointerleave']) {
+      pad.addEventListener(eventName, () => {
+        if (!drawing) return;
+
+        drawing = false;
+        update();
+      });
+    }
+
+    padClearButton.addEventListener('click', () => {
+      clearPad();
+      update();
+    });
+
+    handle.addEventListener('pointerdown', startDrag);
+    handle.addEventListener('pointermove', continueDrag);
+    handle.addEventListener('pointerup', endDrag);
+    handle.addEventListener('pointercancel', endDrag);
+    handle.addEventListener('keydown', nudge);
+    handle.addEventListener('click', (event) => event.preventDefault());
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void chooseFile(fileInput.files?.[0]));
+    imageInput.addEventListener('change', () => void chooseImage(imageInput.files?.[0]));
+    clearButton.addEventListener('click', resetTool);
+    resetButton.addEventListener('click', resetTool);
+    resultClearButton.addEventListener('click', resetTool);
+    applyButton.addEventListener('click', () => void apply());
+    kindField.addEventListener('change', update);
+
+    for (const field of [textField, pagesField]) {
+      field.addEventListener('input', update);
+    }
+
+    widthField.addEventListener('input', () => {
+      placement = resizeSignature(placement, currentWidth() - placement.width, signatureAspect, pageBox);
+      update();
+    });
+
+    // The page is redrawn at whatever size the column gives it, and a typed
+    // signature is scaled against that width, so it is measured again.
+    window.addEventListener('resize', renderPreview);
+
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    }
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    }
+    dropZone.addEventListener('drop', (event) => void chooseFile(event.dataTransfer?.files[0]));
+
+    renderControls();
+  }
+</script>
