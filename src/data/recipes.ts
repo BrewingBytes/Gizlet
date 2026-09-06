@@ -34,6 +34,16 @@ import {
   type PdfPageSizeName,
 } from './jpg-to-pdf';
 import {
+  defaultPageNumberFormat,
+  defaultPageNumberPosition,
+  isPageNumberFormat,
+  isPageNumberPosition,
+  pageNumberFormats,
+  pageNumberPositions,
+  type PageNumberFormat,
+  type PageNumberPosition,
+} from './pdf-page-numbers';
+import {
   defaultWatermarkOpacity,
   defaultWatermarkPosition,
   defaultWatermarkWord,
@@ -88,6 +98,8 @@ export interface RecipeStep {
   readonly ratio?: FlowCropAspectRatioName;
   readonly layout?: CollageLayoutName;
   readonly turn?: OrientationPresetName;
+  readonly numberFormat?: PageNumberFormat;
+  readonly numberPosition?: PageNumberPosition;
   readonly canvasWidth?: number;
   readonly canvasHeight?: number;
   readonly fit?: BackgroundFit;
@@ -203,6 +215,11 @@ const recipeStepSettings = {
   // this format carries is a whole number or a name from a closed list, which
   // is exactly what stops a shared flow from carrying something somebody typed.
   'watermark-pdf': { w: watermarkWords, p: watermarkPositions, o: 'number' },
+  // A link carries how the numbers read and where they sit. What it cannot
+  // carry is a range or a skip: a chain applies to whatever document reaches
+  // it, and a page selection written for one document is a wrong answer about
+  // the next. A shared numbering numbers everything, from one.
+  'pdf-page-numbers': { f: pageNumberFormats, p: pageNumberPositions },
 } as const satisfies Record<RecipeToolSlug, Readonly<Record<string, 'number' | readonly string[]>>>;
 
 const recipeToolSlugs = Object.keys(recipeStepSettings) as readonly RecipeToolSlug[];
@@ -376,6 +393,17 @@ function buildStep(
     if (strength < minimumWatermarkOpacity || strength > maximumWatermarkOpacity) return undefined;
 
     return { toolSlug, word, markPosition, strength };
+  }
+
+  if (toolSlug === 'pdf-page-numbers') {
+    const numberFormat = Object.hasOwn(settings, 'f') ? String(settings.f) : defaultPageNumberFormat;
+    const numberPosition = Object.hasOwn(settings, 'p')
+      ? String(settings.p)
+      : defaultPageNumberPosition;
+
+    if (!isPageNumberFormat(numberFormat) || !isPageNumberPosition(numberPosition)) return undefined;
+
+    return { toolSlug, numberFormat, numberPosition };
   }
 
   if (toolSlug === 'organize-pdf') {
@@ -591,6 +619,15 @@ export function encodeRecipe(recipe: Recipe): string | undefined {
       if (strength < minimumWatermarkOpacity || strength > maximumWatermarkOpacity) return undefined;
 
       settings.push(`w=${word}`, `p=${markPosition}`, `o=${strength}`);
+    }
+
+    if (step.toolSlug === 'pdf-page-numbers') {
+      const numberFormat = step.numberFormat ?? defaultPageNumberFormat;
+      const numberPosition = step.numberPosition ?? defaultPageNumberPosition;
+
+      if (!isPageNumberFormat(numberFormat) || !isPageNumberPosition(numberPosition)) return undefined;
+
+      settings.push(`f=${numberFormat}`, `p=${numberPosition}`);
     }
 
     if (step.toolSlug === 'organize-pdf') {

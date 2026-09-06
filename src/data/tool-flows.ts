@@ -170,6 +170,11 @@ export const toolFlowRegistry = [
     input: pdfPayload,
     output: pdfPayload,
   },
+  {
+    toolSlug: 'pdf-page-numbers',
+    input: pdfPayload,
+    output: pdfPayload,
+  },
 ] as const satisfies readonly ToolFlowDefinition[];
 
 /**

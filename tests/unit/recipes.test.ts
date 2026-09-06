@@ -321,6 +321,37 @@ describe('a background in a recipe', () => {
   });
 });
 
+describe('page numbers in a recipe', () => {
+  it('carries how the numbers read and where they sit', () => {
+    const encoded = encodeRecipe({
+      category: 'pdf',
+      steps: [{ toolSlug: 'pdf-page-numbers', numberFormat: 'page-number-of', numberPosition: 'top-right' }],
+    });
+
+    expect(encoded).toBe('#r=v1;c=pdf;pdf-page-numbers:f=page-number-of,p=top-right');
+    expect(decodeRecipe(encoded ?? '')?.steps).toEqual([
+      { toolSlug: 'pdf-page-numbers', numberFormat: 'page-number-of', numberPosition: 'top-right' },
+    ]);
+  });
+
+  it('defaults what a link does not name', () => {
+    expect(encodeRecipe({ category: 'pdf', steps: [{ toolSlug: 'pdf-page-numbers' }] })).toBe(
+      '#r=v1;c=pdf;pdf-page-numbers:f=number,p=bottom',
+    );
+    expect(decodeRecipe('#r=v1;c=pdf;pdf-page-numbers')?.steps).toEqual([
+      { toolSlug: 'pdf-page-numbers', numberFormat: 'number', numberPosition: 'bottom' },
+    ]);
+  });
+
+  it('carries no range and no skip, because a chain does not know the document', () => {
+    // A page selection written for one document is a wrong answer about the
+    // next one, so the format has no key for it at all.
+    expect(decodeRecipe('#r=v1;c=pdf;pdf-page-numbers:pages=2-9')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;c=pdf;pdf-page-numbers:s=2')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;c=pdf;pdf-page-numbers:f=roman')).toBeUndefined();
+  });
+});
+
 describe('the settings-only guarantee', () => {
   it('cannot emit a value that would break out of its own delimiters', () => {
     // Every whitelisted value is a whole number or a closed enum, which is why

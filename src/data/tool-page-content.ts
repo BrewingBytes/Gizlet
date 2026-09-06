@@ -827,6 +827,93 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'pdf-page-numbers': {
+    what: {
+      heading: 'What PDF Page Numbers does',
+      paragraphs: [
+        'PDF Page Numbers writes numbers onto the pages of a document that arrived without them. Choose the format, where on the page they sit, how big they are and how far in from the edge, then which pages get one and what the first number is.',
+        'The pages are drawn onto rather than rebuilt, so everything already on them is untouched and nothing is re-encoded. The preview shows the number over the page it will be written onto, placed by the same function that writes it, so what you are looking at is where it lands.',
+      ],
+    },
+    when: {
+      heading: 'When a document needs numbering',
+      paragraphs: [
+        'When it is going to be printed and read on paper, where a dropped page is otherwise unrecoverable; when it is going to be discussed by page — a contract, a submission, a report someone will cite; or when it was assembled from several documents and the numbering it had no longer means anything.',
+        'It is the step after Merge PDF and Organize PDF, which is why it exists as its own Gizlet: the numbering has to happen once the pages are in their final order, not before.',
+      ],
+    },
+    options: {
+      heading: 'What each numbering control does',
+      paragraphs: ['Seven settings, and the three about counting are the ones with rules worth knowing.'],
+      details: [
+        {
+          term: 'Format',
+          description:
+            'A bare number, "Page 3", "3 of 12", or "Page 3 of 12". The two that name a total work it out rather than taking one from you, because a typed total is a total that can be wrong.',
+        },
+        {
+          term: 'Position, size and margin',
+          description:
+            'Six places, all of them edges — a page number in the middle of the page is not a page number. The margin is the gap from the edge in points, which is what a printer means by a margin; 36 points is half an inch. A page carrying its own rotation is corrected for, so a sideways page gets its number where you can read it.',
+        },
+        {
+          term: 'Start at',
+          description:
+            'The number printed on the first numbered page. Everything after it counts up by one. Useful when a document is one part of something longer and its first page is really page 47.',
+        },
+        {
+          term: 'Skip the first',
+          description:
+            'Pages at the front that get no number at all: a cover, a title page, a contents page. They are left exactly as they were, and the numbering starts after them.',
+        },
+        {
+          term: 'Pages',
+          description:
+            'A range, such as 2-9, narrowing which pages are numbered. Skipping and the range compose: the skipped pages go first, the range narrows what is left, and the numbering then counts across whatever survived.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'Written here, on your device',
+      paragraphs: [
+        'The document is read, the numbers are drawn onto its pages, and the new file is written entirely by this browser. Gizlet is a static site with no upload endpoint, so there is nowhere for a document to be sent, and nothing is kept once the tab closes.',
+        'The documents that need numbering are the ones being submitted, signed or filed, which is exactly the category that should not be uploaded to a stranger to have a number put in the corner.',
+        'Your original file is not modified: the numbered document is a new file handed to your downloads, and the one on your device is the one that was there before.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Is my PDF uploaded to number it?',
+        answer:
+          'No. It is read and written by this browser, and the numbered copy goes straight to your downloads. There is no upload endpoint behind this page.',
+      },
+      {
+        question: 'How do I leave the cover page unnumbered?',
+        answer:
+          'Set "Skip the first" to 1. The cover is left exactly as it was and the numbering starts on the next page — which, with "Start at" on 1, is page 1.',
+      },
+      {
+        question: 'What does the total in "3 of 12" count?',
+        answer:
+          'The numbers actually printed, not the document’s page count. If two pages at the front are unnumbered, the last printed number is 10, and the numbers say "of 10" — a reader counting the numbered pages gets the same answer.',
+      },
+      {
+        question: 'Can I start numbering at something other than 1?',
+        answer:
+          'Yes. "Start at" is the number on the first numbered page, and everything after it counts up. A chapter that begins at 47 numbers 47, 48, 49 and so on.',
+      },
+      {
+        question: 'Does numbering change the rest of the document?',
+        answer:
+          'No. The numbers are drawn onto the existing pages, so text stays selectable, images are not re-encoded, and nothing is rebuilt. Only the numbers are added.',
+      },
+      {
+        question: 'Can it number a password-protected PDF?',
+        answer:
+          'No. A protected document cannot be read without its password, and this Gizlet does not ask for one. Open it in an application that can, save an unlocked copy, and number that.',
+      },
+    ],
+  },
   'json-ld-generator': {
     what: {
       heading: 'What the JSON-LD Generator does',

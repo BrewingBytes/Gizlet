@@ -523,8 +523,12 @@ export const toolRegistry = [
       "bates numbering",
       "footer page number",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "One PDF file; a number format, a position, a size, a margin, the number to start at, how many pages to skip at the front, and optionally a range of pages. A password-protected PDF is refused rather than numbered.",
+      output: "The same PDF with numbers drawn onto the pages named. The pages are drawn onto rather than rebuilt, so nothing already on them is re-encoded, and a total such as \"of 12\" counts the numbers actually printed rather than the document's pages.",
+    },
   },
   {
     id: 22,
