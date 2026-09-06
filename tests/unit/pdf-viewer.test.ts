@@ -7,12 +7,16 @@ import {
   describePdfPagePosition,
   describePdfZoom,
   getNextPdfZoom,
+  describePdfFullscreenState,
   getPdfFitScale,
+  getPdfFullscreenLabel,
+  getPdfFullscreenMode,
   getPdfOpenErrorMessage,
   getPdfPageErrorMessage,
   getPdfPreviewErrorMessage,
   getPdfRenderScale,
   isLargePdfViewerDocument,
+  isPdfFullscreenExitKey,
   isPdfZoom,
   isSupportedPdfFile,
   largePdfViewerPages,
@@ -189,6 +193,31 @@ describe('render scale', () => {
   it('caps the scale a page is ever drawn at, whatever the zoom asks for', () => {
     expect(getPdfRenderScale(400, 800, 3)).toBe(maximumPdfRenderScale);
     expect(getPdfRenderScale(100, 100_000, 3)).toBe(maximumPdfRenderScale);
+  });
+});
+
+describe('filling the screen', () => {
+  it('uses the browser\u2019s own fullscreen when there is one, and its own when there is not', () => {
+    expect(getPdfFullscreenMode(true)).toBe('native');
+    expect(getPdfFullscreenMode(false)).toBe('in-page');
+  });
+
+  it('labels the control with what it will do rather than where you are', () => {
+    expect(getPdfFullscreenLabel(false)).toBe('Full screen');
+    expect(getPdfFullscreenLabel(true)).toBe('Leave full screen');
+  });
+
+  it('says out loud that the page moved, and how to get back', () => {
+    // Entering fullscreen replaces what a screen reader was reading, so the
+    // way out is part of the announcement rather than something to discover.
+    expect(describePdfFullscreenState(true)).toMatch(/Escape/);
+    expect(describePdfFullscreenState(false)).toBe('Back to the page.');
+  });
+
+  it('leaves the in-page fullscreen on Escape and nothing else', () => {
+    expect(isPdfFullscreenExitKey('Escape')).toBe(true);
+    expect(isPdfFullscreenExitKey('Enter')).toBe(false);
+    expect(isPdfFullscreenExitKey('f')).toBe(false);
   });
 });
 

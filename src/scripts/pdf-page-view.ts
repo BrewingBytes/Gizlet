@@ -60,6 +60,13 @@ export interface PdfPageView {
    */
   show(document: LocalPdfDocument): Promise<void>;
   goToPage(pageNumber: number): void;
+  /**
+   * Draws the current page again, for when the space it is drawn into changed
+   * size rather than the page changing. Entering fullscreen is that: the same
+   * page, the same zoom, a wider column, and a canvas that has to be redrawn
+   * at the new scale rather than stretched.
+   */
+  redraw(): void;
   /** Closes the document and empties the canvas. */
   reset(): void;
 }
@@ -184,6 +191,9 @@ export function createPdfPageView(options: PdfPageViewOptions): PdfPageView {
       await renderCurrentPage();
     },
     goToPage,
+    redraw() {
+      void renderCurrentPage();
+    },
     reset() {
       closeDocument();
       pageCount = 0;

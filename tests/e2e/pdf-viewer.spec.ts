@@ -144,3 +144,79 @@ test("refuses a file that is not a PDF and one it cannot decode", async ({ page 
   await expect(page.locator("[data-page-total]")).toHaveText("of 2");
   await expect(page.getByRole("alert")).toBeHidden();
 });
+
+test("fills the screen and comes back with the same page and zoom", async ({
+  page,
+}) => {
+  await page.goto("/tools/pdf-viewer/");
+  await openPdf(page, await samplePdf(4));
+  await expect.poll(() => paintedPixels(page)).toBeGreaterThan(500);
+
+  const viewer = page.getByRole("region", { name: "PDF reader" });
+  const fullscreen = page.getByRole("button", { name: "Full screen" });
+
+  // Somewhere other than where it opened, so returning to it means something.
+  await page.getByLabel("Go to page").fill("3");
+  await page.getByLabel("Go to page").press("Enter");
+  await page.getByRole("button", { name: "Zoom in" }).click();
+  await expect(page.locator("[data-zoom-level]")).toHaveText("125%");
+
+  await fullscreen.click();
+  await expect(viewer).toHaveAttribute("aria-label", "PDF reader");
+  await expect(
+    page.getByRole("button", { name: "Leave full screen" }),
+  ).toHaveAttribute("aria-pressed", "true");
+
+  // The document did not restart: same page, same zoom, still drawn.
+  await expect(page.getByLabel("Go to page")).toHaveValue("3");
+  await expect(page.locator("[data-zoom-level]")).toHaveText("125%");
+  await expect(page.locator("[data-page-total]")).toHaveText("of 4");
+  await expect.poll(() => paintedPixels(page)).toBeGreaterThan(500);
+
+  // Leaving it is the browser's own exit gesture or this control; the gesture
+  // belongs to the browser, so what is asserted here is the control.
+  await page.getByRole("button", { name: "Leave full screen" }).click();
+
+  await expect(fullscreen).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByLabel("Go to page")).toHaveValue("3");
+  await expect(page.locator("[data-zoom-level]")).toHaveText("125%");
+  await expect.poll(() => paintedPixels(page)).toBeGreaterThan(500);
+
+  // Focus is on the control that opened it, not lost on a layer that went.
+  await expect(fullscreen).toBeFocused();
+});
+
+test("fills the viewport itself when the browser will not", async ({ page }) => {
+  await page.goto("/tools/pdf-viewer/");
+
+  // A browser with no element fullscreen at all, which is most iPhones. The
+  // control must still fill the screen rather than disappear or do nothing.
+  await page.addInitScript(() => {
+    // @ts-expect-error removing the API is the point of this test
+    delete Element.prototype.requestFullscreen;
+  });
+  await page.reload();
+  await openPdf(page, await samplePdf(2));
+  await expect.poll(() => paintedPixels(page)).toBeGreaterThan(500);
+
+  const viewer = page.getByRole("region", { name: "PDF reader" });
+
+  await page.getByRole("button", { name: "Full screen" }).click();
+
+  await expect(viewer).toHaveAttribute("data-fullscreen", "true");
+  await expect(
+    page.getByRole("button", { name: "Leave full screen" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  // It really covers the page rather than merely claiming to.
+  expect(
+    await viewer.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      return box.width >= window.innerWidth && box.height >= window.innerHeight;
+    }),
+  ).toBe(true);
+  await expect.poll(() => paintedPixels(page)).toBeGreaterThan(500);
+
+  await page.keyboard.press("Escape");
+  await expect(viewer).toHaveAttribute("data-fullscreen", "false");
+  await expect(page.getByRole("button", { name: "Full screen" })).toBeFocused();
+});

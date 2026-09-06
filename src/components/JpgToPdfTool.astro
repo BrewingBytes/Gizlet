@@ -1,4 +1,5 @@
 ---
+import PdfViewerSurface from './PdfViewerSurface.astro';
 import { getPdfPageSizeOptions } from '../data/jpg-to-pdf';
 
 const pageSizeOptions = getPdfPageSizeOptions();
@@ -90,19 +91,7 @@ const pageSizeOptions = getPdfPageSizeOptions();
 
     <div class="jpg-to-pdf-tool__preview" data-preview hidden>
       <p class="metadata">Preview</p>
-      <div class="jpg-to-pdf-tool__preview-page" data-page-area>
-        <canvas data-page-canvas aria-label="Current PDF page"></canvas>
-        <p class="jpg-to-pdf-tool__preview-page-error" data-page-error role="alert" hidden></p>
-      </div>
-      <div class="jpg-to-pdf-tool__pager">
-        <button type="button" class="jpg-to-pdf-tool__icon-button" data-previous aria-label="Previous page">←</button>
-        <label class="jpg-to-pdf-tool__page-field" for="jpg-to-pdf-preview-page">
-          <span>Page</span>
-          <input id="jpg-to-pdf-preview-page" type="text" inputmode="numeric" autocomplete="off" data-page-input aria-label="Go to page" />
-          <span data-page-total></span>
-        </label>
-        <button type="button" class="jpg-to-pdf-tool__icon-button" data-next aria-label="Next page">→</button>
-      </div>
+      <PdfViewerSurface id="jpg-to-pdf-preview" label="The PDF this Gizlet just made" />
     </div>
 
     <p class="jpg-to-pdf-tool__preview-error" data-preview-error role="status" hidden></p>
@@ -118,7 +107,11 @@ const pageSizeOptions = getPdfPageSizeOptions();
   .jpg-to-pdf-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
   .jpg-to-pdf-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
   .jpg-to-pdf-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
-  .jpg-to-pdf-tool__editor[hidden], .jpg-to-pdf-tool__result[hidden], .jpg-to-pdf-tool__note[hidden], .jpg-to-pdf-tool__preview[hidden], .jpg-to-pdf-tool__preview-error[hidden], .jpg-to-pdf-tool__preview-page-error[hidden] { display: none; }
+  .jpg-to-pdf-tool__editor[hidden], .jpg-to-pdf-tool__result[hidden], .jpg-to-pdf-tool__note[hidden], .jpg-to-pdf-tool__preview[hidden], .jpg-to-pdf-tool__preview-error[hidden] { display: none; }
+  /* Still this Gizlet's own: the page list reorders images, which is its job
+     rather than the viewer's. */
+  .jpg-to-pdf-tool__icon-button { min-width: 2.75rem; min-height: 2.75rem; padding: 0; border: var(--border-width) solid var(--border); background: transparent; color: var(--text); font-weight: 700; }
+  .jpg-to-pdf-tool__icon-button:disabled { color: var(--text-muted); opacity: 0.5; }
   .jpg-to-pdf-tool__picker h2 { margin-bottom: var(--space-2); }
   .jpg-to-pdf-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
   .jpg-to-pdf-tool__status, .jpg-to-pdf-tool__error, .jpg-to-pdf-tool__note { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
@@ -137,8 +130,6 @@ const pageSizeOptions = getPdfPageSizeOptions();
   .jpg-to-pdf-tool__page-details strong { overflow-wrap: anywhere; }
   .jpg-to-pdf-tool__page-details span { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
   .jpg-to-pdf-tool__page-actions { display: flex; flex-wrap: wrap; gap: var(--space-1); }
-  .jpg-to-pdf-tool__icon-button { min-width: 2.75rem; min-height: 2.75rem; padding: 0; border: var(--border-width) solid var(--border); background: transparent; color: var(--text); font-weight: 700; }
-  .jpg-to-pdf-tool__icon-button:disabled { color: var(--text-muted); opacity: 0.5; }
   .jpg-to-pdf-tool__remove { min-height: 2.75rem; padding: 0 var(--space-2); border: var(--border-width) solid var(--border); background: transparent; color: var(--text); }
   .jpg-to-pdf-tool__controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-3); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
   .jpg-to-pdf-tool__note { grid-column: 1 / -1; }
@@ -148,13 +139,7 @@ const pageSizeOptions = getPdfPageSizeOptions();
   .jpg-to-pdf-tool__result-details { margin-bottom: var(--space-4); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
   .jpg-to-pdf-tool__preview { display: grid; gap: var(--space-2); margin-bottom: var(--space-4); }
   .jpg-to-pdf-tool__preview .metadata { margin: 0; }
-  .jpg-to-pdf-tool__preview-page { display: grid; justify-items: center; gap: var(--space-2); min-width: 0; padding: var(--space-3); border: var(--border-width) solid var(--border); background: var(--background); overflow: auto; }
-  .jpg-to-pdf-tool__preview-page canvas { display: block; max-width: 100%; max-height: 32rem; height: auto; background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 18%); }
-  .jpg-to-pdf-tool__preview-page-error { margin: 0; color: var(--color-red); font-size: var(--font-size-sm); }
   .jpg-to-pdf-tool__preview-error { margin-bottom: var(--space-4); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--color-warning); color: var(--color-warning); }
-  .jpg-to-pdf-tool__pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-2); }
-  .jpg-to-pdf-tool__page-field { display: flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
-  .jpg-to-pdf-tool__page-field input { width: 4rem; min-height: 2.75rem; text-align: center; font-family: var(--font-mono); }
   .jpg-to-pdf-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
   .jpg-to-pdf-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
   @media (max-width: 36rem) {
@@ -186,7 +171,7 @@ const pageSizeOptions = getPdfPageSizeOptions();
   import { getPdfPreviewErrorMessage } from '../data/pdf-viewer';
   import { loadBrowserImage } from '../scripts/image-processing';
   import { createImagePdf } from '../scripts/pdf-generation';
-  import { createPdfPageView } from '../scripts/pdf-page-view';
+  import { createPdfViewerSurface } from '../scripts/pdf-viewer-surface';
 
   interface PdfPage {
     readonly id: number;
@@ -219,15 +204,9 @@ const pageSizeOptions = getPdfPageSizeOptions();
     const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
     const preview = root.querySelector<HTMLElement>('[data-preview]');
     const previewError = root.querySelector<HTMLElement>('[data-preview-error]');
-    const pageArea = root.querySelector<HTMLElement>('[data-page-area]');
-    const pageCanvas = root.querySelector<HTMLCanvasElement>('[data-page-canvas]');
-    const pageError = root.querySelector<HTMLElement>('[data-page-error]');
-    const previousButton = root.querySelector<HTMLButtonElement>('[data-previous]');
-    const nextButton = root.querySelector<HTMLButtonElement>('[data-next]');
-    const pageInput = root.querySelector<HTMLInputElement>('[data-page-input]');
-    const pageTotal = root.querySelector<HTMLElement>('[data-page-total]');
+    const surfaceRoot = root.querySelector<HTMLElement>('[data-pdf-surface]');
 
-    if (!fileInput || !selectFilesButton || !dropZone || !status || !error || !editor || !pageList || !pageTemplate || !pageSummary || !pageSize || !orientation || !fitNote || !buildButton || !clearButton || !result || !resultDetails || !download || !resultClearButton || !preview || !previewError || !pageArea || !pageCanvas || !pageError || !previousButton || !nextButton || !pageInput || !pageTotal) {
+    if (!fileInput || !selectFilesButton || !dropZone || !status || !error || !editor || !pageList || !pageTemplate || !pageSummary || !pageSize || !orientation || !fitNote || !buildButton || !clearButton || !result || !resultDetails || !download || !resultClearButton || !preview || !previewError || !surfaceRoot) {
       throw new Error('Image to PDF tool could not initialise.');
     }
 
@@ -240,19 +219,12 @@ const pageSizeOptions = getPdfPageSizeOptions();
     let previewToken = 0;
 
     /**
-     * The preview's page turning, shared with the PDF Viewer Gizlet. The page
-     * size was just chosen here, so the page is fitted to its column and there
-     * is nothing to zoom.
+     * The shared PDF surface, showing the document this Gizlet just made. The
+     * page size was chosen here a moment ago, so it is fitted to its column
+     * rather than zoomed — and it is the same reader, with the same fullscreen,
+     * that the PDF Viewer Gizlet is.
      */
-    const pageView = createPdfPageView({
-      pageArea,
-      canvas: pageCanvas,
-      pageError,
-      previousButton,
-      nextButton,
-      pageInput,
-      pageTotal,
-    });
+    const surface = createPdfViewerSurface(surfaceRoot);
 
     const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     const clearError = () => { error.hidden = true; error.textContent = ''; };
@@ -267,7 +239,7 @@ const pageSizeOptions = getPdfPageSizeOptions();
 
     const resetResult = () => {
       previewToken += 1;
-      pageView.reset();
+      surface.reset();
       preview.hidden = true;
       previewError.hidden = true;
       previewError.textContent = '';
@@ -412,7 +384,7 @@ const pageSizeOptions = getPdfPageSizeOptions();
         }
 
         preview.hidden = false;
-        await pageView.show(opened);
+        await surface.show(opened, describePdfPageCount(opened.pageCount));
       } catch {
         if (token !== previewToken) return;
         // A document can be perfectly good even when drawing it is not, so the

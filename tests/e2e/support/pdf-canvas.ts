@@ -1,15 +1,22 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
+
+/**
+ * Where to look for the drawn page. A Gizlet may show two of the shared viewer
+ * at once — a source and a result — so the caller says which one it means by
+ * passing that region rather than the whole page.
+ */
+type CanvasScope = Page | Locator;
 
 /**
  * How much of a drawn PDF page is painted, as a fingerprint of what is on the
  * canvas.
  *
- * Both PDF workspaces draw into `[data-page-canvas]` — the viewer a document
- * that was opened, Image to PDF one that was just built — so a test can tell
- * one page from another by looking at the pixels rather than at the controls.
+ * Every PDF Gizlet draws into the same `[data-page-canvas]`, because they all
+ * show the same shared viewer, so a test can tell one page from another by
+ * looking at the pixels rather than at the controls.
  */
-export const paintedPixels = (page: Page) =>
-  page.locator("[data-page-canvas]").evaluate((canvas) => {
+export const paintedPixels = (scope: CanvasScope) =>
+  scope.locator("[data-page-canvas]").evaluate((canvas) => {
     const element = canvas as HTMLCanvasElement;
     const context = element.getContext("2d");
     if (!context) return 0;
@@ -22,7 +29,7 @@ export const paintedPixels = (page: Page) =>
   });
 
 /** The shape of the drawn page: wider than tall is greater than 1. */
-export const paintedAspect = (page: Page) =>
-  page
+export const paintedAspect = (scope: CanvasScope) =>
+  scope
     .locator("[data-page-canvas]")
     .evaluate((canvas) => (canvas as HTMLCanvasElement).width / (canvas as HTMLCanvasElement).height);
