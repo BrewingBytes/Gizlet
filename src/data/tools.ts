@@ -612,8 +612,12 @@ export const toolRegistry = [
       "escape url",
       "query string encoding",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "Any text, typed or pasted, in either direction: text to percent-encode, or percent-encoded text to read back. One of three encodings is chosen — one piece of a URL, a whole URL, or a form field, which writes a space as a plus.",
+      output: "The converted text, in the browser, as it is typed. Decoding a malformed escape reports the character position and what is wrong with it — an incomplete escape, a non-hexadecimal one, or bytes that are legal escapes but not a character in UTF-8 — rather than failing without saying where.",
+    },
   },
   {
     id: 26,
