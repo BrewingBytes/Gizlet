@@ -1,4 +1,5 @@
 ---
+import PdfViewerSurface from './PdfViewerSurface.astro';
 import {
   defaultPdfImageFormat,
   defaultPdfImageResolution,
@@ -32,25 +33,10 @@ const resolutionOptions = getPdfImageResolutionOptions();
 
   <div class="pdf-to-jpg-tool__editor" data-editor hidden>
     <div class="pdf-to-jpg-tool__bar">
-      <p class="pdf-to-jpg-tool__document" data-document-name></p>
       <button type="button" class="button-secondary" data-clear>Choose another PDF</button>
     </div>
 
-    <div class="pdf-to-jpg-tool__preview">
-      <div class="pdf-to-jpg-tool__preview-page" data-page-area>
-        <canvas data-page-canvas aria-label="Current PDF page"></canvas>
-        <p class="pdf-to-jpg-tool__preview-error" data-page-error role="alert" hidden></p>
-      </div>
-      <div class="pdf-to-jpg-tool__pager">
-        <button type="button" class="pdf-to-jpg-tool__icon-button" data-previous aria-label="Previous page">←</button>
-        <label class="pdf-to-jpg-tool__page-field" for="pdf-to-jpg-preview-page">
-          <span>Page</span>
-          <input id="pdf-to-jpg-preview-page" type="text" inputmode="numeric" autocomplete="off" data-page-input aria-label="Go to page" />
-          <span data-page-total></span>
-        </label>
-        <button type="button" class="pdf-to-jpg-tool__icon-button" data-next aria-label="Next page">→</button>
-      </div>
-    </div>
+    <PdfViewerSurface id="pdf-to-jpg-source" label="The PDF being converted" zoom />
 
     <div class="pdf-to-jpg-tool__controls">
       <div class="pdf-to-jpg-tool__control">
@@ -66,6 +52,12 @@ const resolutionOptions = getPdfImageResolutionOptions();
         />
         <p class="pdf-to-jpg-tool__hint" id="pdf-to-jpg-pages-hint" data-pages-hint>
           Numbers and ranges, like 1-3, 5. Empty converts every page.
+        </p>
+        <!-- The two ways of naming a page, kept in step: the field moves the
+          viewer, and this puts the page on screen into the field. -->
+        <p class="pdf-to-jpg-tool__page-sync">
+          <button type="button" class="pdf-to-jpg-tool__text-button" data-add-page>Add the page on screen</button>
+          <span data-page-state></span>
         </p>
       </div>
 
@@ -140,20 +132,13 @@ const resolutionOptions = getPdfImageResolutionOptions();
   .pdf-to-jpg-tool__editor, .pdf-to-jpg-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
   .pdf-to-jpg-tool__editor { display: grid; gap: var(--space-4); }
   .pdf-to-jpg-tool__bar { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
-  .pdf-to-jpg-tool__document { margin: 0; overflow-wrap: anywhere; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
-  .pdf-to-jpg-tool__preview { display: grid; gap: var(--space-2); }
-  .pdf-to-jpg-tool__preview-page { display: grid; justify-items: center; gap: var(--space-2); min-width: 0; padding: var(--space-3); border: var(--border-width) solid var(--border); background: var(--background); overflow: auto; }
-  .pdf-to-jpg-tool__preview-page canvas { display: block; max-width: 100%; max-height: 26rem; height: auto; background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 18%); }
-  .pdf-to-jpg-tool__preview-error { margin: 0; color: var(--color-red); font-size: var(--font-size-sm); }
-  .pdf-to-jpg-tool__pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-2); }
-  .pdf-to-jpg-tool__page-field { display: flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
-  .pdf-to-jpg-tool__page-field input { width: 4rem; min-height: 2.75rem; text-align: center; font-family: var(--font-mono); }
-  .pdf-to-jpg-tool__icon-button { min-width: 2.75rem; min-height: 2.75rem; padding: 0; border: var(--border-width) solid var(--border); background: transparent; color: var(--text); font-weight: 700; }
-  .pdf-to-jpg-tool__icon-button:disabled { color: var(--text-muted); opacity: 0.5; }
   .pdf-to-jpg-tool__controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-3); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); align-items: start; }
   .pdf-to-jpg-tool__control label { display: block; margin-bottom: var(--space-1); font-weight: 700; }
   .pdf-to-jpg-tool__control input, .pdf-to-jpg-tool__control select { width: 100%; }
   .pdf-to-jpg-tool__hint { margin: var(--space-1) 0 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .pdf-to-jpg-tool__page-sync { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); margin: var(--space-1) 0 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .pdf-to-jpg-tool__text-button { min-height: 2.75rem; padding: 0; border: 0; background: none; color: var(--text); font: inherit; font-size: var(--font-size-sm); font-weight: 700; text-decoration: underline; cursor: pointer; }
+  .pdf-to-jpg-tool__text-button:disabled { color: var(--text-muted); text-decoration: none; cursor: not-allowed; }
   .pdf-to-jpg-tool__actions, .pdf-to-jpg-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
   .pdf-to-jpg-tool__result h2 { margin-bottom: var(--space-2); }
   .pdf-to-jpg-tool__result-details { margin-bottom: var(--space-3); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
@@ -180,8 +165,11 @@ const resolutionOptions = getPdfImageResolutionOptions();
   import {
     defaultPdfImageFormat,
     defaultPdfImageResolution,
+    addPdfPageToSelection,
     describePdfImageCount,
+    describePdfPageInSelection,
     describePdfPageSelection,
+    getFirstSelectedPdfPage,
     getPdfImageArchiveName,
     getPdfImageResolutionLabel,
     getPdfPageSelectionErrorMessage,
@@ -193,7 +181,7 @@ const resolutionOptions = getPdfImageResolutionOptions();
     validatePdfToImageSelection,
   } from '../data/pdf-to-jpg';
   import { createZipArchive, zipMimeType } from '../data/zip-archive';
-  import { createPdfPageView } from '../scripts/pdf-page-view';
+  import { createPdfViewerSurface } from '../scripts/pdf-viewer-surface';
   import type { LocalPdfDocument } from '../scripts/pdf-rendering';
   import type { PdfImage } from '../scripts/pdf-to-image';
 
@@ -206,14 +194,9 @@ const resolutionOptions = getPdfImageResolutionOptions();
     const status = root.querySelector<HTMLElement>('[data-status]');
     const error = root.querySelector<HTMLElement>('[data-error]');
     const editor = root.querySelector<HTMLElement>('[data-editor]');
-    const documentName = root.querySelector<HTMLElement>('[data-document-name]');
-    const pageArea = root.querySelector<HTMLElement>('[data-page-area]');
-    const pageCanvas = root.querySelector<HTMLCanvasElement>('[data-page-canvas]');
-    const pageError = root.querySelector<HTMLElement>('[data-page-error]');
-    const previousButton = root.querySelector<HTMLButtonElement>('[data-previous]');
-    const nextButton = root.querySelector<HTMLButtonElement>('[data-next]');
-    const pageInput = root.querySelector<HTMLInputElement>('[data-page-input]');
-    const pageTotal = root.querySelector<HTMLElement>('[data-page-total]');
+    const surfaceRoot = root.querySelector<HTMLElement>('[data-pdf-surface]');
+    const addPageButton = root.querySelector<HTMLButtonElement>('[data-add-page]');
+    const pageState = root.querySelector<HTMLElement>('[data-page-state]');
     const pagesField = root.querySelector<HTMLInputElement>('[data-pages]');
     const formatField = root.querySelector<HTMLSelectElement>('[data-format]');
     const resolutionField = root.querySelector<HTMLSelectElement>('[data-resolution]');
@@ -228,7 +211,7 @@ const resolutionOptions = getPdfImageResolutionOptions();
     const downloadAll = root.querySelector<HTMLAnchorElement>('[data-download-all]');
     const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
 
-    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !documentName || !pageArea || !pageCanvas || !pageError || !previousButton || !nextButton || !pageInput || !pageTotal || !pagesField || !formatField || !resolutionField || !convertButton || !clearButton || !resetButton || !result || !resultTitle || !resultDetails || !imageList || !imageTemplate || !downloadAll || !resultClearButton) {
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !surfaceRoot || !addPageButton || !pageState || !pagesField || !formatField || !resolutionField || !convertButton || !clearButton || !resetButton || !result || !resultTitle || !resultDetails || !imageList || !imageTemplate || !downloadAll || !resultClearButton) {
       throw new Error('PDF to Image tool could not initialise.');
     }
 
@@ -240,20 +223,35 @@ const resolutionOptions = getPdfImageResolutionOptions();
     let resultUrls: string[] = [];
 
     /**
-     * The preview's page turning, shared with the PDF Viewer Gizlet. It is here
-     * so the pages can be seen before they are named in the Pages field, and
-     * fitted to its column rather than zoomed: what is being chosen is which
-     * page, not how large it looks.
+     * The shared PDF surface, showing the document being converted so its pages
+     * can be seen before they are named in the Pages field.
+     *
+     * The two ways of naming a page are kept in step in both directions: the
+     * field moves the viewer to the first page it names, and the button beside
+     * it adds the page on screen to the field. Neither overwrites the other,
+     * because a field that rewrote itself as the visitor turned pages would
+     * lose the selection they were building.
      */
-    const pageView = createPdfPageView({
-      pageArea,
-      canvas: pageCanvas,
-      pageError,
-      previousButton,
-      nextButton,
-      pageInput,
-      pageTotal,
+    const surface = createPdfViewerSurface(surfaceRoot, {
+      onPageChange: () => describeCurrentPage(),
     });
+
+    /** Says whether the page on screen is one the conversion will produce. */
+    const describeCurrentPage = () => {
+      if (pageCount === 0) {
+        pageState.textContent = '';
+        return;
+      }
+
+      pageState.textContent = describePdfPageInSelection(
+        surface.currentPage,
+        pagesField.value,
+        pageCount,
+      );
+      addPageButton.disabled =
+        pagesField.value.trim() === '' ||
+        (parsePdfPageSelection(pagesField.value, pageCount)?.includes(surface.currentPage) ?? true);
+    };
 
     const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     const clearError = () => { error.hidden = true; error.textContent = ''; };
@@ -282,7 +280,8 @@ const resolutionOptions = getPdfImageResolutionOptions();
       openDocument = undefined;
       openFileName = '';
       pageCount = 0;
-      pageView.reset();
+      surface.reset();
+      pageState.textContent = '';
       fileInput.value = '';
       pagesField.value = '';
       editor.hidden = true;
@@ -322,12 +321,13 @@ const resolutionOptions = getPdfImageResolutionOptions();
         openDocument = opened;
         openFileName = file.name;
         pageCount = opened.pageCount;
-        documentName.textContent = `${file.name} · ${formatFileSize(file.size)} · ${pageCount} ${pageCount === 1 ? 'page' : 'pages'}`;
+        const description = `${file.name} · ${formatFileSize(file.size)} · ${pageCount} ${pageCount === 1 ? 'page' : 'pages'}`;
         pagesField.placeholder = pageCount === 1 ? 'The only page' : `All ${pageCount} pages`;
         editor.hidden = false;
         clearStatus();
 
-        await pageView.show(opened);
+        await surface.show(opened, description);
+        describeCurrentPage();
       } catch (caughtError) {
         openDocument = undefined;
         editor.hidden = true;
@@ -456,6 +456,19 @@ const resolutionOptions = getPdfImageResolutionOptions();
       }
     };
 
+    addPageButton.addEventListener('click', () => {
+      pagesField.value = addPdfPageToSelection(pagesField.value, surface.currentPage, pageCount);
+      describeCurrentPage();
+    });
+    pagesField.addEventListener('input', () => {
+      describeCurrentPage();
+
+      // The field moves the viewer to the first page it names, so a selection
+      // typed by hand is something the visitor can immediately look at.
+      const first = getFirstSelectedPdfPage(pagesField.value, pageCount);
+
+      if (first !== undefined && pagesField.value.trim() !== '') surface.goToPage(first);
+    });
     selectFileButton.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', () => void openFile(fileInput.files?.[0]));
     clearButton.addEventListener('click', resetTool);

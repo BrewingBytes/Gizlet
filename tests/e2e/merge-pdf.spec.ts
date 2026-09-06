@@ -5,6 +5,14 @@ import { maximumMergedPages } from "../../src/data/merge-pdf";
 import { paintedAspect, paintedPixels } from "./support/pdf-canvas";
 
 /**
+ * The Gizlet shows two of the shared viewer now — a source being inspected and
+ * the merged result — so an assertion about "the viewer" has to say which.
+ */
+const mergedViewer = (page: Page) => page.getByRole("region", { name: "The merged PDF" });
+const sourceViewer = (page: Page) =>
+  page.getByRole("region", { name: "A PDF chosen for the merge" });
+
+/**
  * Real PDFs, built with the library the PDF Gizlets already ship, so the merge
  * is tested against documents rather than fixture blobs.
  *
@@ -95,14 +103,14 @@ test("joins chosen PDFs into one local document in the order set on the page", a
 
   // The merged document is genuinely a document: it draws, it has every page,
   // and the page it opens on is the one the top of the list promised.
-  await expect(page.locator("[data-page-total]")).toHaveText("of 3");
-  await expect.poll(() => paintedPixels(page)).toBeGreaterThan(0);
-  await expect.poll(() => paintedAspect(page)).toBeGreaterThan(1);
+  await expect(mergedViewer(page).locator("[data-page-total]")).toHaveText("of 3");
+  await expect.poll(() => paintedPixels(mergedViewer(page))).toBeGreaterThan(0);
+  await expect.poll(() => paintedAspect(mergedViewer(page))).toBeGreaterThan(1);
 
-  const pageField = page.getByLabel("Go to page");
-  await page.getByRole("button", { name: "Next page" }).click();
+  const pageField = mergedViewer(page).getByLabel("Go to page");
+  await mergedViewer(page).getByRole("button", { name: "Next page" }).click();
   await expect(pageField).toHaveValue("2");
-  await expect.poll(() => paintedAspect(page)).toBeLessThan(1);
+  await expect.poll(() => paintedAspect(mergedViewer(page))).toBeLessThan(1);
 
   const downloadPromise = page.waitForEvent("download");
   await download.click();
@@ -131,7 +139,7 @@ test("rebuilds the document when the order changes", async ({ page }) => {
     "tall-merged.pdf",
   );
   // Reordering has to change the document, not only the list.
-  await expect.poll(() => paintedAspect(page)).toBeLessThan(1);
+  await expect.poll(() => paintedAspect(mergedViewer(page))).toBeLessThan(1);
 
   await page.getByRole("button", { name: "Start over" }).first().click();
   await expect(page.getByRole("button", { name: "Merge the PDFs" })).toBeHidden();
@@ -231,4 +239,32 @@ test("refuses a combined page count past the memory guard", async ({ page }) => 
   // limit is about rather than the file that happened to cross it.
   await choosePdfs(page, [asFile("first-half.pdf", await blankPdf(half))]);
   await expect(page.getByText(`1 PDF · ${half} pages · up to 20`)).toBeVisible();
+});
+
+test("inspects one chosen document without disturbing the merge", async ({
+  page,
+}) => {
+  await page.goto("/tools/merge-pdf/");
+  await choosePdfs(page, [
+    asFile("tall.pdf", await samplePdf(2, "portrait")),
+    asFile("wide.pdf", await samplePdf(1, "landscape")),
+  ]);
+
+  // Nothing is drawn until a visitor asks to look at something.
+  await expect(sourceViewer(page)).toBeHidden();
+
+  await page.getByRole("button", { name: "Inspect wide.pdf" }).click();
+
+  await expect(sourceViewer(page)).toBeVisible();
+  await expect(sourceViewer(page).locator("[data-document-name]")).toContainText("wide.pdf");
+  await expect(sourceViewer(page).locator("[data-page-total]")).toHaveText("of 1");
+  // The wide one: the source really is the file that was named, not the first.
+  await expect.poll(() => paintedAspect(sourceViewer(page))).toBeGreaterThan(1);
+
+  // Inspecting is reading, so the merge is untouched and still runs.
+  await expect(page.getByRole("list", { name: "PDFs in the merge" }).getByRole("listitem")).toHaveCount(2);
+  await page.getByRole("button", { name: "Merge the PDFs" }).click();
+
+  await expect(mergedViewer(page).locator("[data-page-total]")).toHaveText("of 3");
+  await expect(page.getByRole("link", { name: "Download PDF" })).toBeVisible();
 });

@@ -4,7 +4,11 @@ import { expect, test, type Page } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 
 import { fixedPdfPageSizes } from "../../src/data/jpg-to-pdf";
-import { chunksCarryingPdfJs, initialScripts } from "./support/initial-scripts";
+import {
+  chunksCarryingPdfJs,
+  initialScripts,
+  recordScriptBodies,
+} from "./support/initial-scripts";
 import { paintedAspect, paintedPixels } from "./support/pdf-canvas";
 
 /**
@@ -337,17 +341,17 @@ test("keeps pdf.js out of the flows page until a run has made a PDF", async ({
 }) => {
   const requested: string[] = [];
   page.on("request", (request) => requested.push(request.url()));
+  const scripts = recordScriptBodies(page);
 
   const builder = await initialScripts(page, "/flows/");
   expect(builder.length).toBeGreaterThan(0);
   expect(chunksCarryingPdfJs(builder)).toBe(0);
   expect(requested.filter((url) => url.includes("pdf.worker"))).toEqual([]);
 
-  // The control: the PDF Viewer page does import pdf.js up front, so the check
-  // above is looking for something it would genuinely find.
-  expect(
-    chunksCarryingPdfJs(await initialScripts(page, "/tools/pdf-viewer/")),
-  ).toBeGreaterThan(0);
+  // The reader loads it on demand too, now that it is the same shared
+  // surface, so no page is a control any more: the proof that this check can
+  // find pdf.js is the same page a moment later, once a document exists.
+  expect(chunksCarryingPdfJs(await initialScripts(page, "/tools/pdf-viewer/"))).toBe(0);
 
   // And on this page the library arrives only once a run has a PDF to draw.
   await page.goto("/flows/");
@@ -359,6 +363,10 @@ test("keeps pdf.js out of the flows page until a run has made a PDF", async ({
   await expect
     .poll(() => requested.filter((url) => url.includes("pdf.worker")).length)
     .toBeGreaterThan(0);
+
+  // And the same check that found nothing up front finds it now, which is what
+  // makes the assertion above a measurement rather than a hopeful zero.
+  expect(chunksCarryingPdfJs(await scripts())).toBeGreaterThan(0);
 });
 
 test("turns a PDF back into images and runs the rest of the chain on each", async ({

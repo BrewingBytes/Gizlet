@@ -1,0 +1,154 @@
+---
+/**
+ * The document surface every PDF Gizlet reads a PDF through.
+ *
+ * One markup block, one stylesheet, one set of controls: thumbnails, page
+ * navigation, a page field, zoom and fullscreen. A Gizlet embeds it and drives
+ * it with `createPdfViewerSurface`; it never copies the wiring, which is what
+ * kept four Gizlets each deciding independently how much of a PDF they would
+ * show and how the pager behaved.
+ *
+ * It reads and navigates a document and nothing else. Merge ordering, split
+ * ranges, page selections and generation settings belong to the Gizlet around
+ * it, so nothing here knows what the document is for.
+ */
+interface Props {
+  /** Unique on the page: a Gizlet may show a source and a result at once. */
+  readonly id: string;
+  /** What this surface is showing, for the region's accessible name. */
+  readonly label: string;
+  /** The page strip. A result preview rarely wants one; a reader does. */
+  readonly thumbnails?: boolean;
+  /** Zoom controls. A preview of a document just made is fitted, not zoomed. */
+  readonly zoom?: boolean;
+}
+
+const { id, label, thumbnails = false, zoom = false } = Astro.props;
+
+// The `data-` names are deliberately the ones the PDF workspaces already used
+// before this component existed: the markup moved into one place, and the
+// contract a Gizlet and its tests speak did not change with it.
+---
+
+<section class="pdf-surface" data-pdf-surface aria-label={label}>
+  <div class="pdf-surface__bar">
+    <p class="pdf-surface__document" data-document-name></p>
+    <button type="button" class="pdf-surface__fullscreen" data-surface-fullscreen aria-pressed="false">
+      Full screen
+    </button>
+  </div>
+
+  <div class="pdf-surface__body" data-surface-body>
+    {
+      thumbnails && (
+        <nav class="pdf-surface__thumbnails" aria-label="Pages" data-thumbnails>
+          <template data-thumbnail-template>
+            <button type="button" class="pdf-thumbnail" data-thumbnail>
+              <canvas data-thumbnail-canvas></canvas>
+              <span data-thumbnail-number></span>
+            </button>
+          </template>
+        </nav>
+      )
+    }
+
+    <div class="pdf-surface__page" data-page-area>
+      <canvas data-page-canvas aria-label="Current PDF page"></canvas>
+      <p class="pdf-surface__page-error" data-page-error role="alert" hidden></p>
+    </div>
+  </div>
+
+  <div class="pdf-surface__controls">
+    <div class="pdf-surface__pager">
+      <button type="button" class="pdf-surface__icon-button" data-previous aria-label="Previous page">←</button>
+      <label class="pdf-surface__page-field" for={`${id}-page`}>
+        <span>Page</span>
+        <input
+          id={`${id}-page`}
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          data-page-input
+          aria-label="Go to page"
+        />
+        <span data-page-total></span>
+      </label>
+      <button type="button" class="pdf-surface__icon-button" data-next aria-label="Next page">→</button>
+    </div>
+
+    {
+      zoom && (
+        <div class="pdf-surface__zoom">
+          <button type="button" class="pdf-surface__icon-button" data-zoom-out aria-label="Zoom out">−</button>
+          <output data-zoom-level />
+          <button type="button" class="pdf-surface__icon-button" data-zoom-in aria-label="Zoom in">+</button>
+        </div>
+      )
+    }
+  </div>
+
+  <p class="pdf-surface__announce" data-surface-announce role="status" aria-live="polite"></p>
+</section>
+
+<style>
+  .pdf-surface { display: grid; gap: var(--space-3); }
+  .pdf-surface__bar { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
+  .pdf-surface__document { margin: 0; overflow-wrap: anywhere; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .pdf-surface__document:empty { display: none; }
+  .pdf-surface__fullscreen { min-height: 2.75rem; padding: 0 var(--space-3); border: var(--border-width) solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: var(--font-size-sm); font-weight: 700; cursor: pointer; }
+  .pdf-surface__fullscreen:hover { border-color: var(--text); }
+  .pdf-surface__body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); align-items: start; }
+  .pdf-surface__body:not(:has(> [data-thumbnails])) { grid-template-columns: minmax(0, 1fr); }
+  .pdf-surface__thumbnails { display: flex; flex-direction: column; gap: var(--space-2); max-height: 32rem; overflow-y: auto; padding-right: var(--space-1); }
+  .pdf-thumbnail { display: grid; gap: var(--space-1); justify-items: center; padding: var(--space-1); border: var(--border-width) solid var(--border); background: var(--background); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .pdf-thumbnail[aria-current='true'] { border-color: var(--text); border-width: var(--border-strong-width); color: var(--text); }
+  .pdf-thumbnail canvas { display: block; width: 4rem; height: auto; background: #fff; }
+  .pdf-surface__page { display: grid; justify-items: center; align-content: start; gap: var(--space-2); min-width: 0; padding: var(--space-3); border: var(--border-width) solid var(--border); background: var(--background); overflow: auto; }
+  .pdf-surface__page canvas { display: block; max-width: 100%; height: auto; background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 18%); }
+  .pdf-surface__page-error { margin: 0; color: var(--color-red); font-size: var(--font-size-sm); }
+  .pdf-surface__page-error[hidden] { display: none; }
+  .pdf-surface__controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+  .pdf-surface__pager, .pdf-surface__zoom { display: flex; align-items: center; gap: var(--space-2); }
+  .pdf-surface__page-field { display: flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
+  .pdf-surface__page-field input { width: 4rem; min-height: 2.75rem; text-align: center; font-family: var(--font-mono); }
+  .pdf-surface__icon-button { min-width: 2.75rem; min-height: 2.75rem; padding: 0; border: var(--border-width) solid var(--border); background: transparent; color: var(--text); font-weight: 700; }
+  .pdf-surface__icon-button:disabled { color: var(--text-muted); opacity: 0.5; }
+  .pdf-surface__zoom output { min-width: 3.5rem; text-align: center; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .pdf-surface__announce { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  /* Fullscreen, both ways. The native one styles the element the browser has
+     already taken over; the fallback is the same layout drawn over the page by
+     this stylesheet, for a browser that has no element fullscreen at all. */
+  .pdf-surface:fullscreen,
+  .pdf-surface[data-fullscreen='true'] {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    padding: var(--space-3);
+    background: var(--surface);
+  }
+
+  .pdf-surface[data-fullscreen='true'] {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    overflow: auto;
+  }
+
+  .pdf-surface:fullscreen .pdf-surface__page,
+  .pdf-surface[data-fullscreen='true'] .pdf-surface__page {
+    height: 100%;
+  }
+
+  .pdf-surface:fullscreen .pdf-surface__thumbnails,
+  .pdf-surface[data-fullscreen='true'] .pdf-surface__thumbnails {
+    max-height: none;
+  }
+
+  @media (max-width: 48rem) {
+    .pdf-surface__body { grid-template-columns: minmax(0, 1fr); }
+    .pdf-surface__thumbnails { flex-direction: row; max-height: none; overflow-x: auto; padding-bottom: var(--space-1); }
+  }
+
+  @media (max-width: 36rem) {
+    .pdf-surface__controls { justify-content: center; }
+  }
+</style>

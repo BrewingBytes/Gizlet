@@ -1,4 +1,5 @@
 ---
+import PdfViewerSurface from './PdfViewerSurface.astro';
 ---
 
 <section class="merge-pdf-tool" data-merge-pdf-tool>
@@ -46,10 +47,18 @@
         <span class="merge-pdf-tool__document-actions">
           <button type="button" class="merge-pdf-tool__icon-button" data-document-action="up">↑</button>
           <button type="button" class="merge-pdf-tool__icon-button" data-document-action="down">↓</button>
+          <button type="button" class="merge-pdf-tool__inspect" data-document-action="inspect">Inspect</button>
           <button type="button" class="merge-pdf-tool__remove" data-document-action="remove">Remove</button>
         </span>
       </li>
     </template>
+
+    <!-- One source at a time: a page of open documents is memory nobody asked
+      for, and the reason to look is to check the one you are unsure about. -->
+    <div class="merge-pdf-tool__source-preview" data-source-preview hidden>
+      <p class="metadata">Inspecting</p>
+      <PdfViewerSurface id="merge-pdf-source" label="A PDF chosen for the merge" zoom />
+    </div>
 
     <p class="merge-pdf-tool__note" data-readiness role="status" hidden></p>
 
@@ -66,19 +75,7 @@
 
     <div class="merge-pdf-tool__preview" data-preview hidden>
       <p class="metadata">Preview</p>
-      <div class="merge-pdf-tool__preview-page" data-page-area>
-        <canvas data-page-canvas aria-label="Current PDF page"></canvas>
-        <p class="merge-pdf-tool__preview-page-error" data-page-error role="alert" hidden></p>
-      </div>
-      <div class="merge-pdf-tool__pager">
-        <button type="button" class="merge-pdf-tool__icon-button" data-previous aria-label="Previous page">←</button>
-        <label class="merge-pdf-tool__page-field" for="merge-pdf-preview-page">
-          <span>Page</span>
-          <input id="merge-pdf-preview-page" type="text" inputmode="numeric" autocomplete="off" data-page-input aria-label="Go to page" />
-          <span data-page-total></span>
-        </label>
-        <button type="button" class="merge-pdf-tool__icon-button" data-next aria-label="Next page">→</button>
-      </div>
+      <PdfViewerSurface id="merge-pdf-result" label="The merged PDF" />
     </div>
 
     <p class="merge-pdf-tool__preview-error" data-preview-error role="status" hidden></p>
@@ -114,19 +111,17 @@
   .merge-pdf-tool__document-actions { display: flex; flex-wrap: wrap; gap: var(--space-1); }
   .merge-pdf-tool__icon-button { min-width: 2.75rem; min-height: 2.75rem; padding: 0; border: var(--border-width) solid var(--border); background: transparent; color: var(--text); font-weight: 700; }
   .merge-pdf-tool__icon-button:disabled { color: var(--text-muted); opacity: 0.5; }
+  .merge-pdf-tool__source-preview[hidden] { display: none; }
+  .merge-pdf-tool__source-preview { display: grid; gap: var(--space-2); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .merge-pdf-tool__inspect { min-height: 2.75rem; padding: 0 var(--space-2); border: 0; background: none; color: var(--text-muted); font: inherit; font-size: var(--font-size-sm); font-weight: 700; text-decoration: underline; cursor: pointer; }
+  .merge-pdf-tool__inspect:hover { color: var(--text); }
   .merge-pdf-tool__remove { min-height: 2.75rem; padding: 0 var(--space-2); border: var(--border-width) solid var(--border); background: transparent; color: var(--text); }
   .merge-pdf-tool__actions, .merge-pdf-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
   .merge-pdf-tool__result h2 { margin-bottom: var(--space-2); }
   .merge-pdf-tool__result-details { margin-bottom: var(--space-4); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
   .merge-pdf-tool__preview { display: grid; gap: var(--space-2); margin-bottom: var(--space-4); }
   .merge-pdf-tool__preview .metadata { margin: 0; }
-  .merge-pdf-tool__preview-page { display: grid; justify-items: center; gap: var(--space-2); min-width: 0; padding: var(--space-3); border: var(--border-width) solid var(--border); background: var(--background); overflow: auto; }
-  .merge-pdf-tool__preview-page canvas { display: block; max-width: 100%; max-height: 32rem; height: auto; background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 18%); }
-  .merge-pdf-tool__preview-page-error { margin: 0; color: var(--color-red); font-size: var(--font-size-sm); }
   .merge-pdf-tool__preview-error { margin-bottom: var(--space-4); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--color-warning); color: var(--color-warning); }
-  .merge-pdf-tool__pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-2); }
-  .merge-pdf-tool__page-field { display: flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; }
-  .merge-pdf-tool__page-field input { width: 4rem; min-height: 2.75rem; text-align: center; font-family: var(--font-mono); }
   .merge-pdf-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
   .merge-pdf-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
   @media (max-width: 36rem) {
@@ -153,7 +148,7 @@
   } from '../data/merge-pdf';
   import { getPdfPreviewErrorMessage } from '../data/pdf-viewer';
   import { mergeLocalPdfs, openLocalPdfForMerge, type LocalMergeSource } from '../scripts/pdf-generation';
-  import { createPdfPageView } from '../scripts/pdf-page-view';
+  import { createPdfViewerSurface } from '../scripts/pdf-viewer-surface';
 
   /** One chosen document, with an id the list rows are keyed by. */
   interface MergeEntry {
@@ -182,15 +177,12 @@
     const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
     const preview = root.querySelector<HTMLElement>('[data-preview]');
     const previewError = root.querySelector<HTMLElement>('[data-preview-error]');
-    const pageArea = root.querySelector<HTMLElement>('[data-page-area]');
-    const pageCanvas = root.querySelector<HTMLCanvasElement>('[data-page-canvas]');
-    const pageError = root.querySelector<HTMLElement>('[data-page-error]');
-    const previousButton = root.querySelector<HTMLButtonElement>('[data-previous]');
-    const nextButton = root.querySelector<HTMLButtonElement>('[data-next]');
-    const pageInput = root.querySelector<HTMLInputElement>('[data-page-input]');
-    const pageTotal = root.querySelector<HTMLElement>('[data-page-total]');
+    const surfaces = root.querySelectorAll<HTMLElement>('[data-pdf-surface]');
+    const sourceSurfaceRoot = surfaces[0];
+    const resultSurfaceRoot = surfaces[1];
+    const sourcePreview = root.querySelector<HTMLElement>('[data-source-preview]');
 
-    if (!fileInput || !selectFilesButton || !dropZone || !status || !error || !editor || !documentList || !documentTemplate || !documentSummary || !readiness || !mergeButton || !clearButton || !result || !resultDetails || !download || !resultClearButton || !preview || !previewError || !pageArea || !pageCanvas || !pageError || !previousButton || !nextButton || !pageInput || !pageTotal) {
+    if (!fileInput || !selectFilesButton || !dropZone || !status || !error || !editor || !documentList || !documentTemplate || !documentSummary || !readiness || !mergeButton || !clearButton || !result || !resultDetails || !download || !resultClearButton || !preview || !previewError || !sourceSurfaceRoot || !resultSurfaceRoot || !sourcePreview) {
       throw new Error('Merge PDF tool could not initialise.');
     }
 
@@ -203,19 +195,13 @@
     let previewToken = 0;
 
     /**
-     * The preview's page turning, shared with the PDF Viewer Gizlet. A merged
-     * document is the pages it was given, so the preview is the proof that the
-     * order came out as the list promised.
+     * Two of the same surface: any one of the documents going in, so a visitor
+     * can check they chose the right file, and the merged document, which is
+     * the proof that the order came out as the list promised. Both are the
+     * reader the PDF Viewer Gizlet is, fullscreen included.
      */
-    const pageView = createPdfPageView({
-      pageArea,
-      canvas: pageCanvas,
-      pageError,
-      previousButton,
-      nextButton,
-      pageInput,
-      pageTotal,
-    });
+    const sourceSurface = createPdfViewerSurface(sourceSurfaceRoot);
+    const resultSurface = createPdfViewerSurface(resultSurfaceRoot);
 
     const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     const clearError = () => { error.hidden = true; error.textContent = ''; };
@@ -227,7 +213,7 @@
 
     const resetResult = () => {
       previewToken += 1;
-      pageView.reset();
+      resultSurface.reset();
       preview.hidden = true;
       previewError.hidden = true;
       previewError.textContent = '';
@@ -239,7 +225,13 @@
       download.removeAttribute('download');
     };
 
+    const closeSourcePreview = () => {
+      sourceSurface.reset();
+      sourcePreview.hidden = true;
+    };
+
     const resetTool = () => {
+      closeSourcePreview();
       entries = [];
       fileInput.value = '';
       resetResult();
@@ -272,7 +264,9 @@
           'aria-label',
           action === 'remove'
             ? `Remove ${entry.source.file.name}`
-            : `Move ${entry.source.file.name} ${action === 'up' ? 'up' : 'down'}`,
+            : action === 'inspect'
+              ? `Inspect ${entry.source.file.name}`
+              : `Move ${entry.source.file.name} ${action === 'up' ? 'up' : 'down'}`,
         );
         button.disabled =
           isMerging ||
@@ -364,7 +358,7 @@
         }
 
         preview.hidden = false;
-        await pageView.show(opened);
+        await resultSurface.show(opened, describePdfPageCount(opened.pageCount));
       } catch {
         if (token !== previewToken) return;
         // A document can be perfectly good even when drawing it is not, so the
@@ -425,6 +419,41 @@
       if (merged) await showPreview(merged);
     };
 
+    /**
+     * Shows one of the chosen documents in the shared surface.
+     *
+     * The bytes are already on the device — they were read when the file was
+     * chosen — but the renderer is not, so pdf.js arrives here, the first time
+     * a visitor actually asks to look at something.
+     */
+    const inspectEntry = async (id: number) => {
+      const entry = entries.find((candidate) => candidate.id === id);
+
+      if (!entry) return;
+
+      clearError();
+      showStatus(`Drawing ${entry.source.file.name} locally…`);
+      await nextPaint();
+
+      try {
+        const { openLocalPdf } = await import('../scripts/pdf-rendering');
+        const opened = await openLocalPdf(entry.source.file);
+
+        sourcePreview.hidden = false;
+        await sourceSurface.show(
+          opened,
+          `${entry.source.file.name} · ${describePdfPageCount(entry.source.pageCount)} · ${formatFileSize(entry.source.file.size)}`,
+        );
+      } catch {
+        // Failing to draw a source says nothing about whether it can be merged,
+        // so the merge is left alone and only the preview reports the problem.
+        sourcePreview.hidden = true;
+        showError(getPdfPreviewErrorMessage());
+      } finally {
+        clearStatus();
+      }
+    };
+
     const moveEntry = (id: number, offset: number) => {
       const index = entries.findIndex((entry) => entry.id === id);
       if (index === -1) return;
@@ -447,10 +476,18 @@
 
       const id = Number(button.dataset.entryId);
 
+      // Inspecting changes nothing about the merge, so it does not disturb a
+      // result the visitor may already have.
+      if (button.dataset.documentAction === 'inspect') {
+        void inspectEntry(id);
+        return;
+      }
+
       if (button.dataset.documentAction === 'up') moveEntry(id, -1);
       if (button.dataset.documentAction === 'down') moveEntry(id, 1);
       if (button.dataset.documentAction === 'remove') removeEntry(id);
 
+      closeSourcePreview();
       resetResult();
       clearError();
       render();

@@ -3,7 +3,16 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 import { maximumSplitPdfPages } from "../../src/data/split-pdf";
 import { chunksCarryingPdfJs, initialScripts } from "./support/initial-scripts";
+import { paintedPixels } from "./support/pdf-canvas";
 import { encryptedPdf, zeroPagePdf } from "./support/sample-pdf";
+
+/**
+ * The Gizlet shows two of the shared viewer now — the document being split and
+ * any document the split produced — so an assertion about "the viewer" has to
+ * say which one it means.
+ */
+const sourceViewer = (page: Page) =>
+  page.getByRole("region", { name: "The PDF being split" });
 
 /**
  * A real PDF whose pages are each a different width, built with the library the
@@ -118,10 +127,10 @@ test("splits a local PDF into the ranges it was given, on this device", async ({
 
   await openPdf(page, await numberedPdf(6));
 
-  await expect(page.locator("[data-document-name]")).toContainText("statement.pdf");
-  await expect(page.locator("[data-document-name]")).toContainText("6 pages");
+  await expect(sourceViewer(page).locator("[data-document-name]")).toContainText("statement.pdf");
+  await expect(sourceViewer(page).locator("[data-document-name]")).toContainText("6 pages");
   // The document is drawn while the pages are being chosen, not only after.
-  await expect(page.locator("[data-page-total]")).toHaveText("of 6");
+  await expect(sourceViewer(page).locator("[data-page-total]")).toHaveText("of 6");
 
   await page.getByLabel("Pages to split out").fill("1-3, 5");
   await split(page).click();
@@ -288,7 +297,7 @@ test("explains an encrypted PDF, a corrupt one, and ones with nothing to split",
 
   // The Gizlet is still usable afterwards.
   await openPdf(page, await numberedPdf(2));
-  await expect(page.locator("[data-page-total]")).toHaveText("of 2");
+  await expect(sourceViewer(page).locator("[data-page-total]")).toHaveText("of 2");
   await expect(error).toBeHidden();
 });
 
@@ -321,9 +330,40 @@ test("keeps pdf.js out of the page until a PDF is chosen", async ({ page }) => {
   // And the library arrives only once there is a document to draw.
   await page.goto("/tools/split-pdf/");
   await openPdf(page, await numberedPdf(2));
-  await expect(page.locator("[data-page-total]")).toHaveText("of 2");
+  await expect(sourceViewer(page).locator("[data-page-total]")).toHaveText("of 2");
 
   await expect
     .poll(() => requested.filter((url) => url.includes("pdf.worker")).length)
     .toBeGreaterThan(0);
+});
+
+test("inspects a produced document in the same viewer, without losing the download", async ({
+  page,
+}) => {
+  await page.goto("/tools/split-pdf/");
+  await openPdf(page, await numberedPdf(6));
+
+  // Ranges, which is the mode that produces documents worth checking.
+  await page.getByLabel("Pages to split out").fill("1-2, 5");
+  await page.getByRole("button", { name: "Split the PDF" }).click();
+
+  const parts = page.getByRole("list", { name: "Split documents" }).getByRole("listitem");
+  const resultViewer = page.getByRole("region", { name: "A document this split produced" });
+
+  await expect(parts).toHaveCount(2);
+  // Nothing is drawn until a visitor asks to look at one.
+  await expect(resultViewer).toBeHidden();
+
+  await parts.nth(1).getByRole("button", { name: "Inspect" }).click();
+
+  await expect(resultViewer).toBeVisible();
+  await expect(resultViewer.locator("[data-page-total]")).toHaveText("of 1");
+  await expect.poll(() => paintedPixels(resultViewer)).toBeGreaterThan(200);
+
+  // The downloads are exactly where they were: looking at a part changes none.
+  await expect(parts.nth(1).getByRole("link", { name: /Download/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Download all" })).toBeVisible();
+
+  await parts.nth(0).getByRole("button", { name: "Inspect" }).click();
+  await expect(resultViewer.locator("[data-page-total]")).toHaveText("of 2");
 });

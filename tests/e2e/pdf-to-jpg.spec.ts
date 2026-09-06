@@ -1,7 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { maximumPdfToImagePages } from "../../src/data/pdf-to-jpg";
-import { chunksCarryingPdfJs, initialScripts } from "./support/initial-scripts";
+import {
+  chunksCarryingPdfJs,
+  initialScripts,
+  recordScriptBodies,
+} from "./support/initial-scripts";
 import { paintedPixels } from "./support/pdf-canvas";
 import { encryptedPdf, samplePdf, zeroPagePdf } from "./support/sample-pdf";
 
@@ -169,6 +173,7 @@ test("explains an encrypted PDF, a corrupt one, and one with no pages", async ({
 test("keeps pdf.js out of the page until a PDF is chosen", async ({ page }) => {
   const requested: string[] = [];
   page.on("request", (request) => requested.push(request.url()));
+  const scripts = recordScriptBodies(page);
 
   const workspace = await initialScripts(page, "/tools/pdf-to-jpg/");
 
@@ -176,11 +181,10 @@ test("keeps pdf.js out of the page until a PDF is chosen", async ({ page }) => {
   expect(chunksCarryingPdfJs(workspace)).toBe(0);
   expect(requested.filter((url) => url.includes("pdf.worker"))).toEqual([]);
 
-  // The control: the PDF Viewer page does import pdf.js up front, so the check
-  // above is looking for something it would genuinely find.
-  expect(
-    chunksCarryingPdfJs(await initialScripts(page, "/tools/pdf-viewer/")),
-  ).toBeGreaterThan(0);
+  // The reader loads it on demand too, now that it is the same shared
+  // surface, so no page is a control any more: the proof that this check can
+  // find pdf.js is the same page a moment later, once a document exists.
+  expect(chunksCarryingPdfJs(await initialScripts(page, "/tools/pdf-viewer/"))).toBe(0);
 
   // And here the library arrives only once there is a document to read.
   await page.goto("/tools/pdf-to-jpg/");
@@ -190,6 +194,10 @@ test("keeps pdf.js out of the page until a PDF is chosen", async ({ page }) => {
   await expect
     .poll(() => requested.filter((url) => url.includes("pdf.worker")).length)
     .toBeGreaterThan(0);
+
+  // And the same check that found nothing up front finds it now, which is what
+  // makes the assertion above a measurement rather than a hopeful zero.
+  expect(chunksCarryingPdfJs(await scripts())).toBeGreaterThan(0);
 });
 
 test("refuses a document longer than it will convert in one pass", async ({ page }) => {
@@ -201,4 +209,65 @@ test("refuses a document longer than it will convert in one pass", async ({ page
     `converts up to ${maximumPdfToImagePages} pages at a time`,
   );
   await expect(page.locator("[data-editor]")).toBeHidden();
+});
+
+test("keeps the page on screen and the pages being converted in step", async ({
+  page,
+}) => {
+  await page.goto("/tools/pdf-to-jpg/");
+  await openPdf(page, await samplePdf(6));
+
+  const viewer = page.getByRole("region", { name: "The PDF being converted" });
+  const pages = page.getByLabel("Pages to convert");
+
+  // An untouched field means every page, so every page is in the selection and
+  // there is nothing to add.
+  await expect(page.locator("[data-page-state]")).toHaveText(
+    "Page 1 is in the selection.",
+  );
+  await expect(page.getByRole("button", { name: "Add the page on screen" })).toBeDisabled();
+
+  // The field moves the viewer to the first page it names.
+  await pages.fill("4-5");
+  await expect(viewer.getByLabel("Go to page")).toHaveValue("4");
+  await expect(page.locator("[data-page-state]")).toHaveText(
+    "Page 4 is in the selection.",
+  );
+
+  // Turning to a page outside the selection says so rather than pretending.
+  await viewer.getByRole("button", { name: "Next page" }).click();
+  await viewer.getByRole("button", { name: "Next page" }).click();
+  await expect(viewer.getByLabel("Go to page")).toHaveValue("6");
+  await expect(page.locator("[data-page-state]")).toHaveText(
+    "Page 6 is not in the selection.",
+  );
+
+  // And the button puts it in, collapsing the runs the way the field takes them.
+  await page.getByRole("button", { name: "Add the page on screen" }).click();
+  await expect(pages).toHaveValue("4-6");
+  await expect(page.locator("[data-page-state]")).toHaveText(
+    "Page 6 is in the selection.",
+  );
+
+  await page.getByRole("button", { name: "Make the images" }).click();
+  await expect(page.getByRole("list", { name: "Converted pages" }).getByRole("listitem")).toHaveCount(3);
+});
+
+test("reads the source document in the same viewer, fullscreen included", async ({
+  page,
+}) => {
+  await page.goto("/tools/pdf-to-jpg/");
+  await openPdf(page, await samplePdf(2));
+
+  const viewer = page.getByRole("region", { name: "The PDF being converted" });
+
+  await expect(viewer.locator("[data-document-name]")).toContainText("2 pages");
+  await expect.poll(() => paintedPixels(viewer)).toBeGreaterThan(500);
+
+  await viewer.getByRole("button", { name: "Full screen" }).click();
+  await expect(
+    viewer.getByRole("button", { name: "Leave full screen" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await viewer.getByRole("button", { name: "Leave full screen" }).click();
+  await expect(viewer.getByRole("button", { name: "Full screen" })).toBeVisible();
 });

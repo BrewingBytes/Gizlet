@@ -4,7 +4,11 @@ import { expect, test } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 
 import { fixedPdfPageSizes } from "../../src/data/jpg-to-pdf";
-import { chunksCarryingPdfJs, initialScripts } from "./support/initial-scripts";
+import {
+  chunksCarryingPdfJs,
+  initialScripts,
+  recordScriptBodies,
+} from "./support/initial-scripts";
 import { paintedAspect, paintedPixels } from "./support/pdf-canvas";
 
 /**
@@ -150,17 +154,17 @@ test("shows the assembled PDF in the result panel before it is downloaded", asyn
 test("keeps pdf.js out of the page until a PDF has been made", async ({ page }) => {
   const requested: string[] = [];
   page.on("request", (request) => requested.push(request.url()));
+  const scripts = recordScriptBodies(page);
 
   const workspace = await initialScripts(page, "/tools/jpg-to-pdf/");
   expect(workspace.length).toBeGreaterThan(0);
   expect(chunksCarryingPdfJs(workspace)).toBe(0);
   expect(requested.filter((url) => url.includes("pdf.worker"))).toEqual([]);
 
-  // The control: the PDF Viewer does import pdf.js up front, so the check
-  // above is looking for something it would genuinely find.
-  expect(
-    chunksCarryingPdfJs(await initialScripts(page, "/tools/pdf-viewer/")),
-  ).toBeGreaterThan(0);
+  // The reader loads it on demand too, now that it is the same shared
+  // surface, so no page is a control any more: the proof that this check can
+  // find pdf.js is the same page a moment later, once a document exists.
+  expect(chunksCarryingPdfJs(await initialScripts(page, "/tools/pdf-viewer/"))).toBe(0);
 
   // And on this page the library arrives only once there is a document to draw.
   await page.goto("/tools/jpg-to-pdf/");
@@ -173,4 +177,36 @@ test("keeps pdf.js out of the page until a PDF has been made", async ({ page }) 
   await expect
     .poll(() => requested.filter((url) => url.includes("pdf.worker")).length)
     .toBeGreaterThan(0);
+
+  // And the same check that found nothing up front finds it now, which is what
+  // makes the assertion above a measurement rather than a hopeful zero.
+  expect(chunksCarryingPdfJs(await scripts())).toBeGreaterThan(0);
+});
+
+test("previews the PDF it made in the shared viewer, fullscreen and all", async ({
+  page,
+}) => {
+  await page.goto("/tools/jpg-to-pdf/");
+  await page
+    .getByLabel("Select images to put in a PDF")
+    .setInputFiles([asFile("wide.jpg", wideJpeg), asFile("tall.jpg", tallJpeg)]);
+  await page.getByRole("button", { name: "Make the PDF" }).click();
+
+  const viewer = page.getByRole("region", { name: "The PDF this Gizlet just made" });
+
+  // The document previewed is the one that was generated, not the images.
+  await expect(viewer.locator("[data-document-name]")).toHaveText("2 pages");
+  await expect(viewer.locator("[data-page-total]")).toHaveText("of 2");
+  await expect.poll(() => paintedPixels(viewer)).toBeGreaterThan(500);
+
+  await viewer.getByRole("button", { name: "Full screen" }).click();
+  await expect(
+    viewer.getByRole("button", { name: "Leave full screen" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  // The page survives the move, and the download is untouched by any of it.
+  await expect(viewer.locator("[data-page-total]")).toHaveText("of 2");
+  await expect(page.getByRole("link", { name: "Download PDF" })).toBeVisible();
+
+  await viewer.getByRole("button", { name: "Leave full screen" }).click();
+  await expect(viewer.getByRole("button", { name: "Full screen" })).toBeFocused();
 });

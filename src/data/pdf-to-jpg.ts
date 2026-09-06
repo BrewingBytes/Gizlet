@@ -202,6 +202,72 @@ export function parsePdfPageSelection(
   return selected.size > 0 ? [...selected].sort((left, right) => left - right) : undefined;
 }
 
+/**
+ * A set of pages written back the way the field takes them: `1-3, 5`.
+ *
+ * Runs are collapsed rather than listed, because a visitor who adds page after
+ * page should end up with the selection they would have typed rather than with
+ * every number they pressed.
+ */
+export function formatPdfPageSelection(pages: readonly number[]): string {
+  const sorted = [...new Set(pages)].filter((page) => page >= 1).sort((left, right) => left - right);
+  const runs: string[] = [];
+
+  for (let index = 0; index < sorted.length; ) {
+    let end = index;
+
+    while (end + 1 < sorted.length && sorted[end + 1] === sorted[end] + 1) end += 1;
+
+    runs.push(sorted[index] === sorted[end] ? `${sorted[index]}` : `${sorted[index]}-${sorted[end]}`);
+    index = end + 1;
+  }
+
+  return runs.join(', ');
+}
+
+/**
+ * The field's value with one more page in it.
+ *
+ * A field the visitor has not touched means every page, and adding a page to
+ * every page is still every page — so an empty field stays empty rather than
+ * quietly becoming a selection of one. An unreadable field is left exactly as
+ * it is: it is being typed, and rewriting it under the visitor would be worse
+ * than doing nothing.
+ */
+export function addPdfPageToSelection(
+  value: string,
+  pageNumber: number,
+  pageCount: number,
+): string {
+  if (value.trim() === '') return '';
+
+  const selection = parsePdfPageSelection(value, pageCount);
+
+  if (!selection) return value;
+
+  return formatPdfPageSelection([...selection, pageNumber]);
+}
+
+/** The first page a selection names, for a viewer following the field. */
+export function getFirstSelectedPdfPage(value: string, pageCount: number): number | undefined {
+  return parsePdfPageSelection(value, pageCount)?.[0];
+}
+
+/** Whether the page on screen is one the conversion will actually produce. */
+export function describePdfPageInSelection(
+  pageNumber: number,
+  value: string,
+  pageCount: number,
+): string {
+  const selection = parsePdfPageSelection(value, pageCount);
+
+  if (!selection) return 'The pages above cannot be read yet.';
+
+  return selection.includes(pageNumber)
+    ? `Page ${pageNumber} is in the selection.`
+    : `Page ${pageNumber} is not in the selection.`;
+}
+
 /** Wording for a selection the field could not read. */
 export function getPdfPageSelectionErrorMessage(pageCount: number): string {
   return `Pages has to be numbers or ranges between 1 and ${pageCount}, like 1-3, 5. Leave it empty for every page.`;

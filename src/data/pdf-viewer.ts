@@ -146,6 +146,43 @@ export function getPdfRenderScale(
 }
 
 /**
+ * How a viewer fills the screen.
+ *
+ * `native` is the browser's own fullscreen, which is what a visitor expects and
+ * what the platform's exit gesture already knows about. `in-page` is the same
+ * idea drawn by this page — a fixed layer over everything — for a browser that
+ * refuses the API or does not have it, which is most iPhones. The control is
+ * never hidden and never does nothing: one of the two always applies.
+ */
+export type PdfFullscreenMode = 'native' | 'in-page';
+
+export function getPdfFullscreenMode(hasNativeFullscreen: boolean): PdfFullscreenMode {
+  return hasNativeFullscreen ? 'native' : 'in-page';
+}
+
+/** What the control says, which is what it will do rather than where you are. */
+export function getPdfFullscreenLabel(isFullscreen: boolean): string {
+  return isFullscreen ? 'Leave full screen' : 'Full screen';
+}
+
+/** Said once, out loud, because entering fullscreen moves the page under it. */
+export function describePdfFullscreenState(isFullscreen: boolean): string {
+  return isFullscreen
+    ? 'Full screen. Press Escape to leave it.'
+    : 'Back to the page.';
+}
+
+/**
+ * Whether a key press should leave the in-page fullscreen.
+ *
+ * Native fullscreen has the browser's own handling of Escape and needs none of
+ * this; the fallback is a `div` with a high z-index, and a `div` has to be told.
+ */
+export function isPdfFullscreenExitKey(key: string): boolean {
+  return key === 'Escape';
+}
+
+/**
  * Turns a pdf.js failure into something the visitor can act on.
  *
  * pdf.js reports these through the `name` on the error it throws, which is a
