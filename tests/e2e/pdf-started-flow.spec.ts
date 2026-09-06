@@ -65,6 +65,7 @@ test("offers a PDF category, and the Gizlets that declare they read a document",
     "Organize PDF",
     "Watermark PDF",
     "PDF Page Numbers",
+    "Clean PDF Metadata",
   ]);
 
   await expect(page.getByRole("heading", { name: "Your PDF" })).toBeVisible();

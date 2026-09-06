@@ -1,5 +1,6 @@
 ---
 import ToolPageLayout from '../../components/ToolPageLayout.astro';
+import CleanPdfMetadataTool from '../../components/CleanPdfMetadataTool.astro';
 import CollageMakerTool from '../../components/CollageMakerTool.astro';
 import CompressImageTool from '../../components/CompressImageTool.astro';
 import ConvertImageTool from '../../components/ConvertImageTool.astro';
@@ -79,6 +80,7 @@ const toolWorkspaces = {
   'watermark-pdf': WatermarkPdfTool,
   'pdf-page-numbers': PdfPageNumbersTool,
   'sign-pdf': SignPdfTool,
+  'clean-pdf-metadata': CleanPdfMetadataTool,
 } as const satisfies Record<AvailableToolSlug, unknown>;
 
 const { tool, relatedTools } = Astro.props;

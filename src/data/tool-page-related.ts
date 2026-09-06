@@ -23,7 +23,7 @@ const relatedToolSlugs: Record<AvailableToolSlug, readonly AvailableToolSlug[]> 
   'crop-image': ['rotate-flip-image', 'resize-image', 'compress-image', 'convert-image', 'jpg-to-pdf'],
   'rotate-flip-image': ['crop-image', 'resize-image', 'compress-image', 'convert-image', 'jpg-to-pdf'],
   'image-background': ['resize-image', 'crop-image', 'convert-image', 'collage-maker', 'jpg-to-pdf'],
-  'remove-image-metadata': ['compress-image', 'resize-image', 'convert-image', 'crop-image', 'jpg-to-pdf'],
+  'remove-image-metadata': ['clean-pdf-metadata', 'compress-image', 'resize-image', 'convert-image', 'crop-image'],
   'image-dimensions': ['resize-image', 'crop-image', 'compress-image', 'convert-image', 'jpg-to-pdf'],
   'image-color-picker': ['crop-image', 'resize-image', 'convert-image', 'compress-image', 'jpg-to-pdf'],
   'collage-maker': ['resize-image', 'crop-image', 'compress-image', 'convert-image', 'jpg-to-pdf'],
@@ -38,6 +38,7 @@ const relatedToolSlugs: Record<AvailableToolSlug, readonly AvailableToolSlug[]> 
   'watermark-pdf': ['organize-pdf', 'pdf-page-numbers', 'merge-pdf', 'pdf-viewer'],
   'pdf-page-numbers': ['organize-pdf', 'merge-pdf', 'watermark-pdf', 'pdf-viewer'],
   'sign-pdf': ['pdf-viewer', 'organize-pdf', 'watermark-pdf', 'merge-pdf'],
+  'clean-pdf-metadata': ['remove-image-metadata', 'pdf-viewer', 'organize-pdf', 'merge-pdf'],
 };
 
 function getToolBySlug(slug: AvailableToolSlug): ToolRegistryEntry {

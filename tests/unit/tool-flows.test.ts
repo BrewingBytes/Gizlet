@@ -131,6 +131,7 @@ describe('Gizlet flow registry', () => {
       'organize-pdf',
       'watermark-pdf',
       'pdf-page-numbers',
+      'clean-pdf-metadata',
     ]);
     expect(getNextFlowTools('jpg-to-pdf').map((tool) => tool.toolSlug)).toEqual([
       'merge-pdf',
@@ -139,6 +140,7 @@ describe('Gizlet flow registry', () => {
       'organize-pdf',
       'watermark-pdf',
       'pdf-page-numbers',
+      'clean-pdf-metadata',
     ]);
     expect(canFlowTo('jpg-to-pdf', 'merge-pdf')).toBe(true);
     expect(canFlowTo('jpg-to-pdf', 'split-pdf')).toBe(true);
@@ -150,6 +152,7 @@ describe('Gizlet flow registry', () => {
       'organize-pdf',
       'watermark-pdf',
       'pdf-page-numbers',
+      'clean-pdf-metadata',
     ]);
     // A PDF reaches an image Gizlet only through the one that converts it.
     expect(canFlowTo('jpg-to-pdf', 'compress-image')).toBe(false);
@@ -213,10 +216,11 @@ describe('Gizlet flow registry', () => {
       'organize-pdf',
       'watermark-pdf',
       'pdf-page-numbers',
+      'clean-pdf-metadata',
     ]);
     expect(
       getNextFlowSteps(imageInput, ['resize-image', 'jpg-to-pdf']).map((tool) => tool.toolSlug),
-    ).toEqual(['pdf-to-jpg', 'split-pdf', 'organize-pdf', 'watermark-pdf', 'pdf-page-numbers']);
+    ).toEqual(['pdf-to-jpg', 'split-pdf', 'organize-pdf', 'watermark-pdf', 'pdf-page-numbers', 'clean-pdf-metadata']);
   });
 
   /**
@@ -234,6 +238,7 @@ describe('Gizlet flow registry', () => {
       'organize-pdf',
       'watermark-pdf',
       'pdf-page-numbers',
+      'clean-pdf-metadata',
     ]);
     expect(isValidFlowSequence(pdfInput, ['merge-pdf', 'merge-pdf'])).toBe(false);
     expect(getNextFlowSteps(pdfInput, ['merge-pdf']).map((tool) => tool.toolSlug)).toEqual([
@@ -242,6 +247,7 @@ describe('Gizlet flow registry', () => {
       'organize-pdf',
       'watermark-pdf',
       'pdf-page-numbers',
+      'clean-pdf-metadata',
     ]);
     // Splitting a merged document leaves several again, so a second merge has
     // something to join once more.
@@ -316,6 +322,7 @@ describe('the compatibility rule, against contracts that do not exist yet', () =
       'organize-pdf',
       'watermark-pdf',
       'pdf-page-numbers',
+      'clean-pdf-metadata',
       'compress-pdf',
     ]);
     expect(canFlowTo('jpg-to-pdf', 'compress-pdf', definitions)).toBe(true);
@@ -329,6 +336,7 @@ describe('the compatibility rule, against contracts that do not exist yet', () =
       'organize-pdf',
       'watermark-pdf',
       'pdf-page-numbers',
+      'clean-pdf-metadata',
       'compress-pdf',
     ]);
     expect(canFlowTo('compress-pdf', 'pdf-to-jpg', definitions)).toBe(true);
@@ -432,6 +440,7 @@ describe('flow categories', () => {
       'organize-pdf',
       'watermark-pdf',
       'pdf-page-numbers',
+      'clean-pdf-metadata',
     ]);
   });
 

@@ -175,6 +175,11 @@ export const toolFlowRegistry = [
     input: pdfPayload,
     output: pdfPayload,
   },
+  {
+    toolSlug: 'clean-pdf-metadata',
+    input: pdfPayload,
+    output: pdfPayload,
+  },
 ] as const satisfies readonly ToolFlowDefinition[];
 
 /**

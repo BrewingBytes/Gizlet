@@ -1594,6 +1594,99 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'clean-pdf-metadata': {
+    what: {
+      heading: 'What Clean PDF Metadata does',
+      paragraphs: [
+        'Every PDF carries a set of fields about itself: a title, an author, a subject, keywords, the program it was written in, the program that turned it into a PDF, and when both of those happened. Most of it is filled in without anybody being asked. This Gizlet lists what your document is carrying, in plain words, and then writes a copy with those fields cleared.',
+        'The pages are not touched. Clearing the fields is a change to the document’s own record of itself, not to what is printed on it, so the page count, the text, the fonts and the layout come out exactly as they went in — and the copy is read back with the same reader that read the original, so what the result panel says about it is measured rather than claimed.',
+      ],
+    },
+    when: {
+      heading: 'When the fields say more than the document does',
+      paragraphs: [
+        'A CV keeps the name of whoever’s template it started from. A quote exported from a work laptop keeps the software licensed to the company. A scan keeps the model of the scanner and the hour it was fed through it. A document written on a Sunday says so. None of it is on the page, and all of it travels with the file to everyone you send it to.',
+        'It is worth doing before a document goes somewhere it cannot be taken back from: a job application, a tender, a landlord, a forum, a public filing. It is also worth doing after a document has been through other tools, this site’s included — a PDF that has been merged or stamped usually carries the name of the library that did it.',
+      ],
+    },
+    options: {
+      heading: 'What is listed, and what is cleared',
+      paragraphs: [
+        'There is nothing to configure: the fields are the document’s own, and clearing them takes no settings. What there is to do is look at the list first.',
+      ],
+      details: [
+        {
+          term: 'Who it belongs to',
+          description:
+            'The Author field. This is the one worth looking at first, because it is the one that carries a person’s name out of an office and into a file somebody else opens.',
+        },
+        {
+          term: 'What it says it is',
+          description:
+            'Title, Subject and Keywords. A title is often the filename of the draft it began as, which is how a document called "Offer — final v3 (do not send)" ends up in a reader’s window title.',
+        },
+        {
+          term: 'When it was made',
+          description:
+            'Created and Modified, shown as the document recorded them — with the time zone it recorded them in, rather than shifted into yours. When a document was written, and where in the world the clock was, is a fact about the document.',
+        },
+        {
+          term: 'What made it',
+          description:
+            'The program the document was written in and the one that turned it into a PDF, often with version numbers. It says what you run, and sometimes what your employer licenses.',
+        },
+        {
+          term: 'Everything else',
+          description:
+            'A writer may put anything it likes in there — a company name, a licence string, an internal document number. Those are counted rather than named, because inventing a label for a field this Gizlet does not recognise would be guessing. They are cleared with the rest.',
+        },
+        {
+          term: 'The XMP packet',
+          description:
+            'Most documents record the same information a second time in an XMP packet, and a cleaner that clears one and leaves the other has not cleaned anything. If the document carries one, it is dropped.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'It never leaves this device to be read',
+      paragraphs: [
+        'The document is read, listed and rewritten in this browser. That matters more here than almost anywhere else on this site: the fields being cleaned are the ones that identify a person, and uploading a file to have its author’s name removed hands that name to whoever is running the upload.',
+        'It is also why the list is shown before anything is cleared, rather than a button that promises a clean file. You can see what your document was carrying, and decide.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Does this remove text hidden on the page?',
+        answer:
+          'No, and this is the important limit. It clears the document’s own fields. Text under a black rectangle, an attachment, a comment, or a name written in the document itself are all still there — a rectangle drawn over a paragraph hides it from your eyes and from nobody else. Redaction is a different job and this Gizlet does not claim to do it.',
+      },
+      {
+        question: 'Are the pages changed at all?',
+        answer:
+          'No. The pages are left exactly as they are: the same count, the same text, the same fonts, the same layout. Only the document’s information dictionary and its XMP packet are cleared, and the result panel reads the copy back to say what it carries.',
+      },
+      {
+        question: 'What if my PDF has no metadata to clear?',
+        answer:
+          'It says so, and offers you nothing to press. A document with an empty information dictionary and no XMP packet is already clean, and a button that produced an identical file would only be theatre.',
+      },
+      {
+        question: 'Is the PDF uploaded to read its fields?',
+        answer:
+          'No. Reading the fields, drawing the pages and writing the cleaned copy all happen on this device. There is no upload endpoint behind this page.',
+      },
+      {
+        question: 'Will the cleaned copy say it was made by Gizlet?',
+        answer:
+          'No. Most PDF libraries stamp their own name into the Producer field as they write, and one that did that here would be undoing its own work. The document is loaded and saved with that behaviour switched off, and you can see the result in the read-back line under the download.',
+      },
+      {
+        question: 'Can it clean a password-protected PDF?',
+        answer:
+          'No. A protected document cannot be read without its password, and this Gizlet does not ask for one. Open it in an application that can, save an unlocked copy, and clean that instead.',
+      },
+    ],
+  },
   'organize-pdf': {
     what: {
       heading: 'What Organize PDF does',

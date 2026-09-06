@@ -567,8 +567,12 @@ export const toolRegistry = [
       "strip pdf metadata",
       "pdf producer field",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "One PDF file. Nothing else: the fields it reads are the document's own, and clearing them takes no settings.",
+      output: "What the document says about itself — title, author, subject, keywords, the software that wrote it and when — listed before anything is changed, and then a copy with the information dictionary emptied and the XMP packet dropped. The pages are untouched, and the copy is read back to say what it carries. It does not touch what is on the pages.",
+    },
   },
   {
     id: 24,

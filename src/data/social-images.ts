@@ -53,6 +53,7 @@ const bespokeSocialImageSlugs: readonly string[] = [
   'watermark-pdf',
   'pdf-page-numbers',
   'sign-pdf',
+  'clean-pdf-metadata',
 ];
 
 /** The image file name a slug's bespoke card is committed under. */
