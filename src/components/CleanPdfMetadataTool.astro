@@ -1,0 +1,354 @@
+---
+import PdfViewerSurface from './PdfViewerSurface.astro';
+import { pdfMetadataScopeNotice } from '../data/pdf-metadata';
+---
+
+<section class="clean-pdf-tool" data-clean-pdf-tool>
+  <div class="clean-pdf-tool__picker" data-drop-zone>
+    <input
+      id="clean-pdf-file"
+      class="clean-pdf-tool__file-input"
+      type="file"
+      accept="application/pdf,.pdf"
+      aria-label="Select a PDF to read"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">Read the fields first, then clear them</p>
+    <h2>Drop a PDF here</h2>
+    <p>The document is read and rewritten by this browser. Nothing is uploaded.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose a PDF</button>
+  </div>
+
+  <p class="clean-pdf-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="clean-pdf-tool__error" data-error role="alert" hidden></p>
+
+  <div class="clean-pdf-tool__report" data-report hidden>
+    <div class="clean-pdf-tool__bar">
+      <button type="button" class="button-secondary" data-clear>Choose another PDF</button>
+      <p class="clean-pdf-tool__document" data-document></p>
+    </div>
+
+    <div class="clean-pdf-tool__columns">
+      <div class="clean-pdf-tool__fields">
+        <p class="metadata">What this PDF is carrying</p>
+        <h2 class="clean-pdf-tool__summary" data-summary></h2>
+
+        <!-- The fields the document holds, drawn from the reader rather than
+             from a fixed list: a heading appears only where there is something
+             under it. -->
+        <template data-group-template>
+          <section class="clean-pdf-tool__group" data-group>
+            <h3 data-group-label></h3>
+            <dl data-group-fields></dl>
+          </section>
+        </template>
+        <template data-field-template>
+          <div class="clean-pdf-tool__field">
+            <dt data-field-label></dt>
+            <dd data-field-value></dd>
+          </div>
+        </template>
+
+        <div class="clean-pdf-tool__groups" data-groups></div>
+
+        <p class="clean-pdf-tool__unnamed" data-unnamed hidden></p>
+        <p class="clean-pdf-tool__notice">{pdfMetadataScopeNotice}</p>
+
+        <div class="clean-pdf-tool__actions">
+          <button type="button" data-apply>Clear the metadata</button>
+        </div>
+      </div>
+
+      <div class="clean-pdf-tool__preview">
+        <p class="metadata">The pages, which are not touched</p>
+        <PdfViewerSurface id="clean-pdf-source" label="The PDF being read" thumbnails />
+      </div>
+    </div>
+  </div>
+
+  <section class="clean-pdf-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2 data-result-title>Your cleaned PDF is ready.</h2>
+    <p class="clean-pdf-tool__result-details" data-result-details></p>
+    <p class="clean-pdf-tool__result-check" data-result-check></p>
+
+    <div class="clean-pdf-tool__result-actions">
+      <a class="clean-pdf-tool__download" data-download>Download PDF</a>
+      <button type="button" class="button-secondary" data-result-clear>Start over</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .clean-pdf-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .clean-pdf-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .clean-pdf-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .clean-pdf-tool__picker[hidden], .clean-pdf-tool__report[hidden], .clean-pdf-tool__result[hidden] { display: none; }
+  .clean-pdf-tool__picker h2 { margin-bottom: var(--space-2); }
+  .clean-pdf-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .clean-pdf-tool__status, .clean-pdf-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .clean-pdf-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .clean-pdf-tool__report, .clean-pdf-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .clean-pdf-tool__report { display: grid; gap: var(--space-4); }
+  .clean-pdf-tool__bar { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
+  .clean-pdf-tool__document, .clean-pdf-tool__result-details { margin: 0; overflow-wrap: anywhere; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .clean-pdf-tool__columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-4); align-items: start; }
+  .clean-pdf-tool__fields, .clean-pdf-tool__preview { display: grid; gap: var(--space-2); align-content: start; }
+  .clean-pdf-tool__summary { margin: 0 0 var(--space-2); }
+  .clean-pdf-tool__groups { display: grid; gap: var(--space-3); }
+  .clean-pdf-tool__group h3 { margin: 0 0 var(--space-1); font-size: var(--font-size-sm); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+  .clean-pdf-tool__group dl { display: grid; gap: var(--space-1); margin: 0; }
+  .clean-pdf-tool__field { display: grid; grid-template-columns: 11rem minmax(0, 1fr); gap: var(--space-2); padding: var(--space-1) 0; border-bottom: var(--border-width) solid var(--border); }
+  .clean-pdf-tool__field dt { margin: 0; font-weight: 700; }
+  .clean-pdf-tool__field dd { margin: 0; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .clean-pdf-tool__unnamed[hidden] { display: none; }
+  .clean-pdf-tool__unnamed, .clean-pdf-tool__notice { margin: 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .clean-pdf-tool__notice { padding: var(--space-2) var(--space-3); border-left: var(--border-strong-width) solid var(--color-amber); }
+  .clean-pdf-tool__actions, .clean-pdf-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); padding-top: var(--space-2); }
+  .clean-pdf-tool__result h2 { margin-bottom: var(--space-2); }
+  .clean-pdf-tool__result-details { margin-bottom: var(--space-2); }
+  .clean-pdf-tool__result-check { margin-bottom: var(--space-3); color: var(--text-muted); font-size: var(--font-size-sm); }
+  .clean-pdf-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .clean-pdf-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+
+  @media (max-width: 52rem) {
+    .clean-pdf-tool__columns { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  @media (max-width: 36rem) {
+    .clean-pdf-tool__picker, .clean-pdf-tool__report, .clean-pdf-tool__result { padding: var(--space-3); }
+    .clean-pdf-tool__field { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+
+<script>
+  import { formatFileSize } from '../data/image-compression';
+  import {
+    describeCleanedPdf,
+    describePdfMetadata,
+    getCleanPdfOpenErrorMessage,
+    getCleanedPdfFilename,
+    getPopulatedPdfMetadataGroups,
+    hasRemovablePdfMetadata,
+    pdfMetadataGroupLabels,
+    readPdfMetadata,
+    validateCleanPdfPageCount,
+    validateCleanPdfSelection,
+  } from '../data/pdf-metadata';
+  import { createPdfViewerSurface } from '../scripts/pdf-viewer-surface';
+
+  const root = document.querySelector<HTMLElement>('[data-clean-pdf-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const report = root.querySelector<HTMLElement>('[data-report]');
+    const documentLine = root.querySelector<HTMLElement>('[data-document]');
+    const summary = root.querySelector<HTMLElement>('[data-summary]');
+    const groups = root.querySelector<HTMLElement>('[data-groups]');
+    const groupTemplate = root.querySelector<HTMLTemplateElement>('[data-group-template]');
+    const fieldTemplate = root.querySelector<HTMLTemplateElement>('[data-field-template]');
+    const unnamed = root.querySelector<HTMLElement>('[data-unnamed]');
+    const applyButton = root.querySelector<HTMLButtonElement>('[data-apply]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const surfaceRoot = root.querySelector<HTMLElement>('[data-pdf-surface]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultDetails = root.querySelector<HTMLElement>('[data-result-details]');
+    const resultCheck = root.querySelector<HTMLElement>('[data-result-check]');
+    const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !report || !documentLine || !summary || !groups || !groupTemplate || !fieldTemplate || !unnamed || !applyButton || !clearButton || !surfaceRoot || !result || !resultDetails || !resultCheck || !download || !resultClearButton) {
+      throw new Error('Clean PDF Metadata tool could not initialise.');
+    }
+
+    const surface = createPdfViewerSurface(surfaceRoot);
+
+    let openFile: File | undefined;
+    let pageCount = 0;
+    let isWriting = false;
+    let resultUrl: string | undefined;
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+
+    const resetResult = () => {
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      resultUrl = undefined;
+      result.hidden = true;
+      resultDetails.textContent = '';
+      resultCheck.textContent = '';
+      download.removeAttribute('href');
+      download.removeAttribute('download');
+    };
+
+    const resetTool = () => {
+      openFile = undefined;
+      pageCount = 0;
+      surface.reset();
+      fileInput.value = '';
+      groups.replaceChildren();
+      summary.textContent = '';
+      documentLine.textContent = '';
+      unnamed.hidden = true;
+      report.hidden = true;
+      dropZone.hidden = false;
+      resetResult();
+      clearError();
+      clearStatus();
+    };
+
+    /** Draws the fields the document is carrying, grouped by what they are about. */
+    const renderMetadata = (metadata: ReturnType<typeof readPdfMetadata>) => {
+      groups.replaceChildren();
+      summary.textContent = describePdfMetadata(metadata);
+
+      for (const entry of getPopulatedPdfMetadataGroups(metadata)) {
+        const groupFragment = groupTemplate.content.cloneNode(true) as DocumentFragment;
+        const label = groupFragment.querySelector<HTMLElement>('[data-group-label]');
+        const list = groupFragment.querySelector<HTMLElement>('[data-group-fields]');
+
+        if (!label || !list) continue;
+
+        label.textContent = pdfMetadataGroupLabels[entry.group];
+
+        for (const field of entry.fields) {
+          const fieldFragment = fieldTemplate.content.cloneNode(true) as DocumentFragment;
+          const fieldLabel = fieldFragment.querySelector<HTMLElement>('[data-field-label]');
+          const fieldValue = fieldFragment.querySelector<HTMLElement>('[data-field-value]');
+
+          if (!fieldLabel || !fieldValue) continue;
+
+          fieldLabel.textContent = field.label;
+          fieldValue.textContent = field.value;
+          list.append(fieldFragment);
+        }
+
+        groups.append(groupFragment);
+      }
+
+      unnamed.hidden = metadata.unnamedCount === 0;
+      unnamed.textContent =
+        metadata.unnamedCount === 0
+          ? ''
+          : `${metadata.unnamedCount} more ${metadata.unnamedCount === 1 ? 'entry has' : 'entries have'} no name this Gizlet knows. ${metadata.unnamedCount === 1 ? 'It is' : 'They are'} cleared as well.`;
+
+      // A document with nothing to clear says so, and the button that would do
+      // nothing is not offered.
+      applyButton.hidden = !hasRemovablePdfMetadata(metadata);
+    };
+
+    const chooseFile = async (file: File | undefined) => {
+      resetTool();
+      if (!file) return;
+
+      const problem = validateCleanPdfSelection([file]);
+      if (problem) {
+        showError(problem);
+        return;
+      }
+
+      dropZone.hidden = true;
+      showStatus('Reading the PDF locally…');
+      await nextPaint();
+
+      try {
+        // pdf-lib reads the fields; it is the same library the rest of the PDF
+        // Gizlets write with, so there is no second PDF stack for this one.
+        const { openLocalPdfForMetadata } = await import('../scripts/pdf-generation');
+        const source = await openLocalPdfForMetadata(file);
+        const countProblem = validateCleanPdfPageCount(source.pageCount);
+
+        if (countProblem) throw new Error(countProblem);
+
+        openFile = file;
+        pageCount = source.pageCount;
+        report.hidden = false;
+        documentLine.textContent = `${file.name} · ${formatFileSize(file.size)} · ${pageCount} ${pageCount === 1 ? 'page' : 'pages'}`;
+        renderMetadata(readPdfMetadata(source.metadata));
+        clearStatus();
+
+        // The pages are shown so the visitor can see for themselves that they
+        // are the ones that come out the other side. pdf.js arrives only here,
+        // once there is a document to draw.
+        const { openLocalPdf } = await import('../scripts/pdf-rendering');
+        const opened = await openLocalPdf(file, { getErrorMessage: getCleanPdfOpenErrorMessage });
+
+        await surface.show(opened, `${file.name} · ${pageCount} ${pageCount === 1 ? 'page' : 'pages'}`);
+      } catch (caughtError) {
+        openFile = undefined;
+        report.hidden = true;
+        dropZone.hidden = false;
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : getCleanPdfOpenErrorMessage(undefined));
+      }
+    };
+
+    const apply = async () => {
+      if (!openFile || isWriting) return;
+
+      isWriting = true;
+      clearError();
+      resetResult();
+      applyButton.disabled = true;
+      applyButton.textContent = 'Clearing…';
+
+      try {
+        const { cleanLocalPdfMetadata, openLocalPdfForMetadata } = await import('../scripts/pdf-generation');
+
+        showStatus('Rewriting the document locally…');
+        await nextPaint();
+
+        const source = await openLocalPdfForMetadata(openFile);
+        const cleaned = await cleanLocalPdfMetadata(source);
+        const filename = getCleanedPdfFilename(openFile.name);
+
+        // The copy is read back with the same reader that read the original, so
+        // what the panel claims about it is measured rather than asserted.
+        const written = await openLocalPdfForMetadata(cleaned);
+        const remaining = readPdfMetadata(written.metadata);
+
+        resultUrl = URL.createObjectURL(cleaned);
+        resultDetails.textContent = `${describeCleanedPdf(written.pageCount)} · ${formatFileSize(cleaned.size)}`;
+        resultCheck.textContent = hasRemovablePdfMetadata(remaining)
+          ? `Read back from the copy: ${describePdfMetadata(remaining)}`
+          : 'Read back from the copy: it carries no document metadata at all.';
+        download.href = resultUrl;
+        download.download = filename;
+        download.textContent = `Download ${filename}`;
+        download.setAttribute('aria-label', `Download ${filename}`);
+        result.hidden = false;
+        clearStatus();
+      } catch (caughtError) {
+        resetResult();
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : 'This PDF could not be cleaned.');
+      } finally {
+        isWriting = false;
+        applyButton.disabled = false;
+        applyButton.textContent = 'Clear the metadata';
+      }
+    };
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void chooseFile(fileInput.files?.[0]));
+    clearButton.addEventListener('click', resetTool);
+    resultClearButton.addEventListener('click', resetTool);
+    applyButton.addEventListener('click', () => void apply());
+
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    }
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    }
+    dropZone.addEventListener('drop', (event) => void chooseFile(event.dataTransfer?.files[0]));
+  }
+</script>

@@ -220,6 +220,9 @@ const recipeStepSettings = {
   // it, and a page selection written for one document is a wrong answer about
   // the next. A shared numbering numbers everything, from one.
   'pdf-page-numbers': { f: pageNumberFormats, p: pageNumberPositions },
+  // Clearing a document's own fields takes nothing to decide, which is exactly
+  // what makes it a good last step in a shared chain.
+  'clean-pdf-metadata': {},
 } as const satisfies Record<RecipeToolSlug, Readonly<Record<string, 'number' | readonly string[]>>>;
 
 const recipeToolSlugs = Object.keys(recipeStepSettings) as readonly RecipeToolSlug[];

@@ -1,4 +1,15 @@
-import { PDFDocument, StandardFonts, degrees, rgb, type PDFFont, type PDFImage } from 'pdf-lib';
+import {
+  PDFDict,
+  PDFDocument,
+  PDFHexString,
+  PDFName,
+  PDFString,
+  StandardFonts,
+  degrees,
+  rgb,
+  type PDFFont,
+  type PDFImage,
+} from 'pdf-lib';
 
 import {
   getPdfEmbedStrategy,
@@ -21,6 +32,12 @@ import {
   getSignedPdfFilename,
   type SignaturePlacement,
 } from '../data/sign-pdf';
+import {
+  getCleanPdfSourceErrorMessage,
+  getCleanPdfWriteErrorMessage,
+  type PdfRawMetadata,
+  type PdfRawMetadataEntry,
+} from '../data/pdf-metadata';
 import {
   getOrganizePdfWriteErrorMessage,
   getPdfOrganizeErrorMessage,
@@ -176,11 +193,19 @@ type PdfSourceFailure = 'encrypted' | 'empty' | 'unreadable';
 async function openLocalPdfSource(
   source: Blob,
   word: (reason: PdfSourceFailure) => Error,
+  options: { readonly updateMetadata?: boolean } = {},
 ): Promise<{ readonly pageCount: number; readonly document: PDFDocument }> {
   let document: PDFDocument;
 
   try {
-    document = await PDFDocument.load(await source.arrayBuffer(), { ignoreEncryption: true });
+    // pdf-lib writes its own name into the information dictionary as it loads,
+    // which is exactly what a Gizlet reading that dictionary must not let it
+    // do: the visitor would be shown this site's library instead of whatever
+    // wrote their document.
+    document = await PDFDocument.load(await source.arrayBuffer(), {
+      ignoreEncryption: true,
+      updateMetadata: options.updateMetadata ?? true,
+    });
   } catch {
     throw word('unreadable');
   }
@@ -716,3 +741,91 @@ export async function signLocalPdf(
 }
 
 export { getSignedPdfFilename };
+
+/** A local PDF opened to have its own fields read, and then cleared. */
+export interface LocalPdfMetadataSource {
+  readonly pageCount: number;
+  readonly document: PDFDocument;
+  /** What the document was carrying when it arrived, before anything touched it. */
+  readonly metadata: PdfRawMetadata;
+}
+
+/** The information dictionary, as strings, in the order the document holds them. */
+function readInfoEntries(document: PDFDocument): readonly PdfRawMetadataEntry[] {
+  const info = document.context.lookupMaybe(document.context.trailerInfo.Info, PDFDict);
+
+  if (!info) return [];
+
+  const entries: PdfRawMetadataEntry[] = [];
+
+  for (const [key, value] of info.entries()) {
+    // A name is stored as `/Title`; a value may be a plain string or a hex one,
+    // and anything else in there is structure rather than something to show.
+    const name = key.asString().replace(/^\//, '');
+
+    if (value instanceof PDFString || value instanceof PDFHexString) {
+      entries.push({ key: name, value: value.decodeText() });
+    } else {
+      entries.push({ key: name, value: value.toString() });
+    }
+  }
+
+  return entries;
+}
+
+/**
+ * Opens a document and reads what it says about itself.
+ *
+ * Nothing is modified here — this is the reading half, and the panel it feeds
+ * is what a visitor decides on. `updateMetadata: false` is the whole point of
+ * this loader.
+ */
+export async function openLocalPdfForMetadata(source: Blob): Promise<LocalPdfMetadataSource> {
+  const { pageCount, document } = await openLocalPdfSource(
+    source,
+    (reason) => new Error(getCleanPdfSourceErrorMessage(reason)),
+    { updateMetadata: false },
+  );
+
+  return {
+    pageCount,
+    document,
+    metadata: {
+      entries: readInfoEntries(document),
+      hasXmp: Boolean(document.catalog.get(PDFName.of('Metadata'))),
+    },
+  };
+}
+
+/**
+ * Writes a copy with the document's own fields cleared.
+ *
+ * The pages are not touched: this deletes keys from the information dictionary
+ * and drops the XMP packet, then saves. Every key is deleted rather than set to
+ * an empty string, because a field present and empty is still a field, and the
+ * ones this Gizlet does not name are cleared too — a licence string or a
+ * company name is metadata whether or not there is a label for it here.
+ *
+ * pdf-lib would otherwise put its own producer and a fresh modification date
+ * back in on the way out. Both loaders and this writer are the reason that flag
+ * exists: a cleaner that stamps itself into the file it just cleaned is not one.
+ */
+export async function cleanLocalPdfMetadata(source: LocalPdfMetadataSource): Promise<Blob> {
+  const { document } = source;
+
+  try {
+    const info = document.context.lookupMaybe(document.context.trailerInfo.Info, PDFDict);
+
+    if (info) {
+      for (const key of info.keys()) info.delete(key);
+    }
+
+    document.catalog.delete(PDFName.of('Metadata'));
+
+    const bytes = await document.save();
+
+    return new Blob([bytes.slice()], { type: 'application/pdf' });
+  } catch {
+    throw new Error(getCleanPdfWriteErrorMessage());
+  }
+}

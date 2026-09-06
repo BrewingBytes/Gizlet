@@ -403,6 +403,7 @@ const [firstCategory] = categories;
     validateOrganizePdfPageCount,
     type PdfPageTurn,
   } from '../data/organize-pdf';
+  import { validateCleanPdfPageCount } from '../data/pdf-metadata';
   import {
     describeSplitPdfCount,
     getSinglePageRanges,
@@ -412,7 +413,7 @@ const [firstCategory] = categories;
   import { toolRegistry } from '../data/tools';
   import { createZipArchive, zipMimeType } from '../data/zip-archive';
   import { cropBrowserImage, drawCollage, drawImageBackground, encodeBrowserImage, loadBrowserImage, orientBrowserImage } from '../scripts/image-processing';
-  import { createImagePdf, openLocalPdfForOrganize, openLocalPdfForSplit, openLocalPdfForWatermark, organizeLocalPdf, splitLocalPdf, watermarkLocalPdf } from '../scripts/pdf-generation';
+  import { cleanLocalPdfMetadata, createImagePdf, openLocalPdfForMetadata, openLocalPdfForOrganize, openLocalPdfForSplit, openLocalPdfForWatermark, organizeLocalPdf, splitLocalPdf, watermarkLocalPdf } from '../scripts/pdf-generation';
   import { createPdfPageView } from '../scripts/pdf-page-view';
 
   // Chainable, published, and derived: adding a Gizlet with an image or PDF
@@ -1591,6 +1592,36 @@ const [firstCategory] = categories;
             }
 
             pdfResults = organized;
+            continue;
+          }
+
+          if (step.toolSlug === 'clean-pdf-metadata') {
+            if (pdfResults.length === 0) throw new Error(`${tool.name} needs a PDF from the block before it.`);
+
+            const cleaned: FlowPdf[] = [];
+            setSourceName ??= pdfResults[0].name;
+
+            for (const pdf of pdfResults) {
+              showStatus(`Running ${position}: ${tool.name}, reading the document locally…`);
+              await nextFrame();
+
+              // Clearing a document's own fields takes no settings, so the block
+              // does here exactly what the workspace does. It is also the step
+              // that undoes what the blocks before it wrote: every document this
+              // flow produced carries the library's name until this runs.
+              const source = await openLocalPdfForMetadata(pdf.blob);
+              const countProblem = validateCleanPdfPageCount(source.pageCount);
+              if (countProblem) throw new Error(countProblem);
+
+              cleaned.push({
+                blob: await cleanLocalPdfMetadata(source),
+                pages: source.pageCount,
+                pageSize: pdf.pageSize,
+                name: pdf.name,
+              });
+            }
+
+            pdfResults = cleaned;
             continue;
           }
 

@@ -72,6 +72,7 @@ test("offers a block only when it accepts what the block before it produces", as
     "Organize PDF",
     "Watermark PDF",
     "PDF Page Numbers",
+    "Clean PDF Metadata",
   ]);
 
   await addStep(page, "pdf-to-jpg");
