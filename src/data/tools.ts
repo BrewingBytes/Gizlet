@@ -545,8 +545,12 @@ export const toolRegistry = [
       "fill and sign",
       "stamp a signature",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "One PDF file; a signature drawn with a pointer, typed as a name, or chosen as a local picture, dragged to where it belongs on the page and sized against the page width, with the pages to put it on. A password-protected PDF is refused rather than signed.",
+      output: "The same PDF with the signature drawn onto the pages named, in the place shown over the page. The pages are drawn onto rather than rebuilt, so nothing already on them is re-encoded. This is a visible signature only: it is not certificate-based or cryptographic, and it proves nothing about who signed.",
+    },
   },
   {
     id: 23,

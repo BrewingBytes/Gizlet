@@ -187,11 +187,18 @@ export const toolFlowRegistry = [
  * here is the honest alternative to giving one a pass-through contract it does
  * not have, and it keeps `hasCompleteFlowContracts` a real guard against a
  * Gizlet that simply forgot to declare itself.
+ *
+ * Sign PDF is here for the other reason: it does write a document another
+ * Gizlet could read, but it cannot do its work without a signature, and a
+ * signature is a drawing or a picture. A flow is shared as a link, and a link
+ * carries whole numbers and names from closed lists — never a drawing. A block
+ * that could only ever sign nothing is not a step either.
  */
 export const flowlessToolSlugs = [
   'pdf-viewer',
   'image-dimensions',
   'image-color-picker',
+  'sign-pdf',
 ] as const satisfies readonly ToolRegistryEntry['slug'][];
 
 /** The registry's own entries, with their payload kinds preserved. */
