@@ -205,7 +205,6 @@ export interface PlannedToolChain {
 
 export const plannedToolChains = [
   { slug: 'favicon-generator', chain: ['resize-image', 'favicon-generator'] },
-  { slug: 'organize-pdf', chain: ['merge-pdf', 'organize-pdf', 'split-pdf'] },
   { slug: 'watermark-pdf', chain: ['jpg-to-pdf', 'watermark-pdf', 'merge-pdf'] },
   { slug: 'pdf-page-numbers', chain: ['merge-pdf', 'pdf-page-numbers', 'pdf-to-jpg'] },
   { slug: 'sign-pdf', chain: ['jpg-to-pdf', 'sign-pdf', 'merge-pdf'] },

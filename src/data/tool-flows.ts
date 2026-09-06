@@ -160,6 +160,11 @@ export const toolFlowRegistry = [
     input: imageFlowInput,
     output: imageOutput,
   },
+  {
+    toolSlug: 'organize-pdf',
+    input: pdfPayload,
+    output: pdfPayload,
+  },
 ] as const satisfies readonly ToolFlowDefinition[];
 
 /**

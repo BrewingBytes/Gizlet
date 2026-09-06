@@ -359,6 +359,15 @@ const [firstCategory] = categories;
     validateMergedPageCount,
   } from '../data/merge-pdf';
   import {
+    createOrganizePdfPlan,
+    defaultPdfPageTurn,
+    getPdfPageTurnOptions,
+    isPdfPageTurn,
+    turnEveryPdfPlanPage,
+    validateOrganizePdfPageCount,
+    type PdfPageTurn,
+  } from '../data/organize-pdf';
+  import {
     describeSplitPdfCount,
     getSinglePageRanges,
     getSplitPdfArchiveName,
@@ -367,7 +376,7 @@ const [firstCategory] = categories;
   import { toolRegistry } from '../data/tools';
   import { createZipArchive, zipMimeType } from '../data/zip-archive';
   import { cropBrowserImage, drawCollage, drawImageBackground, encodeBrowserImage, loadBrowserImage, orientBrowserImage } from '../scripts/image-processing';
-  import { createImagePdf, openLocalPdfForSplit, splitLocalPdf } from '../scripts/pdf-generation';
+  import { createImagePdf, openLocalPdfForOrganize, openLocalPdfForSplit, organizeLocalPdf, splitLocalPdf } from '../scripts/pdf-generation';
   import { createPdfPageView } from '../scripts/pdf-page-view';
 
   // Chainable, published, and derived: adding a Gizlet with an image or PDF
@@ -401,6 +410,7 @@ const [firstCategory] = categories;
     pageSize?: PdfPageSizeName;
     orientation?: PdfOrientation;
     resolution?: PdfImageResolution;
+    pageTurn?: PdfPageTurn;
   }
 
   /**
@@ -604,6 +614,7 @@ const [firstCategory] = categories;
       ...(toolSlug === 'image-background' ? { canvasWidth: 1080, canvasHeight: 1080, fit: defaultBackgroundFit } : {}),
       ...(toolSlug === 'jpg-to-pdf' ? { pageSize: defaultPdfPageSize, orientation: defaultPdfOrientation } : {}),
       ...(toolSlug === 'pdf-to-jpg' ? { resolution: defaultPdfImageResolution } : {}),
+      ...(toolSlug === 'organize-pdf' ? { pageTurn: defaultPdfPageTurn } : {}),
     });
     const canReorder = (fromIndex: number, toIndex: number): boolean => {
       return canReorderFlowStep(flowInput(), stepSlugs(), fromIndex, toIndex);
@@ -663,6 +674,10 @@ const [firstCategory] = categories;
       if (step.toolSlug === 'pdf-to-jpg') {
         const resolution = step.resolution ?? defaultPdfImageResolution;
         return `<div class="flow-block__settings"><label for="step-resolution-${step.id}">Resolution</label><select id="step-resolution-${step.id}" data-step-setting="resolution" data-step-id="${step.id}" aria-label="${name} resolution">${optionsMarkup(getPdfImageResolutionOptions(), resolution)}</select></div><p class="flow-block__format-note">Every page of the document becomes an image, in the format chosen below.</p>`;
+      }
+      if (step.toolSlug === 'organize-pdf') {
+        const pageTurn = step.pageTurn ?? defaultPdfPageTurn;
+        return `<div class="flow-block__settings"><label for="step-page-turn-${step.id}">Turn</label><select id="step-page-turn-${step.id}" data-step-setting="pageTurn" data-step-id="${step.id}" aria-label="${name} page turn">${optionsMarkup(getPdfPageTurnOptions(), pageTurn)}</select></div><p class="flow-block__format-note">Every page of the document is turned. Moving a page to a different place is a drag on the Gizlet's own page, not something a link can carry.</p>`;
       }
       return '';
     };
@@ -1009,6 +1024,7 @@ const [firstCategory] = categories;
       if (setting === 'ratio' && isFlowCropAspectRatioName(target.value)) step.ratio = target.value;
       if (setting === 'layout' && isCollageLayoutName(target.value)) step.layout = target.value;
       if (setting === 'turn' && isOrientationPresetName(target.value)) step.turn = target.value;
+      if (setting === 'pageTurn' && isPdfPageTurn(target.value)) step.pageTurn = target.value;
       if (setting === 'fit' && isBackgroundFit(target.value)) step.fit = target.value;
       if (setting === 'canvasWidth') step.canvasWidth = Number(target.value);
       if (setting === 'canvasHeight') step.canvasHeight = Number(target.value);
@@ -1315,6 +1331,46 @@ const [firstCategory] = categories;
             continue;
           }
 
+          if (step.toolSlug === 'organize-pdf') {
+            if (pdfResults.length === 0) throw new Error(`${tool.name} needs a PDF from the block before it.`);
+
+            const organized: FlowPdf[] = [];
+            setSourceName ??= pdfResults[0].name;
+
+            for (const pdf of pdfResults) {
+              showStatus(`Running ${position}: ${tool.name}, reading the document locally…`);
+              await nextFrame();
+
+              const source = await openLocalPdfForOrganize(pdf.blob);
+              const countProblem = validateOrganizePdfPageCount(source.pageCount);
+              if (countProblem) throw new Error(countProblem);
+
+              // A flow has no page to drag, so it applies the one page job that
+              // needs no field: every page turned the same way. The order and
+              // the page count are the document's own.
+              const plan = turnEveryPdfPlanPage(
+                createOrganizePdfPlan(source.pageCount),
+                step.pageTurn ?? defaultPdfPageTurn,
+              );
+              const written = await organizeLocalPdf(source, plan.pages, {
+                onPage: async (pagePosition, total) => {
+                  showStatus(`Running ${position}: ${tool.name}, page ${pagePosition} of ${total} locally…`);
+                  await nextFrame();
+                },
+              });
+
+              organized.push({
+                blob: written,
+                pages: source.pageCount,
+                pageSize: pdf.pageSize,
+                name: pdf.name,
+              });
+            }
+
+            pdfResults = organized;
+            continue;
+          }
+
           if (step.toolSlug === 'split-pdf') {
             if (pdfResults.length === 0) throw new Error(`${tool.name} needs a PDF from the block before it.`);
 
@@ -1549,6 +1605,7 @@ const [firstCategory] = categories;
         ...(step.toolSlug === 'image-background' ? { canvasWidth: step.canvasWidth, canvasHeight: step.canvasHeight, fit: step.fit } : {}),
         ...(step.toolSlug === 'jpg-to-pdf' ? { pageSize: step.pageSize, orientation: step.orientation } : {}),
         ...(step.toolSlug === 'pdf-to-jpg' ? { resolution: step.resolution } : {}),
+        ...(step.toolSlug === 'organize-pdf' ? { pageTurn: step.pageTurn } : {}),
       })),
     });
     const applyRecipe = (recipe: Recipe) => {
@@ -1576,6 +1633,7 @@ const [firstCategory] = categories;
         ...(step.pageSize !== undefined ? { pageSize: step.pageSize } : {}),
         ...(step.orientation !== undefined ? { orientation: step.orientation } : {}),
         ...(step.resolution !== undefined ? { resolution: step.resolution } : {}),
+        ...(step.pageTurn !== undefined ? { pageTurn: step.pageTurn } : {}),
       }));
       if (recipe.outputFormat) {
         // A link may name a format the chain cannot honour — every image flow

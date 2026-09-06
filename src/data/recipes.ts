@@ -34,6 +34,12 @@ import {
   type PdfPageSizeName,
 } from './jpg-to-pdf';
 import {
+  defaultPdfPageTurn,
+  isPdfPageTurn,
+  pdfPageTurns,
+  type PdfPageTurn,
+} from './organize-pdf';
+import {
   defaultPdfImageResolution,
   pdfImageResolutionNames,
   type PdfImageResolution,
@@ -75,6 +81,7 @@ export interface RecipeStep {
   readonly pageSize?: PdfPageSizeName;
   readonly orientation?: PdfOrientation;
   readonly resolution?: PdfImageResolution;
+  readonly pageTurn?: PdfPageTurn;
 }
 
 export interface Recipe {
@@ -172,6 +179,10 @@ const recipeStepSettings = {
   // carries is a whole number or one of a closed list of names. A flow splits
   // the document into its pages, which needs no setting to say so.
   'split-pdf': {},
+  // Which page goes where is a drag on a page nobody else is looking at, so a
+  // link carries the one page job that needs no field: the turn every page
+  // gets. A chain that rearranges pages is a chain that cannot be shared.
+  'organize-pdf': { t: pdfPageTurns },
 } as const satisfies Record<RecipeToolSlug, Readonly<Record<string, 'number' | readonly string[]>>>;
 
 const recipeToolSlugs = Object.keys(recipeStepSettings) as readonly RecipeToolSlug[];
@@ -330,6 +341,16 @@ function buildStep(
     if (!Object.hasOwn(settings, 'r')) return { toolSlug };
 
     return { toolSlug, resolution: settings.r as PdfImageResolution };
+  }
+
+  if (toolSlug === 'organize-pdf') {
+    if (!Object.hasOwn(settings, 't')) return { toolSlug };
+
+    const pageTurn = String(settings.t);
+
+    if (!isPdfPageTurn(pageTurn)) return undefined;
+
+    return { toolSlug, pageTurn };
   }
 
   return { toolSlug };
@@ -523,6 +544,14 @@ export function encodeRecipe(recipe: Recipe): string | undefined {
       if (!pdfImageResolutionNames.includes(resolution)) return undefined;
 
       settings.push(`r=${resolution}`);
+    }
+
+    if (step.toolSlug === 'organize-pdf') {
+      const pageTurn = step.pageTurn ?? defaultPdfPageTurn;
+
+      if (!isPdfPageTurn(pageTurn)) return undefined;
+
+      settings.push(`t=${pageTurn}`);
     }
 
     segments.push(settings.length === 0 ? step.toolSlug : `${step.toolSlug}:${settings.join(',')}`);

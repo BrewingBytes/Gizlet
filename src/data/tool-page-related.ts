@@ -30,10 +30,11 @@ const relatedToolSlugs: Record<AvailableToolSlug, readonly AvailableToolSlug[]> 
   'json-ld-generator': ['json-formatter'],
   'json-formatter': ['json-ld-generator'],
   'jpg-to-pdf': ['pdf-to-jpg', 'merge-pdf', 'pdf-viewer'],
-  'pdf-viewer': ['pdf-to-jpg', 'merge-pdf', 'jpg-to-pdf'],
-  'merge-pdf': ['split-pdf', 'pdf-viewer', 'jpg-to-pdf'],
-  'pdf-to-jpg': ['split-pdf', 'pdf-viewer', 'jpg-to-pdf'],
-  'split-pdf': ['merge-pdf', 'pdf-to-jpg', 'pdf-viewer'],
+  'pdf-viewer': ['organize-pdf', 'pdf-to-jpg', 'merge-pdf', 'jpg-to-pdf'],
+  'merge-pdf': ['split-pdf', 'organize-pdf', 'pdf-viewer', 'jpg-to-pdf'],
+  'pdf-to-jpg': ['split-pdf', 'organize-pdf', 'pdf-viewer', 'jpg-to-pdf'],
+  'split-pdf': ['organize-pdf', 'merge-pdf', 'pdf-to-jpg', 'pdf-viewer'],
+  'organize-pdf': ['split-pdf', 'merge-pdf', 'pdf-viewer', 'pdf-to-jpg'],
 };
 
 function getToolBySlug(slug: AvailableToolSlug): ToolRegistryEntry {

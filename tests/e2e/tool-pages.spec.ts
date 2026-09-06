@@ -28,6 +28,7 @@ const workspaceSignatures = {
   "merge-pdf": "Select PDFs to merge",
   "pdf-to-jpg": "Select a PDF to convert",
   "split-pdf": "Select a PDF to split",
+  "organize-pdf": "Select a PDF to organize",
 } as const satisfies Record<AvailableToolSlug, string>;
 
 for (const tool of getAvailableTools()) {

@@ -1313,6 +1313,99 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'organize-pdf': {
+    what: {
+      heading: 'What Organize PDF does',
+      paragraphs: [
+        'Organize PDF lays a document out as its pages and lets you rebuild it. Drag a page somewhere else, turn it a quarter at a time, copy it, drop it, and save the result as a new PDF. Every page is drawn from the document itself, so you are moving the page you can see rather than a number in a list.',
+        'The pages are copied rather than redrawn, so what comes out is the same PDF content it went in as: the text stays selectable, the fonts stay embedded, and nothing is re-encoded. Tick a few pages instead and they come out as a document of their own, which is the quick way to pull a form or a signature page out of something longer.',
+      ],
+    },
+    when: {
+      heading: 'When to rearrange a document',
+      paragraphs: [
+        'When a scan came out in the wrong order, when a page came out sideways because the feeder took it that way, when a report needs its appendix moved to the front, or when a document has three pages in it that nobody outside the room should see. All four are the same job — the document is nearly right — and all four are the reason a page has to be visible before it can be moved.',
+        'It is the pair to Merge PDF and Split PDF. Merging joins documents end to end and splitting takes runs of pages out; this is the one that changes the order inside a document, and the three of them together are most of what anyone ever does to a PDF that is not writing on it.',
+      ],
+    },
+    options: {
+      heading: 'What the page cards do',
+      paragraphs: [
+        'Every control has a button as well as a drag, because a drag is unavailable to a keyboard and awkward on a phone.',
+      ],
+      details: [
+        {
+          term: 'Moving a page',
+          description:
+            'Drag a page card onto the position you want it in, or use the arrow buttons on the card to move it one place at a time. The number on each card is where that page will be in the new document, and the p.4 beside it is which page of the original it came from — so a document you have rearranged still says what it was made of.',
+        },
+        {
+          term: 'Turning a page',
+          description:
+            'Quarter turns, left or right, and pressing twice puts a page upside down. A turn is added to the way the page already sat rather than replacing it, so a page that arrived sideways ends up upright after one press instead of going back where it started. The thumbnail turns with it, which is how you know before you save.',
+        },
+        {
+          term: 'Copying and dropping',
+          description:
+            'A copy lands directly after the page it copies and is a page in its own right from then on: it can be moved and turned without touching the original. Dropping removes a page from the new document only — the file on your device is never changed. The last page cannot be dropped, because a PDF with no pages is not a PDF.',
+        },
+        {
+          term: 'Ticking pages',
+          description:
+            'A tick puts a page in the set the bulk buttons act on: turn them all, copy them all, drop them all. Extract the ticked pages writes a second document holding only those pages, in the order and orientation you left them in, and leaves the one you are building alone.',
+        },
+        {
+          term: 'Limits',
+          description:
+            'Documents of up to 500 pages, which is what the PDF Viewer will open, so anything this Gizlet produces can be read in the one next to it. Copying stops at the same ceiling. Past 50 pages the Gizlet says it is working through a long document rather than looking stalled, and a password-protected PDF is refused with an explanation.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'The pages are rearranged here',
+      paragraphs: [
+        'Reading the PDF, drawing every page, copying the pages into their new order and writing the document all happen in this browser. Gizlet is a static site with no upload endpoint, so there is no server that could receive the file, and nothing survives closing the tab.',
+        'Dropping a page is the case that matters most. Removing pages from a document is usually what someone does immediately before sending the rest of it on, which means the pages being removed are the ones that should never have left the device — and on a site that uploads first and edits afterwards, they already have.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Is the PDF uploaded to rearrange it?',
+        answer:
+          'No. The document is read and the new one is written by this browser, and it is handed straight to your downloads. There is no upload endpoint behind this page.',
+      },
+      {
+        question: 'Does rearranging the pages change the original file?',
+        answer:
+          'No. The file on your device is never written to. Every page you move, turn or drop changes a plan for a new document, and the new document is created only when you save it.',
+      },
+      {
+        question: 'Can I move a page without dragging it?',
+        answer:
+          'Yes. Each page card has arrow buttons that move it one place earlier or later, and they work from the keyboard, so the whole document can be reordered without a pointer.',
+      },
+      {
+        question: 'What happens when I copy a page?',
+        answer:
+          'The copy lands directly after the page it came from and is independent from that moment: turning or moving one does not touch the other. Both hold the same content, copied from the same source page.',
+      },
+      {
+        question: 'How do I pull a few pages out into their own file?',
+        answer:
+          'Tick them and press Extract the ticked pages. You get a second PDF holding only those pages, in the order they sit in above, and the document you are organizing is left as it was. Naming runs of pages instead is what Split PDF is for.',
+      },
+      {
+        question: 'Does turning a page rotate the text as well?',
+        answer:
+          'Yes. A turn is recorded on the page itself, the way a PDF records orientation, so every reader shows it the way you left it and the text stays selectable rather than becoming a picture.',
+      },
+      {
+        question: 'Can it organize a password-protected PDF?',
+        answer:
+          'No. A protected document cannot be read without its password, and this Gizlet does not ask for one. Open it in an application that can, save an unlocked copy, and organize that instead.',
+      },
+    ],
+  },
   'split-pdf': {
     what: {
       heading: 'What Split PDF does',

@@ -1,0 +1,788 @@
+---
+import PdfViewerSurface from './PdfViewerSurface.astro';
+---
+
+<section class="organize-pdf-tool" data-organize-pdf-tool>
+  <div class="organize-pdf-tool__picker" data-drop-zone>
+    <input
+      id="organize-pdf-file"
+      class="organize-pdf-tool__file-input"
+      type="file"
+      accept="application/pdf,.pdf"
+      aria-label="Select a PDF to organize"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">Reorder, turn, copy, drop</p>
+    <h2>Drop a PDF here</h2>
+    <p>Its pages are rearranged and written into a new document by this browser. Nothing is uploaded.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose a PDF</button>
+  </div>
+
+  <p class="organize-pdf-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="organize-pdf-tool__error" data-error role="alert" hidden></p>
+
+  <div class="organize-pdf-tool__editor" data-editor hidden>
+    <div class="organize-pdf-tool__bar">
+      <button type="button" class="button-secondary" data-clear>Choose another PDF</button>
+    </div>
+
+    <div class="organize-pdf-tool__plan">
+      <div class="organize-pdf-tool__plan-heading">
+        <h3>The new document</h3>
+        <p class="organize-pdf-tool__summary" data-plan-summary></p>
+      </div>
+
+      <div class="organize-pdf-tool__selection" aria-label="Actions for the ticked pages" role="group">
+        <button type="button" class="organize-pdf-tool__bulk" data-select-all>Tick every page</button>
+        <button type="button" class="organize-pdf-tool__bulk" data-select-none>Untick them all</button>
+        <button type="button" class="organize-pdf-tool__bulk" data-turn-selected="right">Turn ticked right</button>
+        <button type="button" class="organize-pdf-tool__bulk" data-turn-selected="left">Turn ticked left</button>
+        <button type="button" class="organize-pdf-tool__bulk" data-duplicate-selected>Copy ticked</button>
+        <button type="button" class="organize-pdf-tool__bulk" data-remove-selected>Drop ticked</button>
+      </div>
+
+      <ol class="organize-pdf-tool__pages" aria-label="Pages in the new document" data-page-list></ol>
+
+      <!-- One page card, cloned per planned page, so no page number is ever markup. -->
+      <template data-page-template>
+        <li class="organize-page" data-page draggable="true">
+          <div class="organize-page__grip" aria-hidden="true">⠿</div>
+          <button type="button" class="organize-page__thumbnail" data-page-open>
+            <span class="organize-page__frame">
+              <canvas data-page-canvas></canvas>
+            </span>
+            <span class="organize-page__position" data-page-position></span>
+          </button>
+          <label class="organize-page__select">
+            <input type="checkbox" data-page-select />
+            <span data-page-source></span>
+          </label>
+          <div class="organize-page__controls">
+            <button type="button" class="organize-page__button" data-page-action="earlier">←</button>
+            <button type="button" class="organize-page__button" data-page-action="later">→</button>
+            <button type="button" class="organize-page__button" data-page-action="turn-left">↺</button>
+            <button type="button" class="organize-page__button" data-page-action="turn-right">↻</button>
+            <button type="button" class="organize-page__button" data-page-action="duplicate">＋</button>
+            <button type="button" class="organize-page__button" data-page-action="remove">✕</button>
+          </div>
+          <p class="organize-page__rotation" data-page-rotation></p>
+        </li>
+      </template>
+    </div>
+
+    <PdfViewerSurface id="organize-pdf-source" label="The PDF being organized" zoom />
+
+    <div class="organize-pdf-tool__actions">
+      <button type="button" data-save>Save the organized PDF</button>
+      <button type="button" class="button-secondary" data-extract>Extract the ticked pages</button>
+      <button type="button" class="button-secondary" data-reset>Start over</button>
+    </div>
+  </div>
+
+  <section class="organize-pdf-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2 data-result-title>Your PDF is ready.</h2>
+    <p class="organize-pdf-tool__result-details" data-result-details></p>
+
+    <div class="organize-pdf-tool__preview" data-result-preview hidden>
+      <p class="metadata">Preview</p>
+      <PdfViewerSurface id="organize-pdf-result" label="The document this Gizlet produced" />
+    </div>
+
+    <p class="organize-pdf-tool__preview-error" data-preview-error role="status" hidden></p>
+
+    <div class="organize-pdf-tool__result-actions">
+      <a class="organize-pdf-tool__download" data-download>Download PDF</a>
+      <button type="button" class="button-secondary" data-result-clear>Start over</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .organize-pdf-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .organize-pdf-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .organize-pdf-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .organize-pdf-tool__picker[hidden], .organize-pdf-tool__editor[hidden], .organize-pdf-tool__result[hidden] { display: none; }
+  .organize-pdf-tool__picker h2 { margin-bottom: var(--space-2); }
+  .organize-pdf-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .organize-pdf-tool__status, .organize-pdf-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .organize-pdf-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .organize-pdf-tool__editor, .organize-pdf-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .organize-pdf-tool__editor { display: grid; gap: var(--space-4); }
+  .organize-pdf-tool__bar { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
+  .organize-pdf-tool__plan { display: grid; gap: var(--space-3); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .organize-pdf-tool__plan-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
+  .organize-pdf-tool__plan-heading h3 { margin: 0; }
+  .organize-pdf-tool__summary { margin: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .organize-pdf-tool__selection { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .organize-pdf-tool__bulk { min-height: 2.75rem; padding: 0 var(--space-3); border: var(--border-width) solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: var(--font-size-sm); font-weight: 700; cursor: pointer; }
+  .organize-pdf-tool__bulk:hover:not(:disabled) { border-color: var(--text); }
+  .organize-pdf-tool__bulk:disabled { color: var(--text-muted); opacity: 0.5; cursor: default; }
+  .organize-pdf-tool__pages { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+
+  /* Rows pack to the top and the turn line always takes its space, so a card
+     carrying one does not sit a row higher than the cards beside it. */
+  .organize-page { display: grid; justify-items: center; align-content: start; gap: var(--space-1); padding: var(--space-2); border: var(--border-width) solid var(--border); background: var(--background); }
+  .organize-page[data-selected='true'] { border-color: var(--text); border-width: var(--border-strong-width); }
+  .organize-page[data-dragging='true'] { opacity: 0.4; }
+  .organize-page[data-drop-target='true'] { border-color: var(--color-amber); border-width: var(--border-strong-width); }
+  .organize-page__grip { color: var(--text-muted); font-size: var(--font-size-xs); cursor: grab; }
+  .organize-page__thumbnail { display: grid; justify-items: center; gap: var(--space-1); padding: 0; border: 0; background: none; color: var(--text-muted); font: inherit; cursor: pointer; }
+  /* A square frame, so a page turned a quarter turn still fits the space it had:
+     a canvas that fits inside a square still fits it with its sides swapped.
+     The bounds are absolute rather than percentages, which a canvas with
+     intrinsic dimensions does not honour — it overflowed and covered the
+     position number under it. */
+  .organize-page__frame { display: grid; place-items: center; width: 4.5rem; height: 4.5rem; }
+  .organize-page__frame canvas { display: block; max-width: 4.5rem; max-height: 4.5rem; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 20%); transform: rotate(var(--page-turn, 0deg)); }
+  .organize-page__position { font-family: var(--font-mono); font-size: var(--font-size-xs); font-weight: 700; color: var(--text); }
+  .organize-page__select { display: flex; align-items: center; gap: var(--space-1); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); cursor: pointer; }
+  .organize-page__controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; width: 100%; }
+  .organize-page__button { min-height: 2.25rem; padding: 0; border: var(--border-width) solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: var(--font-size-sm); cursor: pointer; }
+  .organize-page__button:hover:not(:disabled) { border-color: var(--text); }
+  .organize-page__button:disabled { color: var(--text-muted); opacity: 0.4; cursor: default; }
+  .organize-page__rotation { min-height: 1.25rem; margin: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+
+  .organize-pdf-tool__actions, .organize-pdf-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .organize-pdf-tool__result h2 { margin-bottom: var(--space-2); }
+  .organize-pdf-tool__result-details { margin-bottom: var(--space-3); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .organize-pdf-tool__preview[hidden], .organize-pdf-tool__preview-error[hidden] { display: none; }
+  .organize-pdf-tool__preview { display: grid; gap: var(--space-2); margin-bottom: var(--space-3); }
+  .organize-pdf-tool__preview-error { margin: 0 0 var(--space-3); color: var(--color-red); font-size: var(--font-size-sm); }
+  .organize-pdf-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .organize-pdf-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+
+  @media (max-width: 36rem) {
+    .organize-pdf-tool__picker, .organize-pdf-tool__editor, .organize-pdf-tool__result { padding: var(--space-3); }
+    .organize-pdf-tool__pages { grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr)); }
+  }
+</style>
+
+<script>
+  import { formatFileSize } from '../data/image-compression';
+  import {
+    canDuplicatePdfPlanPages,
+    canRemovePdfPlanPages,
+    createOrganizePdfPlan,
+    describeOrganizePdfPlan,
+    describeOrganizedPdfPage,
+    describePdfPageRotation,
+    duplicatePdfPlanPages,
+    getExtractedPdfFilename,
+    getOrganizePdfFilename,
+    getOrganizePdfOpenErrorMessage,
+    getPdfExtractSelectionMessage,
+    getPdfPlanEmptyMessage,
+    getPdfPlanExtract,
+    getPdfPlanLimitMessage,
+    getPdfPlanPageIndex,
+    getSelectedPdfPlanIds,
+    largeOrganizePdfPages,
+    removePdfPlanPages,
+    setPdfPlanSelection,
+    shiftPdfPlanPage,
+    togglePdfPlanSelection,
+    turnPdfPlanPages,
+    validateOrganizePdfPageCount,
+    validateOrganizePdfSelection,
+    movePdfPlanPage,
+    type OrganizePdfPlan,
+    type OrganizedPdfPage,
+  } from '../data/organize-pdf';
+  import { getPdfPreviewErrorMessage, pdfThumbnailWidth } from '../data/pdf-viewer';
+  import { createPdfViewerSurface } from '../scripts/pdf-viewer-surface';
+  import type { LocalPdfDocument } from '../scripts/pdf-rendering';
+
+  const root = document.querySelector<HTMLElement>('[data-organize-pdf-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const editor = root.querySelector<HTMLElement>('[data-editor]');
+    const surfaces = root.querySelectorAll<HTMLElement>('[data-pdf-surface]');
+    const sourceSurfaceRoot = surfaces[0];
+    const resultSurfaceRoot = surfaces[1];
+    const planSummary = root.querySelector<HTMLElement>('[data-plan-summary]');
+    const pageList = root.querySelector<HTMLOListElement>('[data-page-list]');
+    const pageTemplate = root.querySelector<HTMLTemplateElement>('[data-page-template]');
+    const selectAllButton = root.querySelector<HTMLButtonElement>('[data-select-all]');
+    const selectNoneButton = root.querySelector<HTMLButtonElement>('[data-select-none]');
+    const duplicateSelectedButton = root.querySelector<HTMLButtonElement>('[data-duplicate-selected]');
+    const removeSelectedButton = root.querySelector<HTMLButtonElement>('[data-remove-selected]');
+    const turnSelectedButtons = root.querySelectorAll<HTMLButtonElement>('[data-turn-selected]');
+    const saveButton = root.querySelector<HTMLButtonElement>('[data-save]');
+    const extractButton = root.querySelector<HTMLButtonElement>('[data-extract]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const resetButton = root.querySelector<HTMLButtonElement>('[data-reset]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultTitle = root.querySelector<HTMLElement>('[data-result-title]');
+    const resultDetails = root.querySelector<HTMLElement>('[data-result-details]');
+    const resultPreview = root.querySelector<HTMLElement>('[data-result-preview]');
+    const previewError = root.querySelector<HTMLElement>('[data-preview-error]');
+    const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !status || !error || !editor || !sourceSurfaceRoot || !resultSurfaceRoot || !planSummary || !pageList || !pageTemplate || !selectAllButton || !selectNoneButton || !duplicateSelectedButton || !removeSelectedButton || !saveButton || !extractButton || !clearButton || !resetButton || !result || !resultTitle || !resultDetails || !resultPreview || !previewError || !download || !resultClearButton) {
+      throw new Error('Organize PDF tool could not initialise.');
+    }
+
+    let openFile: File | undefined;
+    let openDocument: LocalPdfDocument | undefined;
+    let sourcePageCount = 0;
+    let plan: OrganizePdfPlan = createOrganizePdfPlan(0);
+    let isWriting = false;
+    let resultUrl: string | undefined;
+    /** Cancels thumbnails still being drawn when the document changes. */
+    let documentToken = 0;
+
+    /**
+     * One drawn thumbnail per source page, kept as an off-screen canvas.
+     *
+     * A page is drawn once however many times it appears in the plan and
+     * however often the plan is rearranged: copying a canvas is cheap, drawing
+     * a PDF page is not, and a document being organized is redrawn on every
+     * move. This is what keeps a drag from re-rendering the document.
+     */
+    const drawnPages = new Map<number, HTMLCanvasElement>();
+    /** The card showing each planned page, so a move reorders rather than rebuilds. */
+    const cards = new Map<number, HTMLLIElement>();
+
+    /**
+     * Two of the same surface: the document as it arrived, so its pages can be
+     * read full screen before they are moved, and the document that came out,
+     * so the new order can be checked before it is downloaded. The page cards
+     * below are this Gizlet's page strip, which is why the reader is asked for
+     * without thumbnails of its own.
+     */
+    const sourceSurface = createPdfViewerSurface(sourceSurfaceRoot);
+    const resultSurface = createPdfViewerSurface(resultSurfaceRoot);
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+
+    const resetResult = () => {
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      resultUrl = undefined;
+      resultSurface.reset();
+      resultPreview.hidden = true;
+      previewError.hidden = true;
+      result.hidden = true;
+      resultDetails.textContent = '';
+      download.removeAttribute('href');
+      download.removeAttribute('download');
+    };
+
+    /** Copies a drawn page into a card's canvas, at the size it was drawn. */
+    const paintCard = (canvas: HTMLCanvasElement, sourcePage: number) => {
+      const drawn = drawnPages.get(sourcePage);
+      const context = canvas.getContext('2d');
+
+      if (!drawn || !context) return;
+
+      canvas.width = drawn.width;
+      canvas.height = drawn.height;
+      context.drawImage(drawn, 0, 0);
+    };
+
+    /** Builds the card for one planned page, drawn from whatever is in the cache. */
+    const createCard = (page: OrganizedPdfPage): HTMLLIElement => {
+      const item = pageTemplate.content.firstElementChild?.cloneNode(true);
+
+      if (!(item instanceof HTMLLIElement)) throw new Error('The page-card template is missing.');
+
+      item.dataset.pageId = String(page.id);
+
+      const canvas = item.querySelector<HTMLCanvasElement>('[data-page-canvas]');
+
+      if (canvas) paintCard(canvas, page.sourcePage);
+
+      for (const button of item.querySelectorAll<HTMLButtonElement>('[data-page-action]')) {
+        button.dataset.pageId = String(page.id);
+      }
+
+      const open = item.querySelector<HTMLButtonElement>('[data-page-open]');
+      const select = item.querySelector<HTMLInputElement>('[data-page-select]');
+
+      if (open) open.dataset.pageId = String(page.id);
+      if (select) select.dataset.pageId = String(page.id);
+
+      return item;
+    };
+
+    /**
+     * Draws the plan.
+     *
+     * Cards are kept and reordered rather than rebuilt, so a move costs a DOM
+     * reorder and a few attributes instead of a page render, and the control the
+     * visitor pressed is still the control they can press again — which is what
+     * makes moving a page with the keyboard usable at all.
+     */
+    const renderPlan = () => {
+      const total = plan.pages.length;
+      const selected = getSelectedPdfPlanIds(plan);
+      const active = document.activeElement;
+      const focusedAction = active instanceof HTMLElement ? active.dataset.pageAction : undefined;
+      const focusedId = active instanceof HTMLElement ? active.dataset.pageId : undefined;
+
+      const ordered = plan.pages.map((page, index) => {
+        const item = cards.get(page.id) ?? createCard(page);
+
+        cards.set(page.id, item);
+
+        const position = index + 1;
+        const label = describeOrganizedPdfPage(page, position, total);
+
+        item.dataset.selected = String(page.selected);
+        item.style.setProperty('--page-turn', `${page.rotation}deg`);
+
+        const positionLabel = item.querySelector<HTMLElement>('[data-page-position]');
+        const sourceLabel = item.querySelector<HTMLElement>('[data-page-source]');
+        const rotation = item.querySelector<HTMLElement>('[data-page-rotation]');
+        const open = item.querySelector<HTMLButtonElement>('[data-page-open]');
+        const select = item.querySelector<HTMLInputElement>('[data-page-select]');
+        const canvas = item.querySelector<HTMLCanvasElement>('[data-page-canvas]');
+
+        if (positionLabel) positionLabel.textContent = String(position);
+        if (sourceLabel) sourceLabel.textContent = `p.${page.sourcePage}`;
+        if (rotation) rotation.textContent = page.rotation === 0 ? '' : describePdfPageRotation(page.rotation);
+        if (canvas) canvas.setAttribute('aria-label', label);
+
+        if (open) {
+          open.setAttribute('aria-label', `Show ${label.toLowerCase()} in the viewer`);
+        }
+
+        if (select) {
+          select.checked = page.selected;
+          select.setAttribute('aria-label', `Tick ${label.toLowerCase()}`);
+        }
+
+        for (const button of item.querySelectorAll<HTMLButtonElement>('[data-page-action]')) {
+          const action = button.dataset.pageAction;
+
+          if (action === 'earlier') {
+            button.disabled = index === 0;
+            button.setAttribute('aria-label', `Move position ${position} earlier`);
+          } else if (action === 'later') {
+            button.disabled = index === total - 1;
+            button.setAttribute('aria-label', `Move position ${position} later`);
+          } else if (action === 'turn-left') {
+            button.setAttribute('aria-label', `Turn position ${position} left`);
+          } else if (action === 'turn-right') {
+            button.setAttribute('aria-label', `Turn position ${position} right`);
+          } else if (action === 'duplicate') {
+            button.disabled = !canDuplicatePdfPlanPages(plan, [page.id]);
+            button.setAttribute('aria-label', `Copy position ${position}`);
+          } else if (action === 'remove') {
+            button.disabled = !canRemovePdfPlanPages(plan, [page.id]);
+            button.setAttribute('aria-label', `Drop position ${position}`);
+          }
+        }
+
+        return item;
+      });
+
+      for (const [id, item] of cards) {
+        if (getPdfPlanPageIndex(plan, id) === -1) {
+          item.remove();
+          cards.delete(id);
+        }
+      }
+
+      pageList.replaceChildren(...ordered);
+      planSummary.textContent = describeOrganizePdfPlan(plan, sourcePageCount);
+
+      selectAllButton.disabled = selected.length === total;
+      selectNoneButton.disabled = selected.length === 0;
+      duplicateSelectedButton.disabled = !canDuplicatePdfPlanPages(plan, selected);
+      // Ticking every page and pressing Drop is a reasonable thing to try, and
+      // it is refused with a sentence rather than by a control that has quietly
+      // gone dead. Dropping one page's own card is disabled instead, where
+      // there is only ever one page it could mean.
+      removeSelectedButton.disabled = selected.length === 0;
+      extractButton.disabled = selected.length === 0;
+
+      for (const button of turnSelectedButtons) button.disabled = selected.length === 0;
+
+      // Reordering the list moves the pressed control out of the document and
+      // back in, so focus is put back on the same control rather than on the
+      // page: a visitor moving a page along with the keyboard presses it twice.
+      if (focusedAction && focusedId) {
+        pageList
+          .querySelector<HTMLButtonElement>(`[data-page-action="${focusedAction}"][data-page-id="${focusedId}"]`)
+          ?.focus();
+      }
+    };
+
+    /** Draws the source pages one at a time, after the reader has its first page. */
+    const drawThumbnails = async (token: number) => {
+      if (!openDocument) return;
+
+      for (let pageNumber = 1; pageNumber <= sourcePageCount; pageNumber += 1) {
+        if (token !== documentToken) return;
+
+        const canvas = document.createElement('canvas');
+
+        try {
+          await openDocument.renderPageToWidth(pageNumber, canvas, pdfThumbnailWidth);
+        } catch {
+          // A page that will not draw is still a page this Gizlet can move and
+          // copy, because rearranging a document never renders it. The card
+          // stays, showing nothing, rather than the whole document refusing.
+          continue;
+        }
+
+        if (token !== documentToken) return;
+
+        drawnPages.set(pageNumber, canvas);
+
+        for (const page of plan.pages) {
+          if (page.sourcePage !== pageNumber) continue;
+
+          const card = cards.get(page.id);
+          const target = card?.querySelector<HTMLCanvasElement>('[data-page-canvas]');
+
+          if (target) paintCard(target, pageNumber);
+        }
+      }
+    };
+
+    const resetTool = () => {
+      documentToken += 1;
+      openFile = undefined;
+      openDocument = undefined;
+      sourcePageCount = 0;
+      plan = createOrganizePdfPlan(0);
+      drawnPages.clear();
+      cards.clear();
+      pageList.replaceChildren();
+      sourceSurface.reset();
+      fileInput.value = '';
+      editor.hidden = true;
+      dropZone.hidden = false;
+      resetResult();
+      clearError();
+      clearStatus();
+    };
+
+    const chooseFile = async (file: File | undefined) => {
+      resetTool();
+      if (!file) return;
+
+      const problem = validateOrganizePdfSelection([file]);
+      if (problem) {
+        showError(problem);
+        return;
+      }
+
+      dropZone.hidden = true;
+      showStatus('Reading the PDF locally…');
+      await nextPaint();
+
+      try {
+        // pdf.js is reached only by dynamic import: the library and its worker
+        // are over a megabyte between them, and this page has no use for either
+        // until a PDF is actually chosen. It draws the pages only; writing the
+        // rearranged document is pdf-lib's job.
+        const { openLocalPdf } = await import('../scripts/pdf-rendering');
+        const opened = await openLocalPdf(file, { getErrorMessage: getOrganizePdfOpenErrorMessage });
+        const countProblem = validateOrganizePdfPageCount(opened.pageCount);
+
+        if (countProblem) {
+          await opened.close().catch(() => undefined);
+          throw new Error(countProblem);
+        }
+
+        documentToken += 1;
+        openFile = file;
+        openDocument = opened;
+        sourcePageCount = opened.pageCount;
+        plan = createOrganizePdfPlan(opened.pageCount);
+        drawnPages.clear();
+        cards.clear();
+        editor.hidden = false;
+        renderPlan();
+        clearStatus();
+
+        const description = `${file.name} · ${formatFileSize(file.size)} · ${sourcePageCount} pages`;
+
+        await sourceSurface.show(opened, description);
+        await drawThumbnails(documentToken);
+      } catch (caughtError) {
+        openFile = undefined;
+        openDocument = undefined;
+        editor.hidden = true;
+        dropZone.hidden = false;
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : getOrganizePdfOpenErrorMessage(undefined));
+      }
+    };
+
+    /** Every change to the plan goes through here, so nothing forgets to redraw. */
+    const update = (next: OrganizePdfPlan) => {
+      plan = next;
+      resetResult();
+      clearError();
+      renderPlan();
+    };
+
+    /**
+     * Writes a document from the pages given, which is the same write whether
+     * the visitor asked for the whole plan or the pages they ticked.
+     */
+    const write = async (pages: readonly OrganizedPdfPage[], filename: string) => {
+      if (!openFile || isWriting || pages.length === 0) return;
+
+      isWriting = true;
+      clearError();
+      resetResult();
+      saveButton.disabled = true;
+      extractButton.disabled = true;
+
+      const isLarge = pages.length >= largeOrganizePdfPages;
+
+      try {
+        // pdf-lib writes the document. It is loaded here rather than up front
+        // for the same reason pdf.js is: a visitor who only opens the page
+        // needs neither library.
+        const { openLocalPdfForOrganize, organizeLocalPdf } = await import('../scripts/pdf-generation');
+
+        showStatus('Reading the document locally…');
+        await nextPaint();
+
+        const source = await openLocalPdfForOrganize(openFile);
+        const organized = await organizeLocalPdf(source, pages, {
+          onPage: async (position, total) => {
+            showStatus(
+              isLarge
+                ? `Long document: writing page ${position} of ${total} locally…`
+                : `Writing page ${position} of ${total} locally…`,
+            );
+            await nextPaint();
+          },
+        });
+
+        resultUrl = URL.createObjectURL(organized);
+        resultTitle.textContent = 'Your PDF is ready.';
+        resultDetails.textContent = `${pages.length} ${pages.length === 1 ? 'page' : 'pages'} · from ${sourcePageCount} · ${formatFileSize(organized.size)}`;
+        download.href = resultUrl;
+        download.download = filename;
+        download.textContent = `Download ${filename}`;
+        download.setAttribute('aria-label', `Download ${filename}`);
+        result.hidden = false;
+        clearStatus();
+
+        // The panel is complete before the preview is drawn, so the download is
+        // there to be used whether or not the drawing succeeds.
+        try {
+          const { openLocalPdf } = await import('../scripts/pdf-rendering');
+          const opened = await openLocalPdf(organized);
+
+          resultPreview.hidden = false;
+          await resultSurface.show(opened, `${filename} · ${formatFileSize(organized.size)}`);
+        } catch {
+          resultPreview.hidden = true;
+          previewError.textContent = getPdfPreviewErrorMessage();
+          previewError.hidden = false;
+        }
+      } catch (caughtError) {
+        resetResult();
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : 'This PDF could not be written.');
+      } finally {
+        isWriting = false;
+        saveButton.disabled = false;
+        extractButton.disabled = getSelectedPdfPlanIds(plan).length === 0;
+      }
+    };
+
+    const save = () => {
+      if (!openFile) return;
+
+      void write(plan.pages, getOrganizePdfFilename(openFile.name));
+    };
+
+    const extract = () => {
+      if (!openFile) return;
+
+      const pages = getPdfPlanExtract(plan);
+
+      if (pages.length === 0) {
+        showError(getPdfExtractSelectionMessage());
+        return;
+      }
+
+      void write(pages, getExtractedPdfFilename(openFile.name));
+    };
+
+    pageList.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      const open = target.closest<HTMLButtonElement>('[data-page-open]');
+
+      if (open?.dataset.pageId) {
+        const page = plan.pages.find((candidate) => candidate.id === Number(open.dataset.pageId));
+
+        // The reader shows the document as it arrived, so a card points at the
+        // page it copies rather than at its own position in the new order.
+        if (page) sourceSurface.goToPage(page.sourcePage);
+        return;
+      }
+
+      const button = target.closest<HTMLButtonElement>('[data-page-action]');
+      const id = Number(button?.dataset.pageId);
+
+      if (!button || !Number.isFinite(id)) return;
+
+      const action = button.dataset.pageAction;
+
+      if (action === 'earlier' || action === 'later') {
+        update(shiftPdfPlanPage(plan, id, action === 'earlier' ? 'earlier' : 'later'));
+      } else if (action === 'turn-left' || action === 'turn-right') {
+        update(turnPdfPlanPages(plan, [id], action === 'turn-left' ? 'left' : 'right'));
+      } else if (action === 'duplicate') {
+        if (!canDuplicatePdfPlanPages(plan, [id])) {
+          showError(getPdfPlanLimitMessage());
+          return;
+        }
+
+        update(duplicatePdfPlanPages(plan, [id]));
+      } else if (action === 'remove') {
+        if (!canRemovePdfPlanPages(plan, [id])) {
+          showError(getPdfPlanEmptyMessage());
+          return;
+        }
+
+        update(removePdfPlanPages(plan, [id]));
+      }
+    });
+
+    pageList.addEventListener('change', (event) => {
+      const select = (event.target as HTMLElement).closest<HTMLInputElement>('[data-page-select]');
+      const id = Number(select?.dataset.pageId);
+
+      if (!select || !Number.isFinite(id)) return;
+
+      // Ticking a page changes what an extract would take, not what the plan
+      // says, so the result panel is left alone.
+      plan = togglePdfPlanSelection(plan, id);
+      clearError();
+      renderPlan();
+    });
+
+    /**
+     * Dragging a card, which is the reason this Gizlet shows pages rather than
+     * a list of numbers. Every drag has a control beside it that does the same
+     * thing, because a drag is unavailable to a keyboard and awkward on a phone.
+     */
+    let draggingId: number | undefined;
+
+    pageList.addEventListener('dragstart', (event) => {
+      const card = (event.target as HTMLElement).closest<HTMLLIElement>('[data-page]');
+
+      if (!card?.dataset.pageId) return;
+
+      draggingId = Number(card.dataset.pageId);
+      card.dataset.dragging = 'true';
+      event.dataTransfer?.setData('text/plain', card.dataset.pageId);
+
+      if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+    });
+
+    pageList.addEventListener('dragover', (event) => {
+      if (draggingId === undefined) return;
+
+      const card = (event.target as HTMLElement).closest<HTMLLIElement>('[data-page]');
+
+      event.preventDefault();
+
+      for (const other of pageList.querySelectorAll<HTMLLIElement>('[data-page]')) {
+        delete other.dataset.dropTarget;
+      }
+
+      if (card && Number(card.dataset.pageId) !== draggingId) card.dataset.dropTarget = 'true';
+    });
+
+    pageList.addEventListener('drop', (event) => {
+      if (draggingId === undefined) return;
+
+      const card = (event.target as HTMLElement).closest<HTMLLIElement>('[data-page]');
+
+      event.preventDefault();
+
+      const target = card ? getPdfPlanPageIndex(plan, Number(card.dataset.pageId)) : plan.pages.length - 1;
+      const moved = draggingId;
+
+      draggingId = undefined;
+      for (const other of pageList.querySelectorAll<HTMLLIElement>('[data-page]')) {
+        delete other.dataset.dropTarget;
+        delete other.dataset.dragging;
+      }
+
+      if (target !== -1) update(movePdfPlanPage(plan, moved, target));
+    });
+
+    pageList.addEventListener('dragend', () => {
+      draggingId = undefined;
+
+      for (const other of pageList.querySelectorAll<HTMLLIElement>('[data-page]')) {
+        delete other.dataset.dropTarget;
+        delete other.dataset.dragging;
+      }
+    });
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => void chooseFile(fileInput.files?.[0]));
+    clearButton.addEventListener('click', resetTool);
+    resetButton.addEventListener('click', resetTool);
+    resultClearButton.addEventListener('click', resetTool);
+    saveButton.addEventListener('click', save);
+    extractButton.addEventListener('click', extract);
+    selectAllButton.addEventListener('click', () => { plan = setPdfPlanSelection(plan, true); clearError(); renderPlan(); });
+    selectNoneButton.addEventListener('click', () => { plan = setPdfPlanSelection(plan, false); clearError(); renderPlan(); });
+    duplicateSelectedButton.addEventListener('click', () => {
+      const selected = getSelectedPdfPlanIds(plan);
+
+      if (!canDuplicatePdfPlanPages(plan, selected)) {
+        showError(selected.length === 0 ? getPdfExtractSelectionMessage() : getPdfPlanLimitMessage());
+        return;
+      }
+
+      update(duplicatePdfPlanPages(plan, selected));
+    });
+    removeSelectedButton.addEventListener('click', () => {
+      const selected = getSelectedPdfPlanIds(plan);
+
+      if (!canRemovePdfPlanPages(plan, selected)) {
+        showError(selected.length === 0 ? getPdfExtractSelectionMessage() : getPdfPlanEmptyMessage());
+        return;
+      }
+
+      update(removePdfPlanPages(plan, selected));
+    });
+    for (const button of turnSelectedButtons) {
+      button.addEventListener('click', () => {
+        const selected = getSelectedPdfPlanIds(plan);
+
+        if (selected.length === 0) {
+          showError(getPdfExtractSelectionMessage());
+          return;
+        }
+
+        update(turnPdfPlanPages(plan, selected, button.dataset.turnSelected === 'left' ? 'left' : 'right'));
+      });
+    }
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    }
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    }
+    dropZone.addEventListener('drop', (event) => void chooseFile(event.dataTransfer?.files[0]));
+  }
+</script>
