@@ -55,6 +55,7 @@ const bespokeSocialImageSlugs: readonly string[] = [
   'sign-pdf',
   'clean-pdf-metadata',
   'create-zip',
+  'extract-archive',
   'favicon-generator',
 ];
 

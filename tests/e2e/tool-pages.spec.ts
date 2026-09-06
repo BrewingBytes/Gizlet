@@ -35,6 +35,7 @@ const workspaceSignatures = {
   "sign-pdf": "Select a PDF to sign",
   "clean-pdf-metadata": "Select a PDF to read",
   "create-zip": "Select files to put in the archive",
+  "extract-archive": "Select an archive to look inside",
 } as const satisfies Record<AvailableToolSlug, string>;
 
 for (const tool of getAvailableTools()) {
