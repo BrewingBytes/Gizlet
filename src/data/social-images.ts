@@ -54,6 +54,7 @@ const bespokeSocialImageSlugs: readonly string[] = [
   'pdf-page-numbers',
   'sign-pdf',
   'clean-pdf-metadata',
+  'create-zip',
 ];
 
 /** The image file name a slug's bespoke card is committed under. */

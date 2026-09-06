@@ -752,8 +752,12 @@ export const toolRegistry = [
       "zip folder",
       "archive files",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "Any files at all, chosen individually, dropped, or as a whole folder. Their order can be changed and any of them removed before the archive is built.",
+      output: "One standard .zip holding those files, with the folder structure the browser reported kept, two files of the same path numbered rather than one silently overwriting the other, and each file deflated where the browser can deflate and stored where it cannot.",
+    },
   },
   {
     id: 34,

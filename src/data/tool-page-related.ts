@@ -31,6 +31,7 @@ const relatedToolSlugs: Record<AvailableToolSlug, readonly AvailableToolSlug[]> 
   'json-formatter': ['json-ld-generator'],
   'jpg-to-pdf': ['pdf-to-jpg', 'merge-pdf', 'watermark-pdf', 'pdf-viewer'],
   'pdf-viewer': ['organize-pdf', 'sign-pdf', 'pdf-to-jpg', 'merge-pdf', 'jpg-to-pdf'],
+  'create-zip': ['compress-image', 'jpg-to-pdf', 'split-pdf', 'pdf-to-jpg'],
   'merge-pdf': ['split-pdf', 'organize-pdf', 'pdf-viewer', 'jpg-to-pdf'],
   'pdf-to-jpg': ['split-pdf', 'organize-pdf', 'pdf-viewer', 'jpg-to-pdf'],
   'split-pdf': ['organize-pdf', 'merge-pdf', 'pdf-to-jpg', 'pdf-viewer'],

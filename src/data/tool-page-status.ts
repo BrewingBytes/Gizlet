@@ -51,6 +51,7 @@ const toolProcessingDescriptions: Partial<Record<ToolSlug, string>> = {
   'split-pdf': 'Your PDF stays on this device.',
   'organize-pdf': 'Your PDF stays on this device.',
   'watermark-pdf': 'Your PDF stays on this device.',
+  'create-zip': 'Your files are packed on this device.',
   'pdf-page-numbers': 'Your PDF stays on this device.',
   'sign-pdf': 'Your PDF and your signature both stay on this device.',
   'clean-pdf-metadata': 'Your PDF and everything it says about you stay on this device.',

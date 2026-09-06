@@ -1687,6 +1687,94 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'create-zip': {
+    what: {
+      heading: 'What Create ZIP does',
+      paragraphs: [
+        'Create ZIP puts a pile of files into one archive. Choose them, drop them, or pick a whole folder; reorder them or take any of them out; then build a standard .zip that any operating system opens by double-clicking it.',
+        'The whole thing happens in this browser. The archive is assembled here from the bytes of your files, and it is handed straight to your downloads — which is the difference between this and the sites that ask you to upload the files you were trying to bundle up in the first place.',
+      ],
+    },
+    when: {
+      heading: 'When one file is easier than forty',
+      paragraphs: [
+        'When something will only take one attachment and you have a folder. When a form wants a single upload. When you are sending somebody a set of photographs and forty separate downloads is unkind. When you want to put something away as one thing rather than as a directory that will be half-deleted in a year.',
+        'It is also the natural end of a job that made a lot of files: pages pulled out of a document with Split PDF, a batch of compressed photographs, an export that came out as pieces. Make them, then bundle them.',
+      ],
+    },
+    options: {
+      heading: 'What happens to your files',
+      paragraphs: [
+        'There is nothing to configure. What there is to know is what the archive does with names, folders and sizes.',
+      ],
+      details: [
+        {
+          term: 'Folders',
+          description:
+            'Choosing a folder keeps its structure: the archive holds the same folders, and unpacking it gives you the same tree back. Files chosen individually or dropped sit at the top of the archive, because that is where the browser says they are.',
+        },
+        {
+          term: 'Two files with one name',
+          description:
+            'They both go in. The second is numbered — notes.txt and notes-2.txt — rather than one silently overwriting the other, which is what an archive with the same entry twice actually does when it is unpacked. The list says when it has had to do this.',
+        },
+        {
+          term: 'Order',
+          description:
+            'Move a file up or down, or take it out. Order is not something most archive readers care about, but it is what the list you are looking at reads like, and a Gizlet that showed you one order and wrote another would be lying about something small for no reason.',
+        },
+        {
+          term: 'Compression',
+          description:
+            'Each file is deflated using the browser’s own compressor, which is the standard method every ZIP reader understands. A file that comes out larger compressed — a JPEG, a PNG, an MP4, anything already compressed — is stored as it is instead, because a bigger archive is not a better one. On a browser with no compressor everything is stored, and the archive still opens everywhere.',
+        },
+        {
+          term: 'Limits',
+          description:
+            'Up to 500 files and 512 MB in one archive. The archive is built in memory before it is handed to you, so this is a limit on what one tab can hold at once rather than on what the format can address — and it is refused with an explanation rather than by freezing.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'Nothing is uploaded to be bundled',
+      paragraphs: [
+        'The files are read, compressed and assembled in this browser. Not one byte and not one filename is sent anywhere, because there is nowhere to send it: this page has no upload endpoint behind it.',
+        'That matters for this Gizlet more than for most. A pile of files being bundled to send somewhere is usually a pile of files that belongs to somebody — tax documents, a client’s photographs, a folder off a work laptop — and handing all of it to a website to be zipped is a strange way to protect it.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Are my files uploaded?',
+        answer:
+          'No. They are read from your device, packed here, and the archive goes straight to your downloads. Nothing is sent anywhere, including the filenames.',
+      },
+      {
+        question: 'Can I zip a whole folder?',
+        answer:
+          'Yes. Choose a folder and the archive keeps its structure, so unpacking it gives you the same tree back. Some browsers do not offer folder selection at all; in those, choose the files and they go in at the top level.',
+      },
+      {
+        question: 'Will the archive be smaller than the files?',
+        answer:
+          'It depends entirely on what is in it. Text, documents and code compress well. Photographs, videos, PDFs and anything else already compressed do not, and those are stored as they are rather than made slightly larger. The result panel says which of the two happened.',
+      },
+      {
+        question: 'What if two files have the same name?',
+        answer:
+          'Both are kept and the second is numbered. An archive holding the same path twice is one that loses a file when it is unpacked, so the Gizlet renames rather than dropping, and tells you it did.',
+      },
+      {
+        question: 'Will the ZIP open on Windows and macOS?',
+        answer:
+          'Yes. It is an ordinary ZIP with standard stored and deflated entries — the two methods every archive tool has understood for thirty years — so Explorer, Finder, unzip and everything else open it normally.',
+      },
+      {
+        question: 'Can I password-protect the archive?',
+        answer:
+          'No. Encrypted ZIPs are deliberately not built here: the format’s own encryption is weak enough to be worth nothing, and doing it properly would need a design that is not this Gizlet. If a file needs protecting, protect the file.',
+      },
+    ],
+  },
   'organize-pdf': {
     what: {
       heading: 'What Organize PDF does',

@@ -1,0 +1,382 @@
+---
+import { maximumZipFiles } from '../data/create-zip';
+---
+
+<section class="create-zip-tool" data-create-zip-tool>
+  <div class="create-zip-tool__picker" data-drop-zone>
+    <input
+      id="create-zip-files"
+      class="create-zip-tool__file-input"
+      type="file"
+      multiple
+      aria-label="Select files to put in the archive"
+      data-file-input
+      hidden
+    />
+    <input
+      id="create-zip-folder"
+      class="create-zip-tool__file-input"
+      type="file"
+      multiple
+      aria-label="Select a folder to put in the archive"
+      data-folder-input
+      data-handoff-skip
+      hidden
+      {...{ webkitdirectory: true }}
+    />
+    <p class="metadata">Up to {maximumZipFiles} files, or a whole folder</p>
+    <h2>Drop files here</h2>
+    <p>Any files at all. They are packed on this device, and nothing is uploaded.</p>
+    <div class="create-zip-tool__picker-actions">
+      <button type="button" class="button-secondary" data-select-files>Choose files</button>
+      <button type="button" class="button-secondary" data-select-folder>Choose a folder</button>
+    </div>
+  </div>
+
+  <p class="create-zip-tool__status" data-status role="status" aria-live="polite" hidden></p>
+  <p class="create-zip-tool__error" data-error role="alert" hidden></p>
+
+  <div class="create-zip-tool__editor" data-editor hidden>
+    <div class="create-zip-tool__bar">
+      <p class="create-zip-tool__summary" data-summary></p>
+      <div class="create-zip-tool__bar-actions">
+        <button type="button" class="button-secondary" data-add-files>Add files</button>
+        <button type="button" class="button-secondary" data-clear>Start over</button>
+      </div>
+    </div>
+
+    <ol class="create-zip-tool__list" data-entry-list aria-label="Files in this archive"></ol>
+    <template data-entry-template>
+      <li>
+        <span class="create-zip-tool__entry-position" data-entry-position></span>
+        <span class="create-zip-tool__entry-path">
+          <strong data-entry-name></strong>
+          <span data-entry-folder></span>
+        </span>
+        <span class="create-zip-tool__entry-size" data-entry-size></span>
+        <span class="create-zip-tool__entry-actions">
+          <button type="button" class="create-zip-tool__icon-button" data-move-up>↑</button>
+          <button type="button" class="create-zip-tool__icon-button" data-move-down>↓</button>
+          <button type="button" class="create-zip-tool__icon-button" data-remove>×</button>
+        </span>
+      </li>
+    </template>
+
+    <p class="create-zip-tool__note" data-note></p>
+
+    <div class="create-zip-tool__actions">
+      <button type="button" data-create>Make the ZIP</button>
+    </div>
+  </div>
+
+  <section class="create-zip-tool__result" data-result aria-live="polite" hidden>
+    <p class="metadata">Ready to download</p>
+    <h2>Your archive is ready.</h2>
+    <p class="create-zip-tool__result-details" data-result-details></p>
+    <div class="create-zip-tool__result-actions">
+      <a class="create-zip-tool__download" data-download>Download ZIP</a>
+      <button type="button" class="button-secondary" data-result-clear>Start over</button>
+    </div>
+  </section>
+</section>
+
+<style>
+  .create-zip-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .create-zip-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .create-zip-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .create-zip-tool__picker[hidden], .create-zip-tool__editor[hidden], .create-zip-tool__result[hidden] { display: none; }
+  .create-zip-tool__picker h2 { margin-bottom: var(--space-2); }
+  .create-zip-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .create-zip-tool__picker-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); }
+  .create-zip-tool__status, .create-zip-tool__error { margin: var(--space-3); padding: var(--space-3); border-left: var(--border-strong-width) solid var(--success); color: var(--text-muted); }
+  .create-zip-tool__error { border-left-color: var(--color-red); color: var(--color-red); }
+  .create-zip-tool__editor, .create-zip-tool__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .create-zip-tool__editor { display: grid; gap: var(--space-3); }
+  .create-zip-tool__bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
+  .create-zip-tool__bar-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .create-zip-tool__summary, .create-zip-tool__note, .create-zip-tool__result-details { margin: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .create-zip-tool__note { font-family: var(--font-body); font-size: var(--font-size-sm); }
+  .create-zip-tool__list { display: grid; gap: var(--space-1); max-height: 28rem; overflow-y: auto; margin: 0; padding: 0; list-style: none; }
+  .create-zip-tool__list li { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr) auto auto; align-items: center; gap: var(--space-2); padding: var(--space-2); border: var(--border-width) solid var(--border); background: var(--background); }
+  .create-zip-tool__entry-position { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .create-zip-tool__entry-path { display: grid; min-width: 0; }
+  .create-zip-tool__entry-path strong { overflow-wrap: anywhere; }
+  .create-zip-tool__entry-path span { overflow-wrap: anywhere; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .create-zip-tool__entry-path span:empty { display: none; }
+  .create-zip-tool__entry-size { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .create-zip-tool__entry-actions { display: flex; gap: var(--space-1); }
+  .create-zip-tool__icon-button { min-width: 2.5rem; min-height: 2.5rem; padding: 0; border: var(--border-width) solid var(--border); background: transparent; color: var(--text); font-weight: 700; }
+  .create-zip-tool__icon-button:disabled { color: var(--text-muted); opacity: 0.5; }
+  .create-zip-tool__actions, .create-zip-tool__result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .create-zip-tool__result h2 { margin-bottom: var(--space-2); }
+  .create-zip-tool__result-details { margin-bottom: var(--space-3); }
+  .create-zip-tool__download { display: inline-block; min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); background: var(--button-background); color: var(--button-text); font-weight: 700; line-height: 1.25; text-decoration: none; }
+  .create-zip-tool__download:hover { color: var(--button-text); box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+  @media (max-width: 36rem) {
+    .create-zip-tool__picker, .create-zip-tool__editor, .create-zip-tool__result { padding: var(--space-3); }
+    .create-zip-tool__list li { grid-template-columns: 2rem minmax(0, 1fr); }
+    .create-zip-tool__entry-size, .create-zip-tool__entry-actions { grid-column: 2; justify-self: start; }
+  }
+</style>
+
+<script>
+  import {
+    describeZipProgress,
+    describeZipResult,
+    describeZipSelection,
+    getUniqueZipPaths,
+    getZipArchiveName,
+    getZipEntryFolder,
+    getZipEntryName,
+    getZipWriteErrorMessage,
+    largeZipJobFiles,
+    moveZipEntry,
+    normaliseZipPath,
+    validateZipSelection,
+  } from '../data/create-zip';
+  import { formatFileSize } from '../data/image-compression';
+
+  const root = document.querySelector<HTMLElement>('[data-create-zip-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const folderInput = root.querySelector<HTMLInputElement>('[data-folder-input]');
+    const selectFilesButton = root.querySelector<HTMLButtonElement>('[data-select-files]');
+    const selectFolderButton = root.querySelector<HTMLButtonElement>('[data-select-folder]');
+    const addFilesButton = root.querySelector<HTMLButtonElement>('[data-add-files]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const editor = root.querySelector<HTMLElement>('[data-editor]');
+    const summary = root.querySelector<HTMLElement>('[data-summary]');
+    const entryList = root.querySelector<HTMLOListElement>('[data-entry-list]');
+    const entryTemplate = root.querySelector<HTMLTemplateElement>('[data-entry-template]');
+    const note = root.querySelector<HTMLElement>('[data-note]');
+    const createButton = root.querySelector<HTMLButtonElement>('[data-create]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const result = root.querySelector<HTMLElement>('[data-result]');
+    const resultDetails = root.querySelector<HTMLElement>('[data-result-details]');
+    const download = root.querySelector<HTMLAnchorElement>('[data-download]');
+    const resultClearButton = root.querySelector<HTMLButtonElement>('[data-result-clear]');
+
+    if (!fileInput || !folderInput || !selectFilesButton || !selectFolderButton || !addFilesButton || !dropZone || !status || !error || !editor || !summary || !entryList || !entryTemplate || !note || !createButton || !clearButton || !result || !resultDetails || !download || !resultClearButton) {
+      throw new Error('Create ZIP tool could not initialise.');
+    }
+
+    /** The chosen files, in the order the archive will hold them. */
+    let chosen: readonly { readonly file: File; readonly path: string }[] = [];
+    let isWriting = false;
+    let resultUrl: string | undefined;
+
+    const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const showStatus = (message: string) => { status.textContent = message; status.hidden = false; };
+    const clearStatus = () => { status.hidden = true; status.textContent = ''; };
+
+    const resetResult = () => {
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      resultUrl = undefined;
+      result.hidden = true;
+      resultDetails.textContent = '';
+      download.removeAttribute('href');
+      download.removeAttribute('download');
+    };
+
+    const resetTool = () => {
+      chosen = [];
+      fileInput.value = '';
+      folderInput.value = '';
+      entryList.replaceChildren();
+      editor.hidden = true;
+      dropZone.hidden = false;
+      resetResult();
+      clearError();
+      clearStatus();
+    };
+
+    /**
+     * The path a browser reported for a file.
+     *
+     * A folder picker fills `webkitRelativePath`; a plain picker and a drop
+     * leave it empty, and those files sit at the top of the archive.
+     */
+    const pathOf = (file: File) =>
+      (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
+
+    const render = () => {
+      // The names are resolved for the list rather than at the last moment, so
+      // what the visitor is shown is exactly what the archive will hold.
+      const paths = getUniqueZipPaths(chosen.map((entry) => entry.path));
+
+      entryList.replaceChildren(
+        ...chosen.map((entry, index) => {
+          const fragment = entryTemplate.content.cloneNode(true) as DocumentFragment;
+          const position = fragment.querySelector<HTMLElement>('[data-entry-position]');
+          const name = fragment.querySelector<HTMLElement>('[data-entry-name]');
+          const folder = fragment.querySelector<HTMLElement>('[data-entry-folder]');
+          const size = fragment.querySelector<HTMLElement>('[data-entry-size]');
+          const moveUp = fragment.querySelector<HTMLButtonElement>('[data-move-up]');
+          const moveDown = fragment.querySelector<HTMLButtonElement>('[data-move-down]');
+          const remove = fragment.querySelector<HTMLButtonElement>('[data-remove]');
+          const entryName = getZipEntryName(paths[index]);
+
+          if (position) position.textContent = String(index + 1).padStart(2, '0');
+          if (name) name.textContent = entryName;
+          if (folder) folder.textContent = getZipEntryFolder(paths[index]) ?? '';
+          if (size) size.textContent = formatFileSize(entry.file.size);
+
+          for (const [button, label, disabled] of [
+            [moveUp, `Move ${entryName} up`, index === 0],
+            [moveDown, `Move ${entryName} down`, index === chosen.length - 1],
+            [remove, `Remove ${entryName}`, false],
+          ] as const) {
+            if (!button) continue;
+            button.setAttribute('aria-label', label);
+            button.disabled = disabled || isWriting;
+            button.dataset.index = String(index);
+          }
+
+          return fragment;
+        }),
+      );
+
+      summary.textContent = describeZipSelection(
+        chosen.map((entry) => ({ path: entry.path, size: entry.file.size })),
+        formatFileSize,
+      );
+      // A name that had to be changed is worth saying so, rather than letting a
+      // visitor find `notes-2.txt` in the archive and wonder.
+      const renamed = paths.filter((path, index) => path !== normaliseZipPath(chosen[index].path)).length;
+
+      note.textContent = renamed === 0
+        ? ''
+        : `${renamed} ${renamed === 1 ? 'file had' : 'files had'} a path already taken, so ${renamed === 1 ? 'it was' : 'they were'} numbered rather than dropped.`;
+      createButton.disabled = isWriting || chosen.length === 0;
+    };
+
+    const addFiles = (files: readonly File[]) => {
+      if (files.length === 0) return;
+
+      resetResult();
+      clearError();
+
+      const added = files.map((file) => ({ file, path: pathOf(file) }));
+      const next = [...chosen, ...added];
+      const problem = validateZipSelection(next.map((entry) => ({ path: entry.path, size: entry.file.size })));
+
+      if (problem) {
+        showError(problem);
+        return;
+      }
+
+      chosen = next;
+      dropZone.hidden = true;
+      editor.hidden = false;
+      render();
+    };
+
+    const create = async () => {
+      if (chosen.length === 0 || isWriting) return;
+
+      const problem = validateZipSelection(chosen.map((entry) => ({ path: entry.path, size: entry.file.size })));
+
+      if (problem) {
+        showError(problem);
+        return;
+      }
+
+      isWriting = true;
+      clearError();
+      resetResult();
+      createButton.disabled = true;
+      createButton.textContent = 'Packing…';
+      showStatus('Packing the files locally…');
+      await nextPaint();
+
+      const isLarge = chosen.length >= largeZipJobFiles;
+
+      try {
+        // The archive writer is imported here rather than up front: a visitor
+        // who only opens the page has nothing to pack.
+        const { buildZipArchive } = await import('../scripts/zip-writing');
+        const paths = getUniqueZipPaths(chosen.map((entry) => entry.path));
+        const archive = await buildZipArchive(
+          chosen.map((entry, index) => ({ path: paths[index], file: entry.file })),
+          {
+            onFile: (position, total) => {
+              if (isLarge) showStatus(describeZipProgress(position, total));
+            },
+          },
+        );
+        const inputBytes = chosen.reduce((bytes, entry) => bytes + entry.file.size, 0);
+        const filename = getZipArchiveName(chosen.map((entry) => ({ path: entry.path, size: entry.file.size })));
+
+        resultUrl = URL.createObjectURL(archive);
+        resultDetails.textContent = describeZipResult(chosen.length, inputBytes, archive.size, formatFileSize);
+        download.href = resultUrl;
+        download.download = filename;
+        download.textContent = `Download ${filename}`;
+        download.setAttribute('aria-label', `Download ${filename}`);
+        result.hidden = false;
+        clearStatus();
+      } catch (caughtError) {
+        resetResult();
+        clearStatus();
+        showError(caughtError instanceof Error ? caughtError.message : getZipWriteErrorMessage());
+      } finally {
+        isWriting = false;
+        createButton.textContent = 'Make the ZIP';
+        render();
+      }
+    };
+
+    entryList.addEventListener('click', (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-index]');
+
+      if (!button || isWriting) return;
+
+      const index = Number(button.dataset.index);
+
+      if (!Number.isInteger(index)) return;
+
+      resetResult();
+
+      if (button.hasAttribute('data-remove')) {
+        chosen = chosen.filter((_, position) => position !== index);
+
+        if (chosen.length === 0) {
+          resetTool();
+          return;
+        }
+      } else {
+        chosen = moveZipEntry(chosen, index, button.hasAttribute('data-move-up') ? index - 1 : index + 1);
+      }
+
+      render();
+    });
+
+    selectFilesButton.addEventListener('click', () => fileInput.click());
+    addFilesButton.addEventListener('click', () => fileInput.click());
+    selectFolderButton.addEventListener('click', () => folderInput.click());
+    fileInput.addEventListener('change', () => {
+      addFiles([...(fileInput.files ?? [])]);
+      fileInput.value = '';
+    });
+    folderInput.addEventListener('change', () => {
+      addFiles([...(folderInput.files ?? [])]);
+      folderInput.value = '';
+    });
+    createButton.addEventListener('click', () => void create());
+    clearButton.addEventListener('click', resetTool);
+    resultClearButton.addEventListener('click', resetTool);
+
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    }
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    }
+    dropZone.addEventListener('drop', (event) => addFiles([...(event.dataTransfer?.files ?? [])]));
+  }
+</script>
