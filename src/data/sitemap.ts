@@ -1,5 +1,6 @@
 import { siteUrl } from './metadata';
 import { roadmapPath } from './roadmap';
+import { sitemapDates } from './sitemap-dates';
 import { toolRegistry } from './tools';
 
 const sitemapPathname = '/sitemap.xml';
@@ -13,26 +14,46 @@ const publicInformationPathnames = [
   '/request-a-gizlet/',
 ] as const;
 
+export interface SitemapEntry {
+  readonly pathname: string;
+  readonly url: string;
+  /**
+   * When the page last changed, as YYYY-MM-DD, or nothing when no date is
+   * known. Nothing is the right answer to serve in that case: a crawler that
+   * has been told a page changed when it did not learns to disregard the
+   * dates on every other page too.
+   */
+  readonly lastModified?: string;
+}
+
 /**
  * Returns every route that is ready for public search discovery.
  *
  * Tool routes deliberately come from the canonical registry so a tool cannot
  * be listed in the sitemap before its launch status is marked available.
  */
-export function getSitemapUrls(): readonly string[] {
-  const urls = [
-    new URL('/', siteUrl).toString(),
-    ...publicInformationPathnames.map((pathname) => new URL(pathname, siteUrl).toString()),
+export function getSitemapEntries(): readonly SitemapEntry[] {
+  const pathnames = [
+    '/',
+    ...publicInformationPathnames,
+    ...toolRegistry.filter((tool) => tool.launchStatus === 'available').map((tool) => tool.path),
   ];
+  const entries = pathnames.map((pathname) => {
+    const lastModified = sitemapDates[pathname];
 
-  for (const tool of toolRegistry) {
-    if (tool.launchStatus === 'available') {
-      urls.push(new URL(tool.path, siteUrl).toString());
-    }
-  }
+    return {
+      pathname,
+      url: new URL(pathname, siteUrl).toString(),
+      ...(lastModified ? { lastModified } : {}),
+    };
+  });
 
-  assertUniqueSitemapUrls(urls);
-  return urls;
+  assertUniqueSitemapUrls(entries.map((entry) => entry.url));
+  return entries;
+}
+
+export function getSitemapUrls(): readonly string[] {
+  return getSitemapEntries().map((entry) => entry.url);
 }
 
 /** Throws during the static build if two sitemap entries resolve to one URL. */
@@ -59,10 +80,24 @@ function escapeXml(value: string): string {
   });
 }
 
-/** Produces the static XML document served from /sitemap.xml. */
+/**
+ * Produces the static XML document served from /sitemap.xml.
+ *
+ * A page carries a `<lastmod>` only when a date is known for it. The dates
+ * come from `data/sitemap-dates`, which is generated from the git history of
+ * the files behind each page rather than from the clock — a sitemap that says
+ * every page changed on the day it was built is a sitemap saying nothing, and
+ * a crawler treats it accordingly.
+ */
 export function getSitemapXml(): string {
-  const entries = getSitemapUrls()
-    .map((url) => `  <url><loc>${escapeXml(url)}</loc></url>`)
+  const entries = getSitemapEntries()
+    .map((entry) => {
+      const lastModified = entry.lastModified
+        ? `<lastmod>${escapeXml(entry.lastModified)}</lastmod>`
+        : '';
+
+      return `  <url><loc>${escapeXml(entry.url)}</loc>${lastModified}</url>`;
+    })
     .join('\n');
 
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries}\n</urlset>\n`;
