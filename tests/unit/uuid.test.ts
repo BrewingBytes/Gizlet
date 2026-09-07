@@ -52,6 +52,14 @@ const time = { milliseconds: 1_760_000_000_000, interval: 0, clockSequence: 0x12
 const bitsOf = (bytes: Uint8Array) => ({ version: bytes[6] >> 4, variant: bytes[8] >> 6 });
 
 describe('the catalogue', () => {
+  it('lists the versions in numeric order, with the two non-versions last', () => {
+    // Somebody who knows which version they want is looking for a number, so
+    // the list reads 1, 3, 4, 5, 6, 7 rather than in order of usefulness. The
+    // default is version 4 regardless of where it sits.
+    expect(uuidKinds).toEqual(['v1', 'v3', 'v4', 'v5', 'v6', 'v7', 'nil', 'max']);
+    expect(defaultUuidKind).toBe('v4');
+  });
+
   it('describes every kind it offers and offers every kind it describes', () => {
     expect(uuidKindDetails.map((detail) => detail.kind)).toEqual([...uuidKinds]);
     expect(uuidKinds).toContain(defaultUuidKind);

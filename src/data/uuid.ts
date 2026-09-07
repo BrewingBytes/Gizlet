@@ -29,8 +29,16 @@ import { md5 } from './md5';
  * `crypto.getRandomValues` is actually called.
  */
 
-/** What this Gizlet can produce. Nil and Max are not versions, but they are answers. */
-export const uuidKinds = ['v4', 'v7', 'v1', 'v6', 'v3', 'v5', 'nil', 'max'] as const;
+/**
+ * What this Gizlet can produce, in version order.
+ *
+ * Version order rather than order of usefulness: someone who knows which
+ * version they want is looking for a number, and a list that puts 4 first and
+ * 1 third makes them read all of it. Nil and Max come last because they are
+ * not versions at all. Version 4 is still the default, which is a separate
+ * question from where it sits in the list.
+ */
+export const uuidKinds = ['v1', 'v3', 'v4', 'v5', 'v6', 'v7', 'nil', 'max'] as const;
 
 export type UuidKind = (typeof uuidKinds)[number];
 
@@ -52,22 +60,6 @@ export interface UuidKindDetail {
 
 export const uuidKindDetails = [
   {
-    kind: 'v4',
-    label: 'Version 4 · random',
-    summary:
-      '122 bits of randomness and six bits saying so. The one to use when an identifier only has to be unique and nothing else, which is nearly always.',
-    needsName: false,
-    reveals: 'Nothing. There is nothing in it but randomness.',
-  },
-  {
-    kind: 'v7',
-    label: 'Version 7 · time-ordered',
-    summary:
-      'The number of milliseconds since 1970, then a counter, then randomness, so two of them sort into the order they were made even when both were made in the same millisecond. The one to reach for as a database key: an index stays tidy instead of taking a random write every time.',
-    needsName: false,
-    reveals: 'The millisecond it was created, in plain sight and by design.',
-  },
-  {
     kind: 'v1',
     label: 'Version 1 · time and node',
     summary:
@@ -75,14 +67,6 @@ export const uuidKindDetails = [
     needsName: false,
     reveals:
       'When it was made. Not where: a browser cannot read a MAC address, so the node is random and flagged as such, which is the one thing a v1 usually gives away.',
-  },
-  {
-    kind: 'v6',
-    label: 'Version 6 · time-ordered v1',
-    summary:
-      "Version 1's fields rearranged so the timestamp reads most-significant-first and the value sorts by time. For a system that wants v1's shape and an index that behaves.",
-    needsName: false,
-    reveals: 'When it was made, the same as a version 1.',
   },
   {
     kind: 'v3',
@@ -94,12 +78,36 @@ export const uuidKindDetails = [
       'That it came from your name, to anyone who guesses the name: they can generate it themselves and confirm it.',
   },
   {
+    kind: 'v4',
+    label: 'Version 4 · random',
+    summary:
+      '122 bits of randomness and six bits saying so. The one to use when an identifier only has to be unique and nothing else, which is nearly always.',
+    needsName: false,
+    reveals: 'Nothing. There is nothing in it but randomness.',
+  },
+  {
     kind: 'v5',
     label: 'Version 5 · name, SHA-1',
     summary:
       'The same idea with SHA-1 instead, which is the one to use when you want a UUID that is a stable function of a name — a URL, a filename, an account — rather than a new random value each time.',
     needsName: true,
     reveals: 'The same as a version 3: anyone who guesses the name can reproduce it.',
+  },
+  {
+    kind: 'v6',
+    label: 'Version 6 · time-ordered v1',
+    summary:
+      "Version 1's fields rearranged so the timestamp reads most-significant-first and the value sorts by time. For a system that wants v1's shape and an index that behaves.",
+    needsName: false,
+    reveals: 'When it was made, the same as a version 1.',
+  },
+  {
+    kind: 'v7',
+    label: 'Version 7 · time-ordered',
+    summary:
+      'The number of milliseconds since 1970, then a counter, then randomness, so two of them sort into the order they were made even when both were made in the same millisecond. The one to reach for as a database key: an index stays tidy instead of taking a random write every time.',
+    needsName: false,
+    reveals: 'The millisecond it was created, in plain sight and by design.',
   },
   {
     kind: 'nil',

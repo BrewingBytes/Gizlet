@@ -1,20 +1,27 @@
 ---
-import { maximumUuidBatch, uuidKindDetails, uuidNamespaces, uuidStyleDetails } from '../data/uuid';
+import {
+  defaultUuidKind,
+  maximumUuidBatch,
+  uuidKindDetails,
+  uuidNamespaces,
+  uuidStyleDetails,
+} from '../data/uuid';
 ---
 
 <section class="uuid-tool" data-uuid-tool>
   <div class="uuid-tool__panel">
-    <fieldset class="uuid-tool__kinds">
-      <legend>Which kind</legend>
-      {
-        uuidKindDetails.map((detail, index) => (
-          <label>
-            <input type="radio" name="uuid-kind" value={detail.kind} data-kind checked={index === 0} />
-            <span>{detail.label}</span>
-          </label>
-        ))
-      }
-    </fieldset>
+    <div class="uuid-tool__row uuid-tool__row--kind">
+      <label for="uuid-kind">Which kind</label>
+      <select id="uuid-kind" data-kind>
+        {
+          uuidKindDetails.map((detail) => (
+            <option value={detail.kind} selected={detail.kind === defaultUuidKind}>
+              {detail.label}
+            </option>
+          ))
+        }
+      </select>
+    </div>
 
     <p class="uuid-tool__summary" data-kind-summary></p>
     <p class="uuid-tool__reveals" data-kind-reveals></p>
@@ -120,12 +127,7 @@ import { maximumUuidBatch, uuidKindDetails, uuidNamespaces, uuidStyleDetails } f
   .uuid-tool__panel { display: grid; gap: var(--space-3); padding: var(--space-4); }
   .uuid-tool__panel--reader { border-top: var(--border-width) solid var(--border); }
   .uuid-tool__panel--reader .metadata, .uuid-tool__panel--reader h2 { margin: 0; }
-  .uuid-tool fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
-  .uuid-tool legend { margin-bottom: var(--space-2); padding: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.08em; }
-  .uuid-tool__kinds { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: var(--space-1) var(--space-3); }
-  .uuid-tool__kinds legend { grid-column: 1 / -1; }
-  .uuid-tool__kinds label { display: flex; align-items: center; gap: var(--space-2); min-height: 2.25rem; }
-  .uuid-tool__kinds input { width: 1.125rem; height: 1.125rem; flex: none; }
+  .uuid-tool__row--kind select { max-width: 22rem; }
   .uuid-tool__summary { margin: 0; padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--border); color: var(--text-muted); }
   .uuid-tool__reveals { margin: 0; padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--color-amber); color: var(--text-muted); font-size: var(--font-size-sm); }
   .uuid-tool__name-fields { display: grid; gap: var(--space-2); padding: var(--space-3); border: var(--border-width) solid var(--border); background: var(--background); }
@@ -175,7 +177,7 @@ import { maximumUuidBatch, uuidKindDetails, uuidNamespaces, uuidStyleDetails } f
   const root = document.querySelector<HTMLElement>('[data-uuid-tool]');
 
   if (root) {
-    const kindInputs = [...root.querySelectorAll<HTMLInputElement>('[data-kind]')];
+    const kindSelect = root.querySelector<HTMLSelectElement>('[data-kind]');
     const kindSummary = root.querySelector<HTMLElement>('[data-kind-summary]');
     const kindReveals = root.querySelector<HTMLElement>('[data-kind-reveals]');
     const nameFields = root.querySelector<HTMLElement>('[data-name-fields]');
@@ -195,7 +197,7 @@ import { maximumUuidBatch, uuidKindDetails, uuidNamespaces, uuidStyleDetails } f
     const reader = root.querySelector<HTMLInputElement>('[data-reader]');
     const facts = root.querySelector<HTMLElement>('[data-facts]');
 
-    if (kindInputs.length === 0 || !kindSummary || !kindReveals || !nameFields || !namespaceSelect || !customNamespaceRow || !customNamespaceInput || !nameInput || !styleSelect || !caseSelect || !countInput || !generateButton || !copyButton || !downloadButton || !status || !error || !output || !reader || !facts) {
+    if (!kindSelect || !kindSummary || !kindReveals || !nameFields || !namespaceSelect || !customNamespaceRow || !customNamespaceInput || !nameInput || !styleSelect || !caseSelect || !countInput || !generateButton || !copyButton || !downloadButton || !status || !error || !output || !reader || !facts) {
       throw new Error('UUID Generator could not initialise.');
     }
 
@@ -327,13 +329,11 @@ import { maximumUuidBatch, uuidKindDetails, uuidNamespaces, uuidStyleDetails } f
       facts.textContent = describeUuidFacts(read, formatTime);
     };
 
-    for (const control of kindInputs) {
-      control.addEventListener('change', () => {
-        if (control.checked && isUuidKind(control.value)) kind = control.value;
-        clearError();
-        renderKind();
-      });
-    }
+    kindSelect.addEventListener('change', () => {
+      if (isUuidKind(kindSelect.value)) kind = kindSelect.value;
+      clearError();
+      renderKind();
+    });
 
     namespaceSelect.addEventListener('change', renderKind);
     styleSelect.addEventListener('change', () => {

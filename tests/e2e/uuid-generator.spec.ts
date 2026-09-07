@@ -7,7 +7,8 @@ import { expect, test, type Page } from "@playwright/test";
  * claims to be a version 7 has a 7 in the right nibble, sorts by time, and
  * decodes back to the moment it was made.
  */
-const radio = (page: Page, name: string) => page.getByRole("radio", { name, exact: true });
+const chooseKind = (page: Page, kind: string) =>
+  page.getByLabel("Which kind", { exact: true }).selectOption(kind);
 
 const lines = async (page: Page) => {
   const text = (await page.locator("[data-output]").textContent()) ?? "";
@@ -72,7 +73,7 @@ test("generates a version 4 with the right bits, on this device", async ({ page 
 test("generates a version 7 that sorts by the time it was made", async ({ page }) => {
   await page.goto("/tools/uuid-generator/");
 
-  await radio(page, "Version 7 · time-ordered").check();
+  await chooseKind(page, "v7");
   await expect(page.locator("[data-kind-summary]")).toContainText("sort into the order they were made");
   await expect(page.locator("[data-kind-reveals]")).toContainText("millisecond it was created");
 
@@ -93,7 +94,7 @@ test("generates a version 7 that sorts by the time it was made", async ({ page }
 test("makes a version 1 whose node cannot identify the machine", async ({ page }) => {
   await page.goto("/tools/uuid-generator/");
 
-  await radio(page, "Version 1 · time and node").check();
+  await chooseKind(page, "v1");
 
   const [made] = await generate(page, 1);
 
@@ -112,14 +113,14 @@ test("derives a name-based UUID that matches every other implementation", async 
   await page.goto("/tools/uuid-generator/");
 
   // The published vector for version 5 in the DNS namespace.
-  await radio(page, "Version 5 · name, SHA-1").check();
+  await chooseKind(page, "v5");
   await expect(page.getByLabel("Name", { exact: true })).toBeVisible();
   await page.getByLabel("Name", { exact: true }).fill("python.org");
 
   expect(await generate(page, 1)).toEqual(["886313e1-3b8a-5372-9b90-0c9aee199e5d"]);
 
   // And version 3, which needs the MD5 the platform refuses to provide.
-  await radio(page, "Version 3 · name, MD5").check();
+  await chooseKind(page, "v3");
 
   expect(await generate(page, 1)).toEqual(["6fa459ea-ee8a-3ca4-894e-db77e160355e"]);
 
@@ -135,7 +136,7 @@ test("derives a name-based UUID that matches every other implementation", async 
 test("refuses a name-based UUID with nothing to derive it from", async ({ page }) => {
   await page.goto("/tools/uuid-generator/");
 
-  await radio(page, "Version 5 · name, SHA-1").check();
+  await chooseKind(page, "v5");
   await page.getByRole("button", { name: "Generate" }).click();
 
   await expect(page.locator("[data-error]")).toContainText("Type the name");
