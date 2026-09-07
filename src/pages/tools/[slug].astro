@@ -7,6 +7,7 @@ import CreateZipTool from '../../components/CreateZipTool.astro';
 import CompressImageTool from '../../components/CompressImageTool.astro';
 import ExtractArchiveTool from '../../components/ExtractArchiveTool.astro';
 import FaviconGeneratorTool from '../../components/FaviconGeneratorTool.astro';
+import FileHashTool from '../../components/FileHashTool.astro';
 import UrlEncodeDecodeTool from '../../components/UrlEncodeDecodeTool.astro';
 import UuidGeneratorTool from '../../components/UuidGeneratorTool.astro';
 import ConvertImageTool from '../../components/ConvertImageTool.astro';
@@ -95,6 +96,7 @@ const toolWorkspaces = {
   'uuid-generator': UuidGeneratorTool,
   'base64-encode-decode': Base64Tool,
   'jwt-decoder': JwtDecoderTool,
+  'file-hash-generator': FileHashTool,
 } as const satisfies Record<AvailableToolSlug, unknown>;
 
 const { tool, relatedTools } = Astro.props;

@@ -1411,6 +1411,106 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'file-hash-generator': {
+    what: {
+      heading: 'What File Hash Generator does',
+      paragraphs: [
+        'It reads a file on this device and gives you its digest five ways at once: SHA-256, SHA-512, SHA-384, SHA-1 and MD5. Every one is copyable, and you do not have to know in advance which one the person on the other end is going to ask for.',
+        'It also does the other half of the job, which is the half people actually have. Paste the checksum you were given into the expected-hash box and the answer comes back as a word — match, or no match — rather than as two rows of hexadecimal for you to compare with your finger on the screen.',
+        'There is no algorithm to choose. A published checksum is a run of hexadecimal, and its length says which digest wrote it: 32 characters is MD5, 40 is SHA-1, 64 is SHA-256, 96 is SHA-384, 128 is SHA-512. Paste a whole sha256sum line with the file name still attached and that is read too.',
+      ],
+    },
+    when: {
+      heading: 'When a checksum answers something and when it does not',
+      paragraphs: [
+        'Reach for it when a download came with a checksum and you want to know whether the file arrived intact: an installer, a disc image, a release archive, a database dump somebody sent you. A mismatch on a large download is usually a truncated or corrupted transfer, and finding that out now is cheaper than finding it out halfway through an install.',
+        'It also answers a duller question well: whether two files are the same file. Hash one, hash the other, compare the SHA-256 by eye — the same digest means the same bytes, whatever the two files are called or where they came from.',
+        'What a checksum cannot settle is trust. If the hash and the file came from the same page, they were replaced by the same person, and a match tells you only that they are consistent with each other. A checksum is worth something when the hash reached you by a route the file did not: a signed release note, a package manifest, a message from whoever built it.',
+      ],
+    },
+    options: {
+      heading: 'The two inputs, and the five answers',
+      paragraphs: [
+        'One file, one optional hash, and nothing to configure. What is worth explaining is what the digests are for and which of them still mean anything.',
+      ],
+      details: [
+        {
+          term: 'The file',
+          description:
+            'Any file at all, up to 512 MB, chosen or dropped. The ceiling is about the browser rather than about hashing: the digest the browser provides takes the whole file at once rather than a piece at a time, so a file has to fit in this tab to be hashed in it. A disc image larger than that wants a command line, and shasum or certutil is the right tool for it.',
+        },
+        {
+          term: 'The expected hash',
+          description:
+            'Optional, and the reason this is one page rather than two. Paste it however you copied it — bare, as a sha256sum line with the file name after it, or in the tagged form BSD tools and certutil write — and it is read out of that. Capitals are the same hash. A whole SHA256SUMS file is refused with a note to paste the single line you want, because guessing which of forty lines you meant would be worse than asking.',
+        },
+        {
+          term: 'The verdict',
+          description:
+            'One word, against the digest your pasted hash names, with both hex strings underneath it as the evidence. A no match does not guess at the cause: a damaged download, a different version, a different build and a file somebody swapped all look identical to a hash, and the page says which four it could be rather than picking one.',
+        },
+        {
+          term: 'SHA-256, SHA-512 and SHA-384',
+          description:
+            'The three worth relying on, and the browser computes all of them. SHA-256 is what nearly every project publishes; SHA-512 is the same family with a longer digest and is no weaker; SHA-384 is SHA-512 cut short and is here mostly so a 96-character hash somebody hands you can be checked rather than only named.',
+        },
+        {
+          term: 'SHA-1 and MD5, labelled broken',
+          description:
+            'Both are broken for authenticity — a second file with the same digest can be produced deliberately, which is exactly the attack a checksum is supposed to catch — and both are computed anyway, because a great many release pages still publish one of them and refusing to read yours would not make it more secure. They are marked on the page rather than quietly offered. Use them to notice a damaged transfer, never to prove nobody meddled.',
+        },
+        {
+          term: 'Why MD5 stops at 128 MB',
+          description:
+            'Because the browser refuses to provide it. crypto.subtle rejects MD5 outright, which is the correct decision for a browser API, so the MD5 here is written out in this project — the same one the UUID versions need — and it runs in JavaScript on the page’s own thread with a padded copy of the file beside it. Above 128 MB the four SHA digests still appear and the MD5 row says why it is empty, which is better than a tab that stops responding.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'A hash is computed here, so the file has nowhere to go',
+      paragraphs: [
+        'The file is read and hashed by this browser, on this device, and never uploaded. This is one of the pages where that is the whole point rather than a nicety: the files people check are installers, disc images, backups and dumps, and a checksum service that wanted the file would be asking for a copy of everything you were about to install.',
+        'Nothing is stored between visits, and no request is made while the page works. The hash you paste stays here too — it is compared in the page, against a digest computed in the page.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Which hash should I use?',
+        answer:
+          'SHA-256, unless you are checking against a hash somebody already published in another form. It is what nearly every project publishes and there is no practical reason to prefer anything else. If the checksum you were given is MD5 or SHA-1, use that one to compare — the page computes it — and treat the answer as a check on the transfer rather than as proof of authenticity.',
+      },
+      {
+        question: 'The hash matches. Is the file safe?',
+        answer:
+          'It means the file is the file that hash was made from, and nothing more. It says nothing about whether the file is safe, and nothing about where the hash came from: if you copied the hash off the same page as the download, whoever could replace the file could replace the hash beside it, and a match is exactly what they would want you to see. A checksum is worth something when it reached you by a different route than the file did.',
+      },
+      {
+        question: 'The hash does not match. What went wrong?',
+        answer:
+          'One of four things, and the hash cannot tell you which. The download was damaged or cut short, which is the usual answer for a large file. You have a different version or a different build than the one the checksum was published for, which is the next most common. You are checking the wrong file. Or the file was replaced. Download it again first: if the second copy matches, it was the transfer.',
+      },
+      {
+        question: 'Do I have to say which algorithm my hash is?',
+        answer:
+          'No, and there is no dropdown to do it with. The length of a hash says which digest wrote it, so pasting it is enough — 32 characters is MD5, 40 is SHA-1, 64 is SHA-256, 96 is SHA-384 and 128 is SHA-512. A hash that is a character or two short of one of those lengths was truncated in the copying, and the page says so rather than comparing it against nothing.',
+      },
+      {
+        question: 'Is my file uploaded to check it?',
+        answer:
+          'No. It is read and hashed in your browser, on this device, and never sent anywhere. That matters here more than on most pages, because the files worth checking are the large ones you were about to run.',
+      },
+      {
+        question: 'Why is MD5 still here if it is broken?',
+        answer:
+          'Because release pages still publish it, and a page that refused to compute the digest you were handed would be no safer — you would simply do it elsewhere. So it is computed, labelled as broken where you cannot miss it, and explained: MD5 collisions take seconds on a laptop, so a match proves the bytes were not damaged and proves nothing about whether they were tampered with.',
+      },
+      {
+        question: 'Can it hash a 4 GB disc image?',
+        answer:
+          'Not here. The browser’s digest takes the whole file in one piece rather than streaming it, so the file has to fit in this tab, and the ceiling on this page is 512 MB. For anything bigger use shasum -a 256 on macOS or Linux, sha256sum where that is installed, or certutil -hashfile on Windows.',
+      },
+    ],
+  },
   'url-encode-decode': {
     what: {
       heading: 'What URL Encode & Decode does',

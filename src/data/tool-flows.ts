@@ -232,6 +232,13 @@ export const toolFlowRegistry = [
  * JWT Decoder reads a token and explains it. Its output is an explanation
  * rather than a payload — the claims, the dates and what each one means — and
  * there is nothing downstream of it to hand that to.
+ *
+ * File Hash Generator is the one that reads every payload kind and still is
+ * not a step. It takes any file at all, which is not one of the kinds declared
+ * here, and gives back a digest and a verdict — a fact about the file rather
+ * than a file. Putting one in a chain would answer a question about an
+ * intermediate result nobody asked about, and the honest place for it is
+ * before a chain starts or after one ends, on the file a person actually has.
  */
 export const flowlessToolSlugs = [
   'pdf-viewer',
@@ -245,6 +252,7 @@ export const flowlessToolSlugs = [
   'uuid-generator',
   'base64-encode-decode',
   'jwt-decoder',
+  'file-hash-generator',
 ] as const satisfies readonly ToolRegistryEntry['slug'][];
 
 /** The registry's own entries, with their payload kinds preserved. */
