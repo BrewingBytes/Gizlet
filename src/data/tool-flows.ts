@@ -233,6 +233,10 @@ export const toolFlowRegistry = [
  * rather than a payload — the claims, the dates and what each one means — and
  * there is nothing downstream of it to hand that to.
  *
+ * Timestamp Converter takes a number a person typed and hands back the same
+ * moment written five ways. Neither end is a file, and a flow here carries
+ * files, so it belongs to the text neighbourhood with the rest of them.
+ *
  * File Hash Generator is the one that reads every payload kind and still is
  * not a step. It takes any file at all, which is not one of the kinds declared
  * here, and gives back a digest and a verdict — a fact about the file rather
@@ -253,6 +257,7 @@ export const flowlessToolSlugs = [
   'base64-encode-decode',
   'jwt-decoder',
   'file-hash-generator',
+  'timestamp-converter',
 ] as const satisfies readonly ToolRegistryEntry['slug'][];
 
 /** The registry's own entries, with their payload kinds preserved. */

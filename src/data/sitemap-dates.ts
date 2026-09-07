@@ -43,6 +43,7 @@ export const sitemapDates: Readonly<Record<string, string>> = {
   '/tools/base64-encode-decode/': '2026-09-07',
   '/tools/jwt-decoder/': '2026-09-07',
   '/tools/file-hash-generator/': '2026-09-07',
+  '/tools/timestamp-converter/': '2026-09-07',
   '/tools/uuid-generator/': '2026-09-07',
   '/tools/create-zip/': '2026-09-06',
   '/tools/extract-archive/': '2026-09-06',

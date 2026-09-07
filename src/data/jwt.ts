@@ -1,4 +1,5 @@
 import { decodeBase64, describeBase64Error, fromUtf8 } from './base64';
+import { describeTimeGap, formatUtcInstant } from './instant';
 
 /**
  * A JSON Web Token taken apart, and deliberately not checked.
@@ -439,43 +440,15 @@ export function readJwtTime(value: unknown): JwtTimeReading | undefined {
   };
 }
 
-/** `2026-09-07 09:15:00 UTC`, because a token's dates belong to no timezone. */
-export function formatJwtInstant(moment: Date): string {
-  if (Number.isNaN(moment.getTime())) return 'a date too far away to write down';
-
-  const pad = (part: number, width = 2) => String(part).padStart(width, '0');
-
-  return `${pad(moment.getUTCFullYear(), 4)}-${pad(moment.getUTCMonth() + 1)}-${pad(moment.getUTCDate())} ${pad(moment.getUTCHours())}:${pad(moment.getUTCMinutes())}:${pad(moment.getUTCSeconds())} UTC`;
-}
-
-const gapUnits = [
-  { limit: 45 * 60, divisor: 60, name: 'minute' },
-  { limit: 36 * 3600, divisor: 3600, name: 'hour' },
-  { limit: 45 * 86400, divisor: 86400, name: 'day' },
-  { limit: 550 * 86400, divisor: 30 * 86400, name: 'month' },
-] as const;
-
 /**
- * How far a moment is from now, in words.
+ * A token's date in UTC, or the reason there is none.
  *
- * The clock is a parameter rather than a call to `Date.now()` inside here: a
- * function that reads the time is a function whose tests are either flaky or
- * elaborate, and every caller has a clock to hand anyway.
+ * A token can write a number no calendar reaches, and the sentence for that is
+ * about the token rather than about formatting — so `data/instant` declines to
+ * write the date and this says why, in the voice the rest of the page uses.
  */
-export function describeJwtTimeGap(seconds: number, now: number): string {
-  const difference = seconds - Math.floor(now / 1000);
-  const magnitude = Math.abs(difference);
-
-  if (magnitude < 30) return difference >= 0 ? 'in a moment' : 'moments ago';
-
-  const unit = gapUnits.find((candidate) => magnitude < candidate.limit);
-  const count = unit
-    ? Math.round(magnitude / unit.divisor)
-    : Math.round((magnitude / (365 * 86400)) * 10) / 10;
-  const name = unit ? unit.name : 'year';
-  const text = `${count.toLocaleString()} ${name}${count === 1 ? '' : 's'}`;
-
-  return difference >= 0 ? `in ${text}` : `${text} ago`;
+export function formatJwtInstant(moment: Date): string {
+  return formatUtcInstant(moment) ?? 'a date too far away to write down';
 }
 
 export interface JwtClaimReading {
@@ -752,14 +725,14 @@ export function getJwtWindow(token: DecodedJwt, now: number): JwtWindow {
   if (expiry && expiry.seconds <= seconds) {
     return {
       state: 'expired',
-      summary: `The token’s own expiry passed ${describeJwtTimeGap(expiry.seconds, now)}, at ${expiry.utc}.`,
+      summary: `The token’s own expiry passed ${describeTimeGap(expiry.seconds, now)}, at ${expiry.utc}.`,
     };
   }
 
   if (start && start.seconds > seconds) {
     return {
       state: 'early',
-      summary: `The token says it is not to be used before ${start.utc}, which is ${describeJwtTimeGap(start.seconds, now)}.`,
+      summary: `The token says it is not to be used before ${start.utc}, which is ${describeTimeGap(start.seconds, now)}.`,
     };
   }
 
@@ -774,7 +747,7 @@ export function getJwtWindow(token: DecodedJwt, now: number): JwtWindow {
 
   return {
     state: 'within',
-    summary: `The token’s own expiry is ${describeJwtTimeGap(expiry.seconds, now)}, at ${expiry.utc}.`,
+    summary: `The token’s own expiry is ${describeTimeGap(expiry.seconds, now)}, at ${expiry.utc}.`,
   };
 }
 

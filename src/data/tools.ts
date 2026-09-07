@@ -737,9 +737,15 @@ export const toolRegistry = [
       "iso 8601",
       "epoch to date",
       "date to epoch",
+      "milliseconds to date",
+      "utc converter",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "A count of seconds or milliseconds, or a date written as 2026-09-07, 2026-09-07 14:30, or an ISO 8601 moment with a Z or a ±HH:MM offset. The unit of a number is chosen rather than guessed, and the clock a bare date was read off is chosen too — an offset written into the text overrides that choice.",
+      output: "Both directions at once, as you type. A number becomes the moment in UTC and on this device, each with its weekday, plus ISO 8601, seconds and milliseconds, all copyable, and how long ago or how far ahead it is. A date becomes its seconds, milliseconds and ISO 8601, with the offset it was read at named. A number whose size disagrees with the chosen unit is reported with the other unit's reading offered, and is never silently reinterpreted. An impossible date is refused by name — the month, the day of that particular month, the hour, or a leap second no calendar holds.",
+    },
   },
   {
     id: 32,
