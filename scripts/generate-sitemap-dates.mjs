@@ -115,20 +115,56 @@ async function exists(relativePath) {
   }
 }
 
-/** The date of the last commit that touched any of some files, as YYYY-MM-DD. */
-async function lastChanged(files) {
+const isDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value);
+
+async function commitDate(files) {
   const { stdout } = await run('git', ['log', '-1', '--format=%cs', '--', ...files], {
     cwd: repositoryRoot,
   });
-  const date = stdout.trim();
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+  return stdout.trim();
+}
+
+/**
+ * Whether this checkout has enough history to date anything at all.
+ *
+ * Checked once, against a file that has certainly been committed, so that a
+ * shallow clone fails with the reason rather than with a page-by-page
+ * complaint about files that are perfectly fine.
+ */
+async function assertUsableHistory() {
+  if (!isDate(await commitDate(['package.json']))) {
     throw new Error(
-      `git has no commit date for ${files.join(', ')}. A shallow clone cannot produce these dates; fetch the full history.`,
+      'git cannot date package.json, so this checkout has no usable history. A shallow clone cannot produce these dates; fetch the full history.',
     );
   }
+}
 
-  return date;
+/**
+ * The date of the last commit that touched any of some files.
+ *
+ * A file that exists on disk with no commit behind it is new work in progress,
+ * and today is the truthful answer for it: it has never changed on any other
+ * day. That case has to work, because a new Gizlet reaches the sitemap through
+ * the registry and its unit test requires a date — without this, adding one
+ * would fail that test until it was committed, and could not be committed
+ * until the test passed.
+ *
+ * Once the file is committed the date becomes the commit's own, which is the
+ * same day, so `--check` stays quiet.
+ */
+async function lastChanged(files) {
+  const date = await commitDate(files);
+
+  if (isDate(date)) return date;
+
+  const present = await Promise.all(files.map(exists));
+
+  if (!present.some(Boolean)) {
+    throw new Error(`None of these files exist: ${files.join(', ')}. Fix the declaration in this script.`);
+  }
+
+  return new Date().toISOString().slice(0, 10);
 }
 
 function formatModule(dates) {
@@ -153,6 +189,8 @@ async function main() {
   const argv = process.argv.slice(2).filter((argument) => argument !== '--');
   const write = argv.includes('--write');
   const check = argv.includes('--check');
+  await assertUsableHistory();
+
   const sources = [...staticPageSources, ...(await getToolSources())];
   const dates = [];
 
