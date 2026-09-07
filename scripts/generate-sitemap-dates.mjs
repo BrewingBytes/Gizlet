@@ -81,7 +81,13 @@ const staticPageSources = [
 async function getToolSources() {
   const route = await readFile(join(repositoryRoot, 'src/pages/tools/[slug].astro'), 'utf8');
   const components = new Map(
-    [...route.matchAll(/'([a-z0-9-]+)':\s*([A-Za-z]+),/g)].map((match) => [match[1], match[2]]),
+    // The component name can carry a digit — Base64Tool — so this is not
+    // letters only. It refused rather than skipping, which is the behaviour
+    // that made the omission obvious.
+    [...route.matchAll(/'([a-z0-9-]+)':\s*([A-Za-z][A-Za-z0-9]*),/g)].map((match) => [
+      match[1],
+      match[2],
+    ]),
   );
   const sources = [];
 

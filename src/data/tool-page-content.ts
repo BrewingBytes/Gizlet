@@ -1204,6 +1204,109 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'base64-encode-decode': {
+    what: {
+      heading: 'What Base64 Encode & Decode does',
+      paragraphs: [
+        'It turns text or a small file into Base64, and turns Base64 back into whatever it was. Both alphabets are here — the standard one with + and /, and the URL-safe one with - and _ — along with the choices that usually go unmentioned: whether to write the = padding, whether to break lines at 76 characters as email does, and whether to wrap the result as a data: URI.',
+        'Decoding needs no settings at all. It works out which alphabet it is looking at, ignores whitespace and line breaks, understands a data: URI prefix, and copes with missing padding. If the bytes turn out not to be text — a picture, an archive — it says so and offers them as a file, because that is what they are.',
+      ],
+    },
+    when: {
+      heading: 'When bytes have to travel as text',
+      paragraphs: [
+        'When an image has to go inline in a stylesheet or an email as a data: URI. When an API wants a file in a JSON field. When a config file, a certificate or a key has arrived as a wall of letters and you need to see what is in it. When a JWT needs its middle section read — that is URL-safe Base64 without padding, which is exactly the combination most tools get wrong.',
+        'It is also the quickest way to find out why something will not decode elsewhere. Paste it here and the page names the character that is wrong and where it is, rather than telling you the input is invalid and leaving you to find it.',
+      ],
+    },
+    options: {
+      heading: 'The choices, and the one thing this is not',
+      paragraphs: [
+        'Base64 is a way of writing bytes down using 64 characters that survive being emailed. What follows is the small set of decisions that make two Base64 strings of the same bytes look different.',
+      ],
+      details: [
+        {
+          term: 'It is not encryption',
+          description:
+            'This is the important one. Base64 hides nothing: anyone can read it back, and this page reads it back. If something arrived Base64-encoded and looked scrambled, it was not protected — it was just written in a different alphabet. Never use it to keep a secret.',
+        },
+        {
+          term: 'Standard or URL-safe',
+          description:
+            'The two alphabets differ in their last two characters: + and / in the standard one, - and _ in the URL-safe one. The standard alphabet breaks when put in a URL or a filename, because / is a path separator and + often means a space. Everything else about the two is identical, and the same bytes come back either way.',
+        },
+        {
+          term: 'Padding',
+          description:
+            'The = characters at the end bring the length to a multiple of four. They carry no data — a decoder can work out the length without them — so URL-safe Base64 is usually written without any. This page reads both and lets you write either.',
+        },
+        {
+          term: 'Line breaks',
+          description:
+            'Email wraps Base64 at 76 characters, which is why a certificate or a key looks like a paragraph. Wrapping changes nothing about the bytes and decoding ignores it, so it is an option here rather than a fact.',
+        },
+        {
+          term: 'A data: URI',
+          description:
+            'A data: URI is Base64 with its media type written on the front, which is how an image goes inline in a stylesheet or an email. Encoding a file can produce one, using the type your browser reported; decoding one reads the type back and names the download after it.',
+        },
+        {
+          term: 'When decoding goes wrong',
+          description:
+            'The page names the character and its position: a character outside the alphabet, an = with something after it, padding on data that has been truncated, or a length no encoder could have produced. It also notices a last character whose unused bits are not zero — QQ== and QR== decode to the same single byte, but only the first is the canonical spelling — and mentions it rather than refusing, because the bytes are not in doubt.',
+        },
+        {
+          term: 'Size',
+          description:
+            'Up to 512 KB in for a file, which comes out as about 700,000 characters. Base64 is a third larger than the bytes it describes, and the result has to be held in the page and made selectable, so the limit is about what a browser can lay out rather than about the format.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'The file is read here, not uploaded',
+      paragraphs: [
+        'The text and the file are converted in this browser. Nothing is sent anywhere, because there is nowhere to send it: this page has no endpoint behind it, and no request is made when you type or choose a file.',
+        'That is worth stating plainly for this one, because the things people Base64-encode are keys, certificates, tokens and attachments — and a site that offered to encode them while quietly keeping a copy would be an excellent way to collect exactly the wrong sort of file. Your file is never uploaded, and nothing is stored between visits.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Is Base64 a way of encrypting something?',
+        answer:
+          'No, and this is the most common misunderstanding about it. It is a way of writing bytes down in 64 characters so they survive systems that only handle text. Anyone can decode it — this page decodes it in one paste — so it protects nothing at all.',
+      },
+      {
+        question: 'Is my file uploaded?',
+        answer:
+          'No. It is read from your device and encoded here. Nothing is sent anywhere, including the filename.',
+      },
+      {
+        question: 'Why does my Base64 have no = at the end?',
+        answer:
+          'Because whoever produced it left the padding off, which is normal for URL-safe Base64 and for JWTs. The padding carries no information, so this page reads it either way and lets you write it either way.',
+      },
+      {
+        question: 'Which alphabet should I use?',
+        answer:
+          'Standard unless the result is going into a URL, a filename or a JWT, in which case URL-safe. The difference is only the last two characters of the alphabet, and the bytes are identical.',
+      },
+      {
+        question: 'It decoded but the result is gibberish. What happened?',
+        answer:
+          'The bytes are probably not text — a PNG or a zip decoded as text looks like nonsense. When the bytes are not valid UTF-8 the page says so and offers them as a file instead, which is the honest answer rather than a screenful of replacement characters.',
+      },
+      {
+        question: 'Can it handle emoji and other languages?',
+        answer:
+          'Yes. Text is encoded as its UTF-8 bytes, which is why this does not use the browser’s own btoa — that function refuses any character above 255, so an é or an emoji would fail outright.',
+      },
+      {
+        question: 'How large a file can it take?',
+        answer:
+          '512 KB, which becomes roughly 700,000 characters of Base64. Past that the page would be trying to lay out several megabytes of text, which is slow rather than useful; an oversized file is refused with an explanation.',
+      },
+    ],
+  },
   'url-encode-decode': {
     what: {
       heading: 'What URL Encode & Decode does',

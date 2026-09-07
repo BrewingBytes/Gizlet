@@ -221,6 +221,13 @@ export const toolFlowRegistry = [
  * that no Gizlet in it produces. UUID Generator is the same, and takes no
  * input at all: a step with nothing coming into it is where a chain starts,
  * and a chain that starts with an identifier leads nowhere here.
+ *
+ * Base64 Encode & Decode is the awkward one, because it does take a file — and
+ * gives back text, which is not a payload kind. Decoding can go the other way
+ * and produce bytes of any kind at all, which is the same objection Extract
+ * Archive has: a step whose output no other step can be sure it reads is not a
+ * step. It stays out until there is a text payload for the text Gizlets to
+ * pass between themselves, which is its own question.
  */
 export const flowlessToolSlugs = [
   'pdf-viewer',
@@ -232,6 +239,7 @@ export const flowlessToolSlugs = [
   'extract-archive',
   'url-encode-decode',
   'uuid-generator',
+  'base64-encode-decode',
 ] as const satisfies readonly ToolRegistryEntry['slug'][];
 
 /** The registry's own entries, with their payload kinds preserved. */

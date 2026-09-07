@@ -1,0 +1,445 @@
+---
+import { base64AlphabetDetails, maximumBase64FileBytes } from '../data/base64';
+---
+
+<section class="base64-tool" data-base64-tool>
+  <div class="base64-tool__controls">
+    <fieldset class="base64-tool__direction">
+      <legend>Direction</legend>
+      <label>
+        <input type="radio" name="base64-direction" value="encode" data-direction checked />
+        <span>Encode</span>
+      </label>
+      <label>
+        <input type="radio" name="base64-direction" value="decode" data-direction />
+        <span>Decode</span>
+      </label>
+    </fieldset>
+
+    <fieldset class="base64-tool__source" data-source-fields>
+      <legend>From</legend>
+      <label>
+        <input type="radio" name="base64-source" value="text" data-source checked />
+        <span>Text</span>
+      </label>
+      <label>
+        <input type="radio" name="base64-source" value="file" data-source />
+        <span>A file</span>
+      </label>
+    </fieldset>
+
+    <div class="base64-tool__row" data-alphabet-row>
+      <label for="base64-alphabet">Alphabet</label>
+      <select id="base64-alphabet" data-alphabet>
+        {base64AlphabetDetails.map((detail) => <option value={detail.alphabet}>{detail.label}</option>)}
+      </select>
+    </div>
+  </div>
+
+  <p class="base64-tool__summary" data-alphabet-summary></p>
+
+  <div class="base64-tool__options" data-encode-options>
+    <label><input type="checkbox" data-padding checked /> <span>Write the = padding</span></label>
+    <label><input type="checkbox" data-wrap /> <span>Break lines at 76 characters</span></label>
+    <label><input type="checkbox" data-data-uri /> <span>Write it as a data: URI</span></label>
+  </div>
+
+  <div class="base64-tool__panel" data-text-panel>
+    <div class="base64-tool__panel-heading">
+      <div>
+        <p class="metadata">Your input</p>
+        <label for="base64-input" data-input-label>Text to encode</label>
+      </div>
+      <div class="base64-tool__panel-actions">
+        <button type="button" class="button-secondary" data-swap disabled>Swap</button>
+        <button type="button" class="button-secondary" data-clear>Clear</button>
+      </div>
+    </div>
+    <textarea
+      id="base64-input"
+      data-input
+      autocapitalize="off"
+      autocomplete="off"
+      autocorrect="off"
+      spellcheck="false"
+      placeholder="tea & biscuits"></textarea>
+  </div>
+
+  <div class="base64-tool__panel base64-tool__panel--picker" data-file-panel hidden>
+    <div class="base64-tool__picker" data-drop-zone>
+      <input
+        id="base64-file"
+        class="base64-tool__file-input"
+        type="file"
+        aria-label="Select a file to encode"
+        data-file-input
+        hidden
+      />
+      <p class="metadata">Up to {Math.round(maximumBase64FileBytes / 1024)} KB</p>
+      <h2>Drop a file here</h2>
+      <p>It is read and encoded on this device. Nothing is uploaded.</p>
+      <button type="button" class="button-secondary" data-select-file>Choose a file</button>
+    </div>
+    <p class="base64-tool__file-name" data-file-name hidden></p>
+  </div>
+
+  <section class="base64-tool__panel base64-tool__panel--result" aria-labelledby="base64-output-title">
+    <div class="base64-tool__panel-heading">
+      <div>
+        <p class="metadata">Result</p>
+        <h2 id="base64-output-title" data-output-label>Base64</h2>
+      </div>
+      <div class="base64-tool__panel-actions">
+        <button type="button" class="button-secondary" data-copy disabled>Copy result</button>
+        <button type="button" class="button-secondary" data-download hidden>Download the bytes</button>
+      </div>
+    </div>
+    <p class="base64-tool__status" data-status data-state="empty" role="status" aria-live="polite"></p>
+    <p class="base64-tool__error" data-error role="alert" hidden></p>
+    <pre tabindex="0" data-output-box><code data-output></code></pre>
+    <p class="base64-tool__note" data-note></p>
+  </section>
+</section>
+
+<style>
+  .base64-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .base64-tool__controls { display: flex; flex-wrap: wrap; gap: var(--space-4); padding: var(--space-4) var(--space-4) var(--space-3); }
+  .base64-tool fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+  .base64-tool legend, .base64-tool__row label { margin-bottom: var(--space-2); padding: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.08em; }
+  .base64-tool fieldset label { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 2.5rem; margin-right: var(--space-3); }
+  .base64-tool fieldset input, .base64-tool__options input { width: 1.125rem; height: 1.125rem; flex: none; }
+  .base64-tool__row { display: grid; gap: var(--space-1); min-width: 0; }
+  .base64-tool__row label { display: block; margin: 0; }
+  .base64-tool__summary { margin: 0 var(--space-4) var(--space-3); padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--border); color: var(--text-muted); }
+  .base64-tool__options { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: 0 var(--space-4) var(--space-3); }
+  .base64-tool__options[hidden] { display: none; }
+  .base64-tool__options label { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 2.25rem; }
+  .base64-tool__panel { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .base64-tool__panel[hidden], .base64-tool__row[hidden], .base64-tool pre[hidden] { display: none; }
+  .base64-tool__panel-heading { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-3); }
+  .base64-tool__panel-heading .metadata, .base64-tool__panel-heading label, .base64-tool__panel-heading h2 { margin: 0; }
+  .base64-tool__panel-heading label, .base64-tool__panel-heading h2 { display: block; font-family: var(--font-display); font-size: var(--font-size-xl); font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; text-transform: none; }
+  .base64-tool__panel-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .base64-tool textarea { min-height: 10rem; font-family: var(--font-mono); font-size: var(--font-size-sm); line-height: 1.5; }
+  .base64-tool__picker { padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .base64-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .base64-tool__picker h2 { margin-bottom: var(--space-2); }
+  .base64-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .base64-tool__file-name { margin: var(--space-3) 0 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); overflow-wrap: anywhere; }
+  .base64-tool__file-name[hidden] { display: none; }
+  .base64-tool__status, .base64-tool__error { min-height: 1.5rem; margin: 0 0 var(--space-2); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); overflow-wrap: anywhere; }
+  .base64-tool__status[data-state='copied'] { color: var(--success); font-weight: 700; }
+  .base64-tool__error { color: var(--color-red); font-weight: 700; }
+  .base64-tool__error[hidden] { display: none; }
+  .base64-tool__note { margin: var(--space-3) 0 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .base64-tool__note:empty { display: none; }
+  .base64-tool pre { max-height: 24rem; margin: 0; padding: var(--space-3); overflow: auto; border: var(--border-width) solid var(--border); background: var(--color-ink); color: #fffdf7; font-family: var(--font-mono); font-size: var(--font-size-sm); line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
+  .base64-tool code:empty::before { content: 'The result appears here.'; color: #b9b3a4; }
+  @media (max-width: 40rem) {
+    .base64-tool__controls, .base64-tool__panel { padding: var(--space-3); }
+    .base64-tool__summary, .base64-tool__options { margin-left: var(--space-3); margin-right: var(--space-3); }
+    .base64-tool__panel-heading { align-items: start; flex-direction: column; }
+  }
+</style>
+
+<script>
+  import { formatFileSize } from '../data/image-compression';
+  import {
+    decodeBase64,
+    describeBase64Error,
+    describeBase64Output,
+    describeBase64Reading,
+    encodeBase64,
+    fromUtf8,
+    getBase64AlphabetDetail,
+    getBase64DownloadName,
+    getBase64NotEncryptionNote,
+    getBase64NotTextMessage,
+    isBase64Alphabet,
+    toDataUri,
+    toUtf8,
+    validateBase64File,
+    type Base64Alphabet,
+  } from '../data/base64';
+
+  const root = document.querySelector<HTMLElement>('[data-base64-tool]');
+
+  if (root) {
+    const directionInputs = [...root.querySelectorAll<HTMLInputElement>('[data-direction]')];
+    const sourceInputs = [...root.querySelectorAll<HTMLInputElement>('[data-source]')];
+    const sourceFields = root.querySelector<HTMLElement>('[data-source-fields]');
+    const alphabetSelect = root.querySelector<HTMLSelectElement>('[data-alphabet]');
+    const alphabetRow = root.querySelector<HTMLElement>('[data-alphabet-row]');
+    const outputBox = root.querySelector<HTMLElement>('[data-output-box]');
+    const alphabetSummary = root.querySelector<HTMLElement>('[data-alphabet-summary]');
+    const encodeOptions = root.querySelector<HTMLElement>('[data-encode-options]');
+    const paddingBox = root.querySelector<HTMLInputElement>('[data-padding]');
+    const wrapBox = root.querySelector<HTMLInputElement>('[data-wrap]');
+    const dataUriBox = root.querySelector<HTMLInputElement>('[data-data-uri]');
+    const textPanel = root.querySelector<HTMLElement>('[data-text-panel]');
+    const filePanel = root.querySelector<HTMLElement>('[data-file-panel]');
+    const input = root.querySelector<HTMLTextAreaElement>('[data-input]');
+    const inputLabel = root.querySelector<HTMLElement>('[data-input-label]');
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const fileName = root.querySelector<HTMLElement>('[data-file-name]');
+    const outputLabel = root.querySelector<HTMLElement>('[data-output-label]');
+    const output = root.querySelector<HTMLElement>('[data-output]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const note = root.querySelector<HTMLElement>('[data-note]');
+    const copyButton = root.querySelector<HTMLButtonElement>('[data-copy]');
+    const downloadButton = root.querySelector<HTMLButtonElement>('[data-download]');
+    const swapButton = root.querySelector<HTMLButtonElement>('[data-swap]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+
+    if (directionInputs.length === 0 || sourceInputs.length === 0 || !sourceFields || !alphabetSelect || !alphabetRow || !outputBox || !alphabetSummary || !encodeOptions || !paddingBox || !wrapBox || !dataUriBox || !textPanel || !filePanel || !input || !inputLabel || !fileInput || !selectFileButton || !dropZone || !fileName || !outputLabel || !output || !status || !error || !note || !copyButton || !downloadButton || !swapButton || !clearButton) {
+      throw new Error('Base64 Encode & Decode could not initialise.');
+    }
+
+    let direction: 'encode' | 'decode' = 'encode';
+    let source: 'text' | 'file' = 'text';
+    let alphabet: Base64Alphabet = 'standard';
+    /** The chosen file's bytes, held so the options can be changed without rereading it. */
+    let fileBytes: Uint8Array | undefined;
+    let fileMediaType = '';
+    /** What a decode produced, kept as bytes so it can be downloaded as it is. */
+    let decoded: Uint8Array | undefined;
+    let decodedName = 'decoded.bin';
+
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+
+    const resetOutput = () => {
+      output.textContent = '';
+      outputBox.hidden = false;
+      copyButton.disabled = true;
+      downloadButton.hidden = true;
+      swapButton.disabled = true;
+      decoded = undefined;
+      note.textContent = '';
+    };
+
+    const encode = () => {
+      const bytes = source === 'file' ? fileBytes : toUtf8(input.value);
+
+      if (!bytes || bytes.length === 0) {
+        resetOutput();
+        status.dataset.state = 'empty';
+        status.textContent = source === 'file' ? 'Choose a file to encode.' : 'Type or paste something above.';
+        return;
+      }
+
+      const encoded = encodeBase64(bytes, {
+        alphabet,
+        padding: paddingBox.checked,
+        wrap: wrapBox.checked,
+      });
+      const result = dataUriBox.checked
+        ? toDataUri(encoded, source === 'file' ? fileMediaType : 'text/plain')
+        : encoded;
+
+      output.textContent = result;
+      outputBox.hidden = false;
+      copyButton.disabled = false;
+      downloadButton.hidden = true;
+      swapButton.disabled = false;
+      status.dataset.state = 'valid';
+      status.textContent = describeBase64Output(bytes.length, result.length, formatFileSize);
+      note.textContent = getBase64NotEncryptionNote();
+    };
+
+    const decode = () => {
+      if (input.value.trim() === '') {
+        resetOutput();
+        status.dataset.state = 'empty';
+        status.textContent = 'Paste some Base64 above.';
+        clearError();
+        return;
+      }
+
+      const result = decodeBase64(input.value);
+
+      if (!result.ok) {
+        resetOutput();
+        status.dataset.state = 'empty';
+        status.textContent = '';
+        showError(describeBase64Error(result.error));
+        return;
+      }
+
+      clearError();
+
+      const text = fromUtf8(result.reading.bytes);
+
+      decoded = result.reading.bytes;
+      decodedName = getBase64DownloadName(result.reading.mediaType);
+      status.dataset.state = 'valid';
+      status.textContent = describeBase64Reading(result.reading, formatFileSize);
+      // Bytes that are not text are still perfectly good bytes, so they are
+      // offered as a file rather than rendered as replacement characters.
+      downloadButton.hidden = false;
+      swapButton.disabled = text === undefined;
+
+      if (text === undefined) {
+        // There is a result, it is just not text — so the box goes rather than
+        // sitting there saying the result will appear in it.
+        output.textContent = '';
+        outputBox.hidden = true;
+        copyButton.disabled = true;
+        note.textContent = getBase64NotTextMessage();
+        return;
+      }
+
+      output.textContent = text;
+      outputBox.hidden = false;
+      copyButton.disabled = false;
+      note.textContent = getBase64NotEncryptionNote();
+    };
+
+    const render = () => {
+      inputLabel.textContent = direction === 'encode' ? 'Text to encode' : 'Base64 to decode';
+      outputLabel.textContent = direction === 'encode' ? 'Base64' : 'Decoded';
+      alphabetSummary.textContent = getBase64AlphabetDetail(alphabet).summary;
+      sourceFields.hidden = direction === 'decode';
+      encodeOptions.hidden = direction === 'decode';
+      // Decoding works out the alphabet from the input, so offering a choice
+      // that changes nothing would be a control that lies about what it does.
+      alphabetRow.hidden = direction === 'decode';
+      alphabetSummary.hidden = direction === 'decode';
+      // Decoding reads whatever it is given, so a file to encode is only ever
+      // an encoding question and the picker goes away with the options.
+      const showPicker = direction === 'encode' && source === 'file';
+
+      filePanel.hidden = !showPicker;
+      textPanel.hidden = showPicker;
+
+      if (direction === 'encode') encode();
+      else decode();
+    };
+
+    const readFile = async (file: File) => {
+      clearError();
+
+      const problem = validateBase64File(file);
+
+      if (problem) {
+        fileBytes = undefined;
+        fileName.hidden = true;
+        resetOutput();
+        showError(problem);
+        return;
+      }
+
+      fileBytes = new Uint8Array(await file.arrayBuffer());
+      fileMediaType = file.type || 'application/octet-stream';
+      fileName.textContent = `${file.name} · ${formatFileSize(file.size)} · ${fileMediaType}`;
+      fileName.hidden = false;
+      encode();
+    };
+
+    input.addEventListener('input', render);
+
+    for (const control of directionInputs) {
+      control.addEventListener('change', () => {
+        if (!control.checked) return;
+        direction = control.value === 'decode' ? 'decode' : 'encode';
+        clearError();
+        resetOutput();
+        render();
+      });
+    }
+
+    for (const control of sourceInputs) {
+      control.addEventListener('change', () => {
+        if (!control.checked) return;
+        source = control.value === 'file' ? 'file' : 'text';
+        clearError();
+        resetOutput();
+        render();
+      });
+    }
+
+    alphabetSelect.addEventListener('change', () => {
+      if (isBase64Alphabet(alphabetSelect.value)) alphabet = alphabetSelect.value;
+      render();
+    });
+
+    for (const box of [paddingBox, wrapBox, dataUriBox]) {
+      box.addEventListener('change', render);
+    }
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+      const [file] = fileInput.files ?? [];
+
+      if (file) void readFile(file);
+      fileInput.value = '';
+    });
+
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.dataset.dragging = 'true'; });
+    }
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => { event.preventDefault(); delete dropZone.dataset.dragging; });
+    }
+    dropZone.addEventListener('drop', (event) => {
+      const [file] = (event as DragEvent).dataTransfer?.files ?? [];
+
+      if (file) void readFile(file);
+    });
+
+    // Swapping turns the answer into the question, which is how a round trip
+    // gets checked: encode something, swap, and it should come back.
+    swapButton.addEventListener('click', () => {
+      const result = output.textContent ?? '';
+
+      direction = direction === 'encode' ? 'decode' : 'encode';
+      source = 'text';
+      input.value = result;
+
+      for (const control of directionInputs) control.checked = control.value === direction;
+      for (const control of sourceInputs) control.checked = control.value === source;
+
+      clearError();
+      render();
+      input.focus();
+    });
+
+    clearButton.addEventListener('click', () => {
+      input.value = '';
+      fileBytes = undefined;
+      fileName.hidden = true;
+      clearError();
+      resetOutput();
+      render();
+      input.focus();
+    });
+
+    copyButton.addEventListener('click', () => {
+      void navigator.clipboard
+        ?.writeText(output.textContent ?? '')
+        .then(() => {
+          status.dataset.state = 'copied';
+          status.textContent = 'Result copied to your clipboard.';
+        })
+        .catch(() => showError('Could not copy automatically. Select the result and copy it manually.'));
+    });
+
+    downloadButton.addEventListener('click', () => {
+      if (!decoded) return;
+
+      const blob = new Blob([decoded.slice()], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      link.href = url;
+      link.download = decodedName;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    render();
+  }
+</script>
