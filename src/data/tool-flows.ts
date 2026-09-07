@@ -228,6 +228,10 @@ export const toolFlowRegistry = [
  * Archive has: a step whose output no other step can be sure it reads is not a
  * step. It stays out until there is a text payload for the text Gizlets to
  * pass between themselves, which is its own question.
+ *
+ * JWT Decoder reads a token and explains it. Its output is an explanation
+ * rather than a payload — the claims, the dates and what each one means — and
+ * there is nothing downstream of it to hand that to.
  */
 export const flowlessToolSlugs = [
   'pdf-viewer',
@@ -240,6 +244,7 @@ export const flowlessToolSlugs = [
   'url-encode-decode',
   'uuid-generator',
   'base64-encode-decode',
+  'jwt-decoder',
 ] as const satisfies readonly ToolRegistryEntry['slug'][];
 
 /** The registry's own entries, with their payload kinds preserved. */

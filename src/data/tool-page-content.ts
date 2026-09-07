@@ -1307,6 +1307,110 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'jwt-decoder': {
+    what: {
+      heading: 'What JWT Decoder does',
+      paragraphs: [
+        'It splits a JSON Web Token into its three parts, reads the header and the payload back out of Base64URL, and shows you the JSON that was in them. Every registered claim gets a line saying what it is for — iss, aud, nbf and azp are not guessable, and looking each one up in the specification is the work this page is meant to save.',
+        'Dates are the reason most people open a token inspector, so they are given twice: the raw number of seconds the token wrote, and the same moment in UTC with how far away it is. The token’s own expiry window is read against your clock and reported as it stands.',
+        'What it does not do is check anything. Decoding a token and verifying one are different jobs, and this page only does the first — it says so at the top, where it cannot be missed.',
+      ],
+    },
+    when: {
+      heading: 'When a token has to be looked at',
+      paragraphs: [
+        'When a request is being refused and you need to know whether the token expired, who it was issued to, or which audience it names. When a login is behaving oddly and the claims are the only evidence. When you are writing the thing that issues tokens and want to see what you actually produced.',
+        'It is also the quickest way to find out why a token will not decode elsewhere: the error names which of the three segments is at fault rather than calling the whole token invalid, and a header that reads is still shown when the payload is the broken part.',
+      ],
+    },
+    options: {
+      heading: 'What is shown, and what is deliberately not',
+      paragraphs: [
+        'There are no settings. A token is one input with one reading, so the page has controls for pasting and clearing and nothing else. What is worth explaining is the parts, and the one thing this page will not tell you.',
+      ],
+      details: [
+        {
+          term: 'It does not verify',
+          description:
+            'This is the important one. The signature proves who wrote the header and the payload, and testing that proof needs the issuer’s key: a shared secret you would have to type in, or a public key this page would have to fetch from the issuer. Neither belongs on a page that sends nothing anywhere. So the signature is shown and measured, never checked — and a token that decodes cleanly here can still be forged, expired, revoked, or meant for somebody else entirely.',
+        },
+        {
+          term: 'The header',
+          description:
+            'The small print about the token itself: alg says what signed it, kid says which of the issuer’s keys, typ says what kind of token it is. Treat alg as a claim rather than a fact — an attacker can write whatever they like there, which is why a receiver decides the algorithm instead of believing the token.',
+        },
+        {
+          term: 'The payload',
+          description:
+            'The claims. Registered ones — from RFC 7519 and OpenID Connect — get a line each explaining what they are for. Everything else in a token belongs to whoever issued it, so those fields are shown in the JSON and left unexplained rather than given an invented meaning.',
+        },
+        {
+          term: 'The dates',
+          description:
+            'exp, nbf, iat and auth_time are counted in seconds since 1970, and each is shown both as that number and as a UTC moment with the gap to now. A date written in milliseconds — the commonest mistake in a hand-rolled token, because that is what Date.now() gives — is called out rather than displayed as the year 57000.',
+        },
+        {
+          term: 'The signature',
+          description:
+            'Shown as it arrived, with its length in bytes. An empty one means the token says it is unsigned, which is worth knowing: anyone can write one of those and change anything in it.',
+        },
+        {
+          term: 'What it says about a broken token',
+          description:
+            'The failure names the segment. An encrypted token — a JWE, which has five parts rather than three — is identified as one rather than being blamed on its Base64. A token with two parts is reported as truncated or unsigned. A segment that is not Base64URL, or is not JSON, or is JSON but a list rather than an object, each say so. Padding and the wrong alphabet are mentioned without refusing the token, because the answer matters more than the complaint.',
+        },
+        {
+          term: 'What it accepts',
+          description:
+            'Paste the token with whatever it was copied out of still attached: an Authorization header name, a Bearer prefix, quotes from a line of JSON, line breaks from a log. All of that is ignored, and the page says what it ignored rather than silently rewriting your input.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'A token is a credential, so it stays in this browser',
+      paragraphs: [
+        'The token is decoded in this page, by this browser. Nothing is sent anywhere, because there is nowhere to send it: this page has no endpoint behind it, no request is made while you type, and no issuer is contacted even when the header says where its keys are published.',
+        'That matters more here than on most pages. A JWT is usually a live credential — whoever holds it can act as you until it expires — so a token inspector that quietly kept a copy would be an extremely efficient way to collect other people’s sessions. Your token is never uploaded, nothing is stored between visits, and the only way it leaves this device is if you copy it out yourself.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Does this check whether the token is genuine?',
+        answer:
+          'No. It reads what the token says about itself and nothing more. Verifying a token means checking the signature against the issuer’s key, and then checking the issuer, the audience and the expiry — this page does none of that, and a token that decodes here perfectly may still be forged.',
+      },
+      {
+        question: 'Is my token uploaded anywhere?',
+        answer:
+          'No. It is decoded in your browser and never sent anywhere, which is the only responsible way to handle something that is usually a live credential.',
+      },
+      {
+        question: 'Is a JWT encrypted?',
+        answer:
+          'A normal one is not. The header and the payload are Base64URL, which anyone can read — this page reads them in one paste. The signature stops them being changed without detection; it does not stop them being read, so never put anything secret in a token. Encrypted tokens do exist, as JWE, and they have five parts rather than three; there is nothing to read in one without the key.',
+      },
+      {
+        question: 'What is the difference between HS256 and RS256?',
+        answer:
+          'HS256 signs with a secret both sides share, so anyone who can check the token can also make one. RS256 signs with the issuer’s private key and is checked with the matching public key, so only the issuer could have produced it. The names look interchangeable and the difference decides who can forge a token.',
+      },
+      {
+        question: 'Why does it say my token expired when it still works?',
+        answer:
+          'Because the page reads the exp claim against your device’s clock, and nothing else. Whether a token is accepted is up to whoever receives it: some allow a little clock skew, some ignore expiry on a token they have already cached, and a wrong clock on your machine will make a current token look expired here.',
+      },
+      {
+        question: 'Why is the expiry in the year 57000?',
+        answer:
+          'Because the token wrote milliseconds where the specification says seconds — Date.now() rather than Date.now() / 1000. The page spots numbers far too large to be seconds, says so, and shows what the date would be if divided by a thousand rather than pretending the token is good for fifty thousand years.',
+      },
+      {
+        question: 'My token will not decode. How do I find out why?',
+        answer:
+          'Paste it and read the error: it names which of the three segments is at fault and what is wrong with it, down to the character where the Base64URL stopped making sense. A token that has been through something that re-encoded it — picking up = padding, or + and / from the standard Base64 alphabet — is decoded anyway, with a note saying a strict library will refuse it.',
+      },
+    ],
+  },
   'url-encode-decode': {
     what: {
       heading: 'What URL Encode & Decode does',

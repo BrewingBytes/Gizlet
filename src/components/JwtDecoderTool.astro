@@ -1,0 +1,382 @@
+---
+import { getJwtNotVerifiedNote, getJwtSignatureNote } from '../data/jwt';
+---
+
+<section class="jwt-tool" data-jwt-tool>
+  <div class="jwt-tool__notice">
+    <p class="metadata">Decode only</p>
+    <p>{getJwtNotVerifiedNote()}</p>
+  </div>
+
+  <div class="jwt-tool__panel">
+    <div class="jwt-tool__panel-heading">
+      <div>
+        <p class="metadata">Your token</p>
+        <label for="jwt-input">Token to decode</label>
+      </div>
+      <div class="jwt-tool__panel-actions">
+        <button type="button" class="button-secondary" data-sample>Try an example</button>
+        <button type="button" class="button-secondary" data-clear>Clear</button>
+      </div>
+    </div>
+    <textarea
+      id="jwt-input"
+      data-input
+      autocapitalize="off"
+      autocomplete="off"
+      autocorrect="off"
+      spellcheck="false"
+      placeholder="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0In0.signature"></textarea>
+    <p class="jwt-tool__hint">Paste it with the Bearer prefix, the quotes or the line breaks still on it. They are ignored.</p>
+  </div>
+
+  <p class="jwt-tool__error" data-error role="alert" hidden></p>
+
+  <div class="jwt-tool__panel jwt-tool__panel--split" data-split-panel hidden>
+    <p class="metadata">The three parts</p>
+    <pre tabindex="0" data-split></pre>
+    <p class="jwt-tool__legend">
+      <span class="jwt-tool__key jwt-tool__key--header">Header</span>
+      <span class="jwt-tool__key jwt-tool__key--payload">Payload</span>
+      <span class="jwt-tool__key jwt-tool__key--signature">Signature</span>
+    </p>
+    <p class="jwt-tool__summary metadata" data-header-summary></p>
+    <p class="jwt-tool__algorithm" data-algorithm></p>
+  </div>
+
+  <ul class="jwt-tool__warnings" data-warnings hidden></ul>
+
+  <p class="jwt-tool__window" data-window hidden>
+    <span class="jwt-tool__window-label" data-window-label></span>
+    <span data-window-summary></span>
+  </p>
+
+  <div class="jwt-tool__results" data-results hidden>
+    <section class="jwt-tool__panel" aria-labelledby="jwt-header-title">
+      <div class="jwt-tool__panel-heading">
+        <div>
+          <p class="metadata">Segment one</p>
+          <h2 id="jwt-header-title">Header</h2>
+        </div>
+        <div class="jwt-tool__panel-actions">
+          <button type="button" class="button-secondary" data-copy="header">Copy header</button>
+        </div>
+      </div>
+      <pre tabindex="0"><code data-header-json></code></pre>
+    </section>
+
+    <section class="jwt-tool__panel" aria-labelledby="jwt-payload-title">
+      <div class="jwt-tool__panel-heading">
+        <div>
+          <p class="metadata">Segment two</p>
+          <h2 id="jwt-payload-title">Payload</h2>
+        </div>
+        <div class="jwt-tool__panel-actions">
+          <button type="button" class="button-secondary" data-copy="payload">Copy payload</button>
+        </div>
+      </div>
+      <pre tabindex="0"><code data-payload-json></code></pre>
+    </section>
+
+    <section class="jwt-tool__panel" aria-labelledby="jwt-claims-title">
+      <div class="jwt-tool__panel-heading">
+        <div>
+          <p class="metadata">What the claims mean</p>
+          <h2 id="jwt-claims-title">Claims</h2>
+        </div>
+      </div>
+      <ul class="jwt-tool__claims" data-claims></ul>
+      <p class="jwt-tool__note" data-claims-note></p>
+    </section>
+
+    <section class="jwt-tool__panel" aria-labelledby="jwt-signature-title">
+      <div class="jwt-tool__panel-heading">
+        <div>
+          <p class="metadata">Segment three</p>
+          <h2 id="jwt-signature-title">Signature</h2>
+        </div>
+      </div>
+      <p class="jwt-tool__note">{getJwtSignatureNote()}</p>
+      <pre tabindex="0" data-signature-box><code data-signature></code></pre>
+    </section>
+  </div>
+
+  <p class="jwt-tool__status" data-status role="status" aria-live="polite"></p>
+</section>
+
+<style>
+  .jwt-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .jwt-tool__notice { padding: var(--space-4); border-bottom: var(--border-width) solid var(--border); background: color-mix(in srgb, var(--color-amber) 10%, var(--surface)); }
+  .jwt-tool__notice .metadata { margin-bottom: var(--space-1); }
+  .jwt-tool__notice p:last-child { margin: 0; font-weight: 700; }
+  .jwt-tool__panel { padding: var(--space-4); border-bottom: var(--border-width) solid var(--border); }
+  .jwt-tool__panel:last-child { border-bottom: 0; }
+  .jwt-tool__panel[hidden], .jwt-tool__results[hidden], .jwt-tool__warnings[hidden], .jwt-tool__window[hidden], .jwt-tool pre[hidden] { display: none; }
+  .jwt-tool__panel-heading { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-3); }
+  .jwt-tool__panel-heading .metadata, .jwt-tool__panel-heading label, .jwt-tool__panel-heading h2 { margin: 0; }
+  .jwt-tool__panel-heading label, .jwt-tool__panel-heading h2 { display: block; font-family: var(--font-display); font-size: var(--font-size-xl); font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; text-transform: none; }
+  .jwt-tool__panel-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .jwt-tool textarea { min-height: 8rem; font-family: var(--font-mono); font-size: var(--font-size-sm); line-height: 1.5; word-break: break-all; }
+  .jwt-tool__hint { margin: var(--space-2) 0 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .jwt-tool__error { margin: 0; padding: var(--space-3) var(--space-4); border-bottom: var(--border-width) solid var(--border); color: var(--color-red); font-family: var(--font-mono); font-size: var(--font-size-xs); font-weight: 700; overflow-wrap: anywhere; }
+  .jwt-tool__error[hidden] { display: none; }
+  .jwt-tool pre { max-height: 22rem; margin: 0; padding: var(--space-3); overflow: auto; border: var(--border-width) solid var(--border); background: var(--color-ink); color: #fffdf7; font-family: var(--font-mono); font-size: var(--font-size-sm); line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
+  .jwt-tool__legend { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: var(--space-2) 0 0; }
+  .jwt-tool__key { font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.08em; }
+  .jwt-tool__key::before { content: '■ '; }
+  .jwt-tool__key--header { color: var(--color-amber); }
+  .jwt-tool__key--payload { color: var(--text); }
+  .jwt-tool__key--signature { color: var(--text-muted); }
+  /* The coloured runs, the warnings and the claims are built by the script,
+     so they never carry the attribute Astro scopes this file's selectors by.
+     Everything the script creates is reached through :global on purpose. */
+  .jwt-tool [data-split] :global(.header) { color: var(--color-amber); }
+  .jwt-tool [data-split] :global(.signature) { color: #b9b3a4; }
+  .jwt-tool__summary { margin: var(--space-3) 0 0; overflow-wrap: anywhere; }
+  .jwt-tool__algorithm { margin: var(--space-1) 0 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .jwt-tool__algorithm:empty { display: none; }
+  .jwt-tool__warnings { margin: 0; padding: var(--space-3) var(--space-4); border-bottom: var(--border-width) solid var(--border); list-style: none; }
+  .jwt-tool__warnings :global(li) { padding-left: var(--space-3); border-left: var(--border-strong-width) solid var(--color-amber); font-size: var(--font-size-sm); }
+  .jwt-tool__warnings :global(li + li) { margin-top: var(--space-2); }
+  .jwt-tool__window { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: var(--space-3) var(--space-4); border-bottom: var(--border-width) solid var(--border); }
+  .jwt-tool__window-label { font-family: var(--font-mono); font-size: var(--font-size-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+  .jwt-tool__window[data-state='expired'] .jwt-tool__window-label { color: var(--color-red); }
+  .jwt-tool__claims { margin: 0; padding: 0; list-style: none; }
+  .jwt-tool__claims :global(li) { padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .jwt-tool__claims :global(li:first-child) { padding-top: 0; border-top: 0; }
+  .jwt-tool__claims :global(li + li) { margin-top: var(--space-3); }
+  .jwt-tool__claims :global(.jwt-tool__claim-name) { margin: 0 0 var(--space-1); }
+  .jwt-tool__claims :global(.jwt-tool__claim-value) { margin: 0; font-family: var(--font-mono); font-size: var(--font-size-sm); overflow-wrap: anywhere; }
+  .jwt-tool__claims :global(.jwt-tool__claim-time) { margin: var(--space-1) 0 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .jwt-tool__claims :global(.jwt-tool__claim-meaning) { margin: var(--space-2) 0 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .jwt-tool__note { margin: 0 0 var(--space-3); color: var(--text-muted); font-size: var(--font-size-sm); }
+  .jwt-tool__note:empty { display: none; }
+  .jwt-tool__status { min-height: 1.5rem; margin: 0; padding: 0 var(--space-4) var(--space-3); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .jwt-tool__status[data-state='copied'] { color: var(--success); font-weight: 700; }
+  .jwt-tool code:empty::before { content: 'Nothing here yet.'; color: #b9b3a4; }
+  @media (max-width: 40rem) {
+    .jwt-tool__notice, .jwt-tool__panel, .jwt-tool__warnings, .jwt-tool__window { padding: var(--space-3); }
+    .jwt-tool__error, .jwt-tool__status { padding-left: var(--space-3); padding-right: var(--space-3); }
+    .jwt-tool__panel-heading { align-items: start; flex-direction: column; }
+  }
+</style>
+
+<script>
+  import {
+    decodeJwt,
+    describeJwtHeader,
+    describeJwtTimeGap,
+    getJwtAlgorithmNote,
+    getJwtWindow,
+    jwtWindowLabels,
+    sampleJwt,
+    type DecodedJwt,
+    type JwtClaimReading,
+    type JwtSegmentReading,
+  } from '../data/jwt';
+
+  const root = document.querySelector<HTMLElement>('[data-jwt-tool]');
+
+  if (root) {
+    const input = root.querySelector<HTMLTextAreaElement>('[data-input]');
+    const sampleButton = root.querySelector<HTMLButtonElement>('[data-sample]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const splitPanel = root.querySelector<HTMLElement>('[data-split-panel]');
+    const split = root.querySelector<HTMLElement>('[data-split]');
+    const headerSummary = root.querySelector<HTMLElement>('[data-header-summary]');
+    const algorithm = root.querySelector<HTMLElement>('[data-algorithm]');
+    const warnings = root.querySelector<HTMLElement>('[data-warnings]');
+    const windowBox = root.querySelector<HTMLElement>('[data-window]');
+    const windowLabel = root.querySelector<HTMLElement>('[data-window-label]');
+    const windowSummary = root.querySelector<HTMLElement>('[data-window-summary]');
+    const results = root.querySelector<HTMLElement>('[data-results]');
+    const headerJson = root.querySelector<HTMLElement>('[data-header-json]');
+    const payloadJson = root.querySelector<HTMLElement>('[data-payload-json]');
+    const claims = root.querySelector<HTMLElement>('[data-claims]');
+    const claimsNote = root.querySelector<HTMLElement>('[data-claims-note]');
+    const signature = root.querySelector<HTMLElement>('[data-signature]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const copyButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-copy]')];
+
+    if (!input || !sampleButton || !clearButton || !error || !splitPanel || !split || !headerSummary || !algorithm || !warnings || !windowBox || !windowLabel || !windowSummary || !results || !headerJson || !payloadJson || !claims || !claimsNote || !signature || !status || copyButtons.length === 0) {
+      throw new Error('JWT Decoder could not initialise.');
+    }
+
+    /** The segment as its own coloured run, so a reader can see the split. */
+    const paintSplit = (parts: readonly (readonly [string, string])[]) => {
+      split.textContent = '';
+
+      parts.forEach(([name, text], index) => {
+        if (index > 0) split.append('.');
+
+        const run = document.createElement('span');
+
+        run.className = name;
+        run.textContent = text;
+        split.append(run);
+      });
+    };
+
+    const showSegments = (header: JwtSegmentReading, payload?: JwtSegmentReading, tail?: string) => {
+      const parts: (readonly [string, string])[] = [['header', header.raw]];
+
+      if (payload) parts.push(['payload', payload.raw]);
+      if (tail !== undefined) parts.push(['signature', tail]);
+
+      paintSplit(parts);
+      headerJson.textContent = header.json;
+      payloadJson.textContent = payload ? payload.json : '';
+      splitPanel.hidden = false;
+    };
+
+    const listWarnings = (messages: readonly string[]) => {
+      warnings.textContent = '';
+      warnings.hidden = messages.length === 0;
+
+      for (const message of messages) {
+        const item = document.createElement('li');
+
+        item.textContent = message;
+        warnings.append(item);
+      }
+    };
+
+    /** One claim: its name, the value as it arrived, the moment, the meaning. */
+    const renderClaim = (claim: JwtClaimReading, now: number) => {
+      const item = document.createElement('li');
+      const name = document.createElement('p');
+
+      name.className = 'metadata jwt-tool__claim-name';
+      name.textContent = `${claim.name} · ${claim.label}`;
+
+      const value = document.createElement('p');
+
+      value.className = 'jwt-tool__claim-value';
+      value.textContent = claim.raw;
+      item.append(name, value);
+
+      if (claim.time) {
+        const time = document.createElement('p');
+
+        time.className = 'jwt-tool__claim-time';
+        // The number is what a bug report needs and the words are what a
+        // person needs, so the row carries both rather than choosing.
+        time.textContent = claim.time.looksLikeMilliseconds
+          ? 'Too large to be seconds — see the note above.'
+          : `${claim.time.utc} · ${describeJwtTimeGap(claim.time.seconds, now)}`;
+        item.append(time);
+      }
+
+      const meaning = document.createElement('p');
+
+      meaning.className = 'jwt-tool__claim-meaning';
+      meaning.textContent = claim.meaning;
+      item.append(meaning);
+
+      return item;
+    };
+
+    const showToken = (token: DecodedJwt) => {
+      const now = Date.now();
+
+      showSegments(token.header, token.payload, token.signature.raw);
+      headerSummary.textContent = describeJwtHeader(token);
+      algorithm.textContent = token.algorithm ? (getJwtAlgorithmNote(token.algorithm) ?? '') : '';
+      listWarnings(token.warnings);
+
+      const period = getJwtWindow(token, now);
+
+      windowBox.dataset.state = period.state;
+      windowBox.hidden = false;
+      windowLabel.textContent = jwtWindowLabels[period.state];
+      windowSummary.textContent = period.summary;
+
+      claims.textContent = '';
+
+      for (const claim of token.claims) claims.append(renderClaim(claim, now));
+
+      claimsNote.textContent =
+        token.claims.length === 0
+          ? 'None of this payload’s fields is a registered claim, so there is nothing here to explain — whoever issued the token named all of them itself. The payload above is the whole of it.'
+          : token.otherClaimCount === 0
+            ? ''
+            : `${token.otherClaimCount.toLocaleString()} other ${token.otherClaimCount === 1 ? 'field is' : 'fields are'} in the payload above. They belong to whoever issued the token, so this page does not put words in their mouth.`;
+
+      signature.textContent = token.signature.empty ? '' : token.signature.raw;
+      results.hidden = false;
+      status.dataset.state = 'read';
+      status.textContent = 'Read on this device. Nothing was sent anywhere.';
+    };
+
+    const reset = () => {
+      splitPanel.hidden = true;
+      results.hidden = true;
+      windowBox.hidden = true;
+      warnings.hidden = true;
+      warnings.textContent = '';
+      error.hidden = true;
+      error.textContent = '';
+      status.dataset.state = 'empty';
+      status.textContent = '';
+    };
+
+    const render = () => {
+      if (input.value.trim() === '') {
+        reset();
+        status.textContent = 'Paste a token above.';
+        return;
+      }
+
+      const result = decodeJwt(input.value);
+
+      if (result.ok) {
+        error.hidden = true;
+        error.textContent = '';
+        showToken(result.token);
+        return;
+      }
+
+      reset();
+      error.textContent = result.error.message;
+      error.hidden = false;
+
+      // A header that read is still worth showing: the complaint is about the
+      // segment after it, and blanking both throws away the half that worked.
+      if (result.partial?.header) showSegments(result.partial.header);
+    };
+
+    input.addEventListener('input', render);
+
+    sampleButton.addEventListener('click', () => {
+      input.value = sampleJwt;
+      render();
+      input.focus();
+    });
+
+    clearButton.addEventListener('click', () => {
+      input.value = '';
+      render();
+      input.focus();
+    });
+
+    for (const button of copyButtons) {
+      button.addEventListener('click', () => {
+        const source = button.dataset.copy === 'payload' ? payloadJson : headerJson;
+
+        void navigator.clipboard
+          ?.writeText(source.textContent ?? '')
+          .then(() => {
+            status.dataset.state = 'copied';
+            status.textContent = `${button.dataset.copy === 'payload' ? 'Payload' : 'Header'} copied to your clipboard.`;
+          })
+          .catch(() => {
+            status.dataset.state = 'read';
+            status.textContent = 'Could not copy automatically. Select the JSON and copy it manually.';
+          });
+      });
+    }
+
+    render();
+  }
+</script>
