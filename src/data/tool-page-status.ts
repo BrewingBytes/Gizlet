@@ -54,6 +54,7 @@ const toolProcessingDescriptions: Partial<Record<ToolSlug, string>> = {
   'create-zip': 'Your files are packed on this device.',
   'url-encode-decode': 'Your text is converted on this device.',
   'uuid-generator': "The identifiers are made on this device, by your browser's own randomness.",
+  'base64-encode-decode': 'Your text and your file are converted on this device.',
   'extract-archive': 'Your archive is opened and unpacked on this device.',
   'favicon-generator': 'Your image never leaves this device.',
   'pdf-page-numbers': 'Your PDF stays on this device.',

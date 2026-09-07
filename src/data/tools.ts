@@ -634,8 +634,12 @@ export const toolRegistry = [
       "data uri",
       "url safe base64",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "Text to encode, a file from the device to encode, or Base64 to read back. The alphabet is chosen — standard, with + and /, or URL-safe, with - and _ — along with whether to write the = padding, whether to break lines at 76 characters as MIME does, and whether to wrap the result as a data: URI. Decoding needs no settings: it detects the alphabet, ignores whitespace and line breaks, and understands a data: URI prefix.",
+      output: "The Base64, or the bytes read back from it. Bytes that are valid UTF-8 are shown as text; bytes that are not are offered as a file download instead, named from the media type when a data URI declared one. A decoding failure names the character position and what is wrong with it — a character outside the alphabet, padding with something after it, padding over truncated data, or a length no encoder can produce — and a non-canonical last character is reported without being refused.",
+    },
   },
   {
     id: 27,

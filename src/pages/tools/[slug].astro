@@ -1,5 +1,6 @@
 ---
 import ToolPageLayout from '../../components/ToolPageLayout.astro';
+import Base64Tool from '../../components/Base64Tool.astro';
 import CleanPdfMetadataTool from '../../components/CleanPdfMetadataTool.astro';
 import CollageMakerTool from '../../components/CollageMakerTool.astro';
 import CreateZipTool from '../../components/CreateZipTool.astro';
@@ -91,6 +92,7 @@ const toolWorkspaces = {
   'extract-archive': ExtractArchiveTool,
   'url-encode-decode': UrlEncodeDecodeTool,
   'uuid-generator': UuidGeneratorTool,
+  'base64-encode-decode': Base64Tool,
 } as const satisfies Record<AvailableToolSlug, unknown>;
 
 const { tool, relatedTools } = Astro.props;

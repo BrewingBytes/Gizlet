@@ -38,6 +38,7 @@ const workspaceSignatures = {
   "extract-archive": "Select an archive to look inside",
   "url-encode-decode": "Text to encode",
   "uuid-generator": "How many",
+  "base64-encode-decode": "Text to encode",
 } as const satisfies Record<AvailableToolSlug, string>;
 
 for (const tool of getAvailableTools()) {
