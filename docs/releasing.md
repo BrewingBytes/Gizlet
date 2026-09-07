@@ -43,8 +43,9 @@ Workers Builds authenticates with a Cloudflare API token stored in Cloudflare, n
 1. **Confirm `main` is ready.** Fetch `origin`, check that `origin/main` is green in Actions, and confirm it holds everything intended for the release and nothing that is not.
 2. **Bump the version.** Set `version` in `package.json` to `x.y.z` by hand. It is not automated, and the next step reads it.
 3. **Collect the changelog entries.** Run `pnpm run changelog:collect` to see the release section the entries in `changelog.d/` make, then `pnpm run changelog:collect -- --write` to write it into `CHANGELOG.md` as `## [x.y.z] - YYYY-MM-DD` and delete the collected files. Read the result as a whole: entries were written one at a time, months apart, and the release is where they are read together (see below).
-4. **Commit.** One commit carrying the changelog, the deleted fragments, and the version bump, with a Conventional Commit title and no body or trailers, per [AGENTS.md](../AGENTS.md) — for example `chore(release): release 0.1.0`. Open it as a pull request and merge it the normal way; the release commit is reviewed like any other.
-5. **Tag the merged commit and push the tag.**
+4. **Refresh the sitemap dates.** Run `pnpm run sitemap:dates -- --write`. The `<lastmod>` each page carries is read from the git history of the files behind it, and committed rather than read during the build, so it has to be regenerated when the pages it describes have changed. `Release` checks it — `pnpm run sitemap:dates -- --check` — and fails the release if it is stale, because it is the one job with the full history to check against.
+5. **Commit.** One commit carrying the changelog, the deleted fragments, the sitemap dates, and the version bump, with a Conventional Commit title and no body or trailers, per [AGENTS.md](../AGENTS.md) — for example `chore(release): release 0.1.0`. Open it as a pull request and merge it the normal way; the release commit is reviewed like any other.
+6. **Tag the merged commit and push the tag.**
 
    ```sh
    git fetch origin
@@ -53,7 +54,7 @@ Workers Builds authenticates with a Cloudflare API token stored in Cloudflare, n
    git push origin v0.1.0
    ```
 
-6. **Verify.** Watch `Release` in Actions, then the build in the Cloudflare dashboard, then the live site (below).
+7. **Verify.** Watch `Release` in Actions, then the build in the Cloudflare dashboard, then the live site (below).
 
 ## Writing the changelog
 

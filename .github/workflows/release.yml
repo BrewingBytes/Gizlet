@@ -64,6 +64,13 @@ jobs:
       - name: Unit tests
         run: pnpm test
 
+      # The sitemap's lastmod dates are generated from the git history and
+      # committed, so a release could otherwise ship dates that are a Gizlet
+      # or two behind. This job is the one place with the full history to
+      # check them against, and a release is the only thing that deploys.
+      - name: Sitemap dates
+        run: pnpm run sitemap:dates -- --check
+
       - name: Production build
         run: pnpm run build
 
