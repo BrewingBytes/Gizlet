@@ -41,6 +41,7 @@ const workspaceSignatures = {
   "base64-encode-decode": "Text to encode",
   "jwt-decoder": "Token to decode",
   "file-hash-generator": "Select a file to hash",
+  "timestamp-converter": "A count of seconds or milliseconds",
 } as const satisfies Record<AvailableToolSlug, string>;
 
 for (const tool of getAvailableTools()) {

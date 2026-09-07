@@ -1,0 +1,413 @@
+---
+import { dateTimeZones, timestampUnitDetails } from '../data/timestamp';
+
+/** The zone chooser's copy. The device's own offset is filled in by the script. */
+const zoneLabels: Record<(typeof dateTimeZones)[number], string> = {
+  utc: 'UTC',
+  local: 'This device',
+};
+---
+
+<section class="stamp-tool" data-timestamp-tool>
+  <div class="stamp-tool__panel" aria-labelledby="stamp-number-title">
+    <div class="stamp-tool__panel-heading">
+      <div>
+        <p class="metadata">One way</p>
+        <h2 id="stamp-number-title">From a timestamp</h2>
+      </div>
+      <div class="stamp-tool__panel-actions">
+        <button type="button" class="button-secondary" data-number-now>Now</button>
+        <button type="button" class="button-secondary" data-number-clear>Clear</button>
+      </div>
+    </div>
+
+    <label for="stamp-number">A count of seconds or milliseconds</label>
+    <input
+      id="stamp-number"
+      type="text"
+      inputmode="numeric"
+      autocapitalize="off"
+      autocomplete="off"
+      autocorrect="off"
+      spellcheck="false"
+      placeholder="1788772500"
+      data-number
+    />
+
+    <fieldset class="stamp-tool__choice">
+      <legend>What it counts</legend>
+      {
+        timestampUnitDetails.map((detail, index) => (
+          <label>
+            <input
+              type="radio"
+              name="stamp-unit"
+              value={detail.id}
+              data-unit
+              checked={index === 0}
+            />
+            <span>{detail.label}</span>
+          </label>
+        ))
+      }
+    </fieldset>
+
+    <p class="stamp-tool__hint" data-unit-note></p>
+    <p class="stamp-tool__error" data-number-error role="alert" hidden></p>
+    <ul class="stamp-tool__notes" data-number-notes hidden></ul>
+    <dl class="stamp-tool__rows" data-number-rows hidden></dl>
+  </div>
+
+  <div class="stamp-tool__panel" aria-labelledby="stamp-date-title">
+    <div class="stamp-tool__panel-heading">
+      <div>
+        <p class="metadata">The other way</p>
+        <h2 id="stamp-date-title">From a date</h2>
+      </div>
+      <div class="stamp-tool__panel-actions">
+        <button type="button" class="button-secondary" data-date-now>Now</button>
+        <button type="button" class="button-secondary" data-date-clear>Clear</button>
+      </div>
+    </div>
+
+    <label for="stamp-date">A date, and a time if you have one</label>
+    <input
+      id="stamp-date"
+      type="text"
+      autocapitalize="off"
+      autocomplete="off"
+      autocorrect="off"
+      spellcheck="false"
+      placeholder="2026-09-07 09:15:00"
+      data-date
+    />
+
+    <fieldset class="stamp-tool__choice">
+      <legend>Which clock it was read off</legend>
+      {
+        dateTimeZones.map((zone, index) => (
+          <label>
+            <input
+              type="radio"
+              name="stamp-zone"
+              value={zone}
+              data-zone
+              checked={index === 0}
+            />
+            <span data-zone-label={zone}>{zoneLabels[zone]}</span>
+          </label>
+        ))
+      }
+    </fieldset>
+
+    <p class="stamp-tool__hint">
+      Only used when the text does not say. Write <code>Z</code> or <code>+02:00</code> on the end
+      and that is used instead.
+    </p>
+    <p class="stamp-tool__error" data-date-error role="alert" hidden></p>
+    <ul class="stamp-tool__notes" data-date-notes hidden></ul>
+    <dl class="stamp-tool__rows" data-date-rows hidden></dl>
+  </div>
+
+  <!-- One answer, cloned per row, so no date or number is ever markup. -->
+  <template data-row-template>
+    <div class="stamp-row">
+      <dt data-row-label></dt>
+      <dd>
+        <span class="stamp-row__value" data-row-value></span>
+        <span class="stamp-row__aside" data-row-aside></span>
+        <button type="button" class="stamp-row__copy" data-row-copy hidden>Copy</button>
+      </dd>
+    </div>
+  </template>
+
+  <p class="stamp-tool__status" data-status role="status" aria-live="polite"></p>
+</section>
+
+<style>
+  .stamp-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .stamp-tool__panel { padding: var(--space-4); }
+  .stamp-tool__panel + .stamp-tool__panel { border-top: var(--border-strong-width) solid var(--text); }
+  .stamp-tool__panel-heading { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-3); }
+  .stamp-tool__panel-heading .metadata, .stamp-tool__panel-heading h2 { margin: 0; }
+  .stamp-tool__panel-heading h2 { font-family: var(--font-display); font-size: var(--font-size-xl); font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; }
+  .stamp-tool__panel-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .stamp-tool label[for] { display: block; margin-bottom: var(--space-1); color: var(--text-muted); font-size: var(--font-size-sm); }
+  .stamp-tool input[type='text'] { width: 100%; font-family: var(--font-mono); font-size: var(--font-size-lg); }
+  .stamp-tool__choice { min-width: 0; margin: var(--space-3) 0 0; padding: 0; border: 0; }
+  .stamp-tool__choice legend { padding: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.08em; }
+  .stamp-tool__choice label { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 2.5rem; margin-right: var(--space-3); }
+  .stamp-tool__choice input { width: 1.125rem; height: 1.125rem; flex: none; }
+  .stamp-tool__hint { margin: var(--space-1) 0 0; max-width: 44rem; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .stamp-tool__hint code { font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .stamp-tool__error { margin: var(--space-3) 0 0; padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--color-red); color: var(--color-red); font-size: var(--font-size-sm); font-weight: 700; }
+  .stamp-tool__notes { margin: var(--space-3) 0 0; padding: 0; list-style: none; }
+  .stamp-tool__notes :global(li) { padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--warning); color: var(--text-muted); font-size: var(--font-size-sm); }
+  .stamp-tool__notes :global(li + li) { margin-top: var(--space-1); }
+  .stamp-tool__rows { margin: var(--space-3) 0 0; }
+  .stamp-tool__rows :global(.stamp-row) { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr); align-items: baseline; gap: var(--space-3); padding: var(--space-2) 0; border-top: var(--border-width) solid var(--border); }
+  .stamp-tool__rows :global(.stamp-row dt) { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.08em; }
+  .stamp-tool__rows :global(.stamp-row dd) { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-2); margin: 0; }
+  .stamp-tool__rows :global(.stamp-row__value) { font-family: var(--font-mono); font-size: var(--font-size-lg); font-weight: 700; overflow-wrap: anywhere; }
+  .stamp-tool__rows :global(.stamp-row__aside) { color: var(--text-muted); font-size: var(--font-size-sm); }
+  .stamp-tool__rows :global(.stamp-row__aside:empty) { display: none; }
+  .stamp-tool__rows :global(.stamp-row__copy) { min-height: 2.75rem; margin-left: auto; padding: 0 var(--space-1); border: 0; background: none; color: var(--text-muted); font: inherit; font-size: var(--font-size-sm); font-weight: 700; text-decoration: underline; cursor: pointer; }
+  .stamp-tool__rows :global(.stamp-row__copy:hover) { color: var(--text); }
+  .stamp-tool__rows :global(.stamp-row__copy[hidden]) { display: none; }
+  .stamp-tool__status { min-height: 1.5rem; margin: 0; padding: 0 var(--space-4) var(--space-3); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .stamp-tool__status[data-state='copied'] { color: var(--success); font-weight: 700; }
+  .stamp-tool [hidden] { display: none; }
+  @media (max-width: 40rem) {
+    .stamp-tool__panel { padding: var(--space-3); }
+    .stamp-tool__status { padding-left: var(--space-3); padding-right: var(--space-3); }
+    .stamp-tool__panel-heading { align-items: start; flex-direction: column; }
+    .stamp-tool__rows :global(.stamp-row) { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  }
+</style>
+
+<script>
+  import { describeLocalZone, describeTimeGap } from '../data/instant';
+  import {
+    defaultDateTimeZone,
+    defaultTimestampUnit,
+    formatDateTimeInput,
+    formatTimestampInput,
+    getTimestampUnit,
+    isDateTimeZone,
+    isTimestampUnit,
+    readDateTime,
+    readTimestamp,
+    type DateTimeZone,
+    type Instant,
+    type TimestampUnit,
+  } from '../data/timestamp';
+
+  const root = document.querySelector<HTMLElement>('[data-timestamp-tool]');
+
+  if (root) {
+    const number = root.querySelector<HTMLInputElement>('[data-number]');
+    const numberNow = root.querySelector<HTMLButtonElement>('[data-number-now]');
+    const numberClear = root.querySelector<HTMLButtonElement>('[data-number-clear]');
+    const numberError = root.querySelector<HTMLElement>('[data-number-error]');
+    const numberNotes = root.querySelector<HTMLElement>('[data-number-notes]');
+    const numberRows = root.querySelector<HTMLElement>('[data-number-rows]');
+    const unitNote = root.querySelector<HTMLElement>('[data-unit-note]');
+    const date = root.querySelector<HTMLInputElement>('[data-date]');
+    const dateNow = root.querySelector<HTMLButtonElement>('[data-date-now]');
+    const dateClear = root.querySelector<HTMLButtonElement>('[data-date-clear]');
+    const dateError = root.querySelector<HTMLElement>('[data-date-error]');
+    const dateNotes = root.querySelector<HTMLElement>('[data-date-notes]');
+    const dateRows = root.querySelector<HTMLElement>('[data-date-rows]');
+    const rowTemplate = root.querySelector<HTMLTemplateElement>('[data-row-template]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const unitInputs = [...root.querySelectorAll<HTMLInputElement>('[data-unit]')];
+    const zoneInputs = [...root.querySelectorAll<HTMLInputElement>('[data-zone]')];
+    const localZoneLabel = root.querySelector<HTMLElement>('[data-zone-label="local"]');
+
+    if (!number || !numberNow || !numberClear || !numberError || !numberNotes || !numberRows || !unitNote || !date || !dateNow || !dateClear || !dateError || !dateNotes || !dateRows || !rowTemplate || !status || !localZoneLabel || unitInputs.length === 0 || zoneInputs.length === 0) {
+      throw new Error('Timestamp Converter could not initialise.');
+    }
+
+    /** The device's offset, named once so both panels say the same thing. */
+    const localZone = describeLocalZone(new Date());
+
+    localZoneLabel.textContent = `This device (${localZone})`;
+
+    const setStatus = (message: string, state?: string) => {
+      status.textContent = message;
+      if (state) status.dataset.state = state;
+      else delete status.dataset.state;
+    };
+
+    const copy = (label: string, value: string) => {
+      void navigator.clipboard
+        ?.writeText(value)
+        .then(() => setStatus(`${label} copied to your clipboard.`, 'copied'))
+        .catch(() => setStatus('This browser would not let the page copy. Select the value instead.'));
+    };
+
+    interface Row {
+      /** A stable hook for the row, so nothing has to find it by its text. */
+      readonly id: string;
+      readonly label: string;
+      readonly value: string;
+      readonly aside?: string;
+      readonly copyable?: boolean;
+    }
+
+    const showRows = (target: HTMLElement, rows: readonly Row[]) => {
+      target.replaceChildren(
+        ...rows.map((row) => {
+          const item = rowTemplate.content.firstElementChild?.cloneNode(true) as HTMLElement;
+          const button = item.querySelector<HTMLButtonElement>('[data-row-copy]')!;
+
+          item.dataset.row = row.id;
+          item.querySelector('[data-row-label]')!.textContent = row.label;
+          item.querySelector('[data-row-value]')!.textContent = row.value;
+          item.querySelector('[data-row-aside]')!.textContent = row.aside ?? '';
+          button.hidden = row.copyable !== true;
+          button.setAttribute('aria-label', `Copy the ${row.label.toLowerCase()}`);
+          button.addEventListener('click', () => copy(row.label, row.value));
+
+          return item;
+        }),
+      );
+      target.hidden = rows.length === 0;
+    };
+
+    const showNotes = (target: HTMLElement, messages: readonly string[]) => {
+      target.replaceChildren(
+        ...messages.map((message) => {
+          const item = document.createElement('li');
+
+          item.textContent = message;
+
+          return item;
+        }),
+      );
+      target.hidden = messages.length === 0;
+    };
+
+    const showError = (target: HTMLElement, message?: string) => {
+      target.textContent = message ?? '';
+      target.hidden = message === undefined;
+    };
+
+    const chosenUnit = (): TimestampUnit => {
+      const checked = unitInputs.find((input) => input.checked)?.value ?? '';
+
+      return isTimestampUnit(checked) ? checked : defaultTimestampUnit;
+    };
+
+    const chosenZone = (): DateTimeZone => {
+      const checked = zoneInputs.find((input) => input.checked)?.value ?? '';
+
+      return isDateTimeZone(checked) ? checked : defaultDateTimeZone;
+    };
+
+    /** The rows every moment gets, whichever direction it was reached from. */
+    const momentRows = (instant: Instant, now: number): readonly Row[] => [
+      {
+        id: 'utc',
+        label: 'UTC',
+        value: instant.utc,
+        aside: `${instant.weekdayUtc} · ${describeTimeGap(instant.seconds, now)}`,
+        copyable: true,
+      },
+      {
+        id: 'local',
+        label: 'This device',
+        value: instant.local,
+        aside: `${instant.weekdayLocal} · ${instant.localZone}`,
+        copyable: true,
+      },
+      { id: 'iso', label: 'ISO 8601', value: instant.iso, copyable: true },
+      { id: 'seconds', label: 'Seconds', value: String(instant.seconds), copyable: true },
+      { id: 'milliseconds', label: 'Milliseconds', value: String(instant.milliseconds), copyable: true },
+    ];
+
+    const renderNumber = () => {
+      const unit = chosenUnit();
+
+      unitNote.textContent = getTimestampUnit(unit).note;
+
+      const result = readTimestamp(number.value, unit);
+
+      if (!result) {
+        showError(numberError, undefined);
+        showNotes(numberNotes, []);
+        showRows(numberRows, []);
+        return;
+      }
+
+      if (!result.ok) {
+        showError(numberError, result.message);
+        showNotes(numberNotes, []);
+        showRows(numberRows, []);
+        return;
+      }
+
+      showError(numberError, undefined);
+      showNotes(numberNotes, result.reading.notes);
+      showRows(numberRows, momentRows(result.reading.instant, Date.now()));
+    };
+
+    const renderDate = () => {
+      const result = readDateTime(date.value, chosenZone());
+
+      if (!result) {
+        showError(dateError, undefined);
+        showNotes(dateNotes, []);
+        showRows(dateRows, []);
+        return;
+      }
+
+      if (!result.ok) {
+        showError(dateError, result.message);
+        showNotes(dateNotes, []);
+        showRows(dateRows, []);
+        return;
+      }
+
+      showError(dateError, undefined);
+      showNotes(dateNotes, result.reading.notes);
+      // Seconds first here: it is what somebody converting a date came for,
+      // and the moment is only the check that they typed what they meant.
+      showRows(dateRows, [
+        { id: 'seconds', label: 'Seconds', value: String(result.reading.instant.seconds), copyable: true },
+        {
+          id: 'milliseconds',
+          label: 'Milliseconds',
+          value: String(result.reading.instant.milliseconds),
+          copyable: true,
+        },
+        { id: 'iso', label: 'ISO 8601', value: result.reading.instant.iso, copyable: true },
+        {
+          id: 'read-as',
+          label: 'Read as',
+          value: result.reading.offset,
+          aside:
+            result.reading.source === 'offset'
+              ? 'the offset written in the text'
+              : result.reading.source === 'utc'
+                ? 'UTC, as chosen above'
+                : 'this device, as chosen above',
+        },
+      ]);
+    };
+
+    number.addEventListener('input', renderNumber);
+    date.addEventListener('input', renderDate);
+
+    for (const input of unitInputs) input.addEventListener('change', renderNumber);
+    for (const input of zoneInputs) input.addEventListener('change', renderDate);
+
+    numberNow.addEventListener('click', () => {
+      number.value = formatTimestampInput(Date.now(), chosenUnit());
+      renderNumber();
+      number.focus();
+    });
+
+    dateNow.addEventListener('click', () => {
+      date.value = formatDateTimeInput(Date.now(), chosenZone());
+      renderDate();
+      date.focus();
+    });
+
+    numberClear.addEventListener('click', () => {
+      number.value = '';
+      renderNumber();
+      number.focus();
+    });
+
+    dateClear.addEventListener('click', () => {
+      date.value = '';
+      renderDate();
+      date.focus();
+    });
+
+    renderNumber();
+    renderDate();
+    setStatus('Converted on this device. Nothing is sent anywhere.');
+  }
+</script>

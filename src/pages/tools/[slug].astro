@@ -29,6 +29,7 @@ import ResizeImageTool from '../../components/ResizeImageTool.astro';
 import RotateFlipImageTool from '../../components/RotateFlipImageTool.astro';
 import SignPdfTool from '../../components/SignPdfTool.astro';
 import SplitPdfTool from '../../components/SplitPdfTool.astro';
+import TimestampConverterTool from '../../components/TimestampConverterTool.astro';
 import WatermarkPdfTool from '../../components/WatermarkPdfTool.astro';
 import { getPlannedGizletRequestPath } from '../../data/gizlet-request';
 import {
@@ -97,6 +98,7 @@ const toolWorkspaces = {
   'base64-encode-decode': Base64Tool,
   'jwt-decoder': JwtDecoderTool,
   'file-hash-generator': FileHashTool,
+  'timestamp-converter': TimestampConverterTool,
 } as const satisfies Record<AvailableToolSlug, unknown>;
 
 const { tool, relatedTools } = Astro.props;

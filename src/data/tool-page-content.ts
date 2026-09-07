@@ -1511,6 +1511,100 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'timestamp-converter': {
+    what: {
+      heading: 'What Timestamp Converter does',
+      paragraphs: [
+        'It turns a Unix timestamp into a date you can read, and a date you can read back into a Unix timestamp. Both boxes are live: type in either one and its answers appear underneath as you go, in UTC and on your own clock, with the weekday and how long ago it was.',
+        'Every form of the answer is there to be copied — ISO 8601, seconds, milliseconds — because the reason for looking one up is almost always that it has to go somewhere else.',
+        'The one thing it will not do is decide what your number counts. Seconds and milliseconds look identical, so the unit is a control you set, and if the size of the number disagrees with it you are told what the other unit would say instead of having your input quietly reinterpreted.',
+      ],
+    },
+    when: {
+      heading: 'When a number in a log needs a meaning',
+      paragraphs: [
+        'When a log line, a database row, a JSON field or an API response has a bare number in it and you need to know when that was. When you are writing the thing that produces the number and want to check you produced the moment you meant. When a token or a cache entry expired and the expiry is written as an integer.',
+        'It is also the quickest way to settle the seconds-or-milliseconds argument: paste the number, look at both readings, and the one that lands in this century is the unit the system was using.',
+      ],
+    },
+    options: {
+      heading: 'The two controls, and why neither is optional',
+      paragraphs: [
+        'Both exist because the input is genuinely ambiguous without them, and a converter that picks for you is confidently wrong for somebody.',
+      ],
+      details: [
+        {
+          term: 'What the number counts',
+          description:
+            'Seconds is Unix time proper and what almost everything meaning “timestamp” means — 10 digits for a moment in this century, from date +%s or a database integer. Milliseconds is what JavaScript and the JVM count in — 13 digits — from Date.now() or System.currentTimeMillis(). The same ten digits are a moment in 2026 read as seconds and a moment three weeks into 1970 read as milliseconds, and nothing in the digits themselves settles which was meant.',
+        },
+        {
+          term: 'When the size disagrees with the unit',
+          description:
+            'You are told, and nothing changes. A 13-digit number read as seconds lands past the year 57000, so the page says so, says what it would be as milliseconds, and leaves your setting alone for you to switch if that is what you meant. The reading shown is always the reading you asked for, however unlikely it looks — a converter that overrules you is a converter you cannot use to check a suspicion.',
+        },
+        {
+          term: 'Which clock a date was read off',
+          description:
+            'A written date is not a moment until somebody says which clock it came from: 2026-09-07 14:30 is two different instants in London and in Bucharest. So the second box asks — UTC, or this device, whose offset is shown on the control itself. It only matters when the text is silent.',
+        },
+        {
+          term: 'An offset in the text wins',
+          description:
+            'Write a Z or a +02:00 or a -0500 on the end and that is used instead of the control, and the page says which offset it used. Somebody who typed an offset has already answered the question, and a setting cannot know better than the text.',
+        },
+        {
+          term: 'What counts as a date here',
+          description:
+            'A date on its own, a date and a time separated by a space or a T, with optional seconds and an optional decimal fraction, and an optional offset. Nothing is handed to the browser’s own date parser, because what that accepts differs between browsers — 2026-9-7 is local time in one engine and rejected in another — and an answer that changes with the browser is worse than a refusal.',
+        },
+        {
+          term: 'What it refuses, and by name',
+          description:
+            'An impossible date is named rather than nudged into a real one. There is no month 13; February 2026 has 28 days, so there is no 30th; a day runs 00 to 23; and 23:59:60 is a leap second, which is real and which no calendar here can hold. A date that rolls silently into the next month is how a bug gets past a test.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'Your device’s clock, and no other',
+      paragraphs: [
+        'The conversion happens in this page, in this browser, and what you type is never sent anywhere. No time server is contacted either — the local readings come from your own device’s clock and offset, which is also why a wrong clock here will produce a wrong “how long ago”.',
+        'Nothing is stored between visits. The number you paste is not logged, which matters more than it sounds: timestamps usually arrive attached to a log line from a system you would rather not describe to a stranger.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Is my timestamp in seconds or milliseconds?',
+        answer:
+          'Count the digits. A moment in this century is 10 digits in seconds and 13 in milliseconds. If you are unsure, paste it and switch the unit: the reading that lands in a plausible year is the one the system meant, and the page will tell you when the size looks wrong for the unit you chose.',
+      },
+      {
+        question: 'Why does it not just work out the unit for me?',
+        answer:
+          'Because it cannot, and pretending otherwise breaks the case you most need it for. A number can be a valid moment in both units — 1749900000 is June 2025 in seconds and January 1970 in milliseconds — so any automatic choice is a guess. Guessing is fine until you are trying to confirm that some other system used the wrong unit, which is exactly when a helpful converter would hide the bug.',
+      },
+      {
+        question: 'What timezone are the answers in?',
+        answer:
+          'Both. Every moment is shown in UTC and as your own device shows it, with the device’s offset named on the row, so you never have to work out which one you are looking at. UTC is the one to paste into anything that will be read elsewhere.',
+      },
+      {
+        question: 'Can it convert a date before 1970?',
+        answer:
+          'Yes. A negative timestamp counts backwards from the epoch, and it is read the same way in both directions — the moon landing is -14182940 seconds. The limit at either end is the year 275760, which is as far as a date reaches in a browser.',
+      },
+      {
+        question: 'What about a specific timezone like America/New_York?',
+        answer:
+          'Not here. This page offers UTC and your device’s own clock, and accepts a fixed offset written into the text. A named zone brings daylight-saving rules and their history with it, which is a different and much larger job than converting a number, and getting it half right would be worse than not offering it.',
+      },
+      {
+        question: 'Is my timestamp sent anywhere?',
+        answer:
+          'No. The conversion is arithmetic your browser does on this device, and it is never sent anywhere — no request is made while you type, and no time server is asked what the time is.',
+      },
+    ],
+  },
   'url-encode-decode': {
     what: {
       heading: 'What URL Encode & Decode does',

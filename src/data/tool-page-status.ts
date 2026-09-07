@@ -57,6 +57,7 @@ const toolProcessingDescriptions: Partial<Record<ToolSlug, string>> = {
   'base64-encode-decode': 'Your text and your file are converted on this device.',
   'jwt-decoder': 'Your token is read on this device, and never sent anywhere.',
   'file-hash-generator': 'Your file is read and hashed on this device, and never uploaded.',
+  'timestamp-converter': 'Your dates are converted on this device, by its own clock.',
   'extract-archive': 'Your archive is opened and unpacked on this device.',
   'favicon-generator': 'Your image never leaves this device.',
   'pdf-page-numbers': 'Your PDF stays on this device.',

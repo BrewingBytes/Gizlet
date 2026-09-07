@@ -162,10 +162,10 @@ import { getJwtNotVerifiedNote, getJwtSignatureNote } from '../data/jwt';
 </style>
 
 <script>
+  import { describeTimeGap } from '../data/instant';
   import {
     decodeJwt,
     describeJwtHeader,
-    describeJwtTimeGap,
     getJwtAlgorithmNote,
     getJwtWindow,
     jwtWindowLabels,
@@ -264,7 +264,7 @@ import { getJwtNotVerifiedNote, getJwtSignatureNote } from '../data/jwt';
         // person needs, so the row carries both rather than choosing.
         time.textContent = claim.time.looksLikeMilliseconds
           ? 'Too large to be seconds — see the note above.'
-          : `${claim.time.utc} · ${describeJwtTimeGap(claim.time.seconds, now)}`;
+          : `${claim.time.utc} · ${describeTimeGap(claim.time.seconds, now)}`;
         item.append(time);
       }
 

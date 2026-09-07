@@ -4,7 +4,6 @@ import {
   cleanJwtInput,
   decodeJwt,
   describeJwtHeader,
-  describeJwtTimeGap,
   formatJwtInstant,
   formatJwtValue,
   getJwtAlgorithmNote,
@@ -263,20 +262,6 @@ describe('the claim readings', () => {
 
   it('writes a moment no calendar can hold as words rather than as a date', () => {
     expect(formatJwtInstant(new Date(Number.NaN))).toContain('too far away');
-  });
-});
-
-describe('describeJwtTimeGap', () => {
-  it('says how far away a moment is, in the unit a person would use', () => {
-    expect(describeJwtTimeGap(nowSeconds, now)).toBe('in a moment');
-    expect(describeJwtTimeGap(nowSeconds - 10, now)).toBe('moments ago');
-    expect(describeJwtTimeGap(nowSeconds + 60, now)).toBe('in 1 minute');
-    expect(describeJwtTimeGap(nowSeconds - 600, now)).toBe('10 minutes ago');
-    expect(describeJwtTimeGap(nowSeconds + 7200, now)).toBe('in 2 hours');
-    expect(describeJwtTimeGap(nowSeconds - 3 * 86400, now)).toBe('3 days ago');
-    expect(describeJwtTimeGap(nowSeconds + 90 * 86400, now)).toBe('in 3 months');
-    expect(describeJwtTimeGap(nowSeconds + 3 * 365 * 86400, now)).toBe('in 3 years');
-    expect(describeJwtTimeGap(nowSeconds + 3600, now)).toBe('in 1 hour');
   });
 });
 
