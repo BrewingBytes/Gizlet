@@ -8,6 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Entries for the next release are written as files in [changelog.d/](changelog.d/), one per change. See [docs/releasing.md](docs/releasing.md).
 
+## [0.8.0] - 2026-09-07
+
+### Added
+
+- **Extract Archive** opens a ZIP on your device and shows what is inside it: every file, in its folders, with its size and how it was packed. Tick what you want and take it out — one file comes back as itself, several come back as a ZIP of just those. Nothing is uploaded, including the list of names inside, which is often the part that says the most.
+- It reads the archive with the decompressor the browser already has, so it adds no dependency, and it reuses the ZIP machinery Create ZIP writes with rather than growing a second stack beside it. Encrypted entries and entries packed with a method no browser can read are listed with the reason on the row rather than silently skipped; a path written to unpack outside its folder is corrected and shown as it was stored; two entries wanting one name are numbered rather than one replacing the other; and every file is checked against the archive's own checksum before it is handed over.
+- RAR and 7z are recognised and named rather than failing vaguely. Reading either needs a decoder that is not part of this site, which is a decision about a dependency rather than a small change, so it has not been made quietly.
+- **URL Encode & Decode** turns text into the percent-encoded form a URL can carry, and turns it back, as you type. It asks which of the three encodings you mean rather than picking one quietly: a value going inside a URL, a whole address that is already assembled, or a form field — which is the only one where a space is written as a plus, and the only one that reads a plus back as a space. That last distinction is what keeps a base64 string from being quietly corrupted.
+- Decoding says **where** a broken escape is. The browser's own decoder throws the same error for every kind of broken input and never says which character; this one walks the text and reports the position and the reason — an escape cut off by the end of the text, a per-cent sign followed by something that is not hexadecimal, or bytes that are legal escapes and still not a character in UTF-8, including the overlong and surrogate spellings that a decoder counting only bytes would accept.
+- Swap puts the result back into the box and turns the direction round, so a round trip can be checked in one click. Nothing is uploaded: the conversion is a function running in the page.
+
+### Changed
+
+- Two roadmap phases are behind us, and the roadmap says so. **The PDF page tree** shipped whole: reordering and rotating pages, a watermark, page numbers, a signature you drew yourself, and clearing the fields a document carries about whoever made it. Its standing records what the shared machinery actually bought — a page that arrives carrying its own rotation is displayed with its sides swapped, and the one correction for that is written once and used by the watermark, the page numbers and the signature alike — and the work the phase made for itself, which is that every Gizlet after it has to expect a sideways page.
+- **One archive, three uses** is behind us too, ahead of its place in the order, because none of its three Gizlets needed anything that was not already here. Its own stopping condition is the one on that page which actually ran: reading a RAR needs a decoder that cannot be justified, so the phase shipped the ZIP half and dropped the rest rather than carrying it.
+- **Text in, text out** becomes the next phase: the small conversions and inspections that are a single pure function each. The first of them is in this release.
+- The sitemap now tells crawlers when each page last changed. Every entry in `/sitemap.xml` carries a `<lastmod>`, and the dates are real ones: they come from the git history of the files behind each page, so the privacy policy is dated the day its wording changed and a Gizlet is dated the day its workspace did, rather than every page claiming to have changed on the day the site was last built. A sitemap that says everything changed at once says nothing, and a crawler learns to disregard it.
+- `pnpm run sitemap:dates` prints the dates, `--write` regenerates them, and `--check` verifies them. Regenerating is a step in the release procedure, and the `Release` workflow fails a release whose dates are stale — it is the only job with the full history to check them against.
+
 ## [0.7.0] - 2026-09-06
 
 ### Added

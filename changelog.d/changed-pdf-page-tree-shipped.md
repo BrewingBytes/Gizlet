@@ -1,3 +1,0 @@
-- The roadmap's PDF page tree is behind us. All five Gizlets it committed to are built — reordering and rotating pages, a watermark, page numbers, a signature you drew yourself, and clearing the fields a document carries about whoever made it — so the phase reads SHIPPED and says where it stands in the past tense, as the page's own rule requires.
-- The standing records what the shared machinery actually bought: a page that carries its own rotation is displayed with its sides swapped, and the one correction for that is written once and used by the watermark, the page numbers and the signature alike. It also records the work the phase made for itself — every Gizlet after it now has to expect a sideways page.
-- Text in, text out becomes the next phase.

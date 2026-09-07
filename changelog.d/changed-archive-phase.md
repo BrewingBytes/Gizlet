@@ -1,1 +1,0 @@
-- The roadmap's archive phase is behind us, ahead of its place in the order: none of its three Gizlets needed anything that was not already here. Its third Gizlet, the half that reads an archive rather than writes one, has shipped, and the phase's own stopping condition — ship the ZIP half rather than carry a RAR decoder that cannot be justified — is what decided its shape.
