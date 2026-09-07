@@ -1,0 +1,449 @@
+---
+import { getHashProvenanceNote, maximumHashBytes } from '../data/file-hash';
+
+const maximumMegabytes = Math.round(maximumHashBytes / (1024 * 1024));
+---
+
+<section class="hash-tool" data-file-hash-tool>
+  <div class="hash-tool__notice">
+    <p class="metadata">What a hash proves</p>
+    <p>{getHashProvenanceNote()}</p>
+  </div>
+
+  <div class="hash-tool__picker" data-drop-zone>
+    <input
+      id="hash-file"
+      class="hash-tool__file-input"
+      type="file"
+      aria-label="Select a file to hash"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">Nothing is uploaded</p>
+    <h2>Drop a file here</h2>
+    <p>Any file, up to {maximumMegabytes} MB. It is read and hashed on this device.</p>
+    <button type="button" class="button-secondary" data-select-file>Choose a file</button>
+  </div>
+
+  <div class="hash-tool__panel hash-tool__panel--file" data-file-panel hidden>
+    <div class="hash-tool__panel-heading">
+      <div>
+        <p class="metadata" data-file-meta></p>
+        <h2 data-file-name></h2>
+      </div>
+      <button type="button" class="button-secondary" data-clear>Hash another file</button>
+    </div>
+    <p class="hash-tool__note" data-file-note hidden></p>
+  </div>
+
+  <div class="hash-tool__panel">
+    <label for="hash-expected">Expected hash</label>
+    <p class="hash-tool__hint">
+      Optional. Paste the checksum you were given and the digest is worked out from its length —
+      there is nothing to choose. A whole <code>sha256sum</code> line, with the file name still on
+      it, is fine.
+    </p>
+    <textarea
+      id="hash-expected"
+      data-expected
+      rows="2"
+      autocapitalize="off"
+      autocomplete="off"
+      autocorrect="off"
+      spellcheck="false"
+      placeholder="ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"></textarea>
+    <p class="hash-tool__field-error" data-expected-error role="alert" hidden></p>
+    <ul class="hash-tool__notes" data-expected-notes hidden></ul>
+  </div>
+
+  <p class="hash-tool__error" data-error role="alert" hidden></p>
+
+  <div class="hash-tool__verdict" data-verdict hidden>
+    <p class="metadata" data-verdict-algorithm></p>
+    <p class="hash-tool__verdict-headline" data-verdict-headline></p>
+    <p class="hash-tool__verdict-summary" data-verdict-summary></p>
+    <dl class="hash-tool__compare" data-compare hidden>
+      <div>
+        <dt>You pasted</dt>
+        <dd data-verdict-expected></dd>
+      </div>
+      <div>
+        <dt>This file is</dt>
+        <dd data-verdict-actual></dd>
+      </div>
+    </dl>
+    <p class="hash-tool__warning" data-verdict-warning hidden></p>
+  </div>
+
+  <div class="hash-tool__results" data-results hidden>
+    <p class="metadata">Every digest of this file</p>
+    <ul class="hash-tool__digests" data-digests></ul>
+
+    <!-- One digest row, cloned per algorithm, so no hash is ever markup. -->
+    <template data-digest-template>
+      <li class="hash-digest">
+        <div class="hash-digest__heading">
+          <p class="metadata hash-digest__label" data-digest-label></p>
+          <p class="hash-digest__badge" data-digest-badge hidden>Broken</p>
+          <button type="button" class="hash-digest__copy" data-digest-copy>Copy</button>
+        </div>
+        <p class="hash-digest__value" data-digest-value></p>
+        <p class="hash-digest__meaning" data-digest-meaning></p>
+      </li>
+    </template>
+  </div>
+
+  <p class="hash-tool__status" data-status role="status" aria-live="polite"></p>
+</section>
+
+<style>
+  .hash-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .hash-tool__notice { padding: var(--space-4); border-bottom: var(--border-width) solid var(--border); background: color-mix(in srgb, var(--color-amber) 10%, var(--surface)); }
+  .hash-tool__notice .metadata { margin-bottom: var(--space-1); }
+  .hash-tool__notice p:last-child { margin: 0; font-weight: 700; }
+  .hash-tool__picker { margin: var(--space-4); padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .hash-tool__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .hash-tool__picker h2 { margin-bottom: var(--space-2); }
+  .hash-tool__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .hash-tool__panel { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .hash-tool__panel label { display: block; margin-bottom: var(--space-1); font-family: var(--font-display); font-size: var(--font-size-xl); font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; text-transform: none; }
+  .hash-tool__hint { margin: 0 0 var(--space-2); max-width: 44rem; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .hash-tool__hint code { font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .hash-tool textarea { min-height: 4.5rem; font-family: var(--font-mono); font-size: var(--font-size-sm); line-height: 1.5; word-break: break-all; }
+  .hash-tool__field-error, .hash-tool__error { margin: var(--space-2) 0 0; color: var(--color-red); font-size: var(--font-size-sm); font-weight: 700; overflow-wrap: anywhere; }
+  .hash-tool__error { padding: var(--space-3) var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .hash-tool__notes { margin: var(--space-2) 0 0; padding: 0; list-style: none; }
+  .hash-tool__notes :global(li) { padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--border); color: var(--text-muted); font-size: var(--font-size-sm); overflow-wrap: anywhere; }
+  .hash-tool__notes :global(li + li) { margin-top: var(--space-1); }
+  /* The answer, and the reason this Gizlet is one page rather than two: it is
+     meant to be read from across the room, not compared character by
+     character. The two hex strings below it are the evidence, not the verdict. */
+  .hash-tool__verdict { padding: var(--space-4); border-top: var(--border-strong-width) solid var(--text); }
+  .hash-tool__verdict[data-state='match'] { background: color-mix(in srgb, var(--success) 12%, var(--surface)); }
+  .hash-tool__verdict[data-state='mismatch'] { background: color-mix(in srgb, var(--color-red) 12%, var(--surface)); }
+  .hash-tool__verdict[data-state='unchecked'] { background: color-mix(in srgb, var(--color-amber) 10%, var(--surface)); }
+  .hash-tool__verdict-headline { margin: var(--space-1) 0 var(--space-2); font-family: var(--font-display); font-size: var(--font-size-2xl); font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+  .hash-tool__verdict[data-state='match'] .hash-tool__verdict-headline { color: var(--success); }
+  .hash-tool__verdict[data-state='mismatch'] .hash-tool__verdict-headline { color: var(--color-red); }
+  .hash-tool__verdict-summary { max-width: 42rem; margin: 0; }
+  .hash-tool__compare { display: grid; gap: var(--space-2); margin: var(--space-3) 0 0; }
+  .hash-tool__compare div { display: grid; grid-template-columns: minmax(0, 8rem) minmax(0, 1fr); gap: var(--space-2); align-items: baseline; }
+  .hash-tool__compare dt { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.08em; }
+  .hash-tool__compare dd { margin: 0; font-family: var(--font-mono); font-size: var(--font-size-sm); overflow-wrap: anywhere; }
+  .hash-tool__warning { margin: var(--space-3) 0 0; padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--warning); color: var(--text-muted); font-size: var(--font-size-sm); }
+  .hash-tool__panel--file { border-top: 0; }
+  .hash-tool__results { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .hash-tool__results > .metadata { margin-bottom: var(--space-3); }
+  .hash-tool__panel-heading { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-3); }
+  .hash-tool__panel-heading .metadata, .hash-tool__panel-heading h2 { margin: 0; }
+  .hash-tool__panel-heading h2 { font-family: var(--font-display); font-size: var(--font-size-xl); font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; overflow-wrap: anywhere; }
+  .hash-tool__note { margin: 0 0 var(--space-3); color: var(--text-muted); font-size: var(--font-size-sm); }
+  .hash-tool__digests { margin: 0; padding: 0; list-style: none; }
+  .hash-tool__digests :global(.hash-digest) { padding: var(--space-3) 0; border-top: var(--border-width) solid var(--border); }
+  .hash-tool__digests :global(.hash-digest:first-child) { border-top: 0; padding-top: 0; }
+  /* The row the pasted hash was compared against, so the verdict and the list
+     cannot be read as being about different digests. */
+  .hash-tool__digests :global(.hash-digest[data-compared]) { padding-left: var(--space-3); border-left: var(--border-strong-width) solid var(--text); }
+  .hash-tool__digests :global(.hash-digest__heading) { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-1); }
+  .hash-tool__digests :global(.hash-digest__label) { margin: 0; font-weight: 700; }
+  .hash-tool__digests :global(.hash-digest__badge) { margin: 0; color: var(--warning); font-family: var(--font-mono); font-size: var(--font-size-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+  .hash-tool__digests :global(.hash-digest__copy) { min-height: 2.75rem; margin-left: auto; padding: 0 var(--space-1); border: 0; background: none; color: var(--text-muted); font: inherit; font-size: var(--font-size-sm); font-weight: 700; text-decoration: underline; cursor: pointer; }
+  .hash-tool__digests :global(.hash-digest__copy:hover) { color: var(--text); }
+  .hash-tool__digests :global(.hash-digest__copy[hidden]) { display: none; }
+  .hash-tool__digests :global(.hash-digest__value) { margin: 0; font-family: var(--font-mono); font-size: var(--font-size-sm); font-weight: 700; overflow-wrap: anywhere; }
+  .hash-tool__digests :global(.hash-digest__value:empty) { display: none; }
+  .hash-tool__digests :global(.hash-digest__meaning) { margin: var(--space-1) 0 0; max-width: 44rem; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .hash-tool__status { min-height: 1.5rem; margin: 0; padding: 0 var(--space-4) var(--space-3); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .hash-tool__status[data-state='copied'] { color: var(--success); font-weight: 700; }
+  .hash-tool [hidden] { display: none; }
+  @media (max-width: 40rem) {
+    .hash-tool__notice, .hash-tool__panel, .hash-tool__verdict, .hash-tool__results { padding: var(--space-3); }
+    .hash-tool__picker { margin: var(--space-3); padding: var(--space-4); }
+    .hash-tool__error, .hash-tool__status { padding-left: var(--space-3); padding-right: var(--space-3); }
+    .hash-tool__panel-heading { align-items: start; flex-direction: column; }
+    .hash-tool__compare div { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  }
+</style>
+
+<script>
+  import {
+    checkHash,
+    describeSkippedHashAlgorithm,
+    getHashAlgorithm,
+    getHashAlgorithmsForSize,
+    getHashFileNote,
+    getSkippedHashAlgorithms,
+    hashAlgorithms,
+    hashBytesWith,
+    readExpectedHash,
+    validateHashFile,
+    type FileDigest,
+    type HashAlgorithm,
+  } from '../data/file-hash';
+  import { formatFileSize } from '../data/image-compression';
+
+  const root = document.querySelector<HTMLElement>('[data-file-hash-tool]');
+
+  if (root) {
+    const fileInput = root.querySelector<HTMLInputElement>('[data-file-input]');
+    const selectFileButton = root.querySelector<HTMLButtonElement>('[data-select-file]');
+    const dropZone = root.querySelector<HTMLElement>('[data-drop-zone]');
+    const expected = root.querySelector<HTMLTextAreaElement>('[data-expected]');
+    const expectedError = root.querySelector<HTMLElement>('[data-expected-error]');
+    const expectedNotes = root.querySelector<HTMLElement>('[data-expected-notes]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const verdict = root.querySelector<HTMLElement>('[data-verdict]');
+    const verdictAlgorithm = root.querySelector<HTMLElement>('[data-verdict-algorithm]');
+    const verdictHeadline = root.querySelector<HTMLElement>('[data-verdict-headline]');
+    const verdictSummary = root.querySelector<HTMLElement>('[data-verdict-summary]');
+    const compare = root.querySelector<HTMLElement>('[data-compare]');
+    const verdictExpected = root.querySelector<HTMLElement>('[data-verdict-expected]');
+    const verdictActual = root.querySelector<HTMLElement>('[data-verdict-actual]');
+    const verdictWarning = root.querySelector<HTMLElement>('[data-verdict-warning]');
+    const results = root.querySelector<HTMLElement>('[data-results]');
+    const filePanel = root.querySelector<HTMLElement>('[data-file-panel]');
+    const fileMeta = root.querySelector<HTMLElement>('[data-file-meta]');
+    const fileName = root.querySelector<HTMLElement>('[data-file-name]');
+    const fileNote = root.querySelector<HTMLElement>('[data-file-note]');
+    const digests = root.querySelector<HTMLElement>('[data-digests]');
+    const digestTemplate = root.querySelector<HTMLTemplateElement>('[data-digest-template]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+
+    if (!fileInput || !selectFileButton || !dropZone || !expected || !expectedError || !expectedNotes || !error || !verdict || !verdictAlgorithm || !verdictHeadline || !verdictSummary || !compare || !verdictExpected || !verdictActual || !verdictWarning || !results || !filePanel || !fileMeta || !fileName || !fileNote || !digests || !digestTemplate || !clearButton || !status) {
+      throw new Error('File Hash Generator could not initialise.');
+    }
+
+    /** The browser's own digest, which is every algorithm here except MD5. */
+    const digest = (subtleName: string, bytes: Uint8Array<ArrayBuffer>) =>
+      crypto.subtle.digest(subtleName, bytes);
+
+    let hashed: { readonly file: File; readonly digests: readonly FileDigest[] } | undefined;
+    /** The row for each algorithm, so a verdict can point at the one it used. */
+    const rows = new Map<HashAlgorithm, HTMLElement>();
+
+    const setStatus = (message: string, state?: string) => {
+      status.textContent = message;
+      if (state) status.dataset.state = state;
+      else delete status.dataset.state;
+    };
+
+    const showError = (message: string) => {
+      error.textContent = message;
+      error.hidden = false;
+    };
+
+    const copy = async (label: string, value: string) => {
+      try {
+        await navigator.clipboard.writeText(value);
+        setStatus(`${label} copied to your clipboard.`, 'copied');
+      } catch {
+        // A refused clipboard is the browser's decision, not a failed hash, so
+        // the digest stays on screen to be selected by hand.
+        setStatus('This browser would not let the page copy. Select the hash instead.');
+      }
+    };
+
+    /** One row per digest, drawn before any of them has a value. */
+    const drawRows = (byteLength: number) => {
+      const skipped = getSkippedHashAlgorithms(byteLength);
+
+      rows.clear();
+      digests.replaceChildren(
+        ...hashAlgorithms.map((algorithm) => {
+          const detail = getHashAlgorithm(algorithm);
+          const row = digestTemplate.content.firstElementChild?.cloneNode(true) as HTMLElement;
+          const badge = row.querySelector<HTMLElement>('[data-digest-badge]')!;
+          const copyButton = row.querySelector<HTMLButtonElement>('[data-digest-copy]')!;
+          const meaning = row.querySelector<HTMLElement>('[data-digest-meaning]')!;
+          const unavailable = skipped.includes(algorithm);
+
+          row.dataset.algorithm = algorithm;
+          row.querySelector('[data-digest-label]')!.textContent = detail.label;
+          badge.hidden = !detail.broken;
+          copyButton.hidden = true;
+          copyButton.setAttribute('aria-label', `Copy the ${detail.label} hash`);
+          meaning.textContent = unavailable
+            ? describeSkippedHashAlgorithm(algorithm)
+            : detail.meaning;
+          row.querySelector('[data-digest-value]')!.textContent = unavailable ? '' : 'Working…';
+          rows.set(algorithm, row);
+
+          return row;
+        }),
+      );
+    };
+
+    const showDigest = (algorithm: HashAlgorithm, hex: string) => {
+      const row = rows.get(algorithm);
+
+      if (!row) return;
+
+      const copyButton = row.querySelector<HTMLButtonElement>('[data-digest-copy]')!;
+
+      row.querySelector('[data-digest-value]')!.textContent = hex;
+      copyButton.hidden = false;
+      copyButton.addEventListener('click', () => void copy(getHashAlgorithm(algorithm).label, hex));
+    };
+
+    const listNotes = (messages: readonly string[]) => {
+      expectedNotes.replaceChildren(
+        ...messages.map((message) => {
+          const item = document.createElement('li');
+
+          item.textContent = message;
+
+          return item;
+        }),
+      );
+      expectedNotes.hidden = messages.length === 0;
+    };
+
+    const hideVerdict = () => {
+      verdict.hidden = true;
+      delete verdict.dataset.state;
+      for (const row of rows.values()) delete row.dataset.compared;
+    };
+
+    /**
+     * The answer, whenever both halves of it exist.
+     *
+     * The expected hash and the file arrive in either order — a checksum is
+     * usually copied before the download finishes — so this runs on both and
+     * shows nothing until it has both.
+     */
+    const render = () => {
+      const reading = readExpectedHash(expected.value);
+
+      expectedError.hidden = reading?.ok !== false;
+      expectedError.textContent = reading?.ok === false ? reading.message : '';
+      listNotes(reading?.ok ? reading.expected.notes : []);
+
+      if (!reading?.ok || !hashed) {
+        hideVerdict();
+        return;
+      }
+
+      const check = checkHash(reading.expected, hashed.digests, hashed.file);
+
+      hideVerdict();
+      verdict.dataset.state = check.state;
+      verdict.hidden = false;
+      verdictAlgorithm.textContent = `${getHashAlgorithm(check.algorithm).label}, from the length of what you pasted`;
+      verdictHeadline.textContent = check.headline;
+      verdictSummary.textContent = check.summary;
+      compare.hidden = check.actual === undefined;
+      verdictExpected.textContent = check.expected;
+      verdictActual.textContent = check.actual ?? '';
+      verdictWarning.textContent = check.nameWarning ?? '';
+      verdictWarning.hidden = check.nameWarning === undefined;
+
+      const row = rows.get(check.algorithm);
+
+      if (row) row.dataset.compared = 'true';
+    };
+
+    const reset = () => {
+      hashed = undefined;
+      rows.clear();
+      fileInput.value = '';
+      digests.replaceChildren();
+      results.hidden = true;
+      filePanel.hidden = true;
+      fileNote.hidden = true;
+      fileNote.textContent = '';
+      dropZone.hidden = false;
+      error.hidden = true;
+      error.textContent = '';
+      hideVerdict();
+      setStatus('');
+    };
+
+    const hashFile = async (file: File) => {
+      reset();
+
+      const refusal = validateHashFile(file);
+
+      if (refusal) {
+        showError(refusal);
+        return;
+      }
+
+      dropZone.hidden = true;
+      fileMeta.textContent = `${formatFileSize(file.size)} · read on this device`;
+      fileName.textContent = file.name;
+      fileNote.textContent = getHashFileNote(file) ?? '';
+      fileNote.hidden = fileNote.textContent === '';
+      filePanel.hidden = false;
+      drawRows(file.size);
+      results.hidden = false;
+      setStatus('Reading the file…');
+
+      try {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const computed: FileDigest[] = [];
+
+        for (const algorithm of getHashAlgorithmsForSize(bytes.length)) {
+          const { label, subtleName } = getHashAlgorithm(algorithm);
+
+          setStatus(
+            subtleName
+              ? `Hashing ${label}…`
+              : `Hashing ${label}… this one is written out in the page rather than provided by the browser, so it takes a moment.`,
+          );
+          // A turn of the event loop, so the line above is actually painted
+          // before a digest that runs on this thread starts.
+          await new Promise((resolve) => setTimeout(resolve, 0));
+
+          const hex = await hashBytesWith(algorithm, bytes, digest);
+
+          computed.push({ algorithm, hex });
+          showDigest(algorithm, hex);
+        }
+
+        hashed = { file, digests: computed };
+        setStatus('Hashed on this device. The file was not uploaded.');
+        render();
+      } catch {
+        reset();
+        showError(
+          'This file could not be read to the end. That usually means it changed or was moved while the page was reading it — choose it again.',
+        );
+      }
+    };
+
+    selectFileButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+
+      if (file) void hashFile(file);
+    });
+    clearButton.addEventListener('click', () => {
+      reset();
+      render();
+    });
+    expected.addEventListener('input', render);
+
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropZone.dataset.dragging = 'true';
+      });
+    }
+
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        delete dropZone.dataset.dragging;
+      });
+    }
+
+    dropZone.addEventListener('drop', (event) => {
+      const file = event.dataTransfer?.files[0];
+
+      if (file) void hashFile(file);
+    });
+
+    render();
+  }
+</script>

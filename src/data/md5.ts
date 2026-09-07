@@ -12,12 +12,16 @@
  *
  * So this is here, written out, in the manner of the CRC-32 in
  * `data/zip-archive` and the EXIF reader in `data/image-metadata`: a small,
- * pure, entirely tested function rather than a dependency. It is not exposed
- * as a general-purpose hash and nothing else in the site uses it.
+ * pure, entirely tested function rather than a dependency.
  *
- * Never use it to protect anything. It is a fingerprint for a name, and the
- * only reason it exists here is that RFC 9562 says version 3 is spelled this
- * way.
+ * `data/file-hash` is the second caller, and for the same reason read the
+ * other way round: it cannot ask a visitor to trust a checksum they were given
+ * and then refuse to compute it because the browser will not. There it is
+ * labelled broken, on the page, next to the answer.
+ *
+ * Never use it to protect anything. It is a fingerprint, and the two reasons
+ * it exists here are that RFC 9562 spells version 3 this way and that release
+ * pages still publish MD5 sums.
  */
 
 /** Per-round left-rotation amounts, in four groups of four. */
