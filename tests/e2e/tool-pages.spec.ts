@@ -39,6 +39,7 @@ const workspaceSignatures = {
   "url-encode-decode": "Text to encode",
   "uuid-generator": "How many",
   "base64-encode-decode": "Text to encode",
+  "jwt-decoder": "Token to decode",
 } as const satisfies Record<AvailableToolSlug, string>;
 
 for (const tool of getAvailableTools()) {

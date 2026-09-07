@@ -656,8 +656,12 @@ export const toolRegistry = [
       "read jwt claims",
       "token expiry",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "A JSON Web Token, pasted with whatever it was copied out of still attached: an Authorization header name, a Bearer prefix, surrounding quotes, or line breaks. All of those are ignored and the omission is reported.",
+      output: "The header and the payload as indented JSON, the registered claims explained one by one with the value exactly as the token wrote it, and every date given as both its raw seconds and a UTC moment with how far away it is. The signature is shown and measured, never checked: nothing here verifies a signature, an issuer or an audience, and the page says so where it cannot be missed. Malformed tokens are named by segment — an encrypted JWE, a truncated token, a segment that is not Base64URL or not JSON — and a readable header is still shown when the payload is the broken part.",
+    },
   },
   {
     id: 28,

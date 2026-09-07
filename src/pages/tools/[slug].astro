@@ -17,6 +17,7 @@ import ImageDimensionsTool from '../../components/ImageDimensionsTool.astro';
 import ImageColourPickerTool from '../../components/ImageColourPickerTool.astro';
 import JpgToPdfTool from '../../components/JpgToPdfTool.astro';
 import JsonFormatterTool from '../../components/JsonFormatterTool.astro';
+import JwtDecoderTool from '../../components/JwtDecoderTool.astro';
 import MergePdfTool from '../../components/MergePdfTool.astro';
 import OrganizePdfTool from '../../components/OrganizePdfTool.astro';
 import PdfPageNumbersTool from '../../components/PdfPageNumbersTool.astro';
@@ -93,6 +94,7 @@ const toolWorkspaces = {
   'url-encode-decode': UrlEncodeDecodeTool,
   'uuid-generator': UuidGeneratorTool,
   'base64-encode-decode': Base64Tool,
+  'jwt-decoder': JwtDecoderTool,
 } as const satisfies Record<AvailableToolSlug, unknown>;
 
 const { tool, relatedTools } = Astro.props;

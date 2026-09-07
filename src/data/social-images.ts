@@ -47,6 +47,7 @@ const bespokeSocialImageSlugs: readonly string[] = [
   'url-encode-decode',
   'uuid-generator',
   'base64-encode-decode',
+  'jwt-decoder',
   'jpg-to-pdf',
   'pdf-viewer',
   'merge-pdf',
