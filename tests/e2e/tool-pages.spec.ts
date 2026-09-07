@@ -37,6 +37,7 @@ const workspaceSignatures = {
   "create-zip": "Select files to put in the archive",
   "extract-archive": "Select an archive to look inside",
   "url-encode-decode": "Text to encode",
+  "uuid-generator": "How many",
 } as const satisfies Record<AvailableToolSlug, string>;
 
 for (const tool of getAvailableTools()) {

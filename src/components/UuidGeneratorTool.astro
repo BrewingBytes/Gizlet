@@ -1,0 +1,380 @@
+---
+import {
+  defaultUuidKind,
+  maximumUuidBatch,
+  uuidKindDetails,
+  uuidNamespaces,
+  uuidStyleDetails,
+} from '../data/uuid';
+---
+
+<section class="uuid-tool" data-uuid-tool>
+  <div class="uuid-tool__panel">
+    <div class="uuid-tool__row uuid-tool__row--kind">
+      <label for="uuid-kind">Which kind</label>
+      <select id="uuid-kind" data-kind>
+        {
+          uuidKindDetails.map((detail) => (
+            <option value={detail.kind} selected={detail.kind === defaultUuidKind}>
+              {detail.label}
+            </option>
+          ))
+        }
+      </select>
+    </div>
+
+    <p class="uuid-tool__summary" data-kind-summary></p>
+    <p class="uuid-tool__reveals" data-kind-reveals></p>
+
+    <div class="uuid-tool__name-fields" data-name-fields hidden>
+      <p class="uuid-tool__note">
+        A name-based UUID is a function of what you put here, so the same namespace and name always
+        give the same value — to you and to anyone else who guesses them.
+      </p>
+      <div class="uuid-tool__row">
+        <label for="uuid-namespace">Namespace</label>
+        <select id="uuid-namespace" data-namespace>
+          {
+            uuidNamespaces.map((namespace) => (
+              <option value={namespace.id}>{namespace.label} — {namespace.hint}</option>
+            ))
+          }
+        </select>
+      </div>
+      <div class="uuid-tool__row" data-custom-namespace hidden>
+        <label for="uuid-custom-namespace">Your namespace UUID</label>
+        <input
+          id="uuid-custom-namespace"
+          type="text"
+          data-custom-namespace-input
+          autocapitalize="off"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+          placeholder="6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+        />
+      </div>
+      <div class="uuid-tool__row">
+        <label for="uuid-name">Name</label>
+        <input
+          id="uuid-name"
+          type="text"
+          data-name
+          autocapitalize="off"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+          placeholder="example.com"
+        />
+      </div>
+    </div>
+
+    <div class="uuid-tool__controls">
+      <div class="uuid-tool__row">
+        <label for="uuid-style">Written as</label>
+        <select id="uuid-style" data-style>
+          {uuidStyleDetails.map((detail) => <option value={detail.style}>{detail.label}</option>)}
+        </select>
+      </div>
+      <div class="uuid-tool__row">
+        <label for="uuid-case">Letters</label>
+        <select id="uuid-case" data-case>
+          <option value="lower">Lower case</option>
+          <option value="upper">UPPER CASE</option>
+        </select>
+      </div>
+      <div class="uuid-tool__row">
+        <label for="uuid-count">How many</label>
+        <input id="uuid-count" type="number" min="1" max={maximumUuidBatch} value="1" data-count />
+      </div>
+    </div>
+
+    <div class="uuid-tool__actions">
+      <button type="button" data-generate>Generate</button>
+      <button type="button" class="button-secondary" data-copy disabled>Copy all</button>
+      <button type="button" class="button-secondary" data-download disabled>Download</button>
+    </div>
+
+    <p class="uuid-tool__status" data-status data-state="empty" role="status" aria-live="polite"></p>
+    <p class="uuid-tool__error" data-error role="alert" hidden></p>
+    <pre tabindex="0"><code data-output></code></pre>
+  </div>
+
+  <section class="uuid-tool__panel uuid-tool__panel--reader" aria-labelledby="uuid-reader-title">
+    <p class="metadata">Or read one</p>
+    <h2 id="uuid-reader-title">What is this UUID?</h2>
+    <div class="uuid-tool__row">
+      <label for="uuid-reader">Paste a UUID</label>
+      <input
+        id="uuid-reader"
+        type="text"
+        data-reader
+        autocapitalize="off"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+        placeholder="{3F2B8C1A-4D5E-4F60-8A71-9B2C3D4E5F60}"
+      />
+    </div>
+    <p class="uuid-tool__facts" data-facts data-state="empty">
+      Any style: canonical, braces, no hyphens, or a URN.
+    </p>
+  </section>
+</section>
+
+<style>
+  .uuid-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .uuid-tool__panel { display: grid; gap: var(--space-3); padding: var(--space-4); }
+  .uuid-tool__panel--reader { border-top: var(--border-width) solid var(--border); }
+  .uuid-tool__panel--reader .metadata, .uuid-tool__panel--reader h2 { margin: 0; }
+  .uuid-tool__row--kind select { max-width: 22rem; }
+  .uuid-tool__summary { margin: 0; padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--border); color: var(--text-muted); }
+  .uuid-tool__reveals { margin: 0; padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--color-amber); color: var(--text-muted); font-size: var(--font-size-sm); }
+  .uuid-tool__name-fields { display: grid; gap: var(--space-2); padding: var(--space-3); border: var(--border-width) solid var(--border); background: var(--background); }
+  .uuid-tool__name-fields[hidden], .uuid-tool__row[hidden] { display: none; }
+  .uuid-tool__note { margin: 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .uuid-tool__controls { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+  .uuid-tool__row { display: grid; gap: var(--space-1); min-width: 0; }
+  .uuid-tool__row label { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.08em; }
+  .uuid-tool__row input[type='number'] { max-width: 7rem; }
+  .uuid-tool__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .uuid-tool__status, .uuid-tool__facts { min-height: 1.5rem; margin: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); overflow-wrap: anywhere; }
+  .uuid-tool__facts { font-family: var(--font-body); font-size: var(--font-size-sm); }
+  .uuid-tool__facts[data-state='invalid'], .uuid-tool__error { color: var(--color-red); font-weight: 700; }
+  .uuid-tool__status[data-state='copied'] { color: var(--success); font-weight: 700; }
+  .uuid-tool__error { margin: 0; padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--color-red); }
+  .uuid-tool__error[hidden] { display: none; }
+  .uuid-tool pre { max-height: 24rem; margin: 0; padding: var(--space-3); overflow: auto; border: var(--border-width) solid var(--border); background: var(--color-ink); color: #fffdf7; font-family: var(--font-mono); font-size: var(--font-size-sm); line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
+  .uuid-tool code:empty::before { content: 'Press Generate.'; color: #b9b3a4; }
+  @media (max-width: 40rem) {
+    .uuid-tool__panel { padding: var(--space-3); }
+    .uuid-tool__controls { display: grid; }
+  }
+</style>
+
+<script>
+  import {
+    defaultUuidCase,
+    defaultUuidKind,
+    defaultUuidStyle,
+    describeUuid,
+    describeUuidFacts,
+    formatUuid,
+    getNamespaceUuid,
+    getUuidKindDetail,
+    isNameBasedKind,
+    isUuidCase,
+    isUuidKind,
+    isUuidNamespaceId,
+    isUuidStyle,
+    parseUuid,
+    validateUuidCount,
+    type UuidCase,
+    type UuidKind,
+    type UuidStyle,
+  } from '../data/uuid';
+
+  const root = document.querySelector<HTMLElement>('[data-uuid-tool]');
+
+  if (root) {
+    const kindSelect = root.querySelector<HTMLSelectElement>('[data-kind]');
+    const kindSummary = root.querySelector<HTMLElement>('[data-kind-summary]');
+    const kindReveals = root.querySelector<HTMLElement>('[data-kind-reveals]');
+    const nameFields = root.querySelector<HTMLElement>('[data-name-fields]');
+    const namespaceSelect = root.querySelector<HTMLSelectElement>('[data-namespace]');
+    const customNamespaceRow = root.querySelector<HTMLElement>('[data-custom-namespace]');
+    const customNamespaceInput = root.querySelector<HTMLInputElement>('[data-custom-namespace-input]');
+    const nameInput = root.querySelector<HTMLInputElement>('[data-name]');
+    const styleSelect = root.querySelector<HTMLSelectElement>('[data-style]');
+    const caseSelect = root.querySelector<HTMLSelectElement>('[data-case]');
+    const countInput = root.querySelector<HTMLInputElement>('[data-count]');
+    const generateButton = root.querySelector<HTMLButtonElement>('[data-generate]');
+    const copyButton = root.querySelector<HTMLButtonElement>('[data-copy]');
+    const downloadButton = root.querySelector<HTMLButtonElement>('[data-download]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const error = root.querySelector<HTMLElement>('[data-error]');
+    const output = root.querySelector<HTMLElement>('[data-output]');
+    const reader = root.querySelector<HTMLInputElement>('[data-reader]');
+    const facts = root.querySelector<HTMLElement>('[data-facts]');
+
+    if (!kindSelect || !kindSummary || !kindReveals || !nameFields || !namespaceSelect || !customNamespaceRow || !customNamespaceInput || !nameInput || !styleSelect || !caseSelect || !countInput || !generateButton || !copyButton || !downloadButton || !status || !error || !output || !reader || !facts) {
+      throw new Error('UUID Generator could not initialise.');
+    }
+
+    let kind: UuidKind = defaultUuidKind;
+    let style: UuidStyle = defaultUuidStyle;
+    let letterCase: UuidCase = defaultUuidCase;
+    /** The last batch, kept as bytes so changing the style redraws it for free. */
+    let made: readonly Uint8Array[] = [];
+
+    const clearError = () => { error.hidden = true; error.textContent = ''; };
+    const showError = (message: string) => { error.textContent = message; error.hidden = false; };
+    const formatTime = (milliseconds: number) => new Date(milliseconds).toLocaleString();
+
+    const renderOutput = () => {
+      output.textContent = made.map((bytes) => formatUuid(bytes, style, letterCase)).join('\n');
+      copyButton.disabled = made.length === 0;
+      downloadButton.disabled = made.length === 0;
+    };
+
+    const renderKind = () => {
+      const detail = getUuidKindDetail(kind);
+
+      kindSummary.textContent = detail.summary;
+      kindReveals.textContent = `What it gives away: ${detail.reveals}`;
+      nameFields.hidden = !detail.needsName;
+      customNamespaceRow.hidden = namespaceSelect.value !== 'custom';
+    };
+
+    /** The namespace bytes for a name-based request, or a reason there are none. */
+    const resolveNamespace = () => {
+      const chosen = namespaceSelect.value;
+
+      if (!isUuidNamespaceId(chosen)) return { problem: 'Choose a namespace.' };
+
+      const text = chosen === 'custom' ? customNamespaceInput.value : getNamespaceUuid(chosen);
+      const bytes = parseUuid(text);
+
+      if (!bytes) {
+        return {
+          problem: text.trim()
+            ? 'That namespace is not a UUID. A namespace is itself a UUID — paste one, or pick one of the four above.'
+            : 'Paste the UUID you want to use as a namespace.',
+        };
+      }
+
+      return { bytes };
+    };
+
+    const generate = async () => {
+      clearError();
+
+      const count = Number(countInput.value);
+      const countProblem = validateUuidCount(count);
+
+      if (countProblem) {
+        showError(countProblem);
+        return;
+      }
+
+      const request: { kind: UuidKind; count: number; namespace?: Uint8Array; name?: string } = {
+        kind,
+        count,
+      };
+
+      if (isNameBasedKind(kind)) {
+        const namespace = resolveNamespace();
+
+        if (namespace.problem) {
+          showError(namespace.problem);
+          return;
+        }
+
+        if (nameInput.value === '') {
+          showError('Type the name this UUID should be derived from.');
+          return;
+        }
+
+        request.namespace = namespace.bytes;
+        request.name = nameInput.value;
+      }
+
+      // The previous batch goes before the new one is made. Leaving it on
+      // screen while this works would show values that are about to be
+      // replaced as though they were the answer.
+      made = [];
+      renderOutput();
+      generateButton.disabled = true;
+      status.dataset.state = 'empty';
+      status.textContent = 'Making them on this device…';
+
+      try {
+        // Imported on the first press rather than up front: a visitor who only
+        // reads the page needs no generator, and SHA-1 needs none either.
+        const { generateUuids } = await import('../scripts/uuid-generation');
+
+        made = await generateUuids(request);
+        renderOutput();
+        status.dataset.state = 'valid';
+        status.textContent = isNameBasedKind(kind)
+          ? `${count.toLocaleString()} ${count === 1 ? 'copy' : 'copies'} of one UUID — a name always gives the same answer.`
+          : `${count.toLocaleString()} ${count === 1 ? 'UUID' : 'UUIDs'}, made on this device.`;
+      } catch (caughtError) {
+        made = [];
+        renderOutput();
+        status.dataset.state = 'empty';
+        status.textContent = '';
+        showError(caughtError instanceof Error ? caughtError.message : 'Nothing could be generated here.');
+      } finally {
+        generateButton.disabled = false;
+      }
+    };
+
+    const readOne = () => {
+      if (reader.value.trim() === '') {
+        facts.dataset.state = 'empty';
+        facts.textContent = 'Any style: canonical, braces, no hyphens, or a URN.';
+        return;
+      }
+
+      const read = describeUuid(reader.value);
+
+      if (!read) {
+        facts.dataset.state = 'invalid';
+        facts.textContent = 'That is not a UUID. One is 32 hexadecimal digits, however they are punctuated.';
+        return;
+      }
+
+      facts.dataset.state = 'valid';
+      facts.textContent = describeUuidFacts(read, formatTime);
+    };
+
+    kindSelect.addEventListener('change', () => {
+      if (isUuidKind(kindSelect.value)) kind = kindSelect.value;
+      clearError();
+      renderKind();
+    });
+
+    namespaceSelect.addEventListener('change', renderKind);
+    styleSelect.addEventListener('change', () => {
+      if (isUuidStyle(styleSelect.value)) style = styleSelect.value;
+      renderOutput();
+    });
+    caseSelect.addEventListener('change', () => {
+      if (isUuidCase(caseSelect.value)) letterCase = caseSelect.value;
+      renderOutput();
+    });
+    generateButton.addEventListener('click', () => void generate());
+
+    copyButton.addEventListener('click', () => {
+      const text = output.textContent ?? '';
+
+      void navigator.clipboard
+        ?.writeText(text)
+        .then(() => {
+          status.dataset.state = 'copied';
+          status.textContent = `Copied ${made.length.toLocaleString()} to your clipboard.`;
+        })
+        .catch(() => {
+          status.dataset.state = 'empty';
+          showError('Could not copy automatically. Select the result and copy it manually.');
+        });
+    });
+
+    downloadButton.addEventListener('click', () => {
+      const blob = new Blob([`${output.textContent ?? ''}\n`], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      link.href = url;
+      link.download = `uuids-${kind}.txt`;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    reader.addEventListener('input', readOne);
+
+    renderKind();
+    renderOutput();
+  }
+</script>

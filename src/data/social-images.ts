@@ -45,6 +45,7 @@ const bespokeSocialImageSlugs: readonly string[] = [
   'json-ld-generator',
   'json-formatter',
   'url-encode-decode',
+  'uuid-generator',
   'jpg-to-pdf',
   'pdf-viewer',
   'merge-pdf',

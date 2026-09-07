@@ -218,7 +218,9 @@ export const toolFlowRegistry = [
  * person typed and gives back text. A flow here carries files between Gizlets,
  * and text is not one of the kinds it carries — the text Gizlets are their own
  * neighbourhood, and joining them to this graph would mean inventing a payload
- * that no Gizlet in it produces.
+ * that no Gizlet in it produces. UUID Generator is the same, and takes no
+ * input at all: a step with nothing coming into it is where a chain starts,
+ * and a chain that starts with an identifier leads nowhere here.
  */
 export const flowlessToolSlugs = [
   'pdf-viewer',
@@ -229,6 +231,7 @@ export const flowlessToolSlugs = [
   'create-zip',
   'extract-archive',
   'url-encode-decode',
+  'uuid-generator',
 ] as const satisfies readonly ToolRegistryEntry['slug'][];
 
 /** The registry's own entries, with their payload kinds preserved. */

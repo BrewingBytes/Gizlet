@@ -1096,6 +1096,114 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'uuid-generator': {
+    what: {
+      heading: 'What UUID Generator does',
+      paragraphs: [
+        'It makes UUIDs, in every version a browser can honestly produce, and reads one back to tell you what it is. Pick a version, pick how it should be written, say how many you want, and they are generated here — from your browser’s cryptographic randomness, never from Math.random.',
+        'A GUID is not a different thing from a UUID; it is the same 128 bits with Microsoft’s punctuation. So the braces and the capital letters are a choice about how the value is written, alongside canonical form, no hyphens at all, and a URN.',
+      ],
+    },
+    when: {
+      heading: 'When you need a name nothing else has',
+      paragraphs: [
+        'When a row needs a primary key before the database has seen it. When two systems have to agree on an identifier without asking each other. When a file, a request or an upload needs a name that will not collide with the last one. Version 4 covers nearly all of it, and version 7 is the one to reach for when the identifier is going into an index.',
+        'The other half is reading. A UUID in a log, a filename or a database is a small artefact with facts inside it: which version it is, when it was made if it carries a time, and — for a version 1 — whether the machine that made it signed its own network address into it. Paste one in and it will say.',
+      ],
+    },
+    options: {
+      heading: 'Which version, and what each one tells the world',
+      paragraphs: [
+        'The versions are not variations on a theme. They differ in what goes into the 128 bits, which means they differ in what someone holding one can work out.',
+      ],
+      details: [
+        {
+          term: 'Version 4 — random',
+          description:
+            'One hundred and twenty-two bits of randomness and six bits saying which version it is. It reveals nothing, because there is nothing in it but randomness. Unless you have a reason to want something else, this is the one.',
+        },
+        {
+          term: 'Version 7 — time-ordered',
+          description:
+            'Milliseconds since 1970 in the first six bytes, then a counter, then randomness. Two of them sort into the order they were made, which is why it has become the recommended choice for a database key: the index grows at one end instead of taking a random write every insert. The cost is that the creation time is in plain sight, by design.',
+        },
+        {
+          term: 'Why a batch of version 7s still sorts',
+          description:
+            'A millisecond is a long time, and forty of these generated at once would share every ordered bit and differ only in randomness — so a batch would come out shuffled, which is the case that actually happens when something inserts a lot of rows. The twelve bits after the timestamp are therefore the monotonic counter RFC 9562 provides for it, advancing within a millisecond and reseeded when the millisecond turns. Ask for a thousand here and they are in order, not merely near it.',
+        },
+        {
+          term: 'Versions 1 and 6 — a clock and a node',
+          description:
+            'The 1997 design: a timestamp counting hundred-nanosecond intervals since 1582, a clock sequence, and a node. Version 6 is the same fields rearranged so the value sorts by time. Generate these when something old expects them.',
+        },
+        {
+          term: 'Why a version 1 from here cannot identify your machine',
+          description:
+            'A version 1 was meant to carry the network card’s MAC address, which is why one found in a document can point at the computer that made it. A browser cannot read a MAC address at all, so the node here is random with its multicast bit set — the flag that means "not a real address". Read one of these back and it will tell you so. It is also how you can tell, of a version 1 you were given, whether somebody’s machine is written into it.',
+        },
+        {
+          term: 'Versions 3 and 5 — derived from a name',
+          description:
+            'Not random at all: the digest of a namespace and a name, so the same name always produces the same UUID, on any implementation. Version 5 uses SHA-1 and is the one to use; version 3 uses MD5 and exists so you can reproduce identifiers a system already made that way. Ask for ten and you get ten copies of one value, because that is what these versions are.',
+        },
+        {
+          term: 'Nil and Max',
+          description:
+            'All zeroes and all ones. The Nil is a defined way of saying "no UUID"; the Max was added by RFC 9562 as its opposite. Both are mostly useful for finding out whether something checks its input.',
+        },
+        {
+          term: 'How many at once',
+          description:
+            'Up to 1,000 in one run, copied together or downloaded one per line. It is text, so the limit is about the size of a sensible page rather than about memory.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'Nothing is uploaded, and nothing about your machine goes in',
+      paragraphs: [
+        'The identifiers are made in this browser and nothing is sent anywhere — there is nowhere to send it, because this page has no endpoint behind it. The name you type for a version 3 or 5 is never uploaded either.',
+        'It is worth being precise about the second half of that, because one UUID version was designed to embed hardware identity. There is no MAC address in anything this page produces: a browser cannot read one, so the node field is random and flagged as random. Nothing here is stored between visits, including the clock sequence, which is generated fresh each time rather than remembered.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Which version should I use?',
+        answer:
+          'Version 4 unless you have a reason. Version 7 if the identifier is going into a database index, because it sorts by creation time and keeps the index tidy. Version 5 if you want the same input to always give the same UUID.',
+      },
+      {
+        question: 'Is a GUID the same as a UUID?',
+        answer:
+          'Yes. It is the same 128 bits; GUID is Microsoft’s name for it. What differs is how it tends to be written — in braces and capitals — and that is offered here as a style. There is a genuine difference in how the bytes are ordered in Microsoft’s binary format, but it never shows in the text form.',
+      },
+      {
+        question: 'Why can’t it make a version 2?',
+        answer:
+          'Because it cannot make one honestly. Version 2, DCE Security, replaces part of the timestamp with a POSIX user or group id and part of the clock sequence with a local domain — and a browser has no POSIX identity. Producing one would mean inventing the very field that gives it meaning. It is also absent from RFC 9562, and survives only in the DCE 1.1 specification.',
+      },
+      {
+        question: 'What about version 8?',
+        answer:
+          'Version 8 is deliberately free-form: whatever bits its creator wants, with the version and variant marked. There is nothing for a generator to decide, so there is nothing here to generate.',
+      },
+      {
+        question: 'Are these random enough to use as secrets?',
+        answer:
+          'The randomness is your browser’s cryptographic generator, so a version 4 is unguessable in practice. But an identifier is not a secret: it usually ends up in URLs, logs and error reports. Use one to name a thing, and use a real token to authorise access to it.',
+      },
+      {
+        question: 'Does the same UUID ever come out twice?',
+        answer:
+          'For a version 4, not in any practical sense — 122 random bits is enough that collisions are a theoretical exercise. For versions 3 and 5, the same namespace and name always give the same answer, which is the whole purpose rather than a fault.',
+      },
+      {
+        question: 'Can it tell me when a UUID was made?',
+        answer:
+          'For versions 1, 6 and 7, yes — the time is in the value, and pasting it into the reader will show it. Versions 3, 4 and 5 contain no time at all, so nothing can be said about when they were created.',
+      },
+    ],
+  },
   'url-encode-decode': {
     what: {
       heading: 'What URL Encode & Decode does',

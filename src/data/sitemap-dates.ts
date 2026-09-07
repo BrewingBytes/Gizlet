@@ -40,6 +40,7 @@ export const sitemapDates: Readonly<Record<string, string>> = {
   '/tools/sign-pdf/': '2026-09-06',
   '/tools/clean-pdf-metadata/': '2026-09-06',
   '/tools/url-encode-decode/': '2026-09-07',
+  '/tools/uuid-generator/': '2026-09-07',
   '/tools/create-zip/': '2026-09-06',
   '/tools/extract-archive/': '2026-09-06',
 };
