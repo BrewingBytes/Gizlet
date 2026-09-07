@@ -4,7 +4,8 @@
 
 ## Before you start
 
-- Work from the GitHub issue that defines the task. It sets the scope and acceptance criteria; anything outside it belongs in a follow-up issue.
+- Work from the Linear issue that defines the task. Its description sets the scope and acceptance criteria, and it is the one to read: the GitHub issue linked from it is a mirror, often written before the scope settled, so it can describe a smaller job than the one that was agreed. Anything outside the Linear issue belongs in a follow-up issue.
+- Keep that issue's status honest as you go: In Progress when you start, Done once the work is merged. Closing the GitHub issue does not close the Linear one.
 - Read [docs/architecture.md](docs/architecture.md) before touching the stack or dependencies, [design.md](design.md) before visual work, [docs/roadmap.md](docs/roadmap.md) before touching the phases or the not-built catalogue, and [docs/releasing.md](docs/releasing.md) before anything touching deployment, versions, or the changelog's release headings.
 - The repository is small enough to read directly. Prefer opening the relevant files over broad searches, and see the repository map in [AGENTS.md](AGENTS.md) for where things live.
 
