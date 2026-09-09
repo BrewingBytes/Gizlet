@@ -262,11 +262,25 @@ test("falls back to the system theme when storage is unavailable", async ({
         throw new DOMException("Storage is unavailable", "SecurityError");
       },
     });
+    (window as unknown as { __themeAtParse: (string | null)[] }).__themeAtParse =
+      [];
+    document.addEventListener("readystatechange", () => {
+      (
+        window as unknown as { __themeAtParse: (string | null)[] }
+      ).__themeAtParse.push(document.documentElement.dataset.theme ?? null);
+    });
   });
 
   for (const systemTheme of ["dark", "light"] as const) {
     await page.emulateMedia({ colorScheme: systemTheme });
     await page.goto("/");
+    const themeAtParse = await page.evaluate(
+      () =>
+        (window as unknown as { __themeAtParse: (string | null)[] })
+          .__themeAtParse,
+    );
+
+    expect(themeAtParse[0]).toBe(systemTheme);
     await expect(page.locator("html")).toHaveAttribute(
       "data-theme",
       systemTheme,
