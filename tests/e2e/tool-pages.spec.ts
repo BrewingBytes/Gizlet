@@ -25,6 +25,7 @@ const workspaceSignatures = {
   "json-ld-generator": "Schema type",
   "json-formatter": "JSON input",
   "json-csv-converter": "Records as JSON",
+  "csv-viewer": "CSV to read",
   "jpg-to-pdf": "Select images to put in a PDF",
   "pdf-viewer": "Select a PDF to open",
   "merge-pdf": "Select PDFs to merge",

@@ -724,8 +724,12 @@ export const toolRegistry = [
       "tsv viewer",
       "csv table",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "A delimited document, either dropped in as a file of up to 8 MB or pasted into the box. The separator is detected from the document itself — comma, semicolon, tab or pipe — and the page says which one it read the document with and why; that reading is a control, so it can be set by hand instead. Whether the first row names the columns is also a control, for an export that begins with data.",
+      output: "The document as a table, each row beside the line of the file it starts on, with the number of rows and columns. A row that disagrees with the header is shown rather than refused: one that stops short is filled with empty cells, one with a field too many puts it in a column with no name, and both are named by line. Underneath it, the same document written back out with RFC 4180 quoting, CRLF endings and every row the same width, to copy or download. Large documents are read whole and drawn in part: the table stops at 200 rows and 50 columns and says so, while the tidied CSV is all of it.",
+    },
   },
   {
     id: 31,

@@ -1,0 +1,519 @@
+---
+import { maximumCsvSize } from '../data/csv-viewer';
+import { csvDelimiterDetails } from '../data/json-csv';
+
+const maximumMegabytes = Math.round(maximumCsvSize / (1024 * 1024));
+---
+
+<section class="csv-viewer" data-csv-viewer-tool>
+  <div class="csv-viewer__picker" data-drop-zone>
+    <input
+      id="csv-viewer-file"
+      class="csv-viewer__file-input"
+      type="file"
+      accept=".csv,.tsv,.tab,.txt,text/csv,text/tab-separated-values,text/plain"
+      aria-label="Select a CSV file to open"
+      data-file-input
+      hidden
+    />
+    <p class="metadata">Nothing is uploaded</p>
+    <h2>Drop a CSV here</h2>
+    <p>
+      Any delimited text file, up to {maximumMegabytes} MB. It is opened and read by this browser.
+    </p>
+    <button type="button" class="button-secondary" data-select-file>Choose a file</button>
+  </div>
+
+  <div class="csv-viewer__panel">
+    <div class="csv-viewer__panel-heading">
+      <div>
+        <p class="metadata" data-source>Pasted text</p>
+        <h2 id="csv-viewer-title">The document</h2>
+      </div>
+      <div class="csv-viewer__actions">
+        <button type="button" class="button-secondary" data-sample>Example</button>
+        <button type="button" class="button-secondary" data-clear>Clear</button>
+      </div>
+    </div>
+
+    <label for="csv-viewer-input">CSV to read</label>
+    <textarea
+      id="csv-viewer-input"
+      autocapitalize="off"
+      autocomplete="off"
+      autocorrect="off"
+      spellcheck="false"
+      placeholder="name,born&#10;Ada,1815"
+      data-input></textarea>
+
+    <fieldset class="csv-viewer__choice">
+      <legend>Columns are separated by</legend>
+      {
+        csvDelimiterDetails.map((detail, index) => (
+          <label>
+            <input
+              type="radio"
+              name="csv-viewer-delimiter"
+              value={detail.id}
+              data-delimiter
+              checked={index === 0}
+            />
+            <span>{detail.label}</span>
+          </label>
+        ))
+      }
+    </fieldset>
+
+    <p class="csv-viewer__hint" data-delimiter-hint></p>
+
+    <div class="csv-viewer__choice">
+      <label class="csv-viewer__switch">
+        <input type="checkbox" data-header checked />
+        <span>The first row names the columns</span>
+      </label>
+    </div>
+
+    <p class="csv-viewer__hint" data-header-hint></p>
+    <p class="csv-viewer__error" data-error role="alert" hidden></p>
+    <ul class="csv-viewer__notes" data-notes hidden></ul>
+  </div>
+
+  <div class="csv-viewer__result" data-result hidden>
+    <div class="csv-viewer__result-heading">
+      <p class="metadata" data-summary></p>
+    </div>
+
+    <div
+      class="csv-viewer__scroll"
+      role="region"
+      aria-label="The document as a table"
+      tabindex="0"
+      data-scroll
+    >
+      <table class="csv-viewer__table" data-table>
+        <thead>
+          <tr data-head></tr>
+        </thead>
+        <tbody data-body></tbody>
+      </table>
+    </div>
+
+    <div class="csv-viewer__tidied">
+      <div class="csv-viewer__result-heading">
+        <div>
+          <p class="metadata">Tidied</p>
+          <h3>The same document, quoted on one rule</h3>
+        </div>
+        <div class="csv-viewer__actions">
+          <button type="button" class="button-secondary" data-copy>Copy CSV</button>
+          <button type="button" class="button-secondary" data-download>Download .csv</button>
+        </div>
+      </div>
+      <pre tabindex="0"><code data-formatted></code></pre>
+    </div>
+  </div>
+
+  <p class="csv-viewer__status" data-status role="status" aria-live="polite"></p>
+</section>
+
+<style>
+  .csv-viewer { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .csv-viewer__picker { margin: var(--space-4); padding: var(--space-5); border: 2px dashed var(--border); text-align: center; }
+  .csv-viewer__picker[data-dragging='true'] { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 12%, var(--surface)); }
+  .csv-viewer__picker h2 { margin-bottom: var(--space-2); }
+  .csv-viewer__picker p:not(.metadata) { margin-bottom: var(--space-4); color: var(--text-muted); }
+  .csv-viewer__panel { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .csv-viewer__panel-heading { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-3); }
+  .csv-viewer__panel-heading .metadata, .csv-viewer__panel-heading h2 { margin: 0; }
+  .csv-viewer__panel-heading h2 { font-size: var(--font-size-xl); overflow-wrap: anywhere; }
+  .csv-viewer__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .csv-viewer label[for] { display: block; margin-bottom: var(--space-1); color: var(--text-muted); font-size: var(--font-size-sm); }
+  .csv-viewer textarea { min-height: 10rem; font-family: var(--font-mono); font-size: var(--font-size-sm); line-height: 1.5; }
+  .csv-viewer__choice { min-width: 0; margin: var(--space-3) 0 0; padding: 0; border: 0; }
+  .csv-viewer__choice legend { padding: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.08em; }
+  .csv-viewer__choice label { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 2.5rem; margin-right: var(--space-3); color: var(--text); font-size: var(--font-size-base); }
+  .csv-viewer__choice input { width: 1.125rem; height: 1.125rem; flex: none; }
+  .csv-viewer__hint { margin: var(--space-1) 0 0; max-width: 44rem; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .csv-viewer__error { margin: var(--space-3) 0 0; padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--color-red); color: var(--color-red); font-size: var(--font-size-sm); font-weight: 700; }
+  .csv-viewer__notes { margin: var(--space-3) 0 0; padding: 0; list-style: none; }
+  .csv-viewer__notes :global(li) { padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--warning); color: var(--text-muted); font-size: var(--font-size-sm); }
+  .csv-viewer__notes :global(li + li) { margin-top: var(--space-1); }
+  .csv-viewer__result { padding: var(--space-4); border-top: var(--border-strong-width) solid var(--text); }
+  .csv-viewer__result-heading { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-2); }
+  .csv-viewer__result-heading .metadata, .csv-viewer__result-heading h3 { margin: 0; }
+  /* The table is the result, so it scrolls in its own box rather than making
+     the page scroll sideways: design.md keeps a tool's own action reachable
+     without that on every width. */
+  .csv-viewer__scroll { max-height: 32rem; overflow: auto; border: var(--border-width) solid var(--border); }
+  .csv-viewer__table { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm); text-align: left; }
+  .csv-viewer__table :global(th), .csv-viewer__table :global(td) { padding: var(--space-1) var(--space-2); border-right: var(--border-width) solid var(--border); border-bottom: var(--border-width) solid var(--border); font-weight: 400; vertical-align: top; white-space: pre; }
+  .csv-viewer__table :global(thead th) { position: sticky; top: 0; border-bottom-width: var(--border-strong-width); border-bottom-color: var(--text); background: var(--surface); color: var(--text); font-family: var(--font-mono); font-size: var(--font-size-xs); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+  .csv-viewer__table :global(thead th[data-unnamed]) { color: var(--text-muted); font-weight: 400; font-style: italic; text-transform: none; }
+  .csv-viewer__table :global(td) { font-family: var(--font-mono); }
+  /* The line number, so a note that names line 41 can be followed to line 41. */
+  .csv-viewer__table :global(.csv-viewer__line) { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-align: right; white-space: nowrap; }
+  .csv-viewer__table :global(tr[data-shape='short']) { background: color-mix(in srgb, var(--color-amber) 8%, transparent); }
+  .csv-viewer__table :global(tr[data-shape='long']) { background: color-mix(in srgb, var(--color-amber) 14%, transparent); }
+  /* A ragged row is named as well as shaded: design.md §15 forbids saying
+     anything with colour alone. */
+  .csv-viewer__table :global(.csv-viewer__flag) { display: block; color: var(--warning); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+  .csv-viewer__tidied { margin-top: var(--space-4); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .csv-viewer__tidied h3 { font-size: var(--font-size-lg); }
+  .csv-viewer pre { max-height: 20rem; margin: 0; padding: var(--space-3); overflow: auto; border: var(--border-width) solid var(--border); background: var(--color-ink); color: #fffdf7; font-family: var(--font-mono); font-size: var(--font-size-sm); line-height: 1.5; white-space: pre; }
+  .csv-viewer__status { min-height: 1.5rem; margin: 0; padding: 0 var(--space-4) var(--space-3); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .csv-viewer__status[data-state='copied'] { color: var(--success); font-weight: 700; }
+  .csv-viewer [hidden] { display: none; }
+  @media (max-width: 40rem) {
+    .csv-viewer__panel, .csv-viewer__result { padding: var(--space-3); }
+    .csv-viewer__picker { margin: var(--space-3); padding: var(--space-4); }
+    .csv-viewer__status { padding-left: var(--space-3); padding-right: var(--space-3); }
+    .csv-viewer__panel-heading, .csv-viewer__result-heading { align-items: start; flex-direction: column; }
+  }
+</style>
+
+<script>
+  import {
+    describeCsvDelimiterDetection,
+    describeCsvTable,
+    detectCsvDelimiter,
+    getCsvTextProblem,
+    getFormattedCsvName,
+    readCsvTable,
+    validateCsvFile,
+    type CsvTable,
+  } from '../data/csv-viewer';
+  import {
+    defaultCsvDelimiter,
+    getCsvDelimiter,
+    isCsvDelimiter,
+    type CsvDelimiter,
+  } from '../data/json-csv';
+
+  const root = document.querySelector<HTMLElement>('[data-csv-viewer-tool]');
+
+  if (root) {
+    const find = <T extends HTMLElement>(name: string) => root.querySelector<T>(`[data-${name}]`);
+    const fileInput = find<HTMLInputElement>('file-input');
+    const selectFile = find<HTMLButtonElement>('select-file');
+    const dropZone = find('drop-zone');
+    const input = find<HTMLTextAreaElement>('input');
+    const source = find('source');
+    const sample = find<HTMLButtonElement>('sample');
+    const clear = find<HTMLButtonElement>('clear');
+    const headerControl = find<HTMLInputElement>('header');
+    const delimiterHint = find('delimiter-hint');
+    const headerHint = find('header-hint');
+    const error = find('error');
+    const notes = find('notes');
+    const result = find('result');
+    const summary = find('summary');
+    const head = find('head');
+    const body = find('body');
+    const formatted = find('formatted');
+    const copy = find<HTMLButtonElement>('copy');
+    const download = find<HTMLButtonElement>('download');
+    const status = find('status');
+    const delimiters = [...root.querySelectorAll<HTMLInputElement>('[data-delimiter]')];
+
+    if (!fileInput || !selectFile || !dropZone || !input || !source || !sample || !clear || !headerControl || !delimiterHint || !headerHint || !error || !notes || !result || !summary || !head || !body || !formatted || !copy || !download || !status || delimiters.length === 0) {
+      throw new Error('CSV Viewer could not initialise.');
+    }
+
+    const resting = 'Read on this device. Nothing is sent anywhere.';
+    const pasted = 'Pasted text';
+
+    /**
+     * The name the tidied file takes, and nothing else.
+     *
+     * It survives editing the box, because a document opened from
+     * `orders.csv` and then corrected is still that document; it is replaced
+     * by opening another file and dropped by clearing.
+     */
+    let sourceName: string | undefined;
+    /**
+     * Whether the separator on screen is the visitor's answer or this page's.
+     *
+     * Detection runs while the answer is still this page's, so pasting a
+     * semicolon file into a box set to commas reads it correctly. The moment
+     * somebody sets the separator themselves, that is the answer and nothing
+     * here overrules it — until another file arrives, which is a new document
+     * and a new question.
+     */
+    let chosenByHand = false;
+    let table: CsvTable | undefined;
+
+    const setStatus = (message: string, state?: string) => {
+      status.textContent = message;
+      if (state) status.dataset.state = state;
+      else delete status.dataset.state;
+    };
+
+    const chosenDelimiter = (): CsvDelimiter => {
+      const checked = delimiters.find((candidate) => candidate.checked)?.value ?? '';
+
+      return isCsvDelimiter(checked) ? checked : defaultCsvDelimiter;
+    };
+
+    const showNotes = (messages: readonly string[]) => {
+      notes.replaceChildren(
+        ...messages.map((message) => {
+          const item = document.createElement('li');
+
+          item.textContent = message;
+
+          return item;
+        }),
+      );
+      notes.hidden = messages.length === 0;
+    };
+
+    const showError = (message?: string) => {
+      error.textContent = message ?? '';
+      error.hidden = message === undefined;
+    };
+
+    const hideResult = () => {
+      table = undefined;
+      result.hidden = true;
+      head.replaceChildren();
+      body.replaceChildren();
+      formatted.textContent = '';
+      summary.textContent = '';
+    };
+
+    /** One `<th>` or `<td>`, since every cell here is text and never markup. */
+    const cell = (tag: 'th' | 'td', text: string) => {
+      const element = document.createElement(tag);
+
+      element.textContent = text;
+
+      return element;
+    };
+
+    const drawTable = (drawn: CsvTable) => {
+      const lineHeading = cell('th', 'Line');
+
+      lineHeading.scope = 'col';
+      lineHeading.className = 'csv-viewer__line';
+
+      head.replaceChildren(
+        lineHeading,
+        ...drawn.columns.map((column) => {
+          const heading = cell('th', column.label);
+
+          heading.scope = 'col';
+          if (!column.named) heading.dataset.unnamed = 'true';
+
+          return heading;
+        }),
+      );
+
+      body.replaceChildren(
+        ...drawn.rows.map((row) => {
+          const line = cell('th', String(row.line));
+          const tableRow = document.createElement('tr');
+
+          line.scope = 'row';
+          line.className = 'csv-viewer__line';
+          tableRow.dataset.shape = row.shape;
+
+          if (row.shape !== 'even') {
+            const flag = document.createElement('span');
+
+            flag.className = 'csv-viewer__flag';
+            flag.textContent = row.shape === 'short' ? 'short' : 'extra';
+            line.append(flag);
+          }
+
+          tableRow.append(line, ...row.cells.map((value) => cell('td', value)));
+
+          return tableRow;
+        }),
+      );
+    };
+
+    /**
+     * The page redrawn from the box.
+     *
+     * A document that cannot be read clears the table rather than leaving the
+     * last one under a new error, which would be a table nobody could tell was
+     * stale. What it never touches is the box itself.
+     */
+    const render = () => {
+      const text = input.value;
+      const problem = getCsvTextProblem(text);
+
+      headerHint.textContent = headerControl.checked
+        ? 'The first row is read as the column names. Turn this off for an export that begins with data, and the columns are numbered instead.'
+        : 'Every row is read as data and the columns are numbered. Nothing is skipped.';
+
+      if (problem) {
+        showError(problem);
+        showNotes([]);
+        hideResult();
+        return;
+      }
+
+      showError();
+
+      if (text.trim() === '') {
+        delimiterHint.textContent = getCsvDelimiter(chosenDelimiter()).note;
+        showNotes([]);
+        hideResult();
+        return;
+      }
+
+      if (chosenByHand) {
+        delimiterHint.textContent = getCsvDelimiter(chosenDelimiter()).note;
+      } else {
+        const detection = detectCsvDelimiter(text);
+
+        for (const candidate of delimiters) {
+          candidate.checked = candidate.value === detection.delimiter;
+        }
+
+        delimiterHint.textContent = describeCsvDelimiterDetection(detection);
+      }
+
+      table = readCsvTable(text, chosenDelimiter(), headerControl.checked);
+
+      if (!table) {
+        showNotes([]);
+        hideResult();
+        return;
+      }
+
+      showNotes(table.notes);
+      summary.textContent = describeCsvTable(table);
+      formatted.textContent = table.formatted;
+      drawTable(table);
+      result.hidden = false;
+    };
+
+    const openFile = async (file: File) => {
+      const refusal = validateCsvFile(file);
+
+      if (refusal) {
+        showError(refusal);
+        showNotes([]);
+        hideResult();
+        setStatus(resting);
+        return;
+      }
+
+      setStatus(`Reading ${file.name}…`);
+
+      try {
+        input.value = await file.text();
+      } catch {
+        showError(
+          'This file could not be read to the end. That usually means it changed or was moved while the page was reading it — choose it again.',
+        );
+        setStatus(resting);
+        return;
+      }
+
+      sourceName = file.name;
+      source.textContent = file.name;
+      chosenByHand = false;
+      render();
+      setStatus(`${file.name} was read on this device. It was not uploaded.`);
+    };
+
+    selectFile.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+
+      // Cleared, so choosing the same file twice reads it twice.
+      fileInput.value = '';
+      if (file) void openFile(file);
+    });
+
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropZone.dataset.dragging = 'true';
+      });
+    }
+
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        delete dropZone.dataset.dragging;
+      });
+    }
+
+    dropZone.addEventListener('drop', (event) => {
+      const file = event.dataTransfer?.files[0];
+
+      if (file) void openFile(file);
+    });
+
+    input.addEventListener('input', () => {
+      render();
+      setStatus(resting);
+    });
+
+    for (const candidate of delimiters) {
+      candidate.addEventListener('change', () => {
+        chosenByHand = true;
+        render();
+      });
+    }
+
+    headerControl.addEventListener('change', render);
+
+    sample.addEventListener('click', () => {
+      // A semicolon export with a decimal comma inside it, a quoted separator,
+      // a row that stops short and a row with one field too many: the four
+      // things this page exists to make visible, in five lines.
+      input.value = [
+        'order;customer;total;note',
+        '1001;"Lovelace, Ada";1,50;first',
+        '1002;"Hopper, Grace";2,75',
+        '1003;"Johnson, Katherine";3,20;checked twice;again',
+      ].join('\r\n');
+      sourceName = undefined;
+      source.textContent = pasted;
+      chosenByHand = false;
+      render();
+      setStatus(resting);
+      input.focus();
+    });
+
+    clear.addEventListener('click', () => {
+      input.value = '';
+      sourceName = undefined;
+      source.textContent = pasted;
+      chosenByHand = false;
+      render();
+      setStatus(resting);
+      input.focus();
+    });
+
+    copy.addEventListener('click', () => {
+      void navigator.clipboard
+        ?.writeText(table?.formatted ?? '')
+        .then(() => setStatus('The tidied CSV is on your clipboard.', 'copied'))
+        .catch(() =>
+          setStatus('This browser would not let the page copy. Select the CSV instead.'),
+        );
+    });
+
+    download.addEventListener('click', () => {
+      const name = getFormattedCsvName(sourceName);
+      const blob = new Blob([table?.formatted ?? ''], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      link.href = url;
+      link.download = name;
+      link.click();
+      URL.revokeObjectURL(url);
+      setStatus(`${name} was written by this page, from this tab.`);
+    });
+
+    render();
+    setStatus(resting);
+  }
+</script>

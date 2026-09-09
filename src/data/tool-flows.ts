@@ -247,6 +247,12 @@ export const toolFlowRegistry = [
  * neighbourhood, and joins on the day a hand-off can be declared in both
  * directions.
  *
+ * CSV Viewer is both of the first two kinds at once. It shows a document as a
+ * table, which is the viewer's objection — no flow needs a block to look at
+ * something — and what it hands back is text, which is not a payload kind
+ * here. It joins the graph on the same day the converter beside it does: when
+ * there is a text payload for the text Gizlets to pass between themselves.
+ *
  * File Hash Generator is the one that reads every payload kind and still is
  * not a step. It takes any file at all, which is not one of the kinds declared
  * here, and gives back a digest and a verdict — a fact about the file rather
@@ -269,6 +275,7 @@ export const flowlessToolSlugs = [
   'file-hash-generator',
   'timestamp-converter',
   'json-csv-converter',
+  'csv-viewer',
 ] as const satisfies readonly ToolRegistryEntry['slug'][];
 
 /** The registry's own entries, with their payload kinds preserved. */

@@ -44,6 +44,7 @@ export const sitemapDates: Readonly<Record<string, string>> = {
   '/tools/jwt-decoder/': '2026-09-07',
   '/tools/file-hash-generator/': '2026-09-07',
   '/tools/json-csv-converter/': '2026-09-09',
+  '/tools/csv-viewer/': '2026-09-09',
   '/tools/timestamp-converter/': '2026-09-07',
   '/tools/uuid-generator/': '2026-09-07',
   '/tools/create-zip/': '2026-09-06',
