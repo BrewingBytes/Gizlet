@@ -78,7 +78,14 @@ const advertising = getAdvertisementConfiguration({
     }
     <script is:inline>
       (() => {
-        const preference = localStorage.getItem('gizlet-theme');
+        let preference = null;
+
+        try {
+          preference = localStorage.getItem('gizlet-theme');
+        } catch {
+          // System preference remains the fallback when storage is unavailable.
+        }
+
         const theme = preference === 'dark' || preference === 'light'
           ? preference
           : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';

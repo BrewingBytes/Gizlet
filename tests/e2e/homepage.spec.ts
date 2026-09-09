@@ -250,6 +250,44 @@ test("uses the system theme on a first visit", async ({ page }) => {
   ).toHaveAttribute("aria-pressed", "true");
 });
 
+test("falls back to the system theme when storage is unavailable", async ({
+  page,
+}) => {
+  const pageErrors: Error[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error));
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      get: () => {
+        throw new DOMException("Storage is unavailable", "SecurityError");
+      },
+    });
+  });
+
+  for (const systemTheme of ["dark", "light"] as const) {
+    await page.emulateMedia({ colorScheme: systemTheme });
+    await page.goto("/");
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-theme",
+      systemTheme,
+    );
+  }
+
+  expect(pageErrors).toEqual([]);
+});
+
+test("uses the system theme for an invalid stored preference", async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.addInitScript(() => {
+    window.localStorage.setItem("gizlet-theme", "system");
+  });
+  await page.goto("/");
+
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+});
+
 test("persists an explicitly selected theme across reloads", async ({
   page,
 }) => {
@@ -266,6 +304,27 @@ test("persists an explicitly selected theme across reloads", async ({
 
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+});
+
+test("keeps the theme toggle usable when persistence fails", async ({
+  page,
+}) => {
+  const pageErrors: Error[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error));
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.addInitScript(() => {
+    Storage.prototype.setItem = () => {
+      throw new DOMException("Storage is unavailable", "QuotaExceededError");
+    };
+  });
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Switch to light theme" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect(
+    page.getByRole("button", { name: "Switch to dark theme" }),
+  ).toBeVisible();
+  expect(pageErrors).toEqual([]);
 });
 
 test("labels the theme toggle without shifting the page after load", async ({
@@ -340,4 +399,5 @@ test("applies a stored theme before the first paint", async ({ page }) => {
         .__themeAtParse,
   );
   expect(themeAtParse[0]).toBe("light");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 });
