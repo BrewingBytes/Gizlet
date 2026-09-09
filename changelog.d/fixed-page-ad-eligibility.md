@@ -1,0 +1,1 @@
+- Prevent configured advertising from loading on legal, roadmap, flow, Gizlet-index, request, missing, and not-yet-built Gizlet pages.

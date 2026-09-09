@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import AdvertisementSlot from '../components/AdvertisementSlot.astro';
 import FileDropDiscovery from '../components/FileDropDiscovery.astro';
 import { homePageDescription, homePageTitle } from '../data/home-page';
+import { getAdvertisementConfiguration, getPageAdvertisementPolicy } from '../data/advertising';
 import { getPageMetadata } from '../data/metadata';
 import { homeSocialImagePath } from '../data/social-images';
 import { getSiteStructuredData } from '../data/structured-data';
@@ -20,9 +21,21 @@ const metadata = getPageMetadata({
   pathname: '/',
   image: homeSocialImagePath,
 });
+const advertising = getPageAdvertisementPolicy({
+  pathname: '/',
+  configuration: getAdvertisementConfiguration({
+    isDevelopment: import.meta.env.DEV,
+    enabled: import.meta.env.PUBLIC_ADS_ENABLED,
+    adSenseClient: import.meta.env.PUBLIC_ADSENSE_CLIENT,
+    bannerSlot: import.meta.env.PUBLIC_ADSENSE_BANNER_SLOT,
+    inlineSlot: import.meta.env.PUBLIC_ADSENSE_INLINE_SLOT,
+    railSlot: import.meta.env.PUBLIC_ADSENSE_RAIL_SLOT,
+  }),
+  requestedSlots: ['banner'],
+});
 ---
 
-<BaseLayout metadata={metadata} structuredData={getSiteStructuredData()}>
+<BaseLayout advertising={advertising} metadata={metadata} structuredData={getSiteStructuredData()}>
   <section class="homepage-intro" aria-labelledby="homepage-title">
     <p class="metadata">Small browser tools, made properly</p>
     <h1 id="homepage-title">Useful internet things, without the nonsense.</h1>
@@ -47,7 +60,7 @@ const metadata = getPageMetadata({
 
   <FileDropDiscovery />
 
-  <AdvertisementSlot variant="banner" />
+  <AdvertisementSlot advertising={advertising} variant="banner" />
 
   <section id="tools" class="tool-index" aria-labelledby="popular-tools-title">
     <div class="section-heading">

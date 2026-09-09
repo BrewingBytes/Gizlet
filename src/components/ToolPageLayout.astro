@@ -1,6 +1,6 @@
 ---
-import type { AdvertisementRailSize } from '../data/advertisement-slots';
-import { getAdvertisementConfiguration } from '../data/advertising';
+import type { AdvertisementRailSize, AdvertisementSlotVariant } from '../data/advertisement-slots';
+import { getAdvertisementConfiguration, getPageAdvertisementPolicy } from '../data/advertising';
 import { getToolMetadata } from '../data/metadata';
 import {
   getContentSectionId,
@@ -41,19 +41,28 @@ const {
 const status = getToolProcessingStatus(tool, processingStatus);
 const content = getToolPageContent(tool);
 const metadata = getToolMetadata(tool, { title, description, image, robots });
-const advertising = getAdvertisementConfiguration({
-  isDevelopment: import.meta.env.DEV,
-  enabled: import.meta.env.PUBLIC_ADS_ENABLED,
-  adSenseClient: import.meta.env.PUBLIC_ADSENSE_CLIENT,
-  bannerSlot: import.meta.env.PUBLIC_ADSENSE_BANNER_SLOT,
-  inlineSlot: import.meta.env.PUBLIC_ADSENSE_INLINE_SLOT,
-  railSlot: import.meta.env.PUBLIC_ADSENSE_RAIL_SLOT,
+const requestedSlots: AdvertisementSlotVariant[] = [
+  ...(showPostResultAd ? ['inline' as const] : []),
+  ...(showRail ? ['rail' as const] : []),
+];
+const advertising = getPageAdvertisementPolicy({
+  pathname: tool.path,
+  configuration: getAdvertisementConfiguration({
+    isDevelopment: import.meta.env.DEV,
+    enabled: import.meta.env.PUBLIC_ADS_ENABLED,
+    adSenseClient: import.meta.env.PUBLIC_ADSENSE_CLIENT,
+    bannerSlot: import.meta.env.PUBLIC_ADSENSE_BANNER_SLOT,
+    inlineSlot: import.meta.env.PUBLIC_ADSENSE_INLINE_SLOT,
+    railSlot: import.meta.env.PUBLIC_ADSENSE_RAIL_SLOT,
+  }),
+  requestedSlots,
+  isAvailableTool: tool.launchStatus === 'available',
 });
 const shouldShowPostResultAd = showPostResultAd && advertising.enabled && advertising.slots.inline;
 const shouldShowRail = showRail && advertising.enabled && advertising.slots.rail;
 ---
 
-<BaseLayout metadata={metadata} structuredData={getToolStructuredData(tool)}>
+<BaseLayout advertising={advertising} metadata={metadata} structuredData={getToolStructuredData(tool)}>
   <article class="tool-page">
     <nav class="tool-page__breadcrumb" aria-label="Breadcrumb">
       <ol>
@@ -91,10 +100,10 @@ const shouldShowRail = showRail && advertising.enabled && advertising.slots.rail
 
         <slot name="result" />
 
-        {shouldShowPostResultAd && <AdvertisementSlot variant="inline" />}
+        {shouldShowPostResultAd && <AdvertisementSlot advertising={advertising} variant="inline" />}
       </div>
 
-      {shouldShowRail && <AdvertisementSlot variant="rail" railSize={railSize} />}
+      {shouldShowRail && <AdvertisementSlot advertising={advertising} variant="rail" railSize={railSize} />}
     </div>
 
     {

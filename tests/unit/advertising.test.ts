@@ -4,7 +4,9 @@ import {
   adSensePublisherId,
   getAdsTxt,
   getAdvertisementConfiguration,
+  getPageAdvertisementPolicy,
 } from '../../src/data/advertising';
+import { getPlannedTools } from '../../src/data/tools';
 
 const productionConfiguration = {
   isDevelopment: false,
@@ -60,6 +62,86 @@ describe('getAdvertisementConfiguration', () => {
         railSlot: undefined,
       }),
     ).toEqual({ enabled: false, slots: {} });
+  });
+});
+
+describe('getPageAdvertisementPolicy', () => {
+  const configuration = getAdvertisementConfiguration(productionConfiguration);
+
+  it('only permits the configured banner on the homepage', () => {
+    expect(getPageAdvertisementPolicy({
+      pathname: '/',
+      configuration,
+      requestedSlots: ['banner', 'inline'],
+    })).toEqual({
+      enabled: true,
+      adSenseClient: 'ca-pub-1234567890123456',
+      slots: { banner: '1234567890' },
+    });
+  });
+
+  it('only permits configured requested placements on available Gizlet pages', () => {
+    expect(getPageAdvertisementPolicy({
+      pathname: '/tools/compress-image/',
+      configuration,
+      isAvailableTool: true,
+      requestedSlots: ['inline', 'rail'],
+    })).toEqual({
+      enabled: true,
+      adSenseClient: 'ca-pub-1234567890123456',
+      slots: { inline: '2345678901', rail: '3456789012' },
+    });
+  });
+
+  it('fails closed for excluded routes, planned Gizlets, and pages without applicable slots', () => {
+    for (const pathname of [
+      '/privacy/',
+      '/terms/',
+      '/about/',
+      '/roadmap/',
+      '/flows/',
+      '/tools/',
+      '/404.html',
+      '/request-a-gizlet/',
+    ]) {
+      expect(getPageAdvertisementPolicy({
+        pathname,
+        configuration,
+        requestedSlots: ['banner', 'inline', 'rail'],
+      })).toEqual({ enabled: false, slots: {} });
+    }
+
+    for (const tool of getPlannedTools()) {
+      expect(getPageAdvertisementPolicy({
+        pathname: tool.path,
+        configuration,
+        requestedSlots: ['inline', 'rail'],
+      })).toEqual({ enabled: false, slots: {} });
+    }
+
+    expect(getPageAdvertisementPolicy({
+      pathname: '/',
+      configuration: getAdvertisementConfiguration({
+        ...productionConfiguration,
+        enabled: 'false',
+      }),
+      requestedSlots: ['banner'],
+    })).toEqual({ enabled: false, slots: {} });
+    expect(getPageAdvertisementPolicy({
+      pathname: '/tools/compress-image/',
+      configuration: getAdvertisementConfiguration({
+        ...productionConfiguration,
+        inlineSlot: undefined,
+        railSlot: undefined,
+      }),
+      requestedSlots: ['inline', 'rail'],
+      isAvailableTool: true,
+    })).toEqual({ enabled: false, slots: {} });
+    expect(getPageAdvertisementPolicy({
+      pathname: '/',
+      configuration,
+      requestedSlots: ['inline'],
+    })).toEqual({ enabled: false, slots: {} });
   });
 });
 
