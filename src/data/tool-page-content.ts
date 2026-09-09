@@ -1605,6 +1605,96 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'csv-viewer': {
+    what: {
+      heading: 'What CSV Viewer does',
+      paragraphs: [
+        'It opens a delimited file and shows you what is in it: a table with the header row along the top, one row per record, and the line of the file each row starts on down the side. Drop the file in or paste the text — either way it is read here, by this browser, and drawn as a table underneath.',
+        'It works out which separator the document uses rather than asking you first, and then says which one it chose and why. That is a control, not a verdict: pick another and the table is redrawn with it, which is the answer for the file where the guess is wrong.',
+        'Underneath the table is the same document written back out tidily — every value quoted on one rule, every row the same width, every line ending the way the standard says. That is the copy you hand to whatever refused the original.',
+      ],
+    },
+    when: {
+      heading: 'When a spreadsheet is the wrong way to look at a file',
+      paragraphs: [
+        'When something rejected a CSV and you need to see what is actually in it. When an export looks fine in a spreadsheet because the spreadsheet quietly fixed it, and the program reading it next will not. When a file is too big to open comfortably, or you only want to know its shape.',
+        'It is also the quickest way to settle an argument about a delimiter. A file that opens in Excel as one tall column is almost always a semicolon export, and seeing it as four columns here says so in a second.',
+        'What it will not do is edit cells. This shows you a document and hands it back tidied; changing what a value says is a spreadsheet’s job, and the Gizlet next door turns the same records into JSON and back.',
+      ],
+    },
+    options: {
+      heading: 'The separator, the header row, and how much is drawn',
+      paragraphs: [
+        'Two controls, one bound, and a description of what tidying actually changes. Both controls are things the file itself does not record, which is why they are questions rather than assumptions.',
+      ],
+      details: [
+        {
+          term: 'The separator, detected and reversible',
+          description:
+            'Comma, semicolon, tab and pipe are each tried against the document, and the reading that the most rows agree about wins. The page then says which one it read the file with and how many columns that gave, because a guess you cannot see is a guess you cannot correct. Choosing one yourself replaces the detection until another file arrives.',
+        },
+        {
+          term: 'Whether the first row is a header',
+          description:
+            'A CSV has no way of saying whether its first line names the columns or is simply the first record, so it is a switch. On, the first row becomes the headings. Off, every row is data and the columns are numbered — which is what an export from a database dump usually needs, and it means no row is quietly swallowed by the heading.',
+        },
+        {
+          term: 'A row that does not fit its header',
+          description:
+            'Both kinds are shown rather than refused, and both are marked in the table and named by line. A row that stops short has empty cells at the end. A row with a field too many makes the table wider than its headings, and the extra values sit in columns with no name — usually because a separator inside a value was never quoted.',
+        },
+        {
+          term: 'What tidying changes',
+          description:
+            'A value is quoted when, and only when, it holds the separator, a double quote or a line break, with its own quotes doubled. Every row is written to the same width. Every line ends CRLF, which is what RFC 4180 names and what a spreadsheet on Windows still expects. Nothing else is touched: no value is trimmed, renamed, reordered or reinterpreted.',
+        },
+        {
+          term: 'How much of a big document is drawn',
+          description:
+            'The file is read whole and the table stops at 200 rows and 50 columns, saying how much of the document that is. Drawing a hundred thousand rows of cells is how a tab stops responding, and the tidied CSV underneath is the whole file either way. A document over 8 MB is refused rather than half-read.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'The file is opened by the page, not by a server',
+      paragraphs: [
+        'Your document stays on this device. It is read, parsed and drawn by this browser, and the tidied copy you download is written by this page out of the text already on screen. Gizlet is a static site with no upload endpoint, so there is nowhere for a spreadsheet to be sent and nothing kept once the tab closes.',
+        'A CSV is usually the most sensitive file somebody owns without thinking of it that way: a customer list, an order export, a payroll run, a download of somebody’s own account data. The ordinary way to look at one online is to hand it to a site that receives it, which is the habit this page exists to make unnecessary.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Why does my file open as a single tall column?',
+        answer:
+          'Because it was read with the wrong separator, and the page will usually tell you which one to try. A spreadsheet saved in most of Europe writes semicolons, since the comma is already the decimal point there. Choose that separator and the columns appear.',
+      },
+      {
+        question: 'Can I open an .xlsx spreadsheet with this?',
+        answer:
+          'No, and it says so rather than showing you nonsense. An .xlsx file is a ZIP archive of XML rather than a delimited document, so nothing here can read it: in Excel, use Save As and choose CSV, then open that.',
+      },
+      {
+        question: 'What does the tidied CSV actually change?',
+        answer:
+          'Quoting, width and line endings, and nothing else. Values that need quotes get them and values that do not lose them, short rows are padded so every row has the same number of fields, and every line ends CRLF. No value is edited, reordered or reinterpreted on the way through.',
+      },
+      {
+        question: 'Why does the table stop before the end of my file?',
+        answer:
+          'Because a table of a hundred thousand rows is how a browser tab becomes unusable. The whole document is read and the table draws the first 200 rows and 50 columns of it, saying how much that is — and the tidied CSV below the table is still the entire file, to copy or download.',
+      },
+      {
+        question: 'Does a row with one field too many get thrown away?',
+        answer:
+          'Nothing is thrown away here. The table simply becomes wider than its headings, the extra value sits in a column with no name, and the row is marked and named by its line number so you can go and look at it. That is the difference between a viewer and a converter, which has no column to put it in.',
+      },
+      {
+        question: 'Is the file uploaded so it can be read?',
+        answer:
+          'No. Choosing or dropping a file hands it to this page, which reads it in the tab and draws the table there; nothing is sent anywhere, and no copy is kept after you close it. There is no upload endpoint on this site for a document to go to.',
+      },
+    ],
+  },
   'timestamp-converter': {
     what: {
       heading: 'What Timestamp Converter does',

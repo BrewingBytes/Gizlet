@@ -102,6 +102,7 @@ const [firstCategory] = categories;
         </div>
       </div>
       <p class="flow-builder__preview-error" data-preview-error role="status" hidden></p>
+      <pre class="flow-builder__text-result" tabindex="0" data-result-text hidden><code data-result-text-content></code></pre>
       <ol class="flow-builder__result-list" aria-label="Final results" data-result-list hidden></ol>
 
       <!-- One file of a set, cloned per result, so no filename is ever markup. -->
@@ -237,6 +238,7 @@ const [firstCategory] = categories;
   .flow-result__details { display: grid; gap: var(--space-1); min-width: 0; }
   .flow-result__details strong { overflow-wrap: anywhere; }
   .flow-result__details span { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .flow-builder__text-result { max-height: 22rem; margin: 0; padding: var(--space-3); overflow: auto; border: var(--border-width) solid var(--border); background: var(--color-ink); color: #fffdf7; font-family: var(--font-mono); font-size: var(--font-size-sm); line-height: 1.5; white-space: pre; }
   .flow-result__download { min-height: 2.75rem; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-width) solid var(--border); color: var(--text); line-height: 1.25; text-decoration: none; white-space: nowrap; }
   @media (max-width: 36rem) {
     .flow-source { grid-template-columns: 2rem 3rem minmax(0, 1fr); }
@@ -248,22 +250,40 @@ const [firstCategory] = categories;
 
 <script>
   import {
-    canFlowTo,
     canReorderFlowStep,
     combinesFlowInputs,
     defaultFlowCategoryId,
     flowOutputImageFormats,
     getFlowCategory,
     getFlowFormatControl,
+    getFlowStepContracts,
     getFlowTool,
     getNextFlowSteps,
     getFlowCombiningLimit,
     getUsableFlowFormat,
     isAvailableFlowToolSlug,
     isFlowCategoryId,
+    isValidFlowSequence,
+    maximumFlowTextBytes,
     type AvailableFlowToolSlug,
     type FlowCategoryId,
   } from '../data/tool-flows';
+  import {
+    describeCsvTable,
+    detectCsvDelimiter,
+    getCsvTextProblem,
+    getFormattedCsvName,
+    readCsvTable,
+  } from '../data/csv-viewer';
+  import {
+    convertCsvToJson,
+    convertJsonToCsv,
+    defaultCsvDelimiter,
+    defaultCsvValueReading,
+    describeConversion,
+    getConvertedRecordsName,
+  } from '../data/json-csv';
+  import { formatJsonParseError, transformJson, validateJson } from '../data/json-formatter';
   import {
     formatFileSize,
     getFormatLabel,
@@ -459,8 +479,10 @@ const [firstCategory] = categories;
    * A chosen starting file, read up front so it can be described and refused
    * before a chain is built on it.
    *
-   * The two kinds are measured differently because they are different things: an
-   * image has pixels and a preview, a document has pages and neither.
+   * The kinds are measured differently because they are different things: an
+   * image has pixels and a preview, a PDF has pages and neither, and a text
+   * document has neither of those and is read once, as it is chosen, so a
+   * chain built on it is built on a document this browser has already opened.
    */
   type FlowSource =
     | {
@@ -476,6 +498,15 @@ const [firstCategory] = categories;
         readonly id: number;
         readonly file: File;
         readonly pages: number;
+      }
+    | {
+        readonly kind: 'text';
+        readonly id: number;
+        readonly file: File;
+        /** Read as it was chosen, so nothing reads the file twice. */
+        readonly text: string;
+        readonly payload: 'csv-file' | 'json-text';
+        readonly summary: string;
       };
 
   /** What travels between steps. A combining step turns many into one. */
@@ -483,6 +514,21 @@ const [firstCategory] = categories;
     readonly file: File;
     readonly width: number;
     readonly height: number;
+  }
+
+  /**
+   * A text document travelling between steps.
+   *
+   * It carries which kind it is, because that is what decides what the next
+   * block does with it: the converter reads a table and writes JSON, or reads
+   * JSON and writes a table, and the payload in hand is the whole of the
+   * difference.
+   */
+  interface FlowText {
+    readonly file: File;
+    readonly kind: 'csv-file' | 'json-text';
+    /** What the block that made it wants said about it. */
+    readonly summary: string;
   }
 
   const root = document.querySelector<HTMLElement>('[data-flow-builder]');
@@ -520,6 +566,8 @@ const [firstCategory] = categories;
     const nextButton = root.querySelector<HTMLButtonElement>('[data-next]');
     const pageInput = root.querySelector<HTMLInputElement>('[data-page-input]');
     const pageTotal = root.querySelector<HTMLElement>('[data-page-total]');
+    const resultText = root.querySelector<HTMLElement>('[data-result-text]');
+    const resultTextContent = root.querySelector<HTMLElement>('[data-result-text-content]');
     const resultList = root.querySelector<HTMLOListElement>('[data-result-list]');
     const resultTemplate = root.querySelector<HTMLTemplateElement>('[data-result-template]');
     const download = root.querySelector<HTMLAnchorElement>('[data-download]');
@@ -527,7 +575,7 @@ const [firstCategory] = categories;
     const copyRecipe = root.querySelector<HTMLButtonElement>('[data-copy-recipe]');
     const recipeStatus = root.querySelector<HTMLElement>('[data-recipe-status]');
 
-    if (!categorySelect || !categorySummary || !sourceInput || !sourceSelect || !sourceClear || !sourceTitle || !sourceDetails || !sourceList || !sourceTemplate || !error || !status || !stepList || !addSelect || !addStepButton || !finalFormat || !finalFormatLabel || !finalFormatText || !runButton || !result || !resultTitle || !resultDetails || !resultFigure || !resultImage || !resultList || !resultTemplate || !preview || !previewError || !pageArea || !pageCanvas || !pageError || !previousButton || !nextButton || !pageInput || !pageTotal || !download || !resultClear || !copyRecipe || !recipeStatus) {
+    if (!categorySelect || !categorySummary || !sourceInput || !sourceSelect || !sourceClear || !sourceTitle || !sourceDetails || !sourceList || !sourceTemplate || !error || !status || !stepList || !addSelect || !addStepButton || !finalFormat || !finalFormatLabel || !finalFormatText || !runButton || !result || !resultTitle || !resultDetails || !resultFigure || !resultImage || !resultText || !resultTextContent || !resultList || !resultTemplate || !preview || !previewError || !pageArea || !pageCanvas || !pageError || !previousButton || !nextButton || !pageInput || !pageTotal || !download || !resultClear || !copyRecipe || !recipeStatus) {
       throw new Error('Flow builder could not initialise.');
     }
 
@@ -568,6 +616,8 @@ const [firstCategory] = categories;
       if (!tool) throw new Error(`Missing Gizlet: ${toolSlug}`);
       return tool;
     };
+    /** How much of a text result the panel draws before it stops drawing. */
+    const maximumResultTextCharacters = 20_000;
     const escapeHtml = (value: string | number) => String(value).replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character] ?? character);
     const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const clearError = () => { error.hidden = true; error.textContent = ''; };
@@ -643,6 +693,8 @@ const [firstCategory] = categories;
       resultFigure.hidden = false;
       resultList.hidden = true;
       resultList.replaceChildren();
+      resultText.hidden = true;
+      resultTextContent.textContent = '';
       resultTitle.textContent = 'Your image is ready.';
       download.textContent = 'Download image';
       download.removeAttribute('href');
@@ -776,7 +828,15 @@ const [firstCategory] = categories;
       } else if (many) {
         sourceDetails.textContent = `${describeSourceCount(sources.length)} · stays on this device`;
       } else {
-        sourceDetails.textContent = `${sources[0].file.name} · ${formatFileSize(sources[0].file.size)} · stays on this device`;
+        const [only] = sources;
+        // A document read as it was chosen can say what is in it, which is
+        // more use than its size: a table that came out one column wide is the
+        // thing to notice before building a chain on it.
+        const measured = only.kind === 'text'
+          ? `${only.summary} · ${formatFileSize(only.file.size)}`
+          : formatFileSize(only.file.size);
+
+        sourceDetails.textContent = `${only.file.name} · ${measured} · stays on this device`;
       }
 
       const readiness = startReadiness();
@@ -814,7 +874,9 @@ const [firstCategory] = categories;
         // beside every row would only say so repeatedly.
         thumbnail.remove();
         item.classList.add('flow-source--document');
-        meta.textContent = `${describePdfPageCount(source.pages)} · ${formatFileSize(source.file.size)}`;
+        meta.textContent = source.kind === 'pdf'
+          ? `${describePdfPageCount(source.pages)} · ${formatFileSize(source.file.size)}`
+          : `${source.summary} · ${formatFileSize(source.file.size)}`;
       }
 
       name.textContent = source.file.name;
@@ -952,7 +1014,19 @@ const [firstCategory] = categories;
       }));
       finalFormat.value = outputFormat;
     };
+    /** What each block hands on, given where this chain starts. */
+    const stepContracts = () => getFlowStepContracts(flowInput(), stepSlugs());
+    /** What a payload is called where a block says what it produces. */
+    const resultNouns = {
+      'image-file': 'image result',
+      'pdf-file': 'PDF result',
+      'csv-file': 'CSV result',
+      'json-text': 'JSON result',
+      'json-ld-form': 'form',
+    } as const;
     const renderSteps = () => {
+      const contracts = stepContracts();
+
       stepList.innerHTML = steps.map((step, index) => {
         const tool = toolBySlug(step.toolSlug);
         const { sourceTitle: titles } = category();
@@ -960,14 +1034,17 @@ const [firstCategory] = categories;
           ? `${toolBySlug(steps[index - 1].toolSlug).name} result`
           : (takesSeveral() ? titles.many : titles.one);
         const contract = getFlowTool(step.toolSlug);
-        // What a block hands on comes from its contract rather than from what
-        // combining used to mean: the first combining Gizlet made a document,
-        // and the one that arranges a collage makes a picture.
+        // What a block hands on comes from the hand-off it makes in this chain
+        // rather than from what combining used to mean: the first combining
+        // Gizlet made a document and the one that arranges a collage makes a
+        // picture, and a Gizlet that declares two hand-offs makes whichever one
+        // the payload reaching it asked for.
+        const produced = contracts?.[index]?.output.kind ?? contract.output.kind;
         const produces = contract.combinesInputs === true
-          ? (contract.output.kind === 'pdf-file' ? 'one PDF' : 'one image')
+          ? (produced === 'pdf-file' ? 'one PDF' : 'one image')
           : contract.splitsInput === true
-            ? (contract.output.kind === 'pdf-file' ? 'one PDF per page' : 'one image per page')
-            : 'image result';
+            ? (produced === 'pdf-file' ? 'one PDF per page' : 'one image per page')
+            : resultNouns[produced];
         return `<li><div class="flow-builder__connector" aria-hidden="true"><span>↓</span></div><article class="flow-block"><div class="flow-block__grip" aria-hidden="true">⠿</div><div class="flow-block__number">${String(index + 1).padStart(2, '0')}</div><div class="flow-block__content"><div class="flow-block__heading"><div><h2>${tool.name}</h2><p>${prior} → ${produces}</p></div><span class="status-local">Local</span></div>${settingsMarkup(step)}</div><div class="flow-block__actions" aria-label="${tool.name} controls"><button type="button" class="flow-block__icon-button" data-step-action="up" data-step-id="${step.id}" aria-label="Move ${tool.name} up" ${index === 0 || !canReorder(index, index - 1) || isRunning ? 'disabled' : ''}>↑</button><button type="button" class="flow-block__icon-button" data-step-action="down" data-step-id="${step.id}" aria-label="Move ${tool.name} down" ${index === steps.length - 1 || !canReorder(index, index + 1) || isRunning ? 'disabled' : ''}>↓</button><button type="button" class="flow-block__remove" data-step-action="remove" data-step-id="${step.id}" ${isRunning ? 'disabled' : ''}>Remove</button></div></article></li>`;
       }).join('');
       renderAddOptions();
@@ -1009,6 +1086,79 @@ const [firstCategory] = categories;
       const multiple = takesSeveral();
       const incoming = multiple ? selected : selected.slice(0, 1);
       const isPdfFlow = categoryId === 'pdf';
+      const textPayload = flowInput().kind === 'csv-file'
+        ? 'csv-file'
+        : flowInput().kind === 'json-text'
+          ? 'json-text'
+          : undefined;
+
+      // A text document is read here, as it is chosen, rather than at the
+      // moment a chain runs on it. A file that is not really a table, or not
+      // really JSON, is then refused while the visitor is still choosing it —
+      // and a chain is never built on a document nothing could read.
+      if (textPayload) {
+        const [file] = incoming;
+
+        if (file.size > maximumFlowTextBytes) {
+          showError(`${file.name} is larger than the ${Math.round(maximumFlowTextBytes / (1024 * 1024))} MB a flow reads. The whole document is held in this tab while the chain runs, so it has to fit in it.`);
+          return;
+        }
+
+        showStatus('Reading the document locally…');
+        await nextFrame();
+
+        let text: string;
+
+        try {
+          text = await file.text();
+        } catch {
+          clearStatus();
+          showError(`${file.name} could not be read to the end. That usually means it changed while the page was reading it — choose it again.`);
+          return;
+        }
+
+        const problem = getCsvTextProblem(text);
+
+        if (problem) {
+          clearStatus();
+          showError(problem);
+          return;
+        }
+
+        let summary: string;
+
+        if (textPayload === 'csv-file') {
+          const table = readCsvTable(text, detectCsvDelimiter(text).delimiter, true);
+
+          if (!table) {
+            clearStatus();
+            showError(`${file.name} holds nothing a table can be read out of. Choose a delimited document to start this flow.`);
+            return;
+          }
+
+          summary = describeCsvTable(table);
+        } else {
+          const parsed = validateJson(text);
+
+          if (!parsed.valid) {
+            clearStatus();
+            showError(`${file.name} is not valid JSON. ${formatJsonParseError(parsed.error)}`);
+            return;
+          }
+
+          summary = Array.isArray(parsed.value)
+            ? `${parsed.value.length} ${parsed.value.length === 1 ? 'item' : 'items'}`
+            : 'JSON';
+        }
+
+        // One document: this lineage has room for one, so a second choice
+        // replaces the first rather than joining it.
+        for (const source of sources) releaseSource(source);
+        sources = [{ kind: 'text', id: nextSourceId++, file, text, payload: textPayload, summary }];
+        clearStatus();
+        renderSteps();
+        return;
+      }
 
       if (isPdfFlow) {
         if (multiple) {
@@ -1314,6 +1464,19 @@ const [firstCategory] = categories;
           pageSize: 'fit',
           name: source.file.name,
         }));
+      // A text chain carries one document, already read: the third hand a
+      // category can fill, and the only one whose payload is characters rather
+      // than bytes this page has never looked at.
+      let textResult: FlowText | undefined = sources
+        .filter((source): source is Extract<FlowSource, { kind: 'text' }> => source.kind === 'text')
+        .map((source) => ({ file: source.file, kind: source.payload, summary: source.summary }))
+        .at(0);
+      // The document the visitor chose, which is what a converted result is
+      // named after. Naming it after the file the previous block made would
+      // stack one block's suffix under the next block's extension, and a chain
+      // of three would hand back a name describing the chain rather than the
+      // document.
+      const textSourceName = textResult?.file.name;
       // The document a set came out of, which names its archive. It is the
       // earliest such document rather than the latest: a split followed by a
       // conversion has taken the same original apart twice over.
@@ -1331,6 +1494,67 @@ const [firstCategory] = categories;
         for (const [index, step] of steps.entries()) {
           const tool = toolBySlug(step.toolSlug);
           const position = `${index + 1} of ${steps.length}`;
+
+          if (step.toolSlug === 'csv-viewer' || step.toolSlug === 'json-csv-converter' || step.toolSlug === 'json-formatter') {
+            if (!textResult) throw new Error(`${tool.name} needs the document this flow started from.`);
+
+            showStatus(`Running ${position}: ${tool.name} locally…`);
+            await nextFrame();
+
+            const text = await textResult.file.text();
+            const name = textResult.file.name;
+
+            if (step.toolSlug === 'csv-viewer') {
+              // Tidying, which is what this block hands on. The separator is
+              // read off the document rather than carried by the chain: a link
+              // that named one would be asserting something about a file it has
+              // never seen.
+              const table = readCsvTable(text, detectCsvDelimiter(text).delimiter, true);
+
+              if (!table) throw new Error(`${tool.name} found nothing in this document to read as a table.`);
+
+              textResult = {
+                file: new File([table.formatted], getFormattedCsvName(name), { type: 'text/csv' }),
+                kind: 'csv-file',
+                summary: describeCsvTable(table),
+              };
+              continue;
+            }
+
+            if (step.toolSlug === 'json-formatter') {
+              const formatted = transformJson(text, 'format');
+
+              if (!formatted.valid) throw new Error(`${tool.name}: ${formatJsonParseError(formatted.error)}`);
+
+              textResult = {
+                file: new File([formatted.output], name, { type: 'application/json' }),
+                kind: 'json-text',
+                summary: 'indented',
+              };
+              continue;
+            }
+
+            // The converter, in whichever direction the payload in hand asks
+            // for. Nothing chose it: a table arriving is read, and JSON
+            // arriving is written out as a table.
+            const reading = textResult.kind === 'csv-file'
+              ? convertCsvToJson(text, detectCsvDelimiter(text).delimiter, defaultCsvValueReading)
+              : convertJsonToCsv(text, defaultCsvDelimiter);
+
+            if (!reading) throw new Error(`${tool.name} was handed an empty document, so there was nothing to convert.`);
+            if (!reading.ok) throw new Error(`${tool.name}: ${reading.message}`);
+
+            const becomes = textResult.kind === 'csv-file' ? 'json' : 'csv';
+
+            textResult = {
+              file: new File([reading.conversion.output], getConvertedRecordsName(textSourceName ?? name, becomes), {
+                type: becomes === 'json' ? 'application/json' : 'text/csv',
+              }),
+              kind: becomes === 'json' ? 'json-text' : 'csv-file',
+              summary: describeConversion(reading.conversion),
+            };
+            continue;
+          }
 
           if (step.toolSlug === 'collage-maker') {
             if (payloads.length === 0) throw new Error(`${tool.name} needs the images this flow started from.`);
@@ -1697,7 +1921,27 @@ const [firstCategory] = categories;
           payloads = processed;
         }
 
-        if (pdfResults.length === 1) {
+        if (textResult) {
+          const isCsv = textResult.kind === 'csv-file';
+          const shown = await textResult.file.text();
+
+          resultUrl = URL.createObjectURL(textResult.file);
+          resultTitle.textContent = isCsv ? 'Your CSV is ready.' : 'Your JSON is ready.';
+          resultDetails.textContent = `${textResult.summary} · ${formatFileSize(textResult.file.size)}`;
+          resultFigure.hidden = true;
+          // The document itself, capped: a result panel is for reading the
+          // answer, and a hundred thousand lines of it is a download rather
+          // than something to look at.
+          resultTextContent.textContent = shown.length > maximumResultTextCharacters
+            ? `${shown.slice(0, maximumResultTextCharacters)}\n…`
+            : shown;
+          resultText.hidden = false;
+          download.textContent = isCsv ? 'Download CSV' : 'Download JSON';
+          download.href = resultUrl;
+          download.download = textResult.file.name;
+          result.hidden = false;
+          showStatus(`Done. Your ${isCsv ? 'CSV' : 'JSON'} is ready to download.`);
+        } else if (pdfResults.length === 1) {
           const [pdf] = pdfResults;
 
           resultUrl = URL.createObjectURL(pdf.blob);
@@ -1857,7 +2101,7 @@ const [firstCategory] = categories;
     addStepButton.addEventListener('click', () => {
       const toolSlug = addSelect.value;
       if (!isAvailableFlowToolSlug(toolSlug) || !availableStepSlugs().includes(toolSlug)) return;
-      if (steps.length > 0 && !canFlowTo(steps.at(-1)?.toolSlug ?? toolSlug, toolSlug)) return;
+      if (!isValidFlowSequence(flowInput(), [...stepSlugs(), toolSlug])) return;
       steps.push(defaultStep(toolSlug));
       resetResult();
       clearStatus();
@@ -1887,7 +2131,9 @@ const [firstCategory] = categories;
     });
     const currentRecipe = (): Recipe => ({
       category: categoryId,
-      outputFormat,
+      // A format the chain has no control for is a format it would ignore, and
+      // a shared link should not carry a setting its own page does not show.
+      outputFormat: formatControl().kind === 'none' ? undefined : outputFormat,
       steps: steps.map((step) => ({
         toolSlug: step.toolSlug,
         ...(step.toolSlug === 'resize-image' ? { width: step.width, height: step.height } : {}),

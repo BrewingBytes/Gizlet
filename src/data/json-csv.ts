@@ -135,6 +135,28 @@ export const csvDownloadName = 'records.csv';
 export const jsonDownloadName = 'records.json';
 
 /**
+ * What a converted document is called when it came from a file.
+ *
+ * A flow hands a document from block to block, and a chain that starts at
+ * `orders.csv` should end at `orders.json` rather than at `records.json`: the
+ * name is the only thing tying a downloaded result back to what it was made
+ * from. A paste has no name and keeps the generic one.
+ */
+export function getConvertedRecordsName(
+  sourceName: string | undefined,
+  format: 'csv' | 'json',
+): string {
+  const fallback = format === 'csv' ? csvDownloadName : jsonDownloadName;
+
+  if (!sourceName || sourceName.trim() === '') return fallback;
+
+  const dot = sourceName.lastIndexOf('.');
+  const stem = (dot > 0 ? sourceName.slice(0, dot) : sourceName).trim();
+
+  return stem === '' ? fallback : `${stem}.${format}`;
+}
+
+/**
  * Whether a field can be written bare.
  *
  * Leading and trailing spaces are quoted too, which RFC 4180 does not require

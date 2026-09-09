@@ -49,6 +49,21 @@ function describeParseError(input: string, caughtError: unknown): JsonParseError
 }
 
 /** Parses JSON and returns a display-ready error without changing the source text. */
+/**
+ * Whether a file holds JSON, by its name and reported type.
+ *
+ * Asked where a file has to be recognised rather than read: the flow that
+ * starts from a JSON document, and the file dropped on the home page to find
+ * out what reads it. Whether the text inside is really JSON is `validateJson`,
+ * which is a question about content rather than about a name.
+ */
+export function isJsonTextFile(file: {
+  readonly name: string;
+  readonly type: string;
+}): boolean {
+  return file.type === "application/json" || /\.json$/i.test(file.name);
+}
+
 export function validateJson(input: string): JsonValidationResult {
   if (!input.trim()) {
     return {

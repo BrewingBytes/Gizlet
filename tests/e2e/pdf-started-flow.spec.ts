@@ -51,7 +51,7 @@ test("offers a PDF category, and the Gizlets that declare they read a document",
   await page.goto("/flows/");
 
   const category = page.getByLabel("Flow category");
-  await expect(category.locator("option")).toHaveText(["Images", "PDF"]);
+  await expect(category.locator("option")).toHaveText(["Images", "PDF", "CSV", "JSON"]);
   await expect(category).toHaveValue("images");
 
   await category.selectOption("pdf");

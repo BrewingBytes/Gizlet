@@ -12,9 +12,13 @@ import {
   getFlowCombiningLimit,
   getFlowFormatControl,
   getFlowTool,
+  getFlowContracts,
+  getFlowOutputKind,
+  getFlowOutputKinds,
   getFlowToolsForInput,
   getNextFlowSteps,
   getNextFlowTools,
+  resolveFlowContract,
   getUsableFlowFormat,
   hasCompleteFlowContracts,
   isFlowCategoryId,
@@ -112,8 +116,67 @@ describe('Gizlet flow registry', () => {
     expect(getFlowTool('json-ld-generator').output).toEqual({ kind: 'json-text' });
     expect(getFlowToolsForInput('json-text').map((tool) => tool.toolSlug)).toEqual([
       'json-formatter',
+      'json-csv-converter',
     ]);
     expect(canFlowTo('json-ld-generator', 'json-formatter')).toBe(true);
+  });
+
+  test('reads a table, and hands one to the Gizlets that take one', () => {
+    expect(getFlowToolsForInput('csv-file').map((tool) => tool.toolSlug)).toEqual([
+      'json-csv-converter',
+      'csv-viewer',
+    ]);
+    // Tidying a document is a transformation rather than a look at one, which
+    // is what makes a viewer a step here and left the PDF one out.
+    expect(getFlowTool('csv-viewer').output).toEqual({ kind: 'csv-file' });
+    expect(canFlowTo('csv-viewer', 'json-csv-converter')).toBe(true);
+    expect(canFlowTo('csv-viewer', 'json-formatter')).toBe(false);
+  });
+
+  test('declares the converter both ways round, and resolves it by what arrives', () => {
+    const converter = getFlowTool('json-csv-converter');
+
+    expect(getFlowContracts(converter)).toHaveLength(2);
+    expect(getFlowOutputKinds(converter)).toEqual(['json-text', 'csv-file']);
+    expect(resolveFlowContract(converter, 'csv-file')?.output.kind).toBe('json-text');
+    expect(resolveFlowContract(converter, 'json-text')?.output.kind).toBe('csv-file');
+    expect(resolveFlowContract(converter, 'pdf-file')).toBeUndefined();
+    // Every other Gizlet declares one hand-off, and nothing here invents a
+    // second one for it.
+    expect(getFlowContracts(getFlowTool('csv-viewer'))).toHaveLength(1);
+  });
+
+  test('follows a chain through the converter and back again', () => {
+    const csv = getFlowCategory('csv').input;
+    const json = getFlowCategory('json').input;
+
+    expect(getFlowOutputKind(csv, ['csv-viewer'])).toBe('csv-file');
+    expect(getFlowOutputKind(csv, ['csv-viewer', 'json-csv-converter'])).toBe('json-text');
+    expect(getFlowOutputKind(csv, ['json-csv-converter', 'json-formatter'])).toBe('json-text');
+    // There and back: a table read as JSON, formatted, and written out again.
+    expect(
+      getFlowOutputKind(csv, ['json-csv-converter', 'json-formatter', 'json-csv-converter']),
+    ).toBe('csv-file');
+    expect(getFlowOutputKind(json, ['json-csv-converter'])).toBe('csv-file');
+    expect(getFlowOutputKind(json, ['json-csv-converter', 'csv-viewer'])).toBe('csv-file');
+    // A chain nothing can read is not given a kind at all.
+    expect(getFlowOutputKind(json, ['csv-viewer'])).toBeUndefined();
+    expect(isValidFlowSequence(json, ['csv-viewer'])).toBe(false);
+    expect(isValidFlowSequence(json, ['json-csv-converter', 'csv-viewer'])).toBe(true);
+  });
+
+  test('offers what the payload in hand can go to, not what the block could take', () => {
+    const json = getFlowCategory('json').input;
+
+    // The converter has just written a table, so the next block is one that
+    // reads a table — including the converter itself, going back.
+    expect(
+      getNextFlowSteps(json, ['json-csv-converter']).map((tool) => tool.toolSlug),
+    ).toEqual(['json-csv-converter', 'csv-viewer']);
+    expect(getNextFlowSteps(json, []).map((tool) => tool.toolSlug)).toEqual([
+      'json-formatter',
+      'json-csv-converter',
+    ]);
   });
 
   test('puts every image Gizlet upstream of the PDF Gizlet', () => {
@@ -413,7 +476,7 @@ describe('flow categories', () => {
   test('offers a category only while a published Gizlet can start it', () => {
     const offered = getAvailableFlowCategories().map((category) => category.id as FlowCategoryId);
 
-    expect(offered).toEqual(['images', 'pdf']);
+    expect(offered).toEqual(['images', 'pdf', 'csv', 'json']);
 
     for (const id of offered) {
       expect(getFlowCategoryStartSlugs(id).length).toBeGreaterThan(0);
@@ -442,6 +505,10 @@ describe('flow categories', () => {
       'pdf-page-numbers',
       'clean-pdf-metadata',
     ]);
+    expect(getFlowCategoryStartSlugs('csv')).toEqual(['json-csv-converter', 'csv-viewer']);
+    // JSON-LD Generator reads a form rather than a document, so it can write
+    // into this lineage and can never start a chain in it.
+    expect(getFlowCategoryStartSlugs('json')).toEqual(['json-formatter', 'json-csv-converter']);
   });
 
   test('gives the PDF category the starting payload the PDF Gizlets declare', () => {
@@ -471,14 +538,21 @@ describe('flow categories', () => {
   test('keeps the categories apart: neither starting payload feeds the other`s Gizlets', () => {
     expect(isValidFlowSequence(getFlowCategory('pdf').input, ['compress-image'])).toBe(false);
     expect(isValidFlowSequence(getFlowCategory('images').input, ['split-pdf'])).toBe(false);
+    expect(isValidFlowSequence(getFlowCategory('csv').input, ['json-formatter'])).toBe(false);
+    expect(isValidFlowSequence(getFlowCategory('json').input, ['csv-viewer'])).toBe(false);
+    // The text lineages are the pair that deliberately meet, and only through
+    // the Gizlet whose whole job is to cross between them.
+    expect(isValidFlowSequence(getFlowCategory('csv').input, ['json-csv-converter', 'json-formatter'])).toBe(true);
   });
 
   test('recognises only the ids it offers', () => {
     expect(isFlowCategoryId('images')).toBe(true);
     expect(isFlowCategoryId('pdf')).toBe(true);
+    expect(isFlowCategoryId('csv')).toBe(true);
+    expect(isFlowCategoryId('json')).toBe(true);
     expect(isFlowCategoryId('pdfs')).toBe(false);
     expect(isFlowCategoryId('')).toBe(false);
-    expect(() => getFlowCategory('json' as never)).toThrow();
+    expect(() => getFlowCategory('text' as never)).toThrow();
   });
 
   test('starts from images when nothing has chosen, which is what every old link meant', () => {

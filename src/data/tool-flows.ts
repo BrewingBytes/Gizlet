@@ -1,3 +1,4 @@
+import { maximumCsvSize } from './csv-viewer';
 import type { ImageInputFormat, ImageOutputFormat } from './image-compression';
 import { describeCollageImageCount, maximumCollageImages } from './image-collage';
 import { describePdfPageCount, maximumPdfPages } from './jpg-to-pdf';
@@ -13,9 +14,16 @@ export type FlowPayloadContract =
     }
   | { readonly kind: 'json-text' }
   | { readonly kind: 'json-ld-form' }
+  | { readonly kind: 'csv-file' }
   | { readonly kind: 'pdf-file' };
 
 export type FlowPayloadKind = FlowPayloadContract['kind'];
+
+/** One hand-off: what a Gizlet takes, and what it gives back for it. */
+export interface FlowContract {
+  readonly input: FlowPayloadContract;
+  readonly output: FlowPayloadContract;
+}
 
 /**
  * This is an executable compatibility contract, deliberately independent from
@@ -32,6 +40,23 @@ export interface ToolFlowDefinition {
   readonly toolSlug: ToolRegistryEntry['slug'];
   readonly input: FlowPayloadContract;
   readonly output: FlowPayloadContract;
+  /**
+   * The same job in the other direction.
+   *
+   * Declared only by a Gizlet that converts between two payload kinds, which
+   * is one Gizlet: JSON and CSV Converter reads records either way round, and
+   * a definition that could only describe one of those directions would let a
+   * chain use that half while the other stayed unsayable. Which direction a
+   * block performs is never asked — it follows from the payload that reaches
+   * it, so a chain carrying a table gets the table read and a chain carrying
+   * JSON gets the table written.
+   *
+   * It is one extra hand-off rather than a list of them because that is what
+   * exists. A Gizlet needing three would be a Gizlet needing a different
+   * shape here, and inventing that shape before there is one to fit it is how
+   * a graph ends up describing Gizlets nobody wrote.
+   */
+  readonly reverse?: FlowContract;
   /**
    * A many-to-one step: it makes a single payload out of everything handed to
    * it, so a chain containing one takes several starting payloads.
@@ -81,6 +106,13 @@ const pdfPayload = { kind: 'pdf-file' } as const satisfies FlowPayloadContract;
 const jsonText = { kind: 'json-text' } as const satisfies FlowPayloadContract;
 
 const jsonLdForm = { kind: 'json-ld-form' } as const satisfies FlowPayloadContract;
+
+const csvPayload = { kind: 'csv-file' } as const satisfies FlowPayloadContract;
+
+/** The payload a CSV flow starts from, and a JSON flow's. Exported like the others. */
+export const csvFlowInput = { kind: 'csv-file' } as const satisfies FlowPayloadContract;
+
+export const jsonFlowInput = { kind: 'json-text' } as const satisfies FlowPayloadContract;
 
 /** Kept in tool-registry order, which is the order the step dropdown offers. */
 export const toolFlowRegistry = [
@@ -180,6 +212,17 @@ export const toolFlowRegistry = [
     input: pdfPayload,
     output: pdfPayload,
   },
+  {
+    toolSlug: 'json-csv-converter',
+    input: csvPayload,
+    output: jsonText,
+    reverse: { input: jsonText, output: csvPayload },
+  },
+  {
+    toolSlug: 'csv-viewer',
+    input: csvPayload,
+    output: csvPayload,
+  },
 ] as const satisfies readonly ToolFlowDefinition[];
 
 /**
@@ -215,37 +258,26 @@ export const toolFlowRegistry = [
  * end. A block whose output no other block can be sure it reads is not a step.
  *
  * URL Encode & Decode is the fourth kind, and the plainest: it takes text a
- * person typed and gives back text. A flow here carries files between Gizlets,
- * and text is not one of the kinds it carries — the text Gizlets are their own
- * neighbourhood, and joining them to this graph would mean inventing a payload
- * that no Gizlet in it produces. UUID Generator is the same, and takes no
- * input at all: a step with nothing coming into it is where a chain starts,
- * and a chain that starts with an identifier leads nowhere here.
+ * person typed and gives back text. The graph carries documents — an image, a
+ * PDF, a delimited table, a JSON file — and a percent-encoded string is none
+ * of those: it is a value on its way into a URL, not a file another Gizlet
+ * opens. UUID Generator is further out still and takes no input at all: a step
+ * with nothing coming into it is where a chain starts, and a chain that starts
+ * with an identifier leads nowhere here.
  *
  * Base64 Encode & Decode is the awkward one, because it does take a file — and
- * gives back text, which is not a payload kind. Decoding can go the other way
- * and produce bytes of any kind at all, which is the same objection Extract
- * Archive has: a step whose output no other step can be sure it reads is not a
- * step. It stays out until there is a text payload for the text Gizlets to
- * pass between themselves, which is its own question.
+ * gives back a string of characters rather than a document. Decoding can go
+ * the other way and produce bytes of any kind at all, which is the same
+ * objection Extract Archive has: a step whose output no other step can be sure
+ * it reads is not a step.
  *
  * JWT Decoder reads a token and explains it. Its output is an explanation
  * rather than a payload — the claims, the dates and what each one means — and
  * there is nothing downstream of it to hand that to.
  *
  * Timestamp Converter takes a number a person typed and hands back the same
- * moment written five ways. Neither end is a file, and a flow here carries
- * files, so it belongs to the text neighbourhood with the rest of them.
- *
- * JSON and CSV Converter is the one with a contract to spare and no way to
- * write it. It reads JSON text and writes a table, and reads a table and
- * writes JSON text — both directions, which is the whole Gizlet. A definition
- * here declares one input kind and one output kind, so any contract it could
- * be given would describe half of it and let a chain use that half while the
- * other stayed unsayable. Half a Gizlet in the graph is worse than none: it
- * reads as the whole one. It stays out with the rest of the text
- * neighbourhood, and joins on the day a hand-off can be declared in both
- * directions.
+ * moment written five ways. Neither end is a document, so neither end is
+ * something this graph can pass on.
  *
  * File Hash Generator is the one that reads every payload kind and still is
  * not a step. It takes any file at all, which is not one of the kinds declared
@@ -268,7 +300,6 @@ export const flowlessToolSlugs = [
   'jwt-decoder',
   'file-hash-generator',
   'timestamp-converter',
-  'json-csv-converter',
 ] as const satisfies readonly ToolRegistryEntry['slug'][];
 
 /** The registry's own entries, with their payload kinds preserved. */
@@ -282,11 +313,16 @@ export type FlowToolSlug = FlowDefinition['toolSlug'];
  * than of Gizlets: a new Gizlet joins a chain by declaring one of these kinds,
  * without being named here.
  *
- * Both the image and the PDF category draw from this one list, because the
- * lineages meet: an image chain can end in a document and a PDF chain can end
- * in images. What separates the categories is only where a chain may start.
+ * Every category draws from this one list, because the lineages meet: an image
+ * chain can end in a document, a PDF chain can end in images, and a CSV chain
+ * can end as JSON. What separates the categories is only where a chain may
+ * start.
+ *
+ * `json-ld-form` is deliberately absent. It is a form somebody fills in rather
+ * than a document anything produces, so the Gizlet that reads one can write
+ * into a chain and can never be a step inside one.
  */
-export const flowPayloadKinds = ['image-file', 'pdf-file'] as const;
+export const flowPayloadKinds = ['image-file', 'pdf-file', 'csv-file', 'json-text'] as const;
 
 export type FlowPayloadLineageKind = (typeof flowPayloadKinds)[number];
 
@@ -357,6 +393,28 @@ export interface FlowCategory {
 }
 
 /**
+ * What a text lineage takes: one document.
+ *
+ * Nothing in either text lineage combines several payloads into one — there is
+ * no Gizlet here that joins two tables — so the ceiling is one rather than a
+ * number borrowed from a Gizlet that does join things.
+ */
+const oneDocument = 1;
+
+/**
+ * The largest text document a flow reads.
+ *
+ * Borrowed from the Gizlet that owns the ceiling rather than invented here,
+ * which is the same rule the combining limits follow: a chain must not accept
+ * a document the block it is about to run would refuse.
+ */
+export const maximumFlowTextBytes = maximumCsvSize;
+
+function describeFlowDocumentCount(count: number): string {
+  return `${count} ${count === 1 ? 'document' : 'documents'}`;
+}
+
+/**
  * Every starting payload the builder knows, in the order it offers them.
  *
  * A category is a starting point rather than a group of Gizlets, so nothing
@@ -391,6 +449,34 @@ export const flowCategories = [
     chooseAriaLabel: 'Choose PDFs for this flow',
     combiningLimit: maximumMergeDocuments,
     describeSourceCount: describeMergeDocumentCount,
+  },
+  {
+    id: 'csv',
+    label: 'CSV',
+    input: csvFlowInput,
+    summary: 'A delimited document passes from block to block, and can leave as JSON. A block is offered when it accepts what the block before it produces.',
+    sourceTitle: { one: 'Your CSV', many: 'Your CSVs' },
+    sourceDetails: 'CSV, TSV, or any delimited text file.',
+    accept: 'text/csv,text/tab-separated-values,text/plain,.csv,.tsv,.tab,.txt',
+    chooseLabel: { one: 'Choose CSV', many: 'Choose CSVs' },
+    addLabel: { one: 'Choose another CSV', many: 'Add CSVs' },
+    chooseAriaLabel: 'Choose a CSV for this flow',
+    combiningLimit: oneDocument,
+    describeSourceCount: describeFlowDocumentCount,
+  },
+  {
+    id: 'json',
+    label: 'JSON',
+    input: jsonFlowInput,
+    summary: 'A JSON document passes from block to block, and can leave as a table. A block is offered when it accepts what the block before it produces.',
+    sourceTitle: { one: 'Your JSON', many: 'Your JSON files' },
+    sourceDetails: 'A .json file, or any file holding JSON text.',
+    accept: 'application/json,text/plain,.json,.txt',
+    chooseLabel: { one: 'Choose JSON', many: 'Choose JSON files' },
+    addLabel: { one: 'Choose another JSON file', many: 'Add JSON files' },
+    chooseAriaLabel: 'Choose a JSON file for this flow',
+    combiningLimit: oneDocument,
+    describeSourceCount: describeFlowDocumentCount,
   },
 ] as const satisfies readonly FlowCategory[];
 
@@ -432,6 +518,33 @@ export function getAvailableFlowCategories(): readonly FlowCategory[] {
 
 type Definitions = readonly ToolFlowDefinition[];
 
+/** Every hand-off a Gizlet declares, in the order it declares them. */
+export function getFlowContracts(tool: ToolFlowDefinition): readonly FlowContract[] {
+  const declared: FlowContract = { input: tool.input, output: tool.output };
+
+  return tool.reverse ? [declared, tool.reverse] : [declared];
+}
+
+/**
+ * The hand-off a Gizlet performs on a payload of this kind, or nothing.
+ *
+ * This is the only place a direction is decided, and it is decided by the
+ * payload rather than by a setting: a converter handed a table reads it, and
+ * handed JSON writes one. Nothing asks the visitor, so nothing can disagree
+ * with the chain it is in.
+ */
+export function resolveFlowContract(
+  tool: ToolFlowDefinition,
+  kind: FlowPayloadKind,
+): FlowContract | undefined {
+  return getFlowContracts(tool).find((contract) => contract.input.kind === kind);
+}
+
+/** Every kind a Gizlet can produce, which is one for all but the converter. */
+export function getFlowOutputKinds(tool: ToolFlowDefinition): readonly FlowPayloadKind[] {
+  return [...new Set(getFlowContracts(tool).map((contract) => contract.output.kind))];
+}
+
 export function getFlowTool(
   toolSlug: ToolRegistryEntry['slug'],
   definitions: Definitions = toolFlowRegistry,
@@ -448,7 +561,7 @@ export function getFlowToolsForInput(
 ): readonly ToolFlowDefinition[] {
   const kind = typeof input === 'string' ? input : input.kind;
 
-  return definitions.filter((tool) => tool.input.kind === kind);
+  return definitions.filter((tool) => resolveFlowContract(tool, kind) !== undefined);
 }
 
 /**
@@ -460,7 +573,13 @@ export function getNextFlowTools(
   toolSlug: ToolRegistryEntry['slug'],
   definitions: Definitions = toolFlowRegistry,
 ): readonly ToolFlowDefinition[] {
-  return getFlowToolsForInput(getFlowTool(toolSlug, definitions).output, definitions);
+  const produced = new Set<FlowPayloadKind>(getFlowOutputKinds(getFlowTool(toolSlug, definitions)));
+
+  // Registry order, and each Gizlet once: a converter produces two kinds, and
+  // a Gizlet reading either of them is offered once rather than twice.
+  return definitions.filter((tool) =>
+    getFlowContracts(tool).some((contract) => produced.has(contract.input.kind)),
+  );
 }
 
 export function canFlowTo(
@@ -468,9 +587,15 @@ export function canFlowTo(
   toToolSlug: ToolRegistryEntry['slug'],
   definitions: Definitions = toolFlowRegistry,
 ): boolean {
-  return (
-    getFlowTool(fromToolSlug, definitions).output.kind ===
-    getFlowTool(toToolSlug, definitions).input.kind
+  const produced = new Set<FlowPayloadKind>(
+    getFlowOutputKinds(getFlowTool(fromToolSlug, definitions)),
+  );
+
+  // Whether one Gizlet can hand to another at all, which is a question about
+  // the pair rather than about a chain. Whether a particular chain may make
+  // that hand-off is `isValidFlowSequence`, which knows what is travelling.
+  return getFlowContracts(getFlowTool(toToolSlug, definitions)).some((contract) =>
+    produced.has(contract.input.kind),
   );
 }
 
@@ -550,6 +675,65 @@ function carriesSeveralPayloads(
   return last === undefined || last.splitsInput === true;
 }
 
+/**
+ * What each step of a chain leaves behind, or nothing if a step cannot read
+ * what reaches it.
+ *
+ * The kind is carried from step to step rather than read off each definition,
+ * because a Gizlet that declares two hand-offs has no single output kind: what
+ * the converter produces is decided by what arrived at it, which is decided by
+ * every step before it and by where the chain started.
+ */
+function walkFlowKinds(
+  input: FlowPayloadContract,
+  toolSlugs: readonly ToolRegistryEntry['slug'][],
+  definitions: Definitions = toolFlowRegistry,
+): readonly FlowPayloadKind[] | undefined {
+  return getFlowStepContracts(input, toolSlugs, definitions)?.map(
+    (contract) => contract.output.kind,
+  );
+}
+
+/**
+ * The hand-off each step of a chain performs, or nothing if one cannot.
+ *
+ * What a block does is a property of the chain rather than of the block: the
+ * converter reads a table in one chain and writes one in another. Asked here
+ * so the page can say what a block hands on without working it out again.
+ */
+export function getFlowStepContracts(
+  input: FlowPayloadContract,
+  toolSlugs: readonly ToolRegistryEntry['slug'][],
+  definitions: Definitions = toolFlowRegistry,
+): readonly FlowContract[] | undefined {
+  const contracts: FlowContract[] = [];
+  let carried: FlowPayloadKind = input.kind;
+
+  for (const toolSlug of toolSlugs) {
+    const contract = resolveFlowContract(getFlowTool(toolSlug, definitions), carried);
+
+    if (!contract) return undefined;
+
+    carried = contract.output.kind;
+    contracts.push(contract);
+  }
+
+  return contracts;
+}
+
+/** The payload a chain leaves the visitor with, or nothing if it cannot run. */
+export function getFlowOutputKind(
+  input: FlowPayloadContract,
+  toolSlugs: readonly ToolRegistryEntry['slug'][],
+  definitions: Definitions = toolFlowRegistry,
+): FlowPayloadKind | undefined {
+  const kinds = walkFlowKinds(input, toolSlugs, definitions);
+
+  if (!kinds) return undefined;
+
+  return kinds.at(-1) ?? input.kind;
+}
+
 /** Validates an ordered pipeline against its initial payload and each hand-off. */
 export function isValidFlowSequence(
   input: FlowPayloadContract,
@@ -557,11 +741,9 @@ export function isValidFlowSequence(
   definitions: Definitions = toolFlowRegistry,
 ): boolean {
   if (toolSlugs.length === 0) return true;
-  if (getFlowTool(toolSlugs[0], definitions).input.kind !== input.kind) return false;
+  if (!walkFlowKinds(input, toolSlugs, definitions)) return false;
 
   return toolSlugs.every((toolSlug, index) => {
-    if (index > 0 && !canFlowTo(toolSlugs[index - 1], toolSlug, definitions)) return false;
-
     // A combining step placed after another has nothing left to combine: the
     // payload reaching it is already the one file the earlier step made.
     return (
@@ -581,12 +763,11 @@ export function getNextFlowSteps(
   toolSlugs: readonly ToolRegistryEntry['slug'][],
   definitions: Definitions = toolFlowRegistry,
 ): readonly ToolFlowDefinition[] {
-  const last = toolSlugs.at(-1);
-  const candidates = last
-    ? getNextFlowTools(last, definitions)
-    : getFlowToolsForInput(input, definitions);
+  const carried = getFlowOutputKind(input, toolSlugs, definitions);
 
-  return candidates.filter((candidate) =>
+  if (carried === undefined) return [];
+
+  return getFlowToolsForInput(carried, definitions).filter((candidate) =>
     isValidFlowSequence(input, [...toolSlugs, candidate.toolSlug], definitions),
   );
 }
@@ -673,14 +854,16 @@ export function getFlowFormatControl(
   // merge, or a split that only copies page trees, is such a chain.
   if (
     last === undefined ||
-    !toolSlugs.some((toolSlug) => getFlowTool(toolSlug, definitions).output.kind === 'image-file')
+    !toolSlugs.some((toolSlug) =>
+      getFlowOutputKinds(getFlowTool(toolSlug, definitions)).includes('image-file'),
+    )
   ) {
     return { kind: 'none' };
   }
 
   // What the chain ends by producing, rather than whether it combines or
   // splits: a split after a combine still hands the visitor documents.
-  if (getFlowTool(last, definitions).output.kind === 'pdf-file') {
+  if (getFlowOutputKinds(getFlowTool(last, definitions)).includes('pdf-file')) {
     return { kind: 'pages', label: 'Page image format', formats: pdfPageImageFormats };
   }
 

@@ -427,7 +427,28 @@ describe('a flow that starts from a PDF', () => {
   it('rejects a category outside the closed list rather than defaulting to images', () => {
     expect(decodeRecipe('#r=v1;c=pdfs;split-pdf')).toBeUndefined();
     expect(decodeRecipe('#r=v1;c=;split-pdf')).toBeUndefined();
-    expect(decodeRecipe('#r=v1;c=json;json-formatter')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;c=text;json-formatter')).toBeUndefined();
+  });
+
+  it('carries a text chain, in either direction, with no setting to carry', () => {
+    expect(decodeRecipe('#r=v1;c=csv;csv-viewer;json-csv-converter')).toEqual({
+      category: 'csv',
+      outputFormat: undefined,
+      steps: [{ toolSlug: 'csv-viewer' }, { toolSlug: 'json-csv-converter' }],
+    });
+    expect(decodeRecipe('#r=v1;c=json;json-csv-converter;csv-viewer')).toEqual({
+      category: 'json',
+      outputFormat: undefined,
+      steps: [{ toolSlug: 'json-csv-converter' }, { toolSlug: 'csv-viewer' }],
+    });
+    // The same two blocks the other way round is a chain neither category can
+    // run: a viewer handed JSON has nothing to read.
+    expect(decodeRecipe('#r=v1;c=json;csv-viewer')).toBeUndefined();
+    expect(decodeRecipe('#r=v1;c=csv;json-formatter')).toBeUndefined();
+    // A format name still decodes, as it does for a PDF chain that re-encodes
+    // nothing: what a chain cannot honour is dropped where the control is
+    // derived, by `getFlowFormatControl`, rather than refused in the link.
+    expect(decodeRecipe('#r=v1;c=csv;f=webp;csv-viewer')?.outputFormat).toBe('image/webp');
   });
 
   /**

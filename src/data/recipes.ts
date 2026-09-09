@@ -223,6 +223,21 @@ const recipeStepSettings = {
   // Clearing a document's own fields takes nothing to decide, which is exactly
   // what makes it a good last step in a shared chain.
   'clean-pdf-metadata': {},
+  // JSON Formatter in a chain indents; the box on its own page also minifies,
+  // and that direction is deliberately not a step. A chain hands its result to
+  // the next block or to the visitor, and neither is served by whitespace
+  // being removed halfway along — the minified copy is a thing you ask for at
+  // the end, on the page that asks you.
+  'json-formatter': {},
+  // Neither text block carries a setting, and the reason is the same for both:
+  // what they would have to be told is read off the document instead. The
+  // separator is detected from the file that arrives, the direction a
+  // conversion runs is decided by the payload that reaches the block, and a
+  // cell is read as text, which is the reading that cannot lose anything. A
+  // link that carried any of those would be a link asserting something about a
+  // document it has never seen.
+  'json-csv-converter': {},
+  'csv-viewer': {},
 } as const satisfies Record<RecipeToolSlug, Readonly<Record<string, 'number' | readonly string[]>>>;
 
 const recipeToolSlugs = Object.keys(recipeStepSettings) as readonly RecipeToolSlug[];
