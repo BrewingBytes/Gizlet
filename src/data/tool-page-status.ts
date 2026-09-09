@@ -41,6 +41,7 @@ export function getToolProcessingStatus(
  */
 const toolProcessingDescriptions: Partial<Record<ToolSlug, string>> = {
   'json-formatter': 'Your JSON stays on this device.',
+  'json-csv-converter': 'Your records stay on this device, whichever way they are going.',
   'collage-maker': 'Your images stay on this device.',
   'image-dimensions': 'Your image stays on this device, and is not changed.',
   'image-color-picker': 'Your image stays on this device, and is not changed.',

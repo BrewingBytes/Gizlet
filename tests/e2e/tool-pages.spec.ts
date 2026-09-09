@@ -24,6 +24,7 @@ const workspaceSignatures = {
   "image-color-picker": "Select an image to pick colours from",
   "json-ld-generator": "Schema type",
   "json-formatter": "JSON input",
+  "json-csv-converter": "Records as JSON",
   "jpg-to-pdf": "Select images to put in a PDF",
   "pdf-viewer": "Select a PDF to open",
   "merge-pdf": "Select PDFs to merge",

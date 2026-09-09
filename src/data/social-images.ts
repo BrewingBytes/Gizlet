@@ -44,6 +44,7 @@ const bespokeSocialImageSlugs: readonly string[] = [
   'image-color-picker',
   'json-ld-generator',
   'json-formatter',
+  'json-csv-converter',
   'url-encode-decode',
   'uuid-generator',
   'base64-encode-decode',

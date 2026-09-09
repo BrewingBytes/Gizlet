@@ -8,7 +8,7 @@
  * dates are committed rather than read during the build.
  */
 export const sitemapDates: Readonly<Record<string, string>> = {
-  '/': '2026-09-06',
+  '/': '2026-09-09',
   '/tools/': '2026-09-05',
   '/flows/': '2026-09-06',
   '/roadmap/': '2026-09-07',
@@ -43,6 +43,7 @@ export const sitemapDates: Readonly<Record<string, string>> = {
   '/tools/base64-encode-decode/': '2026-09-07',
   '/tools/jwt-decoder/': '2026-09-07',
   '/tools/file-hash-generator/': '2026-09-07',
+  '/tools/json-csv-converter/': '2026-09-09',
   '/tools/timestamp-converter/': '2026-09-07',
   '/tools/uuid-generator/': '2026-09-07',
   '/tools/create-zip/': '2026-09-06',

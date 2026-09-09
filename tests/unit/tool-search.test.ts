@@ -80,7 +80,10 @@ describe('searchTools', () => {
 
   it('returns no results for a blank or unmatched query', () => {
     expect(searchTools('')).toEqual([]);
-    expect(searchTools('spreadsheet')).toEqual([]);
+    // A word a visitor might plausibly try and that no Gizlet claims. It has
+    // to be replaced whenever one starts claiming it, which is what happened
+    // to “spreadsheet” when the JSON and CSV Converter shipped.
+    expect(searchTools('translate')).toEqual([]);
   });
 
   it('offers only Gizlets that exist, because a result is a link about to be followed', () => {
