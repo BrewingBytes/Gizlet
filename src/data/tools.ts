@@ -702,8 +702,12 @@ export const toolRegistry = [
       "spreadsheet to json",
       "export json as csv",
     ],
-    processesLocally: false,
-    launchStatus: "planned",
+    processesLocally: true,
+    launchStatus: "available",
+    agent: {
+      input: "Records as JSON in one box, or as CSV in the other, whichever direction is wanted. The column separator is chosen from comma, semicolon, tab and pipe rather than guessed at, and reading a CSV also asks whether a cell is text or a JSON value — the default is text, which loses nothing.",
+      output: "The same records in the other format, with the number of rows and columns, ready to copy or download. JSON becomes a table whose columns are in the order the keys first appear, quoted where a value holds the separator, a quote or a line break. CSV becomes an array of flat objects keyed by the header row. Nested JSON is refused by name rather than flattened, a row with more fields than the header is refused rather than truncated, and a row with fewer is filled in and said so.",
+    },
   },
   {
     id: 30,

@@ -1,0 +1,447 @@
+---
+import { csvDelimiterDetails, csvValueReadingDetails } from '../data/json-csv';
+---
+
+<section class="csv-tool" data-json-csv-tool>
+  <div class="csv-tool__panel" aria-labelledby="csv-json-title">
+    <div class="csv-tool__panel-heading">
+      <div>
+        <p class="metadata">One way</p>
+        <h2 id="csv-json-title">JSON to CSV</h2>
+      </div>
+      <div class="csv-tool__panel-actions">
+        <button type="button" class="button-secondary" data-json-sample>Example</button>
+        <button type="button" class="button-secondary" data-json-clear>Clear</button>
+      </div>
+    </div>
+
+    <label for="csv-json-input">Records as JSON</label>
+    <textarea
+      id="csv-json-input"
+      autocapitalize="off"
+      autocomplete="off"
+      autocorrect="off"
+      spellcheck="false"
+      placeholder='[{"name": "Ada", "born": 1815}]'
+      data-json-input></textarea>
+
+    <fieldset class="csv-tool__choice">
+      <legend>Separate columns with</legend>
+      {
+        csvDelimiterDetails.map((detail, index) => (
+          <label>
+            <input
+              type="radio"
+              name="csv-json-delimiter"
+              value={detail.id}
+              data-json-delimiter
+              checked={index === 0}
+            />
+            <span>{detail.label}</span>
+          </label>
+        ))
+      }
+    </fieldset>
+
+    <p class="csv-tool__hint" data-json-hint></p>
+    <p class="csv-tool__error" data-json-error role="alert" hidden></p>
+    <ul class="csv-tool__notes" data-json-notes hidden></ul>
+
+    <div class="csv-tool__result" data-json-result hidden>
+      <div class="csv-tool__result-heading">
+        <p class="metadata" data-json-summary></p>
+        <div class="csv-tool__panel-actions">
+          <button type="button" class="button-secondary" data-json-copy>Copy CSV</button>
+          <button type="button" class="button-secondary" data-json-download>Download .csv</button>
+        </div>
+      </div>
+      <pre tabindex="0"><code data-json-output></code></pre>
+    </div>
+  </div>
+
+  <div class="csv-tool__panel" aria-labelledby="csv-csv-title">
+    <div class="csv-tool__panel-heading">
+      <div>
+        <p class="metadata">The other way</p>
+        <h2 id="csv-csv-title">CSV to JSON</h2>
+      </div>
+      <div class="csv-tool__panel-actions">
+        <button type="button" class="button-secondary" data-csv-sample>Example</button>
+        <button type="button" class="button-secondary" data-csv-clear>Clear</button>
+      </div>
+    </div>
+
+    <label for="csv-csv-input">Records as CSV</label>
+    <textarea
+      id="csv-csv-input"
+      autocapitalize="off"
+      autocomplete="off"
+      autocorrect="off"
+      spellcheck="false"
+      placeholder="name,born&#10;Ada,1815"
+      data-csv-input></textarea>
+
+    <fieldset class="csv-tool__choice">
+      <legend>Columns are separated by</legend>
+      {
+        csvDelimiterDetails.map((detail, index) => (
+          <label>
+            <input
+              type="radio"
+              name="csv-csv-delimiter"
+              value={detail.id}
+              data-csv-delimiter
+              checked={index === 0}
+            />
+            <span>{detail.label}</span>
+          </label>
+        ))
+      }
+    </fieldset>
+
+    <p class="csv-tool__hint" data-csv-hint></p>
+
+    <fieldset class="csv-tool__choice">
+      <legend>Read every cell as</legend>
+      {
+        csvValueReadingDetails.map((detail, index) => (
+          <label>
+            <input
+              type="radio"
+              name="csv-csv-reading"
+              value={detail.id}
+              data-csv-reading
+              checked={index === 0}
+            />
+            <span>{detail.label}</span>
+          </label>
+        ))
+      }
+    </fieldset>
+
+    <p class="csv-tool__hint" data-csv-reading-hint></p>
+    <p class="csv-tool__error" data-csv-error role="alert" hidden></p>
+    <ul class="csv-tool__notes" data-csv-notes hidden></ul>
+
+    <div class="csv-tool__result" data-csv-result hidden>
+      <div class="csv-tool__result-heading">
+        <p class="metadata" data-csv-summary></p>
+        <div class="csv-tool__panel-actions">
+          <button type="button" class="button-secondary" data-csv-copy>Copy JSON</button>
+          <button type="button" class="button-secondary" data-csv-download>Download .json</button>
+        </div>
+      </div>
+      <pre tabindex="0"><code data-csv-output></code></pre>
+    </div>
+  </div>
+
+  <p class="csv-tool__status" data-status role="status" aria-live="polite"></p>
+</section>
+
+<style>
+  .csv-tool { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .csv-tool__panel { padding: var(--space-4); }
+  .csv-tool__panel + .csv-tool__panel { border-top: var(--border-strong-width) solid var(--text); }
+  .csv-tool__panel-heading { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-3); }
+  .csv-tool__panel-heading .metadata, .csv-tool__panel-heading h2 { margin: 0; }
+  .csv-tool__panel-heading h2 { font-family: var(--font-display); font-size: var(--font-size-xl); font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; }
+  .csv-tool__panel-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .csv-tool label[for] { display: block; margin-bottom: var(--space-1); color: var(--text-muted); font-size: var(--font-size-sm); }
+  .csv-tool textarea { width: 100%; min-height: 12rem; font-family: var(--font-mono); font-size: var(--font-size-sm); line-height: 1.5; }
+  .csv-tool__choice { min-width: 0; margin: var(--space-3) 0 0; padding: 0; border: 0; }
+  .csv-tool__choice legend { padding: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.08em; }
+  .csv-tool__choice label { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 2.5rem; margin-right: var(--space-3); }
+  .csv-tool__choice input { width: 1.125rem; height: 1.125rem; flex: none; }
+  .csv-tool__hint { margin: var(--space-1) 0 0; max-width: 44rem; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .csv-tool__error { margin: var(--space-3) 0 0; padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--color-red); color: var(--color-red); font-size: var(--font-size-sm); font-weight: 700; }
+  .csv-tool__notes { margin: var(--space-3) 0 0; padding: 0; list-style: none; }
+  .csv-tool__notes :global(li) { padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--warning); color: var(--text-muted); font-size: var(--font-size-sm); }
+  .csv-tool__notes :global(li + li) { margin-top: var(--space-1); }
+  .csv-tool__result { margin-top: var(--space-4); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+  .csv-tool__result-heading { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-2); }
+  .csv-tool__result-heading .metadata { margin: 0; }
+  .csv-tool pre { max-height: 24rem; margin: 0; padding: var(--space-3); overflow: auto; border: var(--border-width) solid var(--border); background: var(--color-ink); color: #fffdf7; font-family: var(--font-mono); font-size: var(--font-size-sm); line-height: 1.5; white-space: pre; }
+  .csv-tool__status { min-height: 1.5rem; margin: 0; padding: 0 var(--space-4) var(--space-3); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); }
+  .csv-tool__status[data-state='copied'] { color: var(--success); font-weight: 700; }
+  .csv-tool [hidden] { display: none; }
+  @media (max-width: 40rem) {
+    .csv-tool__panel { padding: var(--space-3); }
+    .csv-tool__status { padding-left: var(--space-3); padding-right: var(--space-3); }
+    .csv-tool__panel-heading, .csv-tool__result-heading { align-items: start; flex-direction: column; }
+  }
+</style>
+
+<script>
+  import {
+    convertCsvToJson,
+    convertJsonToCsv,
+    csvDownloadName,
+    defaultCsvDelimiter,
+    defaultCsvValueReading,
+    describeConversion,
+    getCsvDelimiter,
+    getCsvValueReading,
+    isCsvDelimiter,
+    isCsvValueReading,
+    jsonDownloadName,
+    type CsvConversionResult,
+    type CsvDelimiter,
+    type CsvValueReading,
+  } from '../data/json-csv';
+
+  const root = document.querySelector<HTMLElement>('[data-json-csv-tool]');
+
+  if (root) {
+    const status = root.querySelector<HTMLElement>('[data-status]');
+
+    if (!status) throw new Error('JSON and CSV Converter could not initialise.');
+
+    const setStatus = (message: string, state?: string) => {
+      status.textContent = message;
+      if (state) status.dataset.state = state;
+      else delete status.dataset.state;
+    };
+
+    const resting = 'Converted on this device. Nothing is sent anywhere.';
+
+    /**
+     * Everything one direction owns. Both panels are the same panel with a
+     * different conversion behind them, so the wiring is written once and the
+     * two differ only in what they read and what they call the result.
+     */
+    interface Panel {
+      readonly name: string;
+      readonly input: HTMLTextAreaElement;
+      /** One per control group, in the order the panel renders them. */
+      readonly hints: readonly HTMLElement[];
+      readonly error: HTMLElement;
+      readonly notes: HTMLElement;
+      readonly result: HTMLElement;
+      readonly summary: HTMLElement;
+      readonly output: HTMLElement;
+      readonly copy: HTMLButtonElement;
+      readonly download: HTMLButtonElement;
+      readonly sample: HTMLButtonElement;
+      readonly clear: HTMLButtonElement;
+      readonly controls: readonly HTMLInputElement[];
+      /** What the file is called, and what the copy button says it copied. */
+      readonly fileName: string;
+      readonly mimeType: string;
+      readonly exampleText: string;
+      readonly convert: () => CsvConversionResult | undefined;
+      /** A sentence per control group, in the same order as the hints. */
+      readonly describeControls: () => readonly string[];
+    }
+
+    const findPanel = (
+      name: string,
+      prefix: string,
+      options: {
+        readonly fileName: string;
+        readonly mimeType: string;
+        readonly exampleText: string;
+        readonly extraControls: string;
+        readonly hintSuffixes: readonly string[];
+        readonly convert: (input: HTMLTextAreaElement) => CsvConversionResult | undefined;
+        readonly describeControls: () => readonly string[];
+      },
+    ): Panel => {
+      const find = <T extends HTMLElement>(suffix: string) =>
+        root.querySelector<T>(`[data-${prefix}-${suffix}]`);
+      const input = find<HTMLTextAreaElement>('input');
+      const hints = options.hintSuffixes.map((suffix) => find(suffix));
+      const error = find('error');
+      const notes = find('notes');
+      const result = find('result');
+      const summary = find('summary');
+      const output = find('output');
+      const copy = find<HTMLButtonElement>('copy');
+      const download = find<HTMLButtonElement>('download');
+      const sample = find<HTMLButtonElement>('sample');
+      const clear = find<HTMLButtonElement>('clear');
+      const controls = [
+        ...root.querySelectorAll<HTMLInputElement>(
+          `[data-${prefix}-delimiter]${options.extraControls}`,
+        ),
+      ];
+
+      if (!input || hints.some((hint) => !hint) || !error || !notes || !result || !summary || !output || !copy || !download || !sample || !clear || controls.length === 0) {
+        throw new Error(`${name} could not initialise.`);
+      }
+
+      return {
+        name,
+        input,
+        hints: hints as HTMLElement[],
+        error,
+        notes,
+        result,
+        summary,
+        output,
+        copy,
+        download,
+        sample,
+        clear,
+        controls,
+        fileName: options.fileName,
+        mimeType: options.mimeType,
+        exampleText: options.exampleText,
+        convert: () => options.convert(input),
+        describeControls: options.describeControls,
+      };
+    };
+
+    const chosen = <T extends string>(
+      inputs: readonly HTMLInputElement[],
+      guard: (value: string) => value is T,
+      fallback: T,
+    ): T => {
+      const checked = inputs.find((candidate) => candidate.checked)?.value ?? '';
+
+      return guard(checked) ? checked : fallback;
+    };
+
+    const jsonDelimiters = [...root.querySelectorAll<HTMLInputElement>('[data-json-delimiter]')];
+    const csvDelimiters = [...root.querySelectorAll<HTMLInputElement>('[data-csv-delimiter]')];
+    const csvReadings = [...root.querySelectorAll<HTMLInputElement>('[data-csv-reading]')];
+
+    const jsonSideDelimiter = (): CsvDelimiter =>
+      chosen(jsonDelimiters, isCsvDelimiter, defaultCsvDelimiter);
+    const csvSideDelimiter = (): CsvDelimiter =>
+      chosen(csvDelimiters, isCsvDelimiter, defaultCsvDelimiter);
+    const csvSideReading = (): CsvValueReading =>
+      chosen(csvReadings, isCsvValueReading, defaultCsvValueReading);
+
+    const panels: readonly Panel[] = [
+      findPanel('JSON to CSV', 'json', {
+        fileName: csvDownloadName,
+        mimeType: 'text/csv',
+        exampleText: JSON.stringify(
+          [
+            { name: 'Ada Lovelace', born: 1815, note: 'wrote the first algorithm' },
+            { name: 'Grace Hopper', born: 1906, note: 'found the "first" bug' },
+            { name: 'Katherine Johnson', born: 1918, note: 'checked the numbers, twice' },
+          ],
+          null,
+          2,
+        ),
+        extraControls: '',
+        hintSuffixes: ['hint'],
+        convert: (input) => convertJsonToCsv(input.value, jsonSideDelimiter()),
+        describeControls: () => [getCsvDelimiter(jsonSideDelimiter()).note],
+      }),
+      findPanel('CSV to JSON', 'csv', {
+        fileName: jsonDownloadName,
+        mimeType: 'application/json',
+        exampleText: [
+          'name,born,note',
+          '"Lovelace, Ada",1815,"wrote the first algorithm"',
+          '"Hopper, Grace",1906,"found the ""first"" bug"',
+          '"Johnson, Katherine",1918,"checked the numbers, twice"',
+        ].join('\r\n'),
+        extraControls: ', [data-csv-reading]',
+        hintSuffixes: ['hint', 'reading-hint'],
+        convert: (input) =>
+          convertCsvToJson(input.value, csvSideDelimiter(), csvSideReading()),
+        describeControls: () => [
+          getCsvDelimiter(csvSideDelimiter()).note,
+          getCsvValueReading(csvSideReading()).note,
+        ],
+      }),
+    ];
+
+    const showNotes = (target: HTMLElement, messages: readonly string[]) => {
+      target.replaceChildren(
+        ...messages.map((message) => {
+          const item = document.createElement('li');
+
+          item.textContent = message;
+
+          return item;
+        }),
+      );
+      target.hidden = messages.length === 0;
+    };
+
+    /**
+     * A panel redrawn from its own inputs.
+     *
+     * A failed conversion clears the result rather than leaving the previous
+     * one under a new error, which would be a document that no longer matches
+     * what is in the box. What it never touches is the box itself.
+     */
+    const render = (panel: Panel) => {
+      const described = panel.describeControls();
+
+      panel.hints.forEach((hint, index) => {
+        hint.textContent = described[index] ?? '';
+      });
+
+      const result = panel.convert();
+
+      if (!result || !result.ok) {
+        panel.error.textContent = result ? result.message : '';
+        panel.error.hidden = result === undefined;
+        showNotes(panel.notes, []);
+        panel.output.textContent = '';
+        panel.result.hidden = true;
+        return;
+      }
+
+      panel.error.hidden = true;
+      panel.error.textContent = '';
+      showNotes(panel.notes, result.conversion.notes);
+      panel.summary.textContent = describeConversion(result.conversion);
+      panel.output.textContent = result.conversion.output;
+      panel.result.hidden = false;
+    };
+
+    for (const panel of panels) {
+      panel.input.addEventListener('input', () => render(panel));
+
+      for (const control of panel.controls) {
+        control.addEventListener('change', () => render(panel));
+      }
+
+      panel.sample.addEventListener('click', () => {
+        panel.input.value = panel.exampleText;
+        render(panel);
+        panel.input.focus();
+      });
+
+      panel.clear.addEventListener('click', () => {
+        panel.input.value = '';
+        render(panel);
+        setStatus(resting);
+        panel.input.focus();
+      });
+
+      panel.copy.addEventListener('click', () => {
+        void navigator.clipboard
+          ?.writeText(panel.output.textContent ?? '')
+          .then(() => setStatus(`${panel.name}: the result is on your clipboard.`, 'copied'))
+          .catch(() =>
+            setStatus('This browser would not let the page copy. Select the result instead.'),
+          );
+      });
+
+      panel.download.addEventListener('click', () => {
+        const blob = new Blob([panel.output.textContent ?? ''], {
+          type: `${panel.mimeType};charset=utf-8`,
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+
+        link.href = url;
+        link.download = panel.fileName;
+        link.click();
+        URL.revokeObjectURL(url);
+        setStatus(`${panel.fileName} was written by this page, from this tab.`);
+      });
+
+      render(panel);
+    }
+
+    setStatus(resting);
+  }
+</script>

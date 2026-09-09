@@ -1511,6 +1511,100 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'json-csv-converter': {
+    what: {
+      heading: 'What JSON and CSV Converter does',
+      paragraphs: [
+        'It turns an array of flat JSON objects into a table, and a table back into an array of flat JSON objects. Both boxes are live: paste into either one and the other format appears underneath as you type, with the number of rows and columns, ready to copy or download as a file.',
+        'The keys become the columns. Their order is the order they first appear reading the JSON top to bottom, so the same records always write the same file — and a key only some records carry still gets a column, with an empty cell where it was absent.',
+        'The quoting is the part that is easy to get wrong and expensive to get wrong. A value holding a comma, a quote or a line break is quoted on the way out and read back as one value on the way in, which is the whole of RFC 4180 and the whole reason a spreadsheet opens the result as a table rather than as confetti.',
+      ],
+    },
+    when: {
+      heading: 'When records have to move between a program and a spreadsheet',
+      paragraphs: [
+        'When an API gave you a list of objects and the person who asked for it wanted something they could open in Excel. When somebody sent you a spreadsheet export and the thing you are writing takes JSON. When you are seeding test data and it is quicker to type rows than braces.',
+        'It is also a quick way to see the shape of a response: a table makes a missing field obvious in a way a wall of JSON does not, because the gap is a blank cell in a column with a name at the top.',
+      ],
+    },
+    options: {
+      heading: 'The separator, the cell reading, and the things it will not guess',
+      paragraphs: [
+        'Two controls, and a short list of refusals. Both controls exist because the file does not say, and every refusal is a place where doing something helpful would quietly change your data.',
+      ],
+      details: [
+        {
+          term: 'The column separator',
+          description:
+            'Comma, semicolon, tab or pipe, chosen rather than sniffed. A semicolon is what a spreadsheet writes in a locale where the comma is already the decimal point, which is most of Europe, and it is the usual reason a file opens in Excel as one tall column. Tab is TSV, and what you get pasting a range out of a spreadsheet. If a table comes out one column wide and the header contains one of the others, the page says which one to try.',
+        },
+        {
+          term: 'What a cell becomes',
+          description:
+            'A CSV carries no types at all, so every cell is text until somebody decides otherwise. Text is the default and loses nothing: 00713 stays 00713. Read as values instead and a cell that is exactly a JSON number, or true, false or null, becomes one — which is what a round trip needs, and what turns a product code into a smaller number if you are not paying attention.',
+        },
+        {
+          term: 'A number it will not shorten',
+          description:
+            'Even when cells are read as values, a number is only taken when writing it back gives the same characters. A twenty-digit identifier and 1e3 are both legal JSON numbers and neither survives a trip through a browser number unchanged, so both stay text. A converter that silently rounds an account number is worse than one that hands it back as a string.',
+        },
+        {
+          term: 'Nested JSON, refused by name',
+          description:
+            'An object or an array inside a record is refused, and the message names the record and the key. Flattening means inventing names for the columns it becomes — dot paths, bracket indexes, something — and every convention is somebody else’s wrong one. Flatten it the way your system expects, or take the part that is already a table.',
+        },
+        {
+          term: 'A row that does not match the header',
+          description:
+            'A row with fewer fields than the header is filled in with empty text and the line is named, because nothing was lost. A row with more is refused and nothing is converted, because something would be: there is no column for the extra values, and dropping them is how a converter loses a field without anybody noticing. It usually means a separator inside a value that was never quoted.',
+        },
+        {
+          term: 'What an empty cell means',
+          description:
+            'A null is written as an empty cell, which is what a spreadsheet has instead of one, and an empty cell reads back as an empty string. That is the one value a round trip does not return, and the page says so rather than letting you discover it later. A missing key is an empty cell too, so every row comes out the same width.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'The records never leave the tab',
+      paragraphs: [
+        'The conversion is done by this page, in this browser. Gizlet is a static site with no upload endpoint, so what you paste is not sent anywhere and there is nothing to keep after you close the tab. The downloaded file is written here too, out of the text already on screen.',
+        'That is worth more here than on most pages. Records moving between JSON and CSV are usually somebody’s customers, orders or exports, and the ordinary way to convert them is to paste them into a website that receives them.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Why is my whole CSV coming out as one column?',
+        answer:
+          'The separator above is not the one your file uses. A spreadsheet saved in most of Europe writes semicolons, because the comma is already the decimal point there. Pick the separator the file actually uses and the columns appear — and when the header contains one of the others, the page names it for you.',
+      },
+      {
+        question: 'Will it flatten nested JSON into columns?',
+        answer:
+          'No, deliberately. A cell holds one value, so nesting has to become several columns, and naming them means picking a convention — address.city, address[0], something else — that your system may not read back. It refuses instead, and names the record and the key, so you can flatten it the way the thing at the other end expects.',
+      },
+      {
+        question: 'Do numbers stay numbers when I convert a CSV to JSON?',
+        answer:
+          'Only if you ask. The default makes every cell a string, because a CSV has no types and interpreting them is how a leading zero disappears. Switch the reading to values and a cell that is exactly a JSON number, or true, false or null, becomes one — while anything a browser cannot hold exactly, like a twenty-digit identifier, still stays text.',
+      },
+      {
+        question: 'Does a value with a comma or a line break in it survive?',
+        answer:
+          'Yes, in both directions. Writing a table quotes any value holding the separator, a double quote, or a line break, and doubles the quotes inside it; reading one takes all of that back apart. That is RFC 4180, and it is why the result opens in a spreadsheet as the table you meant.',
+      },
+      {
+        question: 'Can I convert a table and get exactly the same table back?',
+        answer:
+          'Yes, with one exception the page warns about. Text records survive JSON to CSV and back unchanged, and numbers and booleans do too when the cells are read as values. The exception is null: a spreadsheet has no null, so it is written as an empty cell, and an empty cell comes back as an empty string.',
+      },
+      {
+        question: 'Are my records uploaded anywhere?',
+        answer:
+          'No. The conversion happens in this page on your own device, nothing is sent while you type, and the file you download is written by the browser out of what is already on screen. There is no upload endpoint on this site to send it to.',
+      },
+    ],
+  },
   'timestamp-converter': {
     what: {
       heading: 'What Timestamp Converter does',

@@ -118,9 +118,12 @@ test("finds Gizlets from the homepage search by intent", async ({ page }) => {
     searchForm.getByRole("link", { name: /Crop Image/ }),
   ).toHaveAttribute("href", "/tools/crop-image/");
 
-  await search.fill("spreadsheet");
+  // A word a visitor might plausibly try and that no Gizlet claims. It has to
+  // be replaced whenever one starts claiming it, which is what happened to
+  // "spreadsheet" when the JSON and CSV Converter shipped.
+  await search.fill("translate");
   await expect(
-    searchForm.getByText("No Gizlets found for “spreadsheet”."),
+    searchForm.getByText("No Gizlets found for “translate”."),
   ).toBeVisible();
 });
 

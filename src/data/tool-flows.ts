@@ -237,6 +237,16 @@ export const toolFlowRegistry = [
  * moment written five ways. Neither end is a file, and a flow here carries
  * files, so it belongs to the text neighbourhood with the rest of them.
  *
+ * JSON and CSV Converter is the one with a contract to spare and no way to
+ * write it. It reads JSON text and writes a table, and reads a table and
+ * writes JSON text — both directions, which is the whole Gizlet. A definition
+ * here declares one input kind and one output kind, so any contract it could
+ * be given would describe half of it and let a chain use that half while the
+ * other stayed unsayable. Half a Gizlet in the graph is worse than none: it
+ * reads as the whole one. It stays out with the rest of the text
+ * neighbourhood, and joins on the day a hand-off can be declared in both
+ * directions.
+ *
  * File Hash Generator is the one that reads every payload kind and still is
  * not a step. It takes any file at all, which is not one of the kinds declared
  * here, and gives back a digest and a verdict — a fact about the file rather
@@ -258,6 +268,7 @@ export const flowlessToolSlugs = [
   'jwt-decoder',
   'file-hash-generator',
   'timestamp-converter',
+  'json-csv-converter',
 ] as const satisfies readonly ToolRegistryEntry['slug'][];
 
 /** The registry's own entries, with their payload kinds preserved. */
