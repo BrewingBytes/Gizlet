@@ -35,6 +35,20 @@ export interface AdvertisementConfiguration {
   readonly slots: Readonly<Partial<Record<AdvertisementSlotVariant, string>>>;
 }
 
+/**
+ * Advertising can be configured for the site without being appropriate for a
+ * particular page. This policy is the only place that turns configured slots
+ * into page-level delivery eligibility.
+ */
+export interface PageAdvertisementPolicy extends AdvertisementConfiguration {}
+
+export interface PageAdvertisementPolicyRequest {
+  readonly pathname: string;
+  readonly configuration: AdvertisementConfiguration;
+  readonly requestedSlots: readonly AdvertisementSlotVariant[];
+  readonly isAvailableTool?: boolean;
+}
+
 const adSenseClientPattern = /^ca-pub-\d{16}$/;
 const adSenseSlotPattern = /^\d+$/;
 
@@ -74,5 +88,38 @@ export function getAdvertisementConfiguration({
 
   return isEnabled
     ? { enabled: true, adSenseClient: client, slots: configuredSlots }
+    : { enabled: false, slots: {} };
+}
+
+/**
+ * Returns the configured slots a page may actually deliver. Every route is
+ * denied by default: the home page may use its banner, and an available Gizlet
+ * page may use its inline and rail placements. Legal, roadmap, request, 404,
+ * and planned-tool pages therefore cannot load the provider merely because
+ * site-wide advertising is configured.
+ */
+export function getPageAdvertisementPolicy({
+  pathname,
+  configuration,
+  requestedSlots,
+  isAvailableTool = false,
+}: PageAdvertisementPolicyRequest): PageAdvertisementPolicy {
+  const permittedSlots = pathname === '/'
+    ? new Set<AdvertisementSlotVariant>(['banner'])
+    : isAvailableTool && pathname.startsWith('/tools/')
+      ? new Set<AdvertisementSlotVariant>(['inline', 'rail'])
+      : new Set<AdvertisementSlotVariant>();
+  const slots = Object.fromEntries(
+    requestedSlots
+      .filter((variant) => permittedSlots.has(variant))
+      .map((variant) => [variant, configuration.slots[variant]])
+      .filter(([, slot]) => slot !== undefined),
+  ) as Partial<Record<AdvertisementSlotVariant, string>>;
+  const enabled = configuration.enabled
+    && configuration.adSenseClient !== undefined
+    && Object.keys(slots).length > 0;
+
+  return enabled
+    ? { enabled: true, adSenseClient: configuration.adSenseClient, slots }
     : { enabled: false, slots: {} };
 }

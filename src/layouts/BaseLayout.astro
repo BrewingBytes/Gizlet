@@ -5,7 +5,7 @@ import ToolSearchOverlay from '../components/ToolSearchOverlay.astro';
 import {
   adSensePublisherId,
   adSenseScriptBaseUrl,
-  getAdvertisementConfiguration,
+  type PageAdvertisementPolicy,
 } from '../data/advertising';
 import { getPageMetadata, type PageMetadata } from '../data/metadata';
 import {
@@ -16,6 +16,7 @@ import '../styles/global.css';
 
 interface Props {
   description?: string;
+  advertising?: PageAdvertisementPolicy;
   image?: string;
   metadata?: PageMetadata;
   pathname?: string;
@@ -25,6 +26,7 @@ interface Props {
 }
 
 const {
+  advertising,
   description,
   image,
   metadata: suppliedMetadata,
@@ -34,14 +36,7 @@ const {
   title,
 } = Astro.props;
 const metadata = suppliedMetadata ?? getPageMetadata({ title, description, pathname, image, robots });
-const advertising = getAdvertisementConfiguration({
-  isDevelopment: import.meta.env.DEV,
-  enabled: import.meta.env.PUBLIC_ADS_ENABLED,
-  adSenseClient: import.meta.env.PUBLIC_ADSENSE_CLIENT,
-  bannerSlot: import.meta.env.PUBLIC_ADSENSE_BANNER_SLOT,
-  inlineSlot: import.meta.env.PUBLIC_ADSENSE_INLINE_SLOT,
-  railSlot: import.meta.env.PUBLIC_ADSENSE_RAIL_SLOT,
-});
+const adSenseClient = advertising?.enabled ? advertising.adSenseClient : undefined;
 ---
 
 <!doctype html>
@@ -93,11 +88,11 @@ const advertising = getAdvertisementConfiguration({
       })();
     </script>
     {
-      advertising.enabled && advertising.adSenseClient && (
+      adSenseClient && (
         <script
           is:inline
           async
-          src={`${adSenseScriptBaseUrl}?client=${advertising.adSenseClient}`}
+          src={`${adSenseScriptBaseUrl}?client=${adSenseClient}`}
           crossorigin="anonymous"
         ></script>
       )
