@@ -1,0 +1,1 @@
+- Keep Gizlet's colour theme working when browser storage is unavailable.
