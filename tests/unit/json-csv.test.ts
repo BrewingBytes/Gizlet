@@ -15,6 +15,7 @@ import {
   findOtherDelimiters,
   formatCsvField,
   formatCsvRows,
+  getConvertedRecordsName,
   getCsvDelimiter,
   getCsvValueReading,
   isCsvDelimiter,
@@ -40,6 +41,20 @@ function expectFailure(result: CsvConversionResult | undefined): string {
 
   return (result as { readonly message: string }).message;
 }
+
+describe('what a converted document is called', () => {
+  it('keeps the name of the document it was made from', () => {
+    expect(getConvertedRecordsName('orders-2026.csv', 'json')).toBe('orders-2026.json');
+    expect(getConvertedRecordsName('people.json', 'csv')).toBe('people.csv');
+    expect(getConvertedRecordsName('export', 'csv')).toBe('export.csv');
+  });
+
+  it('falls back to the generic names for a paste, which has none', () => {
+    expect(getConvertedRecordsName(undefined, 'csv')).toBe(csvDownloadName);
+    expect(getConvertedRecordsName('', 'json')).toBe(jsonDownloadName);
+    expect(getConvertedRecordsName('   ', 'json')).toBe(jsonDownloadName);
+  });
+});
 
 describe('the delimiters and the value readings', () => {
   it('describes every delimiter it offers, once each', () => {

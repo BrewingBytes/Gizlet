@@ -21,10 +21,43 @@ describe('what the file says it is', () => {
     expect(getDroppedFileKind(file('report.PDF', ''))).toBe('pdf-file');
   });
 
+  it('reads a table and a JSON document the same way, by name and type', () => {
+    expect(getDroppedFileKind(file('orders.csv', 'text/csv'))).toBe('csv-file');
+    expect(getDroppedFileKind(file('ORDERS.CSV', ''))).toBe('csv-file');
+    expect(getDroppedFileKind(file('range.tsv', ''))).toBe('csv-file');
+    expect(getDroppedFileKind(file('export', 'text/tab-separated-values'))).toBe('csv-file');
+    expect(getDroppedFileKind(file('people.json', 'application/json'))).toBe('json-text');
+    expect(getDroppedFileKind(file('people.JSON', ''))).toBe('json-text');
+  });
+
   it('says nothing about a file these Gizlets do not read', () => {
+    // A .txt could be anything at all, and offering to open every file on a
+    // device as a table is a worse answer than offering nothing. The box on
+    // the Gizlet's own page still takes one.
     expect(getDroppedFileKind(file('notes.txt', 'text/plain'))).toBeUndefined();
     expect(getDroppedFileKind(file('archive.zip', 'application/zip'))).toBeUndefined();
     expect(getDroppedFileKind(file('clip.mp4', 'video/mp4'))).toBeUndefined();
+  });
+});
+
+describe('where a dropped table can go', () => {
+  it('offers the Gizlets that read a table, and the ones that read JSON', () => {
+    expect(getGizletsForDroppedFile('csv-file').map((tool) => tool.slug)).toEqual([
+      'json-csv-converter',
+      'csv-viewer',
+    ]);
+    expect(getGizletsForDroppedFile('json-text').map((tool) => tool.slug)).toEqual([
+      'json-formatter',
+      'json-csv-converter',
+    ]);
+  });
+
+  it('counts and names the new kinds like the others', () => {
+    expect(describeDroppedFileDestinations('csv-file', 2)).toBe('2 Gizlets take a CSV.');
+    expect(describeDroppedFile({ name: 'orders.csv', size: 2048 }, 'csv-file', () => '2 KB')).toBe(
+      'orders.csv · a CSV · 2 KB',
+    );
+    expect(describeDroppedFileDestinations('json-text', 1)).toBe('1 Gizlet takes a JSON file.');
   });
 });
 
@@ -111,7 +144,9 @@ describe('what the panel says', () => {
   });
 
   it('says what to do about a file it cannot start from', () => {
-    expect(getUnsupportedDroppedFileMessage('archive.zip')).toMatch(/^archive\.zip is not an image or a PDF/);
+    expect(getUnsupportedDroppedFileMessage('archive.zip')).toMatch(
+      /^archive\.zip is not an image, a PDF, a CSV or a JSON file/,
+    );
     expect(getUnsupportedDroppedFileMessage('archive.zip')).toMatch(/Search above/);
     expect(getDroppedFileCountMessage()).toMatch(/one file at a time/);
   });

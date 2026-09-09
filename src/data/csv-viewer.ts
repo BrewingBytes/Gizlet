@@ -63,6 +63,31 @@ function formatMegabytes(bytes: number): string {
   return `${Math.round(bytes / (1024 * 1024))} MB`;
 }
 
+/** What a picker and a dropped file can be recognised by. */
+interface CsvFileDetails {
+  readonly name: string;
+  readonly type: string;
+}
+
+/**
+ * Whether a file is a delimited document, by its name and reported type.
+ *
+ * The box takes any text at all, deliberately: a `.dat` export is still a
+ * table, and refusing one on its extension would be refusing a file this can
+ * read perfectly well. This narrower question is the one asked where a file
+ * has to be recognised rather than accepted — the flow that starts from a CSV,
+ * and the file dropped on the home page to find out what reads it — because
+ * offering to open every file on a device as a table would be a worse answer
+ * than offering nothing.
+ */
+export function isDelimitedTextFile(file: CsvFileDetails): boolean {
+  return (
+    file.type === 'text/csv' ||
+    file.type === 'text/tab-separated-values' ||
+    /\.(csv|tsv|tab)$/i.test(file.name)
+  );
+}
+
 /** The reason a file was not read, or nothing, from what the picker knows. */
 export function validateCsvFile(file: { readonly size: number }): string | undefined {
   if (file.size > maximumCsvSize) {

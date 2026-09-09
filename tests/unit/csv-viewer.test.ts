@@ -10,6 +10,7 @@ import {
   detectCsvDelimiter,
   getCsvTextProblem,
   getFormattedCsvName,
+  isDelimitedTextFile,
   maximumCsvSize,
   readCsvTable,
   validateCsvFile,
@@ -58,6 +59,24 @@ describe('what it refuses to read', () => {
     expect(getCsvTextProblem('name,born\nAda,1815')).toBeUndefined();
     // A header whose first column is called PKID is not a ZIP archive.
     expect(getCsvTextProblem('PKID,name\n1,Ada')).toBeUndefined();
+  });
+});
+
+describe('recognising a delimited file', () => {
+  const file = (name: string, type: string) => ({ name, type });
+
+  it('knows a table by its extension or by the type the browser reports', () => {
+    expect(isDelimitedTextFile(file('orders.csv', 'text/csv'))).toBe(true);
+    expect(isDelimitedTextFile(file('ORDERS.CSV', ''))).toBe(true);
+    expect(isDelimitedTextFile(file('range.tsv', ''))).toBe(true);
+    expect(isDelimitedTextFile(file('range.tab', ''))).toBe(true);
+    expect(isDelimitedTextFile(file('export', 'text/tab-separated-values'))).toBe(true);
+  });
+
+  it('does not claim every text file is a table, which is what the box is for', () => {
+    expect(isDelimitedTextFile(file('notes.txt', 'text/plain'))).toBe(false);
+    expect(isDelimitedTextFile(file('people.json', 'application/json'))).toBe(false);
+    expect(isDelimitedTextFile(file('report.pdf', 'application/pdf'))).toBe(false);
   });
 });
 

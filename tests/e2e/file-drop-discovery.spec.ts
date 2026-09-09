@@ -116,7 +116,9 @@ test("says what to do about a file no Gizlet reads, and leaves search alone", as
     buffer: Buffer.from("PK not really"),
   });
 
-  await expect(page.getByRole("alert")).toContainText("archive.zip is not an image or a PDF");
+  await expect(page.getByRole("alert")).toContainText(
+    "archive.zip is not an image, a PDF, a CSV or a JSON file",
+  );
   await expect(page.locator("[data-destinations] > li")).toHaveCount(0);
 
   // The ordinary way in still works.

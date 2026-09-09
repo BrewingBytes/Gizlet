@@ -1,4 +1,6 @@
+import { isDelimitedTextFile } from './csv-viewer';
 import { isSupportedImageFile } from './image-compression';
+import { isJsonTextFile } from './json-formatter';
 import { isSupportedPdfFile } from './pdf-viewer';
 import {
   flowlessToolSlugs,
@@ -36,6 +38,8 @@ const categoryPayloads = {
 export const droppedFileLabels = {
   'image-file': 'an image',
   'pdf-file': 'a PDF',
+  'csv-file': 'a CSV',
+  'json-text': 'a JSON file',
 } as const satisfies Record<FlowPayloadLineageKind, string>;
 
 interface FileDetails {
@@ -46,12 +50,17 @@ interface FileDetails {
 /**
  * What kind of payload this file is, or nothing.
  *
- * The two checks are the ones the workspaces already use, so a file this says
- * is an image is a file those Gizlets will accept — one answer, in one place.
+ * Every check is one the workspaces already use, so a file this says is an
+ * image is a file those Gizlets will accept — one answer, in one place. The
+ * two text kinds are recognised by extension and type rather than by opening
+ * the file, which is the same rule as the other two and the same reason: this
+ * reads no bytes.
  */
 export function getDroppedFileKind(file: FileDetails): FlowPayloadLineageKind | undefined {
   if (isSupportedPdfFile(file)) return 'pdf-file';
   if (isSupportedImageFile(file)) return 'image-file';
+  if (isDelimitedTextFile(file)) return 'csv-file';
+  if (isJsonTextFile(file)) return 'json-text';
 
   return undefined;
 }
@@ -111,7 +120,7 @@ export function describeDroppedFileDestinations(
  * visitor nothing about what to do next, and the search box is still there.
  */
 export function getUnsupportedDroppedFileMessage(name: string): string {
-  return `${name} is not an image or a PDF, which are the files these Gizlets read. Search above for what you want to do instead.`;
+  return `${name} is not an image, a PDF, a CSV or a JSON file, which are the ones these Gizlets start from. Search above for what you want to do instead.`;
 }
 
 export function getDroppedFileCountMessage(): string {

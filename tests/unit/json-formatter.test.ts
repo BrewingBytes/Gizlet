@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import {
   formatJsonParseError,
+  isJsonTextFile,
   transformJson,
   validateJson,
 } from '../../src/data/json-formatter';
@@ -33,5 +34,20 @@ describe('JSON Formatter', () => {
       'Invalid JSON at line 4, column 1: Unexpected closing brace.',
     );
     expect(input).toBe('{\n  "name": "Gizlet",\n  "enabled":\n}');
+  });
+});
+
+describe('recognising a JSON file', () => {
+  const file = (name: string, type: string) => ({ name, type });
+
+  test('knows one by its extension or by the type the browser reports', () => {
+    expect(isJsonTextFile(file('people.json', 'application/json'))).toBe(true);
+    expect(isJsonTextFile(file('PEOPLE.JSON', ''))).toBe(true);
+    expect(isJsonTextFile(file('export', 'application/json'))).toBe(true);
+  });
+
+  test('says nothing about a file that only might hold JSON', () => {
+    expect(isJsonTextFile(file('notes.txt', 'text/plain'))).toBe(false);
+    expect(isJsonTextFile(file('orders.csv', 'text/csv'))).toBe(false);
   });
 });
