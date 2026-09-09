@@ -42,7 +42,7 @@ The injected tag is absent from `pnpm run build` output and from a local preview
 
 ## Advertising
 
-Gizlet's first advertising provider is [Google AdSense](https://adsense.google.com/). Its responsive display units can serve the banner, inline, and desktop-rail placements already defined by the reusable `AdvertisementSlot` component. The integration emits no provider script, ad tags, or reserved ad space by default, in development, or whenever its configuration is invalid. Individual placements also remain absent until their own ad-unit ID is configured.
+Gizlet's first advertising provider is [Google AdSense](https://adsense.google.com/). Its responsive display units can serve the banner, inline, and desktop-rail placements already defined by the reusable `AdvertisementSlot` component. The integration emits no provider script, ad tags, or reserved ad space by default, in development, whenever its configuration is invalid, or on a page without an eligible configured placement. Individual placements also remain absent until their own ad-unit ID is configured and the page is eligible to display it.
 
 The Gizlet integration sends AdSense only its public publisher ID and the public ID of the requested ad unit. It never places file contents, filenames, JSON, generated passwords, tool results, error messages, or other Gizlet payloads into ad tags. As with any third-party advertising service, enabling it allows the provider to process the page request and information necessary to serve and measure advertising; the production privacy and cookie notice must accurately describe that processing and the providers selected in AdSense.
 

@@ -69,3 +69,18 @@ jobs:
 
       - name: Browser smoke tests
         run: pnpm run test:e2e
+
+      - name: Browser advertising policy tests with configured slots
+        env:
+          PUBLIC_ADS_ENABLED: 'true'
+          PUBLIC_ADSENSE_CLIENT: ca-pub-1234567890123456
+          PUBLIC_ADSENSE_BANNER_SLOT: '1234567890'
+          PUBLIC_ADSENSE_INLINE_SLOT: '2345678901'
+          PUBLIC_ADSENSE_RAIL_SLOT: '3456789012'
+        run: pnpm exec playwright test tests/e2e/advertising.spec.ts
+
+      - name: Browser advertising policy tests without configured slots
+        env:
+          PUBLIC_ADS_ENABLED: 'true'
+          PUBLIC_ADSENSE_CLIENT: ca-pub-1234567890123456
+        run: pnpm exec playwright test tests/e2e/advertising.spec.ts

@@ -6,6 +6,7 @@ import {
   getAdvertisementConfiguration,
   getPageAdvertisementPolicy,
 } from '../../src/data/advertising';
+import { getPlannedTools } from '../../src/data/tools';
 
 const productionConfiguration = {
   isDevelopment: false,
@@ -98,6 +99,8 @@ describe('getPageAdvertisementPolicy', () => {
       '/terms/',
       '/about/',
       '/roadmap/',
+      '/flows/',
+      '/tools/',
       '/404.html',
       '/request-a-gizlet/',
     ]) {
@@ -108,10 +111,31 @@ describe('getPageAdvertisementPolicy', () => {
       })).toEqual({ enabled: false, slots: {} });
     }
 
+    for (const tool of getPlannedTools()) {
+      expect(getPageAdvertisementPolicy({
+        pathname: tool.path,
+        configuration,
+        requestedSlots: ['inline', 'rail'],
+      })).toEqual({ enabled: false, slots: {} });
+    }
+
     expect(getPageAdvertisementPolicy({
-      pathname: '/tools/remove-background/',
-      configuration,
+      pathname: '/',
+      configuration: getAdvertisementConfiguration({
+        ...productionConfiguration,
+        enabled: 'false',
+      }),
+      requestedSlots: ['banner'],
+    })).toEqual({ enabled: false, slots: {} });
+    expect(getPageAdvertisementPolicy({
+      pathname: '/tools/compress-image/',
+      configuration: getAdvertisementConfiguration({
+        ...productionConfiguration,
+        inlineSlot: undefined,
+        railSlot: undefined,
+      }),
       requestedSlots: ['inline', 'rail'],
+      isAvailableTool: true,
     })).toEqual({ enabled: false, slots: {} });
     expect(getPageAdvertisementPolicy({
       pathname: '/',

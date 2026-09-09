@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { getPlannedTools } from '../../src/data/tools';
+
 const adsEnabled = process.env.PUBLIC_ADS_ENABLED === 'true';
 const hasConfiguredSlots = [
   process.env.PUBLIC_ADSENSE_BANNER_SLOT,
@@ -25,9 +27,11 @@ test.describe('page advertising policy', () => {
       '/terms/',
       '/about/',
       '/roadmap/',
+      '/flows/',
+      '/tools/',
       '/404.html',
       '/request-a-gizlet/',
-      '/tools/qr-code-generator/',
+      ...getPlannedTools().map((tool) => tool.path),
     ]) {
       await page.goto(pathname);
       await expect(page.locator('script[src*="pagead2.googlesyndication.com"]')).toHaveCount(0);
