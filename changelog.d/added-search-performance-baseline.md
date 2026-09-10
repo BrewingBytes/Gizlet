@@ -1,0 +1,1 @@
+- Added a ready-to-fill Search Console baseline for comparing search visibility, query-to-page performance, sitemap status, canonical selection, and evidence-led content experiments without inventing unavailable account data.
