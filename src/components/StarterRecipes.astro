@@ -1,0 +1,147 @@
+---
+/**
+ * A short shelf of flows somebody has already worked out.
+ *
+ * An empty builder asks a visitor to know both which Gizlets exist and which
+ * order they go in. These are three answers to that, and each one is an
+ * ordinary recipe link rather than a special case: the same fragment the Copy
+ * recipe link button writes, read by the same decoder.
+ *
+ * Deliberately outside the builder. A card sets the chain up and then stops —
+ * there is nothing to run until a visitor chooses a file — so nothing here
+ * needs to reach into how a flow executes.
+ */
+import { getStarterRecipes } from '../data/starter-recipes';
+
+const recipes = getStarterRecipes();
+---
+
+<section class="starter-recipes" aria-labelledby="starter-recipes-title" data-starter-recipes>
+  <div class="starter-recipes__intro">
+    <p class="metadata">Start from one of these</p>
+    <h2 id="starter-recipes-title">Three flows somebody has already worked out.</h2>
+    <p>
+      Each is a normal recipe link, the same kind the flow above copies. Opening one fills the
+      blocks in and stops there: nothing runs until you choose a file, and the file you choose stays
+      in this browser.
+    </p>
+  </div>
+
+  <ol class="starter-recipes__list">
+    {
+      recipes.map((recipe) => (
+        <li class="starter-recipe">
+          <h3 class="starter-recipe__title">{recipe.title}</h3>
+          <p class="starter-recipe__summary">{recipe.summary}</p>
+
+          <dl class="starter-recipe__payloads">
+            <div>
+              <dt>Takes</dt>
+              <dd>{recipe.input}</dd>
+            </div>
+            <div>
+              <dt>Gives back</dt>
+              <dd>{recipe.output}</dd>
+            </div>
+            {recipe.format && (
+              <div>
+                <dt>{recipe.format.label}</dt>
+                <dd>{recipe.format.value}</dd>
+              </div>
+            )}
+          </dl>
+
+          <ol class="starter-recipe__steps">
+            {recipe.steps.map((step) => (
+              <li>
+                <strong>{step.name}</strong>
+                <span>{step.effect}</span>
+              </li>
+            ))}
+          </ol>
+
+          {recipe.substitution && <p class="starter-recipe__note">{recipe.substitution}</p>}
+          {recipe.limit && <p class="starter-recipe__limit">{recipe.limit}</p>}
+
+          <a
+            class="starter-recipe__open"
+            href={recipe.href}
+            aria-label={`Open this recipe: ${recipe.title}`}
+            data-recipe-link
+          >
+            Open this recipe
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+</section>
+
+<style>
+  .starter-recipes { max-width: 56rem; margin-top: var(--space-6); padding-top: var(--space-5); border-top: var(--border-strong-width) solid var(--text); }
+  .starter-recipes__intro { max-width: 42rem; margin-bottom: var(--space-4); }
+  .starter-recipes__intro h2 { margin-bottom: var(--space-2); }
+  .starter-recipes__intro p:not(.metadata) { margin-bottom: 0; color: var(--text-muted); }
+  .starter-recipes__list { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+  .starter-recipe { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3); border: var(--border-width) solid var(--border); background: var(--surface); }
+  .starter-recipe__title { margin: 0; font-size: var(--font-size-lg); }
+  .starter-recipe__summary { margin: 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .starter-recipe__payloads { display: grid; gap: var(--space-1); margin: 0; padding: var(--space-2) 0; border-top: var(--border-width) solid var(--border); border-bottom: var(--border-width) solid var(--border); }
+  .starter-recipe__payloads > div { display: flex; flex-wrap: wrap; gap: var(--space-1); align-items: baseline; }
+  .starter-recipe__payloads dt { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); letter-spacing: 0.04em; text-transform: uppercase; }
+  .starter-recipe__payloads dd { margin: 0; font-weight: 700; font-size: var(--font-size-sm); }
+  .starter-recipe__steps { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; counter-reset: recipe-step; }
+  .starter-recipe__steps li { display: grid; gap: 0.125rem; padding-left: var(--space-4); counter-increment: recipe-step; }
+  .starter-recipe__steps li::before { content: counter(recipe-step, decimal-leading-zero); margin-left: calc(var(--space-4) * -1); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); grid-row: span 2; align-self: start; }
+  .starter-recipe__steps strong { font-family: var(--font-display); grid-column: 2; }
+  .starter-recipe__steps span { color: var(--text-muted); font-size: var(--font-size-sm); grid-column: 2; }
+  .starter-recipe__note, .starter-recipe__limit { margin: 0; color: var(--text-muted); font-size: var(--font-size-xs); }
+  .starter-recipe__limit { padding-left: var(--space-2); border-left: var(--border-strong-width) solid var(--warning); color: var(--warning); }
+  .starter-recipe__open { margin-top: auto; padding: calc(var(--space-2) - 2px) var(--space-3); border: var(--border-strong-width) solid var(--button-background); border-radius: var(--border-radius); background: var(--button-background); color: var(--button-text); font-weight: 700; text-align: center; text-decoration: none; }
+  .starter-recipe__open:hover { box-shadow: 3px 3px 0 var(--color-amber); transform: translate(-1px, -1px); }
+  @media (prefers-reduced-motion: reduce) { .starter-recipe__open:hover { transform: none; } }
+</style>
+
+<script>
+  import { getStarterRecipes } from '../data/starter-recipes';
+
+  const root = document.querySelector<HTMLElement>('[data-starter-recipes]');
+
+  if (root) {
+    const builder = document.querySelector<HTMLElement>('[data-flow-builder]');
+    const fragments = new Set(
+      getStarterRecipes().map((recipe) => recipe.href.slice(recipe.href.indexOf('#'))),
+    );
+
+    /**
+     * The builder reads the fragment once, as it starts. A card points at this
+     * same page, so following one in place would change the address bar and
+     * leave the blocks above it exactly as they were; reloading is what makes a
+     * card behave the same as the link it is, wherever it is opened from.
+     */
+    for (const link of root.querySelectorAll<HTMLAnchorElement>('[data-recipe-link]')) {
+      link.addEventListener('click', (event) => {
+        // A modified click is a request for a new tab or a saved link, and a
+        // recipe link works there already: it is a URL, not a gesture.
+        if (event.defaultPrevented || event.button !== 0) return;
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+        const target = new URL(link.href);
+
+        if (target.pathname !== window.location.pathname) return;
+
+        event.preventDefault();
+        window.location.hash = target.hash;
+        window.location.reload();
+      });
+    }
+
+    // Arriving on a recipe means the filled-in chain is the thing to look at,
+    // so the reload lands there rather than wherever the page was scrolled to.
+    if (builder && fragments.has(window.location.hash)) {
+      if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
+
+      builder.scrollIntoView({ block: 'start' });
+    }
+  }
+</script>
