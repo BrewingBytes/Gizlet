@@ -1,0 +1,1 @@
+- Prepared a local JPEG and WebP compression engine for a future target-file-size control, with bounded attempts and an explicit result when the limit cannot be met.
