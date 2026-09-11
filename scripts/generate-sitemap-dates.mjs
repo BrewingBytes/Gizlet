@@ -57,7 +57,15 @@ const outputPath = join(repositoryRoot, 'src/data/sitemap-dates.ts');
 const staticPageSources = [
   { pathname: '/', files: ['src/pages/index.astro', 'src/data/home-page.ts'] },
   { pathname: '/tools/', files: ['src/pages/tools/index.astro'] },
-  { pathname: '/flows/', files: ['src/pages/flows.astro', 'src/components/FlowBuilder.astro'] },
+  {
+    pathname: '/flows/',
+    files: [
+      'src/pages/flows.astro',
+      'src/components/FlowBuilder.astro',
+      'src/components/StarterRecipes.astro',
+      'src/data/starter-recipes.ts',
+    ],
+  },
   { pathname: '/roadmap/', files: ['src/pages/roadmap.astro', 'src/data/roadmap.ts'] },
   { pathname: '/privacy/', files: ['src/pages/privacy.astro', 'src/data/legal.ts'] },
   { pathname: '/terms/', files: ['src/pages/terms.astro', 'src/data/legal.ts'] },
