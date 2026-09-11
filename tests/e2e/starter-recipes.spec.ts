@@ -86,6 +86,20 @@ test("loads a recipe's settings and then waits, rather than running anything", a
   await direct.goto(`/flows/${new URL(page.url()).hash}`);
   await expect(direct.locator("[data-step-list] > li")).toHaveCount(2);
   await expect(direct.getByLabel("Resize Image width")).toHaveValue("1600");
+  await direct.close();
+
+  // And a modified click is still a request for a new tab rather than a
+  // gesture the card intercepts.
+  await page.goto("/flows/");
+  const opened = page.context().waitForEvent("page");
+  await page
+    .getByRole("link", { name: "Open this recipe: Join documents and clear their fields" })
+    .click({ modifiers: ["ControlOrMeta"] });
+  const tab = await opened;
+
+  await expect(tab.locator("[data-step-list] > li")).toHaveCount(2);
+  await expect(tab.getByLabel("Flow category")).toHaveValue("pdf");
+  expect(new URL(tab.url()).hash).toBe("#r=v1;c=pdf;merge-pdf;clean-pdf-metadata");
 });
 
 test("completes the web-ready image recipe on a local picture", async ({ page }) => {

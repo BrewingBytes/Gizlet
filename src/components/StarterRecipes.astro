@@ -137,11 +137,13 @@ const recipes = getStarterRecipes();
     }
 
     // Arriving on a recipe means the filled-in chain is the thing to look at,
-    // so the reload lands there rather than wherever the page was scrolled to.
+    // so the reload lands on it rather than back at the card that was clicked.
+    // The builder opens the page, so that place is the top of it — scrolling to
+    // the section itself would push the header off a screen nobody had scrolled.
     if (builder && fragments.has(window.location.hash)) {
       if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
 
-      builder.scrollIntoView({ block: 'start' });
+      window.scrollTo({ top: 0 });
     }
   }
 </script>
