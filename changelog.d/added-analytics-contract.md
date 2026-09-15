@@ -1,0 +1,1 @@
+- Added `docs/analytics-contract.md`, a proposal recording what adding Google Analytics 4 would cost Gizlet's privacy claims, the consent-delivery constraint that ties it to advertising, and the event whitelist it would require.
