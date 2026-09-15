@@ -19,6 +19,9 @@ export const consentVersion = 1;
 
 export const consentStorageKey = 'gizlet-consent';
 
+/** Dispatched on the document when a visitor answers, carrying the choice. */
+export const consentChangeEventName = 'gizlet:consent';
+
 export interface ConsentChoice {
   readonly version: number;
   readonly analytics: ConsentDecision;

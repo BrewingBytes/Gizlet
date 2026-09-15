@@ -70,6 +70,12 @@ jobs:
       - name: Browser smoke tests
         run: pnpm run test:e2e
 
+      - name: Browser analytics consent tests with measurement configured
+        env:
+          PUBLIC_ANALYTICS_ENABLED: 'true'
+          PUBLIC_GA4_MEASUREMENT_ID: G-TEST1234567
+        run: pnpm exec playwright test tests/e2e/analytics-consent.spec.ts
+
       - name: Browser advertising policy tests with configured slots
         env:
           PUBLIC_ADS_ENABLED: 'true'
