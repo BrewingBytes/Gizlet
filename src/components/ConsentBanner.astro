@@ -1,0 +1,109 @@
+---
+/**
+ * Asked only when measurement is configured and the visitor has not answered.
+ * It is rendered hidden and revealed by script, so a visitor who has already
+ * chosen never sees it flash, and a page with scripting off never shows a
+ * dialogue whose buttons would do nothing.
+ */
+---
+
+<section class="consent" data-consent-banner hidden aria-labelledby="consent-title">
+  <div class="consent__inner">
+    <div class="consent__copy">
+      <h2 class="consent__title" id="consent-title">Analytics is optional</h2>
+      <p class="consent__text">
+        Gizlet would like to measure which pages and Gizlets get used, so it knows what to build
+        next. It uses cookies, and it is entirely your choice. Files and text you give a Gizlet are
+        processed on your device and are never part of this. See the <a href="/privacy/">privacy page</a>.
+      </p>
+    </div>
+    <div class="consent__actions">
+      <button class="consent__button" type="button" data-consent-choice="denied">No thanks</button>
+      <button
+        class="consent__button consent__button--primary"
+        type="button"
+        data-consent-choice="granted"
+      >
+        Allow analytics
+      </button>
+    </div>
+  </div>
+</section>
+
+<style>
+  .consent {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    background: var(--surface);
+    border-top: var(--border-strong-width) solid var(--text);
+  }
+
+  .consent__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    max-width: var(--container-width);
+    margin: 0 auto;
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .consent__copy {
+    max-width: 62ch;
+  }
+
+  .consent__title {
+    margin: 0 0 var(--space-1);
+    font-family: var(--font-display);
+    font-size: var(--font-size-base);
+  }
+
+  .consent__text {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .consent__actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: var(--space-2);
+  }
+
+  .consent__button {
+    background: var(--control-background);
+    border: var(--border-width) solid var(--text);
+    border-radius: var(--border-radius);
+    color: var(--control-text);
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: var(--font-size-sm);
+    padding: var(--space-1) var(--space-3);
+  }
+
+  .consent__button--primary {
+    background: var(--button-background);
+    color: var(--button-text);
+  }
+
+  @media (max-width: 44rem) {
+    .consent__inner {
+      align-items: stretch;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .consent__actions {
+      justify-content: flex-end;
+    }
+  }
+</style>
+
+<script>
+  import { initialiseConsentBanner } from '../scripts/consent';
+
+  initialiseConsentBanner();
+</script>
