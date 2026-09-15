@@ -602,6 +602,10 @@ if (!resizeImage) throw new Error('Compress Image needs the Resize Image entry t
   import { checkBatchSize, packImageArchive, readBatchSources, releaseBatch, runImageBatch, type BatchSource } from '../scripts/image-batch';
   import { encodeBrowserImage } from '../scripts/image-processing';
   import { createBrowserTargetImageEncoder, encodeImageToTargetSize } from '../scripts/image-target-size';
+  import { sendAnalyticsEvent } from '../scripts/analytics';
+
+  /** Validated against the registry before anything is reported. */
+  const toolSlug = 'compress-image';
 
   const root = document.querySelector<HTMLElement>('[data-compress-image-tool]');
 
@@ -1038,6 +1042,7 @@ if (!resizeImage) throw new Error('Compress Image needs the Resize Image entry t
 
         editor.hidden = true;
         result.hidden = false;
+        sendAnalyticsEvent('tool_completed', { tool_slug: toolSlug });
 
         if (!many) {
           const [output] = outputs;
@@ -1054,6 +1059,7 @@ if (!resizeImage) throw new Error('Compress Image needs the Resize Image entry t
           updateComparison();
           download.href = resultUrl;
           download.download = output.file.name;
+          download.dataset.outputFormat = 'image';
           download.textContent = 'Download image';
 
           // The exact byte count rather than a rounded one: this file is about
@@ -1100,6 +1106,7 @@ if (!resizeImage) throw new Error('Compress Image needs the Resize Image entry t
         sizeChange.textContent = formatSizeChange(before, after);
         download.href = resultUrl;
         download.download = getBatchArchiveName('compressed');
+        download.dataset.outputFormat = 'archive';
         download.textContent = `Download all ${outputs.length} as a ZIP`;
 
         if (limit !== undefined) {
@@ -1112,6 +1119,12 @@ if (!resizeImage) throw new Error('Compress Image needs the Resize Image entry t
       } catch (caughtError) {
         if (token !== runToken) return;
 
+        // The category, never the message: what failed is reportable, what it
+        // said about the visitor's file is not.
+        sendAnalyticsEvent('tool_error', {
+          tool_slug: toolSlug,
+          error_category: 'processing-failed',
+        });
         showError(caughtError instanceof Error ? caughtError.message : 'This image could not be compressed.');
       } finally {
         if (token === runToken) {
@@ -1121,6 +1134,12 @@ if (!resizeImage) throw new Error('Compress Image needs the Resize Image entry t
       }
     };
 
+    download.addEventListener('click', () => {
+      sendAnalyticsEvent('tool_download', {
+        tool_slug: toolSlug,
+        output_format: download.dataset.outputFormat,
+      });
+    });
     selectFileButton.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', () => void selectFiles([...(fileInput.files ?? [])]));
     clearButton.addEventListener('click', resetTool);
