@@ -46,6 +46,7 @@ const toolPageContent: Record<string, ToolPageContent> = {
       paragraphs: [
         'Compress Image re-encodes a picture so the file gets smaller while the picture still looks like the picture. Your browser decodes the image, redraws it at its original dimensions, and encodes it again as JPEG, PNG, or WebP at the quality you pick.',
         'The result arrives next to the original with a drag-to-compare slider and the size difference in plain numbers, so you can see what a quality setting actually cost before you download anything.',
+        'You can also work the other way round and name the file size instead of the quality. Pick a limit — 100 KB, 200 KB, 500 KB, 1 MB, or a number of your own — and your browser tries descending qualities until the file comes in under it, then tells you exactly how many bytes it landed on.',
         'It also takes a batch. Choose or drop a folder of photographs, set the format and the quality once, and every one of them is compressed here in turn — each with its own download, and all of them as one ZIP.',
       ],
     },
@@ -57,8 +58,8 @@ const toolPageContent: Record<string, ToolPageContent> = {
       ],
     },
     options: {
-      heading: 'What the format and quality controls do',
-      paragraphs: ['Two settings, and both matter more than they look.'],
+      heading: 'What the format, quality, and target controls do',
+      paragraphs: ['A format, and then one of two ways to say how hard to squeeze.'],
       details: [
         {
           term: 'Output format',
@@ -68,7 +69,17 @@ const toolPageContent: Record<string, ToolPageContent> = {
         {
           term: 'Quality',
           description:
-            'The slider runs from 40% to 100% and starts at 82%, a good default for photographs. Below roughly 60% the artefacts start to show around hard edges and in flat areas like skies. It has no effect on PNG, which is lossless and has no quality to trade away.',
+            'The default. The slider runs from 40% to 100% and starts at 82%, a good default for photographs. Below roughly 60% the artefacts start to show around hard edges and in flat areas like skies. It has no effect on PNG, which is lossless and has no quality to trade away.',
+        },
+        {
+          term: 'Target file size',
+          description:
+            'The other way round: name the limit and let the quality fall out of it. Your browser encodes the picture at descending qualities and keeps the first result at or under the limit, so the answer is a real measured file rather than an estimate. In this control KB means 1,000 bytes and MB means 1,000,000, because that is what an upload form asking for "under 500 KB" means. It is offered for JPEG and WebP; PNG has no quality to spend, so it stays on the slider and says so.',
+        },
+        {
+          term: 'When the limit cannot be met',
+          description:
+            'Some pictures will not come down that far at their current dimensions. Rather than switching format or shrinking the image behind your back, the Gizlet stops at the smallest attempt it made, says how many bytes over the limit that is, and offers it as a best attempt beside a link to Resize Image — because taking pixels out is the thing that works when quality has run out.',
         },
         {
           term: 'Several images at once',
@@ -104,6 +115,16 @@ const toolPageContent: Record<string, ToolPageContent> = {
         question: 'How much smaller will my file get?',
         answer:
           'It depends on the picture. A phone photograph at the default 82% typically loses most of its size, while an image that was already compressed may barely change or even come out slightly larger. The result panel shows the exact before and after, so you never have to guess.',
+      },
+      {
+        question: 'How do I get an image under a specific file size?',
+        answer:
+          'Switch the mode to Target file size, pick 100 KB, 200 KB, 500 KB, 1 MB, or type a whole number of KB, and compress. The result panel prints the exact byte count and whether it came in under the limit, and a batch reports that for each picture separately.',
+      },
+      {
+        question: 'Does 500 KB here mean 500,000 bytes or 512,000?',
+        answer:
+          '500,000. The target control is decimal: KB is 1,000 bytes and MB is 1,000,000, which is what an upload form printing a limit almost always means. The result is reported as an exact byte count as well, so you never have to work out which unit was intended.',
       },
       {
         question: 'Is there a file size limit?',

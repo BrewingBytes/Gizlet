@@ -185,7 +185,7 @@ test("keeps the workspace above the supporting content at every width", async ({
   const faqMarkup = markup.find(
     (item: { "@type": string }) => item["@type"] === "FAQPage",
   );
-  expect(faqMarkup.mainEntity).toHaveLength(5);
+  expect(faqMarkup.mainEntity).toHaveLength(7);
 
   for (const question of faqMarkup.mainEntity) {
     await expect(

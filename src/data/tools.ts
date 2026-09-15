@@ -69,6 +69,10 @@ export const toolRegistry = [
       "image compression",
       "reduce image size",
       "photo compressor",
+      "target file size",
+      "compress to kb",
+      "image size limit",
+      "under 1mb",
       "jpg",
       "jpeg",
       "png",
@@ -79,8 +83,8 @@ export const toolRegistry = [
     processesLocally: true,
     launchStatus: "available",
     agent: {
-      input: "One JPEG, PNG, WebP, AVIF, or BMP image; choose JPEG, PNG, or WebP output and an optional quality level.",
-      output: "A compressed image ready to download in the selected format.",
+      input: "One or more JPEG, PNG, WebP, AVIF, or BMP images; choose JPEG, PNG, or WebP output, then either a quality level or a target file size in decimal KB, which JPEG and WebP support and PNG does not.",
+      output: "A compressed image ready to download in the selected format, with its exact size in bytes and, for a target, whether the limit was met.",
     },
   },
   {

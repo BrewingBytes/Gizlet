@@ -7,6 +7,20 @@ describe('searchTools', () => {
     expect(searchTools('compress photo').map((tool) => tool.name)).toEqual(['Compress Image']);
   });
 
+  it('ranks Compress Image first for someone working to a file-size limit', () => {
+    // The person with an upload form in front of them does not search for
+    // "compress": they search for the number the form refused.
+    for (const query of [
+      'target file size',
+      'compress to kb',
+      'image size limit',
+      'under 1mb',
+      'compress image to 500 kb',
+    ]) {
+      expect(searchTools(query).map((tool) => tool.name)[0], query).toBe('Compress Image');
+    }
+  });
+
   it('matches schema terminology from the registry keywords', () => {
     expect(searchTools('schema').map((tool) => tool.name)).toEqual(['JSON-LD Generator']);
   });

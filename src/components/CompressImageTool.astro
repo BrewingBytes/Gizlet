@@ -1,4 +1,14 @@
 ---
+import { imageTargetSizePresets } from '../data/image-target-size';
+import { toolRegistry } from '../data/tools';
+
+/**
+ * A target the browser cannot reach is answered with the Gizlet that removes
+ * pixels, so the route comes from the registry rather than from this file.
+ */
+const resizeImage = toolRegistry.find((tool) => tool.slug === 'resize-image');
+
+if (!resizeImage) throw new Error('Compress Image needs the Resize Image entry to link to.');
 ---
 
 <section class="compress-image-tool" data-compress-image-tool>
@@ -36,15 +46,49 @@
           <option value="image/webp">WebP</option>
         </select>
       </div>
-      <div data-quality-control>
+      <fieldset class="compress-image-tool__modes" aria-describedby="compress-mode-note" data-mode-control>
+        <legend>Compress by</legend>
+        <label>
+          <input type="radio" name="compress-mode" value="quality" data-mode checked />
+          Quality
+        </label>
+        <label>
+          <input type="radio" name="compress-mode" value="target" data-mode />
+          Target file size
+        </label>
+      </fieldset>
+      <div class="compress-image-tool__mode-panel" data-quality-control>
         <label for="compress-quality">Quality <output for="compress-quality" data-quality-value>82%</output></label>
         <input id="compress-quality" type="range" min="40" max="100" value="82" data-quality />
         <p class="utility-text">JPEG and WebP only</p>
       </div>
+      <div class="compress-image-tool__mode-panel" data-target-control hidden>
+        <label for="compress-target">Size limit</label>
+        <select id="compress-target" data-target-preset>
+          {imageTargetSizePresets.map((preset) => <option value={preset.bytes}>{preset.label}</option>)}
+          <option value="custom">Custom size</option>
+        </select>
+        <div class="compress-image-tool__custom-target" data-target-custom-field hidden>
+          <label for="compress-target-custom">Custom size, in KB</label>
+          <input
+            id="compress-target-custom"
+            type="number"
+            min="1"
+            step="1"
+            value="250"
+            inputmode="numeric"
+            data-target-custom
+          />
+        </div>
+        <p class="utility-text">KB is 1,000 bytes · MB is 1,000,000 · JPEG and WebP only</p>
+      </div>
     </div>
+
+    <p id="compress-mode-note" class="compress-image-tool__note" data-format-note hidden></p>
 
     <div class="compress-image-tool__actions">
       <button type="button" data-compress>Compress it</button>
+      <button type="button" class="button-secondary" data-cancel hidden>Stop</button>
       <button type="button" class="button-secondary" data-clear>Choose other images</button>
     </div>
   </div>
@@ -52,6 +96,7 @@
   <section class="compress-image-tool__result" data-result aria-live="polite" hidden>
     <p class="metadata">Ready to download</p>
     <h2 data-result-title>Your image is ready.</h2>
+    <p class="compress-image-tool__target-outcome" data-target-outcome hidden></p>
     <dl data-result-dl>
       <div><dt>Before</dt><dd data-before-size></dd></div>
       <div><dt>After</dt><dd data-after-size></dd></div>
@@ -108,6 +153,14 @@
       </div>
       <p id="comparison-help" class="compress-image-tool__comparison-help">Drag to compare. The dimensions stay the same.</p>
     </section>
+    <!-- A limit the browser could not reach is not a failure with nothing in
+         it: the smallest attempt is still a file, and it is offered as exactly
+         that, beside the Gizlet that can do the thing compression cannot. -->
+    <div class="compress-image-tool__advice" data-target-advice hidden>
+      <p data-target-advice-text></p>
+      <a href={resizeImage.path} data-resize-link>{resizeImage.name}</a>
+    </div>
+
     <div class="compress-image-tool__result-actions">
       <a class="compress-image-tool__download" data-download>Download image</a>
       <button type="button" class="button-secondary" data-result-clear>Choose other images</button>
@@ -216,6 +269,97 @@
     gap: var(--space-2);
     margin-bottom: var(--space-1);
     font-weight: 700;
+  }
+
+  .compress-image-tool__modes {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .compress-image-tool__modes legend {
+    margin-bottom: var(--space-1);
+    padding: 0;
+    font-weight: 700;
+  }
+
+  .compress-image-tool__modes label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--space-2);
+    min-height: 2.5rem;
+    margin: 0 var(--space-3) 0 0;
+    font-weight: 400;
+  }
+
+  .compress-image-tool__modes input {
+    width: 1.125rem;
+    height: 1.125rem;
+    flex: none;
+    accent-color: var(--color-amber);
+  }
+
+  /* Quality and target are the same slot: only one of them is ever the way the
+     next run is described, so they take the full row rather than sitting beside
+     each other pretending both apply. */
+  .compress-image-tool__mode-panel {
+    grid-column: 1 / -1;
+  }
+
+  .compress-image-tool__mode-panel[hidden] {
+    display: none;
+  }
+
+  .compress-image-tool__custom-target {
+    margin-top: var(--space-2);
+  }
+
+  .compress-image-tool__custom-target[hidden] {
+    display: none;
+  }
+
+  .compress-image-tool__settings select,
+  .compress-image-tool__settings input[type='number'] {
+    width: 100%;
+  }
+
+  /* A sentence, so it is set as one rather than in the uppercase metadata
+     style the short labels beside it use. */
+  .compress-image-tool__note {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .compress-image-tool__note[hidden] {
+    display: none;
+  }
+
+  .compress-image-tool__target-outcome {
+    margin: 0 0 var(--space-4);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+  }
+
+  .compress-image-tool__target-outcome[hidden] {
+    display: none;
+  }
+
+  .compress-image-tool__advice {
+    margin-bottom: var(--space-4);
+    padding: var(--space-3);
+    border-left: var(--border-strong-width) solid var(--color-amber);
+    background: var(--background);
+  }
+
+  .compress-image-tool__advice[hidden] {
+    display: none;
+  }
+
+  .compress-image-tool__advice p {
+    margin: 0 0 var(--space-2);
   }
 
   .compress-image-tool__settings output {
@@ -444,8 +588,20 @@
     summariseBatch,
     validateBatchSelection,
   } from '../data/image-batches';
+  import {
+    describeImageTargetResult,
+    getImageTargetTitle,
+    imageTargetSizePngExplanation,
+    imageTargetSizeUnmetAdvice,
+    parseImageTargetKilobytes,
+    summariseImageTargetBatch,
+    supportsImageTargetSize,
+    type ImageTargetSizeDecision,
+    type ImageTargetSizeMode,
+  } from '../data/image-target-size';
   import { checkBatchSize, packImageArchive, readBatchSources, releaseBatch, runImageBatch, type BatchSource } from '../scripts/image-batch';
   import { encodeBrowserImage } from '../scripts/image-processing';
+  import { createBrowserTargetImageEncoder, encodeImageToTargetSize } from '../scripts/image-target-size';
 
   const root = document.querySelector<HTMLElement>('[data-compress-image-tool]');
 
@@ -461,7 +617,17 @@
     const quality = root.querySelector<HTMLInputElement>('[data-quality]');
     const qualityValue = root.querySelector<HTMLOutputElement>('[data-quality-value]');
     const qualityControl = root.querySelector<HTMLElement>('[data-quality-control]');
+    const modeInputs = [...root.querySelectorAll<HTMLInputElement>('[data-mode]')];
+    const targetControl = root.querySelector<HTMLElement>('[data-target-control]');
+    const targetPreset = root.querySelector<HTMLSelectElement>('[data-target-preset]');
+    const targetCustomField = root.querySelector<HTMLElement>('[data-target-custom-field]');
+    const targetCustom = root.querySelector<HTMLInputElement>('[data-target-custom]');
+    const formatNote = root.querySelector<HTMLElement>('[data-format-note]');
+    const targetOutcome = root.querySelector<HTMLElement>('[data-target-outcome]');
+    const targetAdvice = root.querySelector<HTMLElement>('[data-target-advice]');
+    const targetAdviceText = root.querySelector<HTMLElement>('[data-target-advice-text]');
     const compressButton = root.querySelector<HTMLButtonElement>('[data-compress]');
+    const cancelButton = root.querySelector<HTMLButtonElement>('[data-cancel]');
     const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
     const result = root.querySelector<HTMLElement>('[data-result]');
     const resultTitle = root.querySelector<HTMLElement>('[data-result-title]');
@@ -495,7 +661,17 @@
       !quality ||
       !qualityValue ||
       !qualityControl ||
+      modeInputs.length !== 2 ||
+      !targetControl ||
+      !targetPreset ||
+      !targetCustomField ||
+      !targetCustom ||
+      !formatNote ||
+      !targetOutcome ||
+      !targetAdvice ||
+      !targetAdviceText ||
       !compressButton ||
+      !cancelButton ||
       !clearButton ||
       !result ||
       !resultTitle ||
@@ -528,6 +704,22 @@
     let sources: readonly BatchSource[] = [];
     let resultUrl: string | undefined;
     let itemUrls: string[] = [];
+
+    /**
+     * Which mode the visitor chose, rather than which radio is currently
+     * usable. PNG cannot be aimed at a size, so choosing it disables the target
+     * radio — but it does not throw the choice away, and picking JPEG or WebP
+     * again brings the target control back as it was left.
+     */
+    let preferredMode: ImageTargetSizeMode = 'quality';
+
+    /**
+     * The run in flight, and the number that says whether it is still the one
+     * being waited for. A stopped run, or one whose files were replaced while
+     * it worked, comes back to find the token moved on and publishes nothing.
+     */
+    let activeRun: AbortController | undefined;
+    let runToken = 0;
     const nextPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
     const updateComparison = () => {
@@ -553,10 +745,79 @@
       }
     };
 
-    const updateQualityControl = () => {
-      const usesQuality = outputFormat.value !== 'image/png';
-      quality.disabled = !usesQuality;
-      qualityControl.setAttribute('aria-disabled', String(!usesQuality));
+    /**
+     * Keeps the format, the two modes, and the target field agreeing with each
+     * other.
+     *
+     * PNG is lossless: there is no quality to spend and so nothing for a
+     * target search to vary. Rather than offer a control that silently does
+     * nothing, the target mode is disabled for PNG and the reason is written
+     * out under the settings.
+     */
+    const updateModeControls = () => {
+      const canTarget = supportsImageTargetSize(outputFormat.value);
+      const targeting = canTarget && preferredMode === 'target';
+
+      for (const input of modeInputs) {
+        if (input.value === 'target') input.disabled = !canTarget;
+        input.checked = input.value === (canTarget ? preferredMode : 'quality');
+      }
+
+      quality.disabled = !canTarget || targeting;
+      qualityControl.hidden = targeting;
+      qualityControl.setAttribute('aria-disabled', String(quality.disabled));
+      targetControl.hidden = !targeting;
+      targetCustomField.hidden = targetPreset.value !== 'custom';
+      formatNote.textContent = canTarget ? '' : imageTargetSizePngExplanation;
+      formatNote.hidden = canTarget;
+    };
+
+    /** The limit the next run aims at, or nothing when the field cannot be read. */
+    const readTargetBytes = (): number | undefined => {
+      if (targetPreset.value !== 'custom') {
+        const preset = Number(targetPreset.value);
+
+        return Number.isSafeInteger(preset) && preset > 0 ? preset : undefined;
+      }
+
+      const parsed = parseImageTargetKilobytes(targetCustom.value);
+
+      if (parsed.kind === 'invalid') {
+        showError(parsed.message);
+
+        return undefined;
+      }
+
+      return parsed.bytes;
+    };
+
+    /** What is left to try when the limit was not reached. */
+    const showTargetAdvice = (unmet: boolean) => {
+      targetAdviceText.textContent = unmet ? imageTargetSizeUnmetAdvice : '';
+      targetAdvice.hidden = !unmet;
+    };
+
+    /** The actions as they read when nothing is running. */
+    const readyToCompress = () => {
+      cancelButton.hidden = true;
+      compressButton.disabled = false;
+      compressButton.textContent =
+        sources.length > 1 ? `Compress ${describeBatchCount(sources.length)}` : 'Compress it';
+    };
+
+    /**
+     * Ends the run in flight, if there is one.
+     *
+     * Moving the token is the half that matters: aborting asks the search to
+     * stop, and the token makes whatever it hands back afterwards unpublishable
+     * whether it noticed or not. The settings are left exactly as they were, so
+     * stopping is a pause rather than a reset.
+     */
+    const cancelRun = () => {
+      activeRun?.abort();
+      activeRun = undefined;
+      runToken += 1;
+      readyToCompress();
     };
 
     const resetResult = () => {
@@ -568,6 +829,9 @@
       comparison.hidden = false;
       resultList.hidden = true;
       resultList.replaceChildren();
+      targetOutcome.hidden = true;
+      targetOutcome.textContent = '';
+      showTargetAdvice(false);
       download.removeAttribute('href');
       download.removeAttribute('download');
       comparisonOriginal.removeAttribute('src');
@@ -579,6 +843,7 @@
     };
 
     const resetTool = () => {
+      cancelRun();
       releaseBatch(sources);
       sources = [];
       fileInput.value = '';
@@ -634,7 +899,7 @@
         : `${describeBatchCount(sources.length)} · ${formatFileSize(totalBytes)}`;
       outputFormat.value = getPreferredOutputFormat(getInputImageFormat(first.file));
       compressButton.textContent = sources.length === 1 ? 'Compress it' : `Compress ${describeBatchCount(sources.length)}`;
-      updateQualityControl();
+      updateModeControls();
       editor.hidden = false;
 
       if (failures.length > 0) {
@@ -671,40 +936,99 @@
       return fragment;
     };
 
+    /** One finished picture, and what the target search made of it. */
+    interface CompressedImage {
+      readonly file: File;
+      readonly source: BatchSource;
+      readonly target?: {
+        readonly kind: ImageTargetSizeDecision['kind'];
+        readonly actualBytes: number;
+        readonly limit: number;
+      };
+    }
+
     const compressImages = async () => {
       if (sources.length === 0 || !isImageOutputFormat(outputFormat.value)) {
         return;
       }
 
       const format = outputFormat.value;
+
+      // `supportsImageTargetSize` narrows the format rather than only answering
+      // about it, so a target run carries a format the engine accepts instead
+      // of a flag standing next to one it might refuse.
+      const targetFormat =
+        preferredMode === 'target' && supportsImageTargetSize(format) ? format : undefined;
+      const limit = targetFormat ? readTargetBytes() : undefined;
+
+      // A limit that cannot be read is answered before anything is encoded, so
+      // the panel the visitor is looking at is not cleared for a run that was
+      // never going to produce a file.
+      if (targetFormat && limit === undefined) return;
+
       const many = sources.length > 1;
+      const controller = new AbortController();
 
       clearError();
       resetResult();
+      activeRun = controller;
+      const token = ++runToken;
       compressButton.disabled = true;
       compressButton.textContent = 'Compressing…';
+      cancelButton.hidden = false;
       await nextPaint();
 
       try {
         const outcomes = await runImageBatch(
           sources,
-          async (source) => {
-            const blob = await encodeBrowserImage(
-              source.image,
-              { width: source.width, height: source.height },
-              format,
-              Number(quality.value) / 100,
+          async (source): Promise<CompressedImage> => {
+            if (controller.signal.aborted) throw new Error('Stopped.');
+
+            const dimensions = { width: source.width, height: source.height };
+            const name = getOutputFilename(source.file.name, format);
+
+            if (targetFormat === undefined || limit === undefined) {
+              const blob = await encodeBrowserImage(source.image, dimensions, format, Number(quality.value) / 100);
+
+              return { file: new File([blob], name, { type: blob.type }), source };
+            }
+
+            // Each picture gets the limit to itself: a batch is a set of
+            // independent answers, not one budget shared between them.
+            const found = await encodeImageToTargetSize(
+              limit,
+              createBrowserTargetImageEncoder(source.image, dimensions, targetFormat),
+              { signal: controller.signal },
             );
 
+            if (found.kind === 'cancelled') throw new Error('Stopped.');
+
+            if (found.kind === 'encoding-failed') {
+              throw found.error instanceof Error
+                ? found.error
+                : new Error('This image could not be compressed.');
+            }
+
             return {
-              file: new File([blob], getOutputFilename(source.file.name, format), { type: blob.type }),
+              file: new File([found.blob], name, { type: found.blob.type }),
               source,
+              target: { kind: found.kind, actualBytes: found.actualBytes, limit },
             };
           },
           (position, total) => {
+            // A stopped run still walks its remaining files to unwind, and it
+            // must not narrate that over the button a stop already restored.
+            if (token !== runToken) return;
+
             if (total > 1) compressButton.textContent = `Compressing ${position} of ${total}…`;
           },
         );
+
+        // A stopped run, or one whose files were replaced while it worked, is
+        // no longer the current one and publishes nothing: a stale result
+        // overwriting a newer selection is worse than no result at all.
+        if (token !== runToken || controller.signal.aborted) return;
+
         const outputs = getBatchSuccesses(outcomes);
         const failures = getBatchFailures(outcomes);
 
@@ -731,6 +1055,19 @@
           download.href = resultUrl;
           download.download = output.file.name;
           download.textContent = 'Download image';
+
+          // The exact byte count rather than a rounded one: this file is about
+          // to be handed to something that will measure it.
+          if (output.target) {
+            const { kind, actualBytes, limit: aimed } = output.target;
+
+            resultTitle.textContent = getImageTargetTitle(kind);
+            targetOutcome.textContent = describeImageTargetResult(kind, actualBytes, aimed);
+            targetOutcome.hidden = false;
+            download.textContent = kind === 'met' ? 'Download image' : 'Download best attempt';
+            showTargetAdvice(kind === 'unmet');
+          }
+
           return;
         }
 
@@ -743,7 +1080,9 @@
           ...outputs.map((output, index) =>
             renderRow(
               output.file,
-              `${formatFileSize(output.file.size)} · ${formatSizeChange(output.source.file.size, output.file.size)}`,
+              output.target
+                ? describeImageTargetResult(output.target.kind, output.target.actualBytes, output.target.limit)
+                : `${formatFileSize(output.file.size)} · ${formatSizeChange(output.source.file.size, output.file.size)}`,
               itemUrls[index],
             ),
           ),
@@ -762,11 +1101,23 @@
         download.href = resultUrl;
         download.download = getBatchArchiveName('compressed');
         download.textContent = `Download all ${outputs.length} as a ZIP`;
+
+        if (limit !== undefined) {
+          const kinds = outputs.flatMap((output) => (output.target ? [output.target.kind] : []));
+
+          targetOutcome.textContent = summariseImageTargetBatch(kinds, limit);
+          targetOutcome.hidden = false;
+          showTargetAdvice(kinds.includes('unmet'));
+        }
       } catch (caughtError) {
+        if (token !== runToken) return;
+
         showError(caughtError instanceof Error ? caughtError.message : 'This image could not be compressed.');
       } finally {
-        compressButton.disabled = false;
-        compressButton.textContent = sources.length > 1 ? `Compress ${describeBatchCount(sources.length)}` : 'Compress it';
+        if (token === runToken) {
+          activeRun = undefined;
+          readyToCompress();
+        }
       }
     };
 
@@ -775,7 +1126,24 @@
     clearButton.addEventListener('click', resetTool);
     resultClearButton.addEventListener('click', resetTool);
     compressButton.addEventListener('click', () => void compressImages());
-    outputFormat.addEventListener('change', updateQualityControl);
+    cancelButton.addEventListener('click', cancelRun);
+    outputFormat.addEventListener('change', updateModeControls);
+
+    for (const input of modeInputs) {
+      input.addEventListener('change', () => {
+        if (!input.checked) return;
+
+        preferredMode = input.value === 'target' ? 'target' : 'quality';
+        clearError();
+        updateModeControls();
+      });
+    }
+
+    targetPreset.addEventListener('change', () => {
+      clearError();
+      updateModeControls();
+    });
+    targetCustom.addEventListener('input', clearError);
     quality.addEventListener('input', () => {
       qualityValue.value = `${quality.value}%`;
       qualityValue.textContent = `${quality.value}%`;
@@ -797,6 +1165,6 @@
     }
 
     dropZone.addEventListener('drop', (event) => void selectFiles([...(event.dataTransfer?.files ?? [])]));
-    updateQualityControl();
+    updateModeControls();
   }
 </script>
