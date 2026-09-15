@@ -30,10 +30,12 @@ const metadata = getPageMetadata({
 
     <h2>Analytics and advertising</h2>
     <p>
-      Analytics and advertising are separate from Gizlet processing. Analytics is measured for gizlet.app by
-      Cloudflare, which adds its measurement script at the edge rather than from this site’s code. Advertising is
-      disabled during development and only added to a production build when its public configuration is enabled.
-      The current provider details are listed below so they can stay in step with the services Gizlet uses.
+      Analytics and advertising are separate from Gizlet processing. Aggregate analytics is measured for
+      gizlet.app by Cloudflare, which adds its measurement script at the edge rather than from this site’s code
+      and uses no cookies. Google Analytics is separate again: it uses cookies, it is only present when a
+      production build configures it, and it is only loaded once you have allowed it. Advertising is disabled
+      during development and only added to a production build when its public configuration is enabled. The
+      current provider details are listed below so they can stay in step with the services Gizlet uses.
     </p>
     <ul>
       {
@@ -53,6 +55,18 @@ const metadata = getPageMetadata({
       storage where applicable.
     </p>
 
+    <h2>Analytics consent choices</h2>
+    <p>
+      Where Google Analytics is configured, Gizlet asks before it measures anything. Until you choose to allow it,
+      and if you refuse, no request is made to Google at all — not a reduced or cookieless one. Refusing and
+      simply not answering are treated the same way.
+    </p>
+    <p>
+      Your answer is remembered in your own browser and is never sent anywhere. Clearing this site’s data clears
+      it and Gizlet asks again. Advertising storage and personalisation stay switched off whatever you choose
+      here, and Google Analytics advertising features are disabled.
+    </p>
+
     <h2>Advertising consent choices</h2>
     <p>
       When advertising is enabled, Gizlet uses Google’s consent management platform for visitors in the European
@@ -68,9 +82,15 @@ const metadata = getPageMetadata({
     <h2>What Gizlet does not send as analytics</h2>
     <p>
       Gizlet does not send file contents, filenames, file sizes, dimensions, formats, JSON contents, generated
-      passwords, tool results, error messages, or other entered or generated tool payloads to analytics. Gizlet
-      sends no analytics events of its own at all: measurement is limited to the aggregate page and performance
-      data Cloudflare collects for a page load.
+      passwords, tool results, error messages, or other entered or generated tool payloads to analytics. This is
+      not only a policy: the events Gizlet may report are a fixed list, and every value in them is a fixed name, a
+      whole number, or the identifier of a Gizlet. There is no field any of the above could be placed in, and an
+      event carrying anything unrecognised is discarded rather than sent in part.
+    </p>
+    <p>
+      When a Gizlet fails, Gizlet may report that it failed and one of four broad categories — an input it does
+      not support, an input too large, processing that did not succeed, or a feature your browser does not offer.
+      It does not report the message you were shown, which can name your file.
     </p>
 
     <h2>Gizlet requests</h2>
