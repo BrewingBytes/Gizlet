@@ -1,4 +1,5 @@
 import {
+  consentChangeEventName,
   consentStorageKey,
   createConsentChoice,
   getConsentSignals,
@@ -59,6 +60,7 @@ export function initialiseConsentBanner(): void {
 
     storeConsent(choice);
     applyConsent(choice);
+    document.dispatchEvent(new CustomEvent(consentChangeEventName, { detail: choice }));
     banner.hidden = true;
     // The dismissed button was holding focus, so hand it somewhere real.
     document.querySelector<HTMLElement>('#main-content')?.focus();

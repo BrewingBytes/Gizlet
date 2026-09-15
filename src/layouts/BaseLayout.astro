@@ -116,7 +116,7 @@ const consentDefaultsScript = `window.dataLayer=window.dataLayer||[];`
       )
     }
   </head>
-  <body>
+  <body data-ga-measurement-id={analytics.measurementId}>
     <div class="site-shell">
       <a class="skip-link" href="#main-content">Skip to content</a>
       <SiteHeader />
@@ -133,7 +133,9 @@ const consentDefaultsScript = `window.dataLayer=window.dataLayer||[];`
 </html>
 
 <script>
+  import { initialiseAnalytics } from '../scripts/analytics';
   import { initialiseToolSearch } from '../scripts/tool-search';
 
+  initialiseAnalytics();
   initialiseToolSearch();
 </script>
