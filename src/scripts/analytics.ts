@@ -1,4 +1,5 @@
 import { analyticsConfigParameters, getAnalyticsTagUrl } from '../data/analytics';
+import { buildAnalyticsEvent } from '../data/analytics-events';
 import {
   consentChangeEventName,
   consentStorageKey,
@@ -60,4 +61,29 @@ export function initialiseAnalytics(): void {
       requestTag(measurementId);
     }
   });
+}
+
+/**
+ * Reports one whitelisted event, or nothing.
+ *
+ * Consent is re-read here rather than trusted from module state, so a call from
+ * any bundle on the page is checked against the visitor's actual answer. An
+ * event the whitelist rejects is dropped whole and silently: a mistake at a call
+ * site costs a measurement, never a disclosure.
+ */
+export function sendAnalyticsEvent(
+  name: string,
+  parameters: Readonly<Record<string, unknown>>,
+): void {
+  if (!isAnalyticsGranted(readStoredChoice())) {
+    return;
+  }
+
+  const event = buildAnalyticsEvent(name, parameters);
+
+  if (!event) {
+    return;
+  }
+
+  window.gtag?.('event', event.name, event.parameters);
 }

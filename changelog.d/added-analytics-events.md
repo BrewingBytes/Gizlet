@@ -1,0 +1,1 @@
+- Gizlet now reports a small, closed set of analytics events when a visitor has allowed analytics: a Gizlet finishing, a download, and an error category. Every value is a fixed name, a bounded number, or a Gizlet slug, so a filename, file size, format, result, or error message has no way to be included. Compressing an image is the first Gizlet to report them.

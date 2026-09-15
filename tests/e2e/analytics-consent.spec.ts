@@ -104,6 +104,59 @@ test.describe('analytics consent', () => {
       await expect(page.locator('script[src*="googletagmanager.com"]')).toHaveCount(1);
     });
 
+    /** One real Gizlet run, end to end, so the reported events are real ones. */
+    const compressAnImage = async (page: import('@playwright/test').Page): Promise<void> => {
+      await page.getByLabel('Select an image to compress').setInputFiles({
+        name: 'holiday-secret.png',
+        mimeType: 'image/png',
+        buffer: Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLZywAAAABJRU5ErkJggg==',
+          'base64',
+        ),
+      });
+      await page.getByLabel('Output format').selectOption('image/jpeg');
+      await page.getByRole('button', { name: 'Compress it' }).click();
+      await expect(page.getByText('Your image is ready.')).toBeVisible();
+      await page.getByRole('link', { name: 'Download image' }).click();
+    };
+
+    const readEvents = (page: import('@playwright/test').Page) =>
+      page.evaluate(() =>
+        (window.dataLayer ?? [])
+          .map((entry) => Array.from(entry as ArrayLike<unknown>))
+          .filter((entry) => entry[0] === 'event')
+          .map((entry) => ({ name: entry[1], parameters: entry[2] })),
+      );
+
+    test('reports no event at all when the visitor refused', async ({ page }) => {
+      await stubProvider(page);
+
+      await page.goto('/tools/compress-image/');
+      await page.getByRole('button', { name: 'No thanks' }).click();
+      await compressAnImage(page);
+
+      expect(await readEvents(page)).toEqual([]);
+    });
+
+    test('reports the run without reporting anything about the file', async ({ page }) => {
+      await stubProvider(page);
+
+      await page.goto('/tools/compress-image/');
+      await page.getByRole('button', { name: 'Allow analytics' }).click();
+      await compressAnImage(page);
+
+      const events = await readEvents(page);
+
+      expect(events).toEqual([
+        { name: 'tool_completed', parameters: { tool_slug: 'compress-image' } },
+        { name: 'tool_download', parameters: { tool_slug: 'compress-image', output_format: 'image' } },
+      ]);
+
+      // The filename, its format, and its size reached the Gizlet and stopped there.
+      expect(JSON.stringify(events)).not.toContain('holiday-secret');
+      expect(JSON.stringify(events)).not.toContain('image/png');
+    });
+
     test('discards a stored answer it did not write', async ({ page }) => {
       const requests = await stubProvider(page);
 
