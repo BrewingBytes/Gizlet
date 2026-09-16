@@ -1,1 +1,0 @@
-- Added optional Google Analytics 4 measurement, off unless a production build configures it. Nothing is requested from Google until a visitor allows analytics on the consent banner: refusing, or not answering, sends no request at all rather than a cookieless one. Google Analytics advertising features are turned off.

@@ -1,1 +1,0 @@
-- Added an optional analytics consent banner. It appears only when Google Analytics 4 measurement is configured for a production build, asks before any measurement cookie is set, and remembers the answer. Refusing is the default for anyone who has not answered, and a stored answer that Gizlet did not write is discarded rather than trusted.
