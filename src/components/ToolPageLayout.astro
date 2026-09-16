@@ -12,6 +12,7 @@ import { getToolStructuredData } from '../data/structured-data';
 import type { ToolRegistryEntry } from '../data/tools';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AdvertisementSlot from './AdvertisementSlot.astro';
+import SendToGizlet from './SendToGizlet.astro';
 
 interface Props {
   tool: ToolRegistryEntry;
@@ -92,13 +93,15 @@ const shouldShowRail = showRail && advertising.enabled && advertising.slots.rail
 
     <div class:list={['tool-page__body', { 'tool-page__body--with-rail': shouldShowRail }]}>
       <div class="tool-page__main-column">
-        <section class="tool-page__workspace" aria-label={`${tool.name} workspace`}>
+        <section class="tool-page__workspace" aria-label={`${tool.name} workspace`} data-tool-workspace>
           <slot name="workspace" />
         </section>
 
         <p class="tool-page__handoff" data-handoff-note role="status" hidden></p>
 
         <slot name="result" />
+
+        {tool.launchStatus === 'available' && <SendToGizlet tool={tool} />}
 
         {shouldShowPostResultAd && <AdvertisementSlot advertising={advertising} variant="inline" />}
       </div>
@@ -417,7 +420,7 @@ const shouldShowRail = showRail && advertising.enabled && advertising.slots.rail
         input.dispatchEvent(new Event('change', { bubbles: true }));
 
         if (note) {
-          note.textContent = `${file.name} came with you from the file you dropped. It never left this device.`;
+          note.textContent = `${file.name} came with you. It never left this device.`;
           note.hidden = false;
         }
       } catch {
