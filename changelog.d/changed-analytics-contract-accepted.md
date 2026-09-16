@@ -1,1 +1,0 @@
-- Recorded the accepted analytics data contract in `docs/analytics-contract.md`: Google Analytics 4 joins Cloudflare Web Analytics rather than replacing it, sends only a closed set of whitelisted events, and is gated behind a first-party consent banner.
