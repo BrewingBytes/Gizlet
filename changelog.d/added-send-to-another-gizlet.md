@@ -1,0 +1,1 @@
+- Every Gizlet that makes a file now offers to send it straight to the next one. Finish a resize and the image Gizlets are there to take it; finish a watermark and the PDF ones are. The result travels in this browser, on this device, so there is no download and no second upload in between. A run that produces several files offers a send for each of them.
