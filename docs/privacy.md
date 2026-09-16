@@ -1,12 +1,24 @@
 # Privacy, analytics, and advertising
 
-Gizlet uses [Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/) for aggregate traffic and page-performance measurement. It was selected because it is free at any traffic level, needs no script or configuration in this repository, and is designed for aggregate rather than user-level reporting: Cloudflare states that it "does not use any client-side state, such as cookies or localStorage, to collect usage metrics" and does not fingerprint individuals.
+Gizlet measures from two sources, and they are not interchangeable. [Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/) measures aggregate traffic and page performance for every visitor. [Google Analytics 4](#google-analytics-4) measures a closed set of events, and only for a visitor who has allowed it.
+
+Cloudflare Web Analytics was selected because it is free at any traffic level, needs no script or configuration in this repository, and is designed for aggregate rather than user-level reporting: Cloudflare states that it "does not use any client-side state, such as cookies or localStorage, to collect usage metrics" and does not fingerprint individuals.
 
 ## What Gizlet sends
 
-Nothing. Gizlet ships no analytics module, no provider script tag, and no client event calls. Cloudflare injects its beacon at the edge for the proxied `gizlet.app` zone, so the only analytics data collected is what that beacon reports for a page load: the page path, referrer, browser, operating system, device type, country, and page-performance timings.
+**To Cloudflare, nothing.** Gizlet ships no Cloudflare analytics module and no beacon tag. Cloudflare injects its beacon at the edge for the proxied `gizlet.app` zone, so the only data it collects is what that beacon reports for a page load: the page path, referrer, browser, operating system, device type, country, and page-performance timings. Cloudflare Web Analytics does not log URL query strings, so a value that reached a URL is not collected there either.
 
-Because Gizlet defines no events, there is no code path that could put a file's contents, filename, size, dimensions, or format, JSON contents, a generated password, a tool result, or an error message into analytics. Cloudflare Web Analytics also does not log URL query strings, so a value that reached a URL could not be collected either.
+**To Google Analytics, a closed list and nothing else** — and only once a visitor has allowed analytics. The list is defined in `src/data/analytics-events.ts`:
+
+| Event | Values it carries |
+| --- | --- |
+| `tool_opened` | The Gizlet's identifier |
+| `tool_completed` | The Gizlet's identifier |
+| `tool_error` | The Gizlet's identifier, and a category: `unsupported-input`, `input-too-large`, `processing-failed`, or `feature-unavailable` |
+| `tool_download` | The Gizlet's identifier, and a kind: `image`, `pdf`, `archive`, `text`, or `data` |
+| `flow_step` | Two Gizlet identifiers and a step number |
+
+Every value is a fixed name from one of those lists, a bounded whole number, or the identifier of a Gizlet that exists. **No parameter accepts free text.** A file's contents, its name, size, dimensions or format, JSON contents, a generated password, a tool result, or an error message has no field it could be sent in — an error reports its category, never what it said. An event carrying anything unrecognised is discarded whole rather than sent in part, and a value read from a visitor's file cannot become one of these names.
 
 The request form accepts one value through a URL **query parameter**: a row in the not-built block on `/tools/` links to `/request-a-gizlet/` with a `gizlet` parameter naming a planned Gizlet's slug. That value never leaves the visitor's browser. The page is prerendered, so the parameter is read by browser-side code rather than sent anywhere to be resolved, and Cloudflare Web Analytics does not log URL query strings, so it is not collected either. It is also resolved against the tool registry and discarded if it names nothing, so the only thing it can prefill is a Gizlet Gizlet already lists. See [request-form.md](request-form.md).
 
@@ -14,15 +26,47 @@ A Gizlet Flow can be shared as a recipe link, and those settings travel in the U
 
 Cloudflare's proxy adds more to a page load than the analytics beacon. The browser also fetches Cloudflare's bot-detection script from `/cdn-cgi/challenge-platform/` and posts its result, next to the `/cdn-cgi/rum` request that carries the Web Analytics measurement. These are zone-level Cloudflare features rather than Gizlet code, and they do not respond to tool activity: loading a 325 KB image into a Gizlet and compressing it leaves their payloads the same size as a page load with no file at all. No Gizlet input reaches them.
 
-Cloudflare Web Analytics does not currently support custom events, so the previous `tool_opened`, `tool_action_completed`, and `tool_error` events are gone. Per-Gizlet usage is still visible because every Gizlet is its own route, such as `/tools/compress-image/`; completion and error rates are not. Retention is limited to roughly 30 days.
+Cloudflare Web Analytics does not support custom events, so nothing above reaches it. Per-Gizlet usage is visible there because every Gizlet is its own route, such as `/tools/compress-image/`; completion and error rates are not. Cloudflare retention is limited to roughly 30 days.
 
 For Cloudflare's handling of this data, see its [privacy policy](https://www.cloudflare.com/privacypolicy/) and the [Web Analytics documentation](https://developers.cloudflare.com/web-analytics/).
 
 For what these limits mean when planning — which signals a Gizlet feature may rely on, and which it may not — see [signals.md](signals.md).
 
+## Google Analytics 4
+
+Google Analytics is **off unless a production build turns it on**, is never enabled in development, and treats a malformed measurement ID exactly like being disabled. A default build contains no Google tag, no measurement identifier, and no consent banner.
+
+When it is configured, nothing is requested from Google until the visitor allows analytics. This is Google's *basic* consent mode rather than its advanced mode: a refusing visitor produces **no request at all**, not a cookieless one. Consent Mode defaults are declared in the document head before any tag can load, denying `ad_storage`, `ad_personalization`, `ad_user_data`, and `analytics_storage`. Granting analytics grants `analytics_storage` alone; the three advertising keys stay denied whatever the visitor chose.
+
+Google Analytics advertising features are turned off in the tag configuration — `allow_google_signals` and `allow_ad_personalization_signals` are both `false` — so the data is not used to build advertising audiences.
+
+Google Analytics uses cookies. That is the whole reason the consent banner exists, and it is the one place Gizlet's measurement is not cookieless.
+
+### What this costs, recorded rather than glossed
+
+Two consequences follow, and neither should be argued away later:
+
+- **A refusing visitor is not counted at all**, and is unlikely to be a random sample. Google Analytics totals are therefore not a measure of Gizlet's traffic; Cloudflare's are.
+- The privacy claim changed shape when this shipped. It used to hold because no mechanism existed. It now holds because a mechanism exists and is constrained by a whitelist and its tests. See [analytics-contract.md](analytics-contract.md), which records that trade and the decisions behind it.
+
+## Analytics consent
+
+A visitor who has not answered is treated exactly as one who refused. The banner asks once, stores the answer in the browser under `gizlet-consent`, and does not ask again unless the choices themselves change. A stored answer that Gizlet did not write — an unrecognised key, a missing key, an unreadable timestamp, or a choice recorded against a different set of questions — is discarded whole, and the visitor is asked again rather than held to it.
+
+The answer is stored in the visitor's own browser and is never sent anywhere. Clearing site data for gizlet.app clears it, and the banner asks again.
+
 ## Configuration
 
-There is nothing to configure in the repository, and no `PUBLIC_*` variable gates analytics. Cloudflare Web Analytics is enabled per zone in the Cloudflare dashboard:
+Google Analytics is configured by two build-time public variables, absent by default:
+
+```sh
+PUBLIC_ANALYTICS_ENABLED=false
+PUBLIC_GA4_MEASUREMENT_ID=G-XXXXXXXXXX
+```
+
+Both must be set for measurement to exist at all, and they must be set as **build** variables in Cloudflare Workers Builds rather than as the Worker's runtime variables: the values are inlined into the static output at build time, so a runtime variable would be read by nothing. See [releasing.md](releasing.md).
+
+Cloudflare Web Analytics needs nothing in the repository, and no `PUBLIC_*` variable gates it. It is enabled per zone in the Cloudflare dashboard:
 
 1. Open the Cloudflare dashboard for the `gizlet.app` zone and go to **Analytics & Logs → Web Analytics**.
 2. Keep the automatic setup for the proxied zone so Cloudflare injects `beacon.min.js` itself. Enabling the beacon manually would put a site token in this repository, which is why the automatic path is used.

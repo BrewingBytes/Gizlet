@@ -1,0 +1,2 @@
+- Rewrote the published privacy notice and the privacy and measurement documentation to describe Google Analytics accurately: what the fixed list of events can carry, what no field in it can carry, that nothing is requested from Google until you allow it, and that refusing and not answering are treated the same.
+- Recorded what the new measurement cannot answer as well as what it can: Google Analytics counts consenting, non-blocking visitors only, so they are a ratio within that group and never a measure of how many people use Gizlet.

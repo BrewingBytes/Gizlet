@@ -34,6 +34,18 @@ Nothing reaches `release` without passing the gates, so a tagged deploy runs exa
 | Deploy command | `pnpm run deploy` |
 | Root directory | `/` |
 
+Build variables live in the same place, and are read at build time rather than at runtime. Astro inlines every `PUBLIC_*` value into the static output, so setting one as the Worker's runtime variable instead would be read by nothing and the feature would simply not appear, with no error to explain why:
+
+| Build variable | Value | Effect |
+| --- | --- | --- |
+| `PUBLIC_ANALYTICS_ENABLED` | `true` | Renders the consent banner and permits Google Analytics |
+| `PUBLIC_GA4_MEASUREMENT_ID` | the property's `G-…` identifier | The property measurement goes to |
+| `PUBLIC_ADS_ENABLED` | `true` | Permits advertising |
+| `PUBLIC_ADSENSE_CLIENT` | the `ca-pub-…` identifier | The AdSense account |
+| `PUBLIC_ADSENSE_BANNER_SLOT`, `_INLINE_SLOT`, `_RAIL_SLOT` | numeric ad-unit IDs | Each placement appears only with its own ID |
+
+All of them are absent by default, and both halves of a pair are required: analytics with no measurement ID, or advertising with no valid slot, is treated exactly as disabled. Do not set the analytics pair before the consent banner's copy has been reviewed, and do not set the advertising ones before the checklist in [privacy.md](privacy.md) is complete.
+
 The production branch must stay `release`. Setting it back to `main` restores deploy-on-merge and defeats this whole document.
 
 Workers Builds authenticates with a Cloudflare API token stored in Cloudflare, not in this repository, so no repository secret is needed and none should be added. The `Release` workflow uses only the built-in `GITHUB_TOKEN` with `contents: write` on its `promote` job.
