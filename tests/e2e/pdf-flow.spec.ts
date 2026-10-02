@@ -376,6 +376,32 @@ test("keeps pdf.js out of the flows page until a run has made a PDF", async ({
   expect(chunksCarryingPdfJs(await scripts())).toBeGreaterThan(0);
 });
 
+/**
+ * Every PDF block now runs through one module the flows page imports, so a
+ * chain of image blocks reaches that module too: running one to the end must
+ * still not fetch pdf.js, whose loading belongs to the blocks that draw pages.
+ */
+test("keeps pdf.js out of a run that only ever holds images", async ({
+  page,
+}) => {
+  const requested: string[] = [];
+  page.on("request", (request) => requested.push(request.url()));
+  const scripts = recordScriptBodies(page);
+
+  await page.goto("/flows/");
+  await addStep(page, "resize-image");
+  await page.getByLabel("Resize Image width").fill("24");
+  await page.getByLabel("Resize Image height").fill("12");
+  await chooseImages(page).setInputFiles(asFile("wide.jpg", wideJpeg));
+  await page.getByRole("button", { name: "Run flow" }).click();
+
+  await expect(page.locator("[data-status]")).toContainText("final image is ready");
+  await page.waitForLoadState("networkidle");
+
+  expect(requested.filter((url) => url.includes("pdf.worker"))).toEqual([]);
+  expect(chunksCarryingPdfJs(await scripts())).toBe(0);
+});
+
 test("turns a PDF back into images and runs the rest of the chain on each", async ({
   page,
 }) => {

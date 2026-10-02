@@ -338,10 +338,8 @@ const [firstCategory] = categories;
     defaultPdfPageSize,
     describePdfPageCount,
     getPdfOrientationOptions,
-    getPdfOutputFilename,
     getPdfPageSizeLabel,
     getPdfPageSizeOptions,
-    isLargePdfWorkload,
     isPdfOrientation,
     isPdfPageSizeName,
     reorderPdfImages,
@@ -356,16 +354,11 @@ const [firstCategory] = categories;
     describePdfImageCount,
     getPdfImageArchiveName,
     getPdfImageResolutionOptions,
-    getPdfToImageErrorMessage,
     isPdfImageResolution,
-    validatePdfToImagePageCount,
     type PdfImageResolution,
   } from '../data/pdf-to-jpg';
   import {
-    describeMergeDocumentCount,
-    getMergedPdfFilename,
     getMergeReadinessMessage,
-    isLargeMergeWorkload,
     validateMergeSelection,
     validateMergedPageCount,
   } from '../data/merge-pdf';
@@ -375,67 +368,43 @@ const [firstCategory] = categories;
     defaultWatermarkWord,
     getWatermarkPositionOptions,
     getWatermarkWordOptions,
-    getWatermarkWordText,
     isWatermarkPosition,
     isWatermarkWord,
     maximumWatermarkOpacity,
     minimumWatermarkOpacity,
-    validateWatermarkPdfPageCount,
     type WatermarkPosition,
     type WatermarkWord,
   } from '../data/watermark-pdf';
   import {
-    defaultPageNumberFontSize,
     defaultPageNumberFormat,
-    defaultPageNumberMargin,
     defaultPageNumberPosition,
     getPageNumberFormatOptions,
     getPageNumberPositionOptions,
     isPageNumberFormat,
     isPageNumberPosition,
-    planPageNumbers,
-    validatePageNumbersPageCount,
     type PageNumberFormat,
     type PageNumberPosition,
   } from '../data/pdf-page-numbers';
   import {
-    createOrganizePdfPlan,
     defaultPdfPageTurn,
     getPdfPageTurnOptions,
     isPdfPageTurn,
-    turnEveryPdfPlanPage,
-    validateOrganizePdfPageCount,
     type PdfPageTurn,
   } from '../data/organize-pdf';
-  import { validateCleanPdfPageCount } from '../data/pdf-metadata';
   import {
     describeSplitPdfCount,
-    getSinglePageRanges,
     getSplitPdfArchiveName,
-    validateSplitPdfPageCount,
   } from '../data/split-pdf';
   import { toolRegistry } from '../data/tools';
   import { createZipArchive, zipMimeType } from '../data/zip-archive';
   import { runFlowImageStep, type FlowPayload } from '../scripts/flow-image-runner';
+  import { isFlowPdfStep, runFlowPdfStep, type FlowPdf } from '../scripts/flow-pdf-runner';
   import { drawCollage, encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
-  import { cleanLocalPdfMetadata, createImagePdf, openLocalPdfForMetadata, openLocalPdfForOrganize, openLocalPdfForSplit, openLocalPdfForWatermark, organizeLocalPdf, splitLocalPdf, watermarkLocalPdf } from '../scripts/pdf-generation';
   import { createPdfPageView } from '../scripts/pdf-page-view';
 
   // Chainable, published, and derived: adding a Gizlet with an image or PDF
   // contract joins the builder without a list here being edited.
   type FlowToolSlug = AvailableFlowToolSlug;
-
-  /**
-   * A PDF a flow is holding between blocks. A flow carries a set of these
-   * rather than one, because a splitting block turns the one document into
-   * several and everything after it then runs over each.
-   */
-  interface FlowPdf {
-    readonly blob: Blob;
-    readonly pages: number;
-    readonly pageSize: PdfPageSizeName;
-    readonly name: string;
-  }
 
   interface FlowStep {
     readonly id: number;
@@ -1489,298 +1458,19 @@ const [firstCategory] = categories;
             continue;
           }
 
-          if (step.toolSlug === 'jpg-to-pdf') {
-            const pageSize = step.pageSize ?? defaultPdfPageSize;
-            const isLarge = isLargePdfWorkload(payloads);
-            const pages = payloads.length;
-            const name = getPdfOutputFilename(payloads[0].file.name, pages);
-            const blob = await createImagePdf(payloads, {
-              pageSize,
-              orientation: step.orientation ?? defaultPdfOrientation,
-              onPage: async (pageNumber, pageCount) => {
-                showStatus(`Running ${position}: ${tool.name}${isLarge ? ', large document' : ''}, page ${pageNumber} of ${pageCount} locally…`);
+          if (isFlowPdfStep(step)) {
+            const next = await runFlowPdfStep(step, { payloads, pdfs: pdfResults }, {
+              position,
+              outputFormat,
+              onProgress: async (message) => {
+                showStatus(message);
                 await nextFrame();
               },
             });
 
-            pdfResults = [{ blob, pages, pageSize, name }];
-            payloads = [];
-            continue;
-          }
-
-          if (step.toolSlug === 'merge-pdf') {
-            if (pdfResults.length === 0) throw new Error(`${tool.name} needs the PDFs this flow started from.`);
-
-            const { mergeLocalPdfs, openLocalPdfForMerge } = await import('../scripts/pdf-generation');
-
-            showStatus(`Running ${position}: ${tool.name}, reading the documents locally…`);
-            await nextFrame();
-
-            // Opened again here rather than held since they were chosen: a
-            // merge copies page trees out of live documents, and re-reading
-            // them is cheaper than keeping parsed ones alive across every edit.
-            const merging = [];
-
-            for (const pdf of pdfResults) {
-              merging.push(await openLocalPdfForMerge(
-                pdf.blob instanceof File ? pdf.blob : new File([pdf.blob], pdf.name, { type: 'application/pdf' }),
-              ));
-            }
-
-            const isLarge = isLargeMergeWorkload(merging);
-            const pages = merging.reduce((total, document) => total + document.pageCount, 0);
-            const blob = await mergeLocalPdfs(merging, {
-              onDocument: async (documentNumber, documentCount) => {
-                showStatus(`Running ${position}: ${tool.name}${isLarge ? ', large document' : ''}, ${describeMergeDocumentCount(documentCount)}, joining ${documentNumber} of ${documentCount} locally…`);
-                await nextFrame();
-              },
-            });
-
-            pdfResults = [{ blob, pages, pageSize: 'fit', name: getMergedPdfFilename(merging[0].file.name) }];
-            continue;
-          }
-
-          if (step.toolSlug === 'pdf-to-jpg') {
-            // Only a PDF block can precede this one, so the graph guarantees a
-            // document is waiting; the check is here because a chain that
-            // reached this state some other way must say so rather than throw.
-            if (pdfResults.length === 0) throw new Error(`${tool.name} needs a PDF from the block before it.`);
-
-            showStatus(`Running ${position}: ${tool.name}, reading the document locally…`);
-            await nextFrame();
-
-            // pdf.js is loaded only when a flow actually reaches this block, so
-            // the page carries neither the library nor its worker until then.
-            const { openLocalPdf } = await import('../scripts/pdf-rendering');
-            const { renderPdfPagesToImages } = await import('../scripts/pdf-to-image');
-            const converted: FlowPayload[] = [];
-
-            // A splitting block before this one leaves several documents, so
-            // every one of them is drawn and their pages join one set.
-            for (const pdf of pdfResults) {
-              const opened = await openLocalPdf(pdf.blob, {
-                getErrorMessage: getPdfToImageErrorMessage,
-              });
-
-              try {
-                const countProblem = validatePdfToImagePageCount(opened.pageCount);
-                if (countProblem) throw new Error(countProblem);
-
-                const images = await renderPdfPagesToImages(opened, {
-                  documentName: pdf.name,
-                  pageNumbers: Array.from({ length: opened.pageCount }, (_, page) => page + 1),
-                  pageCount: opened.pageCount,
-                  format: outputFormat,
-                  resolution: step.resolution ?? defaultPdfImageResolution,
-                  onPage: async (pagePosition, total) => {
-                    showStatus(`Running ${position}: ${tool.name}, page ${pagePosition} of ${total} locally…`);
-                    await nextFrame();
-                  },
-                });
-
-                for (const image of images) {
-                  converted.push({ file: image.file, width: image.width, height: image.height });
-                }
-              } finally {
-                await opened.close().catch(() => undefined);
-              }
-            }
-
-            payloads = converted;
-            setSourceName ??= pdfResults[0].name;
-            pdfResults = [];
-            continue;
-          }
-
-          if (step.toolSlug === 'watermark-pdf') {
-            if (pdfResults.length === 0) throw new Error(`${tool.name} needs a PDF from the block before it.`);
-
-            const stamped: FlowPdf[] = [];
-            setSourceName ??= pdfResults[0].name;
-
-            for (const pdf of pdfResults) {
-              showStatus(`Running ${position}: ${tool.name}, reading the document locally…`);
-              await nextFrame();
-
-              const source = await openLocalPdfForWatermark(pdf.blob);
-              const countProblem = validateWatermarkPdfPageCount(source.pageCount);
-              if (countProblem) throw new Error(countProblem);
-
-              const written = await watermarkLocalPdf(
-                source,
-                { kind: 'text', text: getWatermarkWordText(step.word ?? defaultWatermarkWord), fontSize: 64 },
-                {
-                  // A flow stamps the whole document: naming pages needs a field
-                  // holding free text, which this format deliberately has none of.
-                  pages: Array.from({ length: source.pageCount }, (_, page) => page + 1),
-                  position: step.markPosition ?? defaultWatermarkPosition,
-                  rotation: 45,
-                  opacity: step.strength ?? defaultWatermarkOpacity,
-                  onPage: async (pagePosition, total) => {
-                    showStatus(`Running ${position}: ${tool.name}, page ${pagePosition} of ${total} locally…`);
-                    await nextFrame();
-                  },
-                },
-              );
-
-              stamped.push({ blob: written, pages: source.pageCount, pageSize: pdf.pageSize, name: pdf.name });
-            }
-
-            pdfResults = stamped;
-            continue;
-          }
-
-          if (step.toolSlug === 'pdf-page-numbers') {
-            if (pdfResults.length === 0) throw new Error(`${tool.name} needs a PDF from the block before it.`);
-
-            const numbered: FlowPdf[] = [];
-            setSourceName ??= pdfResults[0].name;
-
-            for (const pdf of pdfResults) {
-              showStatus(`Running ${position}: ${tool.name}, reading the document locally…`);
-              await nextFrame();
-
-              const { addPageNumbersToLocalPdf, openLocalPdfForPageNumbers } = await import('../scripts/pdf-generation');
-              const source = await openLocalPdfForPageNumbers(pdf.blob);
-              const countProblem = validatePageNumbersPageCount(source.pageCount);
-
-              if (countProblem) throw new Error(countProblem);
-
-              // A flow numbers the whole document from one: a skip or a range
-              // is about a particular document, and a chain does not know which
-              // document will reach it.
-              const plan = planPageNumbers(source.pageCount, {
-                format: step.numberFormat ?? defaultPageNumberFormat,
-                startAt: 1,
-                skip: 0,
-                pages: '',
-              });
-              const written = await addPageNumbersToLocalPdf(source, {
-                plan,
-                format: step.numberFormat ?? defaultPageNumberFormat,
-                position: step.numberPosition ?? defaultPageNumberPosition,
-                fontSize: defaultPageNumberFontSize,
-                margin: defaultPageNumberMargin,
-                onPage: async (pagePosition, total) => {
-                  showStatus(`Running ${position}: ${tool.name}, page ${pagePosition} of ${total} locally…`);
-                  await nextFrame();
-                },
-              });
-
-              numbered.push({ blob: written, pages: source.pageCount, pageSize: pdf.pageSize, name: pdf.name });
-            }
-
-            pdfResults = numbered;
-            continue;
-          }
-
-          if (step.toolSlug === 'organize-pdf') {
-            if (pdfResults.length === 0) throw new Error(`${tool.name} needs a PDF from the block before it.`);
-
-            const organized: FlowPdf[] = [];
-            setSourceName ??= pdfResults[0].name;
-
-            for (const pdf of pdfResults) {
-              showStatus(`Running ${position}: ${tool.name}, reading the document locally…`);
-              await nextFrame();
-
-              const source = await openLocalPdfForOrganize(pdf.blob);
-              const countProblem = validateOrganizePdfPageCount(source.pageCount);
-              if (countProblem) throw new Error(countProblem);
-
-              // A flow has no page to drag, so it applies the one page job that
-              // needs no field: every page turned the same way. The order and
-              // the page count are the document's own.
-              const plan = turnEveryPdfPlanPage(
-                createOrganizePdfPlan(source.pageCount),
-                step.pageTurn ?? defaultPdfPageTurn,
-              );
-              const written = await organizeLocalPdf(source, plan.pages, {
-                onPage: async (pagePosition, total) => {
-                  showStatus(`Running ${position}: ${tool.name}, page ${pagePosition} of ${total} locally…`);
-                  await nextFrame();
-                },
-              });
-
-              organized.push({
-                blob: written,
-                pages: source.pageCount,
-                pageSize: pdf.pageSize,
-                name: pdf.name,
-              });
-            }
-
-            pdfResults = organized;
-            continue;
-          }
-
-          if (step.toolSlug === 'clean-pdf-metadata') {
-            if (pdfResults.length === 0) throw new Error(`${tool.name} needs a PDF from the block before it.`);
-
-            const cleaned: FlowPdf[] = [];
-            setSourceName ??= pdfResults[0].name;
-
-            for (const pdf of pdfResults) {
-              showStatus(`Running ${position}: ${tool.name}, reading the document locally…`);
-              await nextFrame();
-
-              // Clearing a document's own fields takes no settings, so the block
-              // does here exactly what the workspace does. It is also the step
-              // that undoes what the blocks before it wrote: every document this
-              // flow produced carries the library's name until this runs.
-              const source = await openLocalPdfForMetadata(pdf.blob);
-              const countProblem = validateCleanPdfPageCount(source.pageCount);
-              if (countProblem) throw new Error(countProblem);
-
-              cleaned.push({
-                blob: await cleanLocalPdfMetadata(source),
-                pages: source.pageCount,
-                pageSize: pdf.pageSize,
-                name: pdf.name,
-              });
-            }
-
-            pdfResults = cleaned;
-            continue;
-          }
-
-          if (step.toolSlug === 'split-pdf') {
-            if (pdfResults.length === 0) throw new Error(`${tool.name} needs a PDF from the block before it.`);
-
-            const split: FlowPdf[] = [];
-            setSourceName ??= pdfResults[0].name;
-
-            for (const pdf of pdfResults) {
-              showStatus(`Running ${position}: ${tool.name}, reading the document locally…`);
-              await nextFrame();
-
-              const source = await openLocalPdfForSplit(pdf.blob);
-              const countProblem = validateSplitPdfPageCount(source.pageCount);
-              if (countProblem) throw new Error(countProblem);
-
-              // A flow has no field to name ranges in, so it splits the
-              // document into its pages: one page per document is the piece
-              // every block after this one can use.
-              const parts = await splitLocalPdf(source, getSinglePageRanges(source.pageCount), {
-                documentName: pdf.name,
-                pageCount: source.pageCount,
-                onPart: async (partPosition, total) => {
-                  showStatus(`Running ${position}: ${tool.name}, document ${partPosition} of ${total} locally…`);
-                  await nextFrame();
-                },
-              });
-
-              for (const part of parts) {
-                split.push({
-                  blob: part.file,
-                  pages: 1,
-                  pageSize: pdf.pageSize,
-                  name: part.file.name,
-                });
-              }
-            }
-
-            pdfResults = split;
+            payloads = next.payloads;
+            pdfResults = next.pdfs;
+            setSourceName ??= next.setSourceName;
             continue;
           }
 
