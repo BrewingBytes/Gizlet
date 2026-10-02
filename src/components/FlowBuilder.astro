@@ -1410,6 +1410,14 @@ const [firstCategory] = categories;
 
         if (outcome.status === 'success') {
           await showResult(outcome.result, run.signal);
+
+          // A panel cleared while the result was still being drawn — a PDF's
+          // preview, say — stopped the run after it succeeded. Whatever it
+          // was saying it was doing, it is no longer doing.
+          if (run.signal.aborted) {
+            ended = 'cancelled';
+            clearStatus();
+          }
         } else if (outcome.status === 'failure') {
           showError(outcome.message);
           clearStatus();
