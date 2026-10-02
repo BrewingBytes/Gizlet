@@ -1,0 +1,226 @@
+---
+import { utmFieldDetails } from '../data/utm-builder';
+---
+
+<section class="utm-builder" data-utm-builder>
+  <form class="utm-builder__form" novalidate data-form>
+    <div class="utm-builder__field utm-builder__field--destination">
+      <label for="utm-destination">Destination address</label>
+      <input
+        id="utm-destination"
+        type="url"
+        inputmode="url"
+        autocapitalize="off"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="https://example.com/pricing"
+        aria-describedby="utm-destination-hint utm-destination-problem"
+        data-destination
+      />
+      <p id="utm-destination-hint" class="utm-builder__hint">The page the link should open. It is read here as text, and never opened or fetched.</p>
+      <p id="utm-destination-problem" class="utm-builder__problem" data-destination-problem></p>
+    </div>
+
+    <fieldset class="utm-builder__fields">
+      <legend>Campaign parameters</legend>
+      {
+        utmFieldDetails.map((detail) => (
+          <div class="utm-builder__field">
+            <label for={`utm-${detail.field}`}>
+              {detail.label}
+              <span class="utm-builder__parameter">{detail.parameter}</span>
+            </label>
+            <input
+              id={`utm-${detail.field}`}
+              type="text"
+              autocapitalize="off"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder={detail.placeholder}
+              required={detail.required}
+              aria-describedby={`utm-${detail.field}-hint`}
+              data-field={detail.field}
+            />
+            <p id={`utm-${detail.field}-hint`} class="utm-builder__hint">{detail.hint}</p>
+          </div>
+        ))
+      }
+    </fieldset>
+
+    <div class="utm-builder__actions">
+      <button type="button" class="button-secondary" data-clear>Clear</button>
+    </div>
+  </form>
+
+  <section class="utm-builder__result" aria-labelledby="utm-result-title">
+    <div class="utm-builder__result-heading">
+      <div>
+        <p class="metadata">Result</p>
+        <h2 id="utm-result-title">Campaign link</h2>
+      </div>
+      <button type="button" data-copy disabled>Copy link</button>
+    </div>
+    <textarea
+      id="utm-result"
+      readonly
+      rows="3"
+      spellcheck="false"
+      aria-labelledby="utm-result-title"
+      aria-describedby="utm-status"
+      placeholder="The link appears here once the address, source, medium and campaign are filled in."
+      data-result></textarea>
+    <p id="utm-status" class="utm-builder__status" data-status data-state="empty" role="status" aria-live="polite"></p>
+    <p class="utm-builder__case" data-case-note hidden></p>
+  </section>
+
+  <aside class="utm-builder__note" aria-labelledby="utm-note-title">
+    <h2 id="utm-note-title">Where the campaign is counted</h2>
+    <p>
+      These parameters are read by the analytics on the destination site. If that site runs none, or ignores <code>utm_</code> parameters, the link still works and nothing is counted.
+    </p>
+    <p>
+      Gizlet counts nothing here: it does not track clicks on the link, and its own Cloudflare Web Analytics does not report UTM parameters, or any query string.
+    </p>
+  </aside>
+</section>
+
+<style>
+  .utm-builder { border: var(--border-strong-width) solid var(--text); background: var(--surface); }
+  .utm-builder__form { padding: var(--space-4); }
+  .utm-builder__fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: var(--space-3) var(--space-4); min-width: 0; margin: var(--space-4) 0 0; padding: 0; border: 0; }
+  .utm-builder legend { margin-bottom: var(--space-3); padding: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.08em; }
+  .utm-builder__field { display: grid; gap: var(--space-1); align-content: start; min-width: 0; }
+  .utm-builder__field label { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2); font-weight: 700; }
+  .utm-builder__field--destination label { font-family: var(--font-display); font-size: var(--font-size-xl); letter-spacing: -0.025em; line-height: 1.05; }
+  .utm-builder__field input { font-family: var(--font-mono); font-size: var(--font-size-sm); }
+  .utm-builder__field input[aria-invalid='true'] { border-color: var(--color-red); }
+  .utm-builder__parameter { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); font-weight: 400; }
+  .utm-builder__hint, .utm-builder__problem { margin: 0; color: var(--text-muted); font-size: var(--font-size-sm); }
+  .utm-builder__problem { color: var(--color-red); font-weight: 700; }
+  .utm-builder__problem:empty { display: none; }
+  .utm-builder__actions { display: flex; justify-content: end; margin-top: var(--space-3); }
+  .utm-builder__result { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .utm-builder__result-heading { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-3); }
+  .utm-builder__result-heading .metadata, .utm-builder__result-heading h2 { margin: 0; }
+  .utm-builder__result textarea { min-height: 6rem; border: var(--border-width) solid var(--border); background: var(--color-ink); color: #fffdf7; font-family: var(--font-mono); font-size: var(--font-size-sm); overflow-wrap: anywhere; }
+  .utm-builder__result textarea::placeholder { color: #b9b3a4; }
+  .utm-builder__status, .utm-builder__case { min-height: 1.5rem; margin: var(--space-2) 0 0; color: var(--text-muted); font-family: var(--font-mono); font-size: var(--font-size-xs); overflow-wrap: anywhere; }
+  .utm-builder__status[data-state='invalid'] { color: var(--color-red); font-weight: 700; }
+  .utm-builder__status[data-state='copied'] { color: var(--success); font-weight: 700; }
+  .utm-builder__status[data-state='manual'] { color: var(--text); font-weight: 700; }
+  .utm-builder__note { padding: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .utm-builder__note h2 { font-size: var(--font-size-lg); }
+  .utm-builder__note p { max-width: 65ch; color: var(--text-muted); }
+  .utm-builder__note p:last-child { margin-bottom: 0; }
+  @media (max-width: 40rem) {
+    .utm-builder__form, .utm-builder__result, .utm-builder__note { padding: var(--space-3); }
+    .utm-builder__result-heading { align-items: start; flex-direction: column; }
+  }
+</style>
+
+<script>
+  import {
+    buildCampaignUrl,
+    describeCampaignUrl,
+    describeDestinationProblem,
+    getMixedCaseFields,
+    getUtmFieldDetail,
+    utmFields,
+    type UtmField,
+    type UtmValues,
+  } from '../data/utm-builder';
+
+  const root = document.querySelector<HTMLElement>('[data-utm-builder]');
+
+  if (root) {
+    const form = root.querySelector<HTMLFormElement>('[data-form]');
+    const destination = root.querySelector<HTMLInputElement>('[data-destination]');
+    const destinationProblem = root.querySelector<HTMLElement>('[data-destination-problem]');
+    const result = root.querySelector<HTMLTextAreaElement>('[data-result]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const caseNote = root.querySelector<HTMLElement>('[data-case-note]');
+    const copyButton = root.querySelector<HTMLButtonElement>('[data-copy]');
+    const clearButton = root.querySelector<HTMLButtonElement>('[data-clear]');
+    const fieldInputs = new Map(
+      utmFields.map((field) => [field, root.querySelector<HTMLInputElement>(`[data-field="${field}"]`)] as const),
+    );
+
+    if (!form || !destination || !destinationProblem || !result || !status || !caseNote || !copyButton || !clearButton || [...fieldInputs.values()].some((input) => !input)) {
+      throw new Error('UTM Builder could not initialise.');
+    }
+
+    const fieldInput = (field: UtmField) => fieldInputs.get(field)!;
+
+    const readValues = (): UtmValues =>
+      Object.fromEntries(utmFields.map((field) => [field, fieldInput(field).value])) as Record<UtmField, string>;
+
+    /** The last good link, which is what Copy acts on. */
+    let link = '';
+
+    // Everything typed here is written back with textContent or as a form
+    // value, never as markup, and the address is never given to a link or a
+    // request: a campaign link is text to be copied, not a page to visit.
+    const render = () => {
+      const values = readValues();
+      const built = buildCampaignUrl(destination.value, values);
+      const problem = !built.ok && built.destination && built.destination.kind !== 'empty' ? built.destination : undefined;
+
+      destinationProblem.textContent = problem ? describeDestinationProblem(problem) : '';
+      destination.setAttribute('aria-invalid', problem ? 'true' : 'false');
+
+      link = built.ok ? built.url : '';
+      result.value = link;
+      copyButton.disabled = link === '';
+
+      const untouched = destination.value.trim() === '' && utmFields.every((field) => values[field].trim() === '');
+
+      status.dataset.state = built.ok ? 'valid' : untouched ? 'empty' : 'invalid';
+      status.textContent = built.ok || !untouched ? describeCampaignUrl(built) : '';
+
+      const mixed = getMixedCaseFields(values);
+
+      caseNote.hidden = mixed.length === 0;
+      caseNote.textContent = mixed.length === 0
+        ? ''
+        : `${mixed.map((field) => getUtmFieldDetail(field).label).join(', ')} ${mixed.length === 1 ? 'has' : 'have'} a capital letter. Most reports count Newsletter and newsletter as two different values, so keep one spelling across links.`;
+    };
+
+    // When the clipboard is unavailable or refused, the link is selected in
+    // its box instead, so the visitor's own copy shortcut takes it from there.
+    const selectForManualCopy = () => {
+      result.focus();
+      result.select();
+      status.dataset.state = 'manual';
+      status.textContent = 'Copying is blocked in this browser. The link is selected: press Ctrl+C, or ⌘C on a Mac.';
+    };
+
+    form.addEventListener('submit', (event) => event.preventDefault());
+    form.addEventListener('input', render);
+
+    copyButton.addEventListener('click', () => {
+      if (link === '') return;
+
+      if (!navigator.clipboard?.writeText) {
+        selectForManualCopy();
+        return;
+      }
+
+      void navigator.clipboard
+        .writeText(link)
+        .then(() => {
+          status.dataset.state = 'copied';
+          status.textContent = 'Link copied to your clipboard.';
+        })
+        .catch(selectForManualCopy);
+    });
+
+    clearButton.addEventListener('click', () => {
+      destination.value = '';
+      for (const input of fieldInputs.values()) input!.value = '';
+      render();
+      destination.focus();
+    });
+
+    render();
+  }
+</script>

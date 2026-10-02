@@ -44,6 +44,7 @@ const workspaceSignatures = {
   "jwt-decoder": "Token to decode",
   "file-hash-generator": "Select a file to hash",
   "timestamp-converter": "A count of seconds or milliseconds",
+  "utm-builder": "Destination address",
 } as const satisfies Record<AvailableToolSlug, string>;
 
 for (const tool of getAvailableTools()) {

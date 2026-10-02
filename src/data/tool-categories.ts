@@ -103,13 +103,14 @@ export const toolCategoryEditorial = {
   seo: {
     heading: 'SEO tools',
     description:
-      'Write JSON-LD structured data for a page from a form, and what that markup can and cannot do for a search listing.',
+      'Write JSON-LD structured data for a page, and tag a link with campaign parameters, with what each one can and cannot do for you.',
     introduction: [
-      'There is one Gizlet here so far. It writes the Schema.org markup a page carries to describe what it is: a product, an organisation, a local business, an article, an event, or the breadcrumb trail that leads to it.',
-      'Valid markup tells a search engine what the page holds. It does not promise a rich result or a better position, and the generator keeps those two questions apart: Schema.org errors are listed separately from Google search recommendations.',
+      'Two Gizlets here, for the two halves of getting a page found and knowing how it was found. One writes the Schema.org markup a page carries to describe what it is: a product, an organisation, a local business, an article, an event, or the breadcrumb trail that leads to it. The other adds utm_ campaign parameters to a link, so the visits it brings are reported under the campaign that sent them.',
+      'Neither makes a promise on someone else’s behalf. Valid markup tells a search engine what the page holds, and does not promise a rich result or a better position: the generator lists Schema.org errors separately from Google search recommendations. A campaign link is only counted if the destination site’s own analytics reads the parameters.',
     ],
     choices: [
       { need: 'A page needs JSON-LD for a product, organisation, local business, article, event, or breadcrumb trail', slug: 'json-ld-generator' },
+      { need: 'A link in a newsletter, post, or ad should show up under its campaign in the site’s analytics', slug: 'utm-builder' },
     ],
   },
   developer: {
