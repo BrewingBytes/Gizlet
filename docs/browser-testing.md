@@ -41,7 +41,8 @@ Every invocation builds the site again before it starts the preview, so no run c
 
 - If a test fails in both projects, it is a Gizlet bug or a test bug. It is not a WebKit compatibility problem.
 - If a test fails only in `webkit-smoke`, it is WebKit-specific. Reproduce it locally with `--project=webkit-smoke --headed`. If the fix is more than small, open a separately scoped issue for it rather than widening the change at hand.
-- In CI, WebKit has its own install step and its own test step, placed after every Chromium step. A WebKit failure therefore never hides a Chromium result, and the step timings show what WebKit adds.
+- In CI, WebKit has its own test step, placed after every Chromium step. A WebKit failure therefore never hides a Chromium result, and the step timing shows what WebKit adds. CI runs in the Playwright image, which already carries both browsers, so neither has an install step there ([ci-performance.md](ci-performance.md)).
+- CI runs Playwright with one worker per CPU (`workers: '100%'` when `CI` is set); a local run keeps Playwright's default of half. A failure that only appears in CI can be a concurrency problem: reproduce it with `--workers=4`.
 
 ## Unsupported formats are a result, not a skip
 
