@@ -13,7 +13,7 @@ Version numbers follow the release policy at the bottom of [CHANGELOG.md](../CHA
 Cloudflare Workers Builds is the source of the production build. It can only trigger on a branch — [it has no git-tag trigger](https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/) — so the tag drives a branch that Cloudflare watches:
 
 1. A maintainer pushes `vx.y.z`.
-2. `Release` runs on the tag. Its `validate` job checks that the tag matches `package.json`, that `CHANGELOG.md` has the matching release section, and that the tagged commit is on `origin/main`, then runs the same gates as CI: `check`, `test`, `build`, and `test:e2e`.
+2. `Release` runs on the tag. Its `validate` job checks that the tag matches `package.json`, that `CHANGELOG.md` has the matching release section, and that the tagged commit is on `origin/main`, then runs the same gates as CI: `check`, `test`, `build`, `site:check`, and `test:e2e`.
 3. Only if all of that passes, the `promote` job fast-forwards the `release` branch onto the tagged commit.
 4. Cloudflare Workers Builds sees the push to `release`, runs `pnpm run build`, and deploys with `pnpm run deploy`.
 

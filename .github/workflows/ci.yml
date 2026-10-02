@@ -64,6 +64,9 @@ jobs:
       - name: Production build
         run: pnpm run build
 
+      - name: Built site check
+        run: pnpm run site:check
+
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
 
