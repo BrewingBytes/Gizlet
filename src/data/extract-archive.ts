@@ -106,6 +106,17 @@ export const maximumArchiveEntries = 5_000;
 /** How much may come out of one archive in total, unpacked. */
 export const maximumExtractedBytes = 512 * 1024 * 1024;
 
+/** Shared declared/actual byte guard, before allocating or retaining output. */
+export function assertExtractionSize(bytes: number, remainingBytes: number): void {
+  if (!Number.isSafeInteger(bytes) || bytes < 0 ||
+      !Number.isSafeInteger(remainingBytes) || remainingBytes < 0 || bytes > remainingBytes) {
+    throw new ArchiveReadError(
+      'The selected files exceed the extraction size limit, or an entry expands beyond its declared size. Select fewer files, or open the archive with a tool on your device.',
+    );
+  }
+}
+
+
 /**
  * How much larger than itself a single entry may claim to unpack.
  *

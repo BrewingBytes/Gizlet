@@ -5,6 +5,8 @@ import {
   getExtractionName,
   getExtractionPaths,
   readEntryPayload,
+  maximumExtractedBytes,
+  assertExtractionSize,
   storedMethod,
   verifyEntry,
   type ArchiveEntry,
@@ -37,29 +39,75 @@ export function getNoInflateMessage(): string {
   return 'This browser has no decompressor built in, so a compressed archive cannot be unpacked here. A current Firefox, Chrome, Edge or Safari has one.';
 }
 
-export async function inflateBytes(bytes: Uint8Array): Promise<Uint8Array> {
+/** Read only within the budget; cancel upstream before retaining an oversized chunk. */
+export async function readBoundedOutput(
+  stream: ReadableStream<Uint8Array>,
+  maximumBytes: number,
+): Promise<Uint8Array> {
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+
+  try {
+    assertExtractionSize(0, maximumBytes);
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      assertExtractionSize(value.byteLength, maximumBytes - length);
+      chunks.push(value);
+      length += value.byteLength;
+    }
+
+    const output = new Uint8Array(length);
+    let offset = 0;
+    for (const chunk of chunks) {
+      output.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return output;
+  } catch (error) {
+    // A failed stream can reject cancellation too; preserve the useful error.
+    await reader.cancel().catch(() => undefined);
+    throw error;
+  } finally {
+    chunks.length = 0;
+    reader.releaseLock();
+  }
+}
+
+export async function inflateBytes(
+  bytes: Uint8Array,
+  maximumBytes = maximumExtractedBytes,
+): Promise<Uint8Array> {
   if (!canInflate()) throw new ArchiveReadError(getNoInflateMessage());
 
   const stream = new Blob([bytes.slice()])
     .stream()
     .pipeThrough(new DecompressionStream('deflate-raw'));
 
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+  return readBoundedOutput(stream, Math.min(maximumBytes, maximumExtractedBytes));
 }
 
 /** One entry, unpacked and checked, as the bytes it was before it was packed. */
-export async function unpackEntry(archive: Uint8Array, entry: ArchiveEntry): Promise<Uint8Array> {
+export async function unpackEntry(
+  archive: Uint8Array,
+  entry: ArchiveEntry,
+  remainingBytes = maximumExtractedBytes,
+): Promise<Uint8Array> {
   const blocker = getEntryBlocker(entry);
 
   if (blocker) throw new ArchiveReadError(`${entry.path} cannot be unpacked here: ${blocker.toLowerCase()}.`);
 
+  const budget = Math.min(remainingBytes, maximumExtractedBytes);
+  assertExtractionSize(entry.size, budget);
   const payload = readEntryPayload(archive, entry);
   let data: Uint8Array;
 
   if (entry.method === storedMethod) {
+    assertExtractionSize(payload.byteLength, Math.min(entry.size, budget));
     data = payload.slice();
   } else if (entry.method === deflatedMethod) {
-    data = await inflateBytes(payload);
+    data = await inflateBytes(payload, Math.min(entry.size, budget));
   } else {
     throw new ArchiveReadError(`${entry.path} uses a compression method a browser cannot read.`);
   }
@@ -79,6 +127,8 @@ export interface ExtractionResult {
 }
 
 export interface ExtractionOptions {
+  /** Optional lower output budget; callers cannot raise the application limit. */
+  readonly maximumBytes?: number;
   readonly onFile?: (position: number, total: number) => void;
 }
 
@@ -101,6 +151,16 @@ export async function extractEntries(
   indexes: readonly number[],
   options: ExtractionOptions = {},
 ): Promise<ExtractionResult> {
+  const maximumBytes = Math.min(options.maximumBytes ?? maximumExtractedBytes, maximumExtractedBytes);
+  assertExtractionSize(0, maximumBytes);
+  let declaredBytes = 0;
+  for (const index of indexes) {
+    const entry = files[index];
+    if (!entry) continue;
+    assertExtractionSize(entry.size, maximumBytes - declaredBytes);
+    declaredBytes += entry.size;
+  }
+
   const paths = getExtractionPaths(files, indexes);
   const name = getExtractionName(archiveName, paths);
   const entries: ZipEntry[] = [];
@@ -114,7 +174,7 @@ export async function extractEntries(
     options.onFile?.(position + 1, indexes.length);
     await nextPaint();
 
-    const data = await unpackEntry(archive, entry);
+    const data = await unpackEntry(archive, entry, maximumBytes - bytes);
 
     bytes += data.length;
 
