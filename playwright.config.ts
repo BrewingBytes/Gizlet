@@ -13,6 +13,11 @@ export default defineConfig({
   testDir: './tests/e2e',
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
+  // Playwright's default is half the CPUs, which leaves two of a GitHub
+  // runner's four idle while the Chromium suite is the longest step in CI
+  // (docs/ci-performance.md). Locally the default stays, so a laptop keeps
+  // cores for everything else.
+  workers: process.env.CI ? '100%' : undefined,
   use: {
     baseURL: previewUrl,
     trace: 'on-first-retry',
