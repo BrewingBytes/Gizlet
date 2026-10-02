@@ -288,7 +288,6 @@ const [firstCategory] = categories;
     formatFileSize,
     getFormatLabel,
     getInputImageFormat,
-    getOutputFilename,
     getPreferredOutputFormat,
     type ImageOutputFormat,
   } from '../data/image-compression';
@@ -300,27 +299,16 @@ const [firstCategory] = categories;
     validateBatchPixels,
     validateBatchSelection,
   } from '../data/image-batches';
-  import { getConversionOutputFilename } from '../data/image-conversion';
-  import { getCleanedImageFilename } from '../data/image-metadata';
   import {
-    defaultBackgroundAnchor,
-    defaultBackgroundColour,
     defaultBackgroundFit,
     getBackgroundFitOptions,
-    getBackgroundOutputFilename,
     isBackgroundFit,
-    planImageBackground,
-    validateBackgroundCanvas,
     type BackgroundFit,
   } from '../data/image-background';
   import {
     defaultOrientationPreset,
-    getOrientationOutputFilename,
-    getOrientationPreset,
     getOrientationPresetOptions,
-    getOrientedDimensions,
     isOrientationPresetName,
-    validateOrientedImage,
     type OrientationPresetName,
   } from '../data/image-orientation';
   import {
@@ -339,16 +327,12 @@ const [firstCategory] = categories;
   import {
     defaultFlowCropAspectRatio,
     flowCropAspectRatioNames,
-    getCenteredCrop,
-    getCropAspectRatio,
     getCropAspectRatioOptions,
-    getCropOutputFilename,
     isFlowCropAspectRatioName,
     type FlowCropAspectRatioName,
   } from '../data/image-crop';
   import { getPdfPreviewErrorMessage, isSupportedPdfFile } from '../data/pdf-viewer';
   import { decodeRecipe, encodeRecipe, type Recipe } from '../data/recipes';
-  import { getResizeOutputFilename, validateResizeDimensions } from '../data/image-resize';
   import {
     defaultPdfOrientation,
     defaultPdfPageSize,
@@ -432,7 +416,8 @@ const [firstCategory] = categories;
   } from '../data/split-pdf';
   import { toolRegistry } from '../data/tools';
   import { createZipArchive, zipMimeType } from '../data/zip-archive';
-  import { cropBrowserImage, drawCollage, drawImageBackground, encodeBrowserImage, loadBrowserImage, orientBrowserImage } from '../scripts/image-processing';
+  import { runFlowImageStep, type FlowPayload } from '../scripts/flow-image-runner';
+  import { drawCollage, encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
   import { cleanLocalPdfMetadata, createImagePdf, openLocalPdfForMetadata, openLocalPdfForOrganize, openLocalPdfForSplit, openLocalPdfForWatermark, organizeLocalPdf, splitLocalPdf, watermarkLocalPdf } from '../scripts/pdf-generation';
   import { createPdfPageView } from '../scripts/pdf-page-view';
 
@@ -508,13 +493,6 @@ const [firstCategory] = categories;
         readonly payload: 'csv-file' | 'json-text';
         readonly summary: string;
       };
-
-  /** What travels between steps. A combining step turns many into one. */
-  interface FlowPayload {
-    readonly file: File;
-    readonly width: number;
-    readonly height: number;
-  }
 
   /**
    * A text document travelling between steps.
@@ -1321,89 +1299,6 @@ const [firstCategory] = categories;
       }
       resetResult();
     };
-    /** One image through one image step, keeping the dimensions it came out at. */
-    const runImageStep = async (step: FlowStep, payload: FlowPayload): Promise<FlowPayload> => {
-      const image = await loadBrowserImage(payload.file);
-      const sourceDimensions = { width: image.naturalWidth, height: image.naturalHeight };
-      if (!sourceDimensions.width || !sourceDimensions.height) throw new Error('This image has no usable dimensions.');
-
-      let dimensions = sourceDimensions;
-      if (step.toolSlug === 'resize-image') {
-        dimensions = { width: Math.round(step.width ?? 0), height: Math.round(step.height ?? 0) };
-        const validation = validateResizeDimensions(dimensions);
-        if (validation) throw new Error(`Resize Image: ${validation}`);
-      }
-
-      // A background block is the one image step whose output size is neither
-      // the picture's nor a resize of it: the canvas is the size, and the
-      // picture is placed on it.
-      if (step.toolSlug === 'image-background') {
-        const canvas = { width: Math.round(step.canvasWidth ?? 0), height: Math.round(step.canvasHeight ?? 0) };
-        const problem = validateBackgroundCanvas(canvas);
-
-        if (problem) throw new Error(`${toolBySlug(step.toolSlug).name}: ${problem}`);
-
-        const plan = planImageBackground(sourceDimensions, {
-          canvas,
-          fit: step.fit ?? defaultBackgroundFit,
-          anchor: defaultBackgroundAnchor,
-          offsetX: 0,
-          offsetY: 0,
-        });
-        const drawn = drawImageBackground(document.createElement('canvas'), image, plan, defaultBackgroundColour);
-        const blob = await encodeBrowserImage(drawn, plan.canvas, outputFormat);
-
-        return {
-          file: new File([blob], getBackgroundOutputFilename(payload.file.name, outputFormat), { type: blob.type }),
-          ...plan.canvas,
-        };
-      }
-
-      // A turn keeps every pixel it was given and only moves them, so the
-      // block that does it hands on the same picture in a new orientation —
-      // with its sides swapped when the turn is a quarter one.
-      if (step.toolSlug === 'rotate-flip-image') {
-        const problem = validateOrientedImage(sourceDimensions);
-
-        if (problem) throw new Error(`${toolBySlug(step.toolSlug).name}: ${problem}`);
-
-        const turned = getOrientationPreset(step.turn ?? defaultOrientationPreset);
-        const oriented = getOrientedDimensions(sourceDimensions, turned);
-        const blob = await encodeBrowserImage(
-          orientBrowserImage(image, sourceDimensions, turned),
-          oriented,
-          outputFormat,
-        );
-
-        return {
-          file: new File([blob], getOrientationOutputFilename(payload.file.name, turned, outputFormat), { type: blob.type }),
-          ...oriented,
-        };
-      }
-
-      // A flow has nobody to drag a rectangle, so a crop block takes the
-      // largest centred one of its chosen shape: what the workspace opens on
-      // when that ratio is picked and nothing else is touched.
-      let source: CanvasImageSource = image;
-      if (step.toolSlug === 'crop-image') {
-        const rectangle = getCenteredCrop(sourceDimensions, getCropAspectRatio(step.ratio ?? defaultFlowCropAspectRatio));
-        source = cropBrowserImage(image, rectangle);
-        dimensions = { width: rectangle.width, height: rectangle.height };
-      }
-
-      const blob = await encodeBrowserImage(source, dimensions, outputFormat, step.toolSlug === 'compress-image' ? (step.quality ?? 80) / 100 : undefined);
-      const filename = step.toolSlug === 'remove-image-metadata'
-        ? getCleanedImageFilename(payload.file.name, outputFormat)
-        : step.toolSlug === 'convert-image'
-        ? getConversionOutputFilename(payload.file.name, outputFormat)
-        : step.toolSlug === 'resize-image'
-          ? getResizeOutputFilename(payload.file.name, outputFormat)
-          : step.toolSlug === 'crop-image'
-            ? getCropOutputFilename(payload.file.name, outputFormat)
-            : getOutputFilename(payload.file.name, outputFormat);
-
-      return { file: new File([blob], filename, { type: blob.type }), ...dimensions };
-    };
     /**
      * Draws the document the flow produced, so the page order and what
      * automatic orientation did to each sheet can be read before anything is
@@ -1900,12 +1795,12 @@ const [firstCategory] = categories;
             // do is dropped, named, and the rest go on. A flow over one picture
             // has nothing to go on with, so its failure is still the run's.
             if (payloads.length === 1 && failed.length === 0) {
-              processed.push(await runImageStep(step, payload));
+              processed.push(await runFlowImageStep(step, payload, outputFormat));
               continue;
             }
 
             try {
-              processed.push(await runImageStep(step, payload));
+              processed.push(await runFlowImageStep(step, payload, outputFormat));
             } catch (caughtError) {
               failed.push({
                 name: payload.file.name,
