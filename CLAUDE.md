@@ -18,6 +18,7 @@ pnpm dev                   # Astro dev server
 pnpm run check             # Astro + TypeScript, fails on hints and warnings
 pnpm test                  # Vitest over tests/unit
 pnpm run build             # static production build
+pnpm run site:check        # check dist/ against its sitemap, after a build
 pnpm run test:e2e          # Playwright against a preview of the build
 pnpm run changelog:draft   # draft changelog entries from commit titles; writes nothing
 pnpm run changelog:collect # assemble changelog.d/ into a release section; writes nothing
@@ -25,7 +26,7 @@ pnpm run pr:assets         # push a pull request's screenshots to pr-assets, pri
 pnpm run sitemap:dates     # print the sitemap's lastmod dates; --write to commit them, --check to verify
 ```
 
-Playwright needs `pnpm exec playwright install chromium` once. Run `check`, `test`, and `build` before handing work off; add `test:e2e` when browser behavior changes. Report failures with their output instead of working around them.
+Playwright needs `pnpm exec playwright install chromium` once. Run `check`, `test`, `build`, and `site:check` before handing work off; add `test:e2e` when browser behavior changes. Report failures with their output instead of working around them.
 
 ## Working style in this repo
 

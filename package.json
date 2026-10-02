@@ -18,6 +18,7 @@
     "changelog:collect": "node scripts/collect-changelog.mjs",
     "pr:assets": "node scripts/publish-pr-assets.mjs",
     "sitemap:dates": "node scripts/generate-sitemap-dates.mjs",
+    "site:check": "node scripts/check-built-site.mjs",
     "deploy": "wrangler deploy"
   },
   "dependencies": {
