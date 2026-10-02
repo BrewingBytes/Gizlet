@@ -13,7 +13,7 @@ Read [docs/architecture.md](docs/architecture.md) before changing the applicatio
 - `src/components/` — one Astro component per Gizlet workspace plus the shared shell (`SiteHeader`, `SiteFooter`, `ToolPageLayout`, `AdvertisementSlot`, `ToolSearchOverlay`, `FlowBuilder`). Each keeps its own markup, scoped CSS, and `<script>` module.
 - `src/layouts/BaseLayout.astro` — document shell, metadata, theme bootstrap, and the env-gated ads tag.
 - `src/pages/` — static routes, including `tools/[slug].astro` (generated from the registry) and the generated `sitemap.xml`, `robots.txt`, `tools.json`, and `llms.txt`.
-- `tests/unit/` — Vitest, one file per `src/data` module. `tests/e2e/` — Playwright smoke coverage.
+- `tests/unit/` — Vitest, one file per `src/data` module. `tests/e2e/` — Playwright smoke coverage; `tests/e2e/smoke/` is the subset that also runs on WebKit.
 - `docs/` — architecture baseline, privacy data contract, measurement constraints, request-form behavior, the roadmap narrative, release procedure.
 - `changelog.d/` — one file per unreleased changelog entry. A change writes its entry here rather than editing `CHANGELOG.md`, so two pull requests never edit the same lines; the release collects them.
 
@@ -71,7 +71,7 @@ Node.js 24 LTS and pnpm 10 (`corepack enable`, then `pnpm install --frozen-lockf
 - `pnpm test` — Vitest over `tests/unit`.
 - `pnpm run build` — production build.
 - `pnpm run site:check` — after a build, checks `dist/` against its sitemap: every listed URL is a generated, indexable page with a matching canonical, one title and H1, a description and a social image that exists; every unlisted page is `noindex`, and the 404 page, campaign entries and planned Gizlets carry their own robots policy whatever the sitemap says; JSON-LD parses, stays on the site's host and presents no planned Gizlet as an app; and same-site links and fragments land on something the build wrote.
-- `pnpm run test:e2e` — Playwright against a preview of the production build, when browser behavior changes. First run needs `pnpm exec playwright install chromium`.
+- `pnpm run test:e2e` — Playwright against a preview of the production build, when browser behavior changes: the full suite on the `chromium` project, plus the phone-size local file workflows in `tests/e2e/smoke/` on the `webkit-smoke` project ([docs/browser-testing.md](docs/browser-testing.md)). First run needs `pnpm exec playwright install chromium webkit`.
 
 Add focused Vitest coverage for deterministic logic and Playwright coverage for important browser flows. Run the relevant checks before handing work off. CI runs all five on pull requests and on `main`, plus a Conventional Commit title check. If an expected command or test layer does not exist yet, say so plainly rather than inventing a substitute.
 

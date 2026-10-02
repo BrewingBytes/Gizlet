@@ -22,12 +22,12 @@ The standard validation commands are `pnpm run check`, `pnpm test`, and `pnpm ru
 
 ### Tests
 
-Run unit tests with `pnpm test`. Run browser smoke tests with `pnpm run test:e2e`.
+Run unit tests with `pnpm test`. Run browser tests with `pnpm run test:e2e`. That runs the full suite on Chromium and a small set of local file workflows on WebKit at phone size; [docs/browser-testing.md](docs/browser-testing.md) explains both, plus the manual iPhone check that WebKit cannot replace.
 
-The first browser-test setup also needs Chromium installed locally:
+The first browser-test setup also needs both browsers installed locally:
 
 ```sh
-pnpm exec playwright install chromium
+pnpm exec playwright install chromium webkit
 ```
 
 ## Product principles

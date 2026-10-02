@@ -70,8 +70,10 @@ jobs:
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
 
+      # Chromium runs the whole suite, `smoke/` included, so a failure that
+      # only the WebKit step below shows is a WebKit failure.
       - name: Browser smoke tests
-        run: pnpm run test:e2e
+        run: pnpm exec playwright test --project=chromium
 
       - name: Browser analytics consent tests with measurement configured
         env:
@@ -93,3 +95,12 @@ jobs:
           PUBLIC_ADS_ENABLED: 'true'
           PUBLIC_ADSENSE_CLIENT: ca-pub-1234567890123456
         run: pnpm exec playwright test tests/e2e/advertising.spec.ts
+
+      # Its own install and its own step, so the WebKit cost and any WebKit-only
+      # failure read separately from Chromium's. Each Playwright run starts a
+      # fresh build and preview of its own, this one included.
+      - name: Install Playwright WebKit
+        run: pnpm exec playwright install --with-deps webkit
+
+      - name: Browser smoke tests on WebKit
+        run: pnpm exec playwright test --project=webkit-smoke

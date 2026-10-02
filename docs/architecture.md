@@ -12,7 +12,7 @@ This document defines the production baseline for Gizlet v1. It is intentionally
 | Language | TypeScript using Astro's strict configuration. |
 | Styling | Custom CSS, design tokens, and Astro component-scoped styles. |
 | Unit tests | Vitest for pure tool logic and small utility modules. |
-| Browser tests | Playwright for the homepage smoke test and critical tool happy paths. |
+| Browser tests | Playwright for the homepage smoke test and critical tool happy paths on Chromium, plus a phone-size WebKit smoke set for local file workflows. |
 
 ## Rendering and interactivity
 
@@ -44,7 +44,7 @@ Do not import browser-only WASM code from Astro frontmatter or other build-time 
 
 ## Testing policy
 
-Test transformations, validation, filenames, registry rules, and other deterministic behavior with Vitest. Browser tests use Playwright against a local Vite preview of the Astro production build and cover the homepage plus high-value user paths such as a tool's primary action and download/copy result.
+Test transformations, validation, filenames, registry rules, and other deterministic behavior with Vitest. Browser tests use Playwright against a local Vite preview of the Astro production build and cover the homepage plus high-value user paths such as a tool's primary action and download/copy result. The full suite runs on Chromium. A bounded smoke set in `tests/e2e/smoke/` also runs on WebKit at phone size; it is not a device matrix, and it does not replace the manual iPhone check in [browser-testing.md](browser-testing.md).
 
 The project uses these scripts once initialized:
 
@@ -55,7 +55,7 @@ The project uses these scripts once initialized:
 - `test` for Vitest
 - `test:e2e` for Playwright
 
-GitHub Actions validates pull requests and pushes to `main`. The pull-request-only `Commit Title` job requires Conventional Commit subjects. The validation job installs from the lockfile and runs checks, tests, the production build, a check of the built site against its sitemap, and Playwright smoke tests without deployment secrets.
+GitHub Actions validates pull requests and pushes to `main`. The pull-request-only `Commit Title` job requires Conventional Commit subjects. The validation job installs from the lockfile and runs checks, tests, the production build, a check of the built site against its sitemap, and Playwright tests without deployment secrets: Chromium first, then the WebKit smoke set in its own install and test steps.
 
 ## Dependency policy
 
