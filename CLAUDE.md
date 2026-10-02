@@ -26,7 +26,7 @@ pnpm run pr:assets         # push a pull request's screenshots to pr-assets, pri
 pnpm run sitemap:dates     # print the sitemap's lastmod dates; --write to commit them, --check to verify
 ```
 
-Playwright needs `pnpm exec playwright install chromium` once. Run `check`, `test`, `build`, and `site:check` before handing work off; add `test:e2e` when browser behavior changes. Report failures with their output instead of working around them.
+Playwright needs `pnpm exec playwright install chromium webkit` once. `test:e2e` runs both projects; `--project=chromium` or `--project=webkit-smoke` runs one ([docs/browser-testing.md](docs/browser-testing.md)). Run `check`, `test`, `build`, and `site:check` before handing work off; add `test:e2e` when browser behavior changes. Report failures with their output instead of working around them.
 
 ## Working style in this repo
 

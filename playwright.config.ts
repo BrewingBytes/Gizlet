@@ -17,6 +17,23 @@ export default defineConfig({
     baseURL: previewUrl,
     trace: 'on-first-retry',
   },
+  projects: [
+    // The whole suite, as it has always run. It includes `smoke/`, so the
+    // WebKit project below always has a Chromium result to be compared with.
+    {
+      name: 'chromium',
+      use: { browserName: 'chromium' },
+    },
+    // A bounded set of local file workflows at phone size, nothing more. A
+    // full device matrix would multiply the run for little extra signal, and
+    // Playwright's WebKit is not iOS Safari either way: docs/browser-testing.md
+    // has the manual iPhone check that this cannot replace.
+    {
+      name: 'webkit-smoke',
+      testMatch: 'smoke/**/*.spec.ts',
+      use: { browserName: 'webkit' },
+    },
+  ],
   webServer: {
     command: `pnpm run build && pnpm exec vite preview --host 127.0.0.1 --port ${previewPort} --strictPort`,
     url: previewUrl,
