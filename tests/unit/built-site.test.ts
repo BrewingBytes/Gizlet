@@ -108,6 +108,11 @@ function goodFiles(): Record<string, string> {
       jsonLd: [JSON.stringify({ "@context": "https://schema.org", "@type": "BreadcrumbList" })],
     }),
     "404.html": page({ path: "/404/", robots: "noindex, follow" }),
+    "campaigns/local-pdf/index.html": page({
+      path: "/campaigns/local-pdf/",
+      robots: "noindex, follow",
+      canonical: `${origin}/tools/compress-image/`,
+    }),
     "sitemap.xml": sitemap(listedPaths),
     "_redirects": "# Moved routes\n/old-tools/ /tools/ 301\n",
     "tools/index.html": page({ path: "/tools/", robots: "noindex, follow" }),
@@ -134,7 +139,7 @@ describe("the built-site check", () => {
     const result = check(goodFiles());
 
     expect(result.findings).toEqual([]);
-    expect(result.pages).toBe(8);
+    expect(result.pages).toBe(9);
     expect(result.sitemapUrls).toBe(3);
   });
 
@@ -165,7 +170,7 @@ describe("the built-site check", () => {
 
   it("fails a canonical on another host even on an unlisted page", () => {
     const files = goodFiles();
-    files["404.html"] = page({ path: "/404/", robots: "noindex", canonical: "https://example.com/404/" });
+    files["404.html"] = page({ path: "/404/", robots: "noindex, follow", canonical: "https://example.com/404/" });
 
     expect(rulesFor(files)).toEqual([{ page: "/404", rule: "canonical-host" }]);
   });
@@ -224,7 +229,31 @@ describe("the built-site check", () => {
     expect(rulesFor(files)).toEqual([
       { page: "/tools/trim-video/", rule: "sitemap-planned" },
       { page: "/tools/trim-video/", rule: "sitemap-noindex" },
-      { page: "/tools/trim-video/", rule: "planned-robots" },
+      { page: "/tools/trim-video/", rule: "excluded-robots" },
+    ]);
+  });
+
+  it("fails the 404 page and a campaign entry listed as indexable pages, however tidy their metadata", () => {
+    const files = goodFiles();
+    files["sitemap.xml"] = sitemap([...listedPaths, "/404/", "/campaigns/local-pdf/"]);
+    files["404.html"] = page({ path: "/404/" });
+    files["campaigns/local-pdf/index.html"] = page({ path: "/campaigns/local-pdf/" });
+
+    expect(rulesFor(files)).toEqual([
+      { page: "/404", rule: "sitemap-excluded" },
+      { page: "/campaigns/local-pdf/", rule: "sitemap-excluded" },
+      { page: "/404", rule: "excluded-robots" },
+      { page: "/campaigns/local-pdf/", rule: "excluded-robots" },
+    ]);
+  });
+
+  it("accepts the excluded policies with their directives in any order, and nothing looser", () => {
+    const files = goodFiles();
+    files["404.html"] = page({ path: "/404/", robots: "follow,noindex" });
+    files["campaigns/local-pdf/index.html"] = page({ path: "/campaigns/local-pdf/", robots: "noindex, nofollow" });
+
+    expect(check(files).findings.map(({ page, rule, value }) => ({ page, rule, value }))).toEqual([
+      { page: "/campaigns/local-pdf/", rule: "excluded-robots", value: "noindex, nofollow" },
     ]);
   });
 
@@ -251,7 +280,9 @@ describe("the built-site check", () => {
 
     expect(rulesFor(files)).toEqual([
       { page: "/404", rule: "unlisted-indexable" },
+      { page: "/404", rule: "excluded-robots" },
       { page: "/campaigns/spring/", rule: "unlisted-indexable" },
+      { page: "/campaigns/spring/", rule: "excluded-robots" },
     ]);
   });
 
@@ -292,6 +323,50 @@ describe("the built-site check", () => {
 
     const [finding] = check(files).findings;
     expect(finding).toMatchObject({ rule: "jsonld-host", value: "http://localhost:4321/tools/" });
+  });
+
+  it("judges protocol-relative and relative JSON-LD addresses by the host they resolve to", () => {
+    const files = goodFiles();
+    files["categories/images/index.html"] = page({
+      path: "/categories/images/",
+      jsonLd: [JSON.stringify({ "@type": "WebPage", url: "//outside.example/", item: "/tools/" })],
+    });
+
+    expect(check(files).findings.map(({ rule, value }) => ({ rule, value }))).toEqual([
+      { rule: "jsonld-host", value: "//outside.example/" },
+    ]);
+  });
+
+  it("reports malformed addresses as findings rather than throwing", () => {
+    const files = goodFiles();
+    files["sitemap.xml"] = sitemap([...listedPaths, "https://["]);
+    files["categories/images/index.html"] = page({
+      path: "/categories/images/",
+      title: "Images &#99999999; | Gizlet",
+      image: "https://[",
+      jsonLd: [JSON.stringify({ "@type": "WebPage", url: "https://[" })],
+      body: '<a href="#%">Bad fragment</a><a href="https://[">Bad link</a>',
+    });
+
+    expect(check(files).findings.map(({ page, rule, value }) => ({ page, rule, value }))).toEqual([
+      { page: "/sitemap.xml", rule: "sitemap-url", value: "https://[" },
+      { page: "/categories/images/", rule: "og-image", value: "https://[" },
+      { page: "/categories/images/", rule: "twitter-image", value: "https://[" },
+      { page: "/categories/images/", rule: "jsonld-url", value: "https://[" },
+      { page: "/categories/images/", rule: "link-fragment", value: "#%" },
+      { page: "/categories/images/", rule: "link-invalid", value: "https://[" },
+    ]);
+  });
+
+  it("reports a canonical that is not a URL", () => {
+    const files = goodFiles();
+    files["404.html"] = page({ path: "/404/", robots: "noindex, follow", canonical: "https://[" });
+
+    // The canonical is a <link href> as well, so the link check reports it too.
+    expect(rulesFor(files)).toEqual([
+      { page: "/404", rule: "canonical-host" },
+      { page: "/404", rule: "link-invalid" },
+    ]);
   });
 
   it("fails a planned Gizlet presented as a working app", () => {

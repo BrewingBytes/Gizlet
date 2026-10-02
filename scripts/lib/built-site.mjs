@@ -37,6 +37,24 @@ export const categoryPagesPath = '/categories/';
 /** The page a deployment serves for an unknown address. */
 export const notFoundFile = '404.html';
 
+/**
+ * Where campaign entry pages live (BRE-38). They are near-duplicates of a
+ * Gizlet page by design, so they are never listed and never indexed.
+ */
+export const campaignPagesPath = '/campaigns/';
+
+/**
+ * The robots policy each kind of excluded page is built with. These pages
+ * are kept out of the sitemap and out of the index by what they are, not by
+ * whether the sitemap happens to leave them out: a 404 or a campaign entry
+ * with tidy metadata is still not a search result.
+ */
+export const excludedRobotsPolicies = {
+  notFound: 'noindex, follow',
+  campaign: 'noindex, follow',
+  planned: 'noindex, nofollow',
+};
+
 /** Element and attribute pairs that name another resource on the site. */
 const linkAttributes = {
   a: ['href'],
@@ -86,7 +104,8 @@ function decodeEntities(value) {
       const codePoint = name[1] === 'x' || name[1] === 'X'
         ? Number.parseInt(name.slice(2), 16)
         : Number.parseInt(name.slice(1), 10);
-      return String.fromCodePoint(codePoint);
+      // An out-of-range reference is left as written rather than throwing.
+      return codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : entity;
     }
 
     return namedEntities[/** @type {keyof typeof namedEntities} */ (name.toLowerCase())] ?? entity;
@@ -196,6 +215,50 @@ function isNoindex(robots) {
   return (robots ?? '').toLowerCase().split(/[\s,]+/).some((directive) => directive === 'noindex' || directive === 'none');
 }
 
+/** @param {string | undefined} robots */
+function robotsDirectives(robots) {
+  return [...new Set((robots ?? '').toLowerCase().split(/[\s,]+/).filter(Boolean))].sort().join(', ');
+}
+
+/**
+ * A URL, or `undefined` when the value is not one. Every address the checks
+ * read comes from built output, so a malformed one is a finding, not a crash.
+ *
+ * @param {string} value
+ * @param {string | URL} [base]
+ */
+function parseUrl(value, base) {
+  try {
+    return new URL(value, base);
+  } catch {
+    return undefined;
+  }
+}
+
+/** @param {string} value */
+function decodeComponent(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Which excluded kind a generated page is, if any.
+ *
+ * @param {string} file
+ * @param {string} page
+ * @param {ReadonlySet<string>} plannedPaths
+ * @returns {keyof typeof excludedRobotsPolicies | undefined}
+ */
+function excludedKindOf(file, page, plannedPaths) {
+  if (file === notFoundFile) return 'notFound';
+  if (page.startsWith(campaignPagesPath)) return 'campaign';
+  if (plannedPaths.has(page)) return 'planned';
+  return undefined;
+}
+
 /**
  * The URLs a sitemap lists, in order.
  *
@@ -266,11 +329,12 @@ export function resolvePath(pathname, site, redirects = []) {
 
     if (!matches) continue;
 
-    const target = new URL(
+    const target = parseUrl(
       splat === undefined ? rule.to : rule.to.replace(':splat', pathname.slice(splat.length)),
       site.siteUrl,
     );
 
+    if (!target) return undefined;
     if (target.origin !== new URL(site.siteUrl).origin) return rule.to;
     return resolvePath(target.pathname, site, []);
   }
@@ -344,11 +408,9 @@ export function checkBuiltSite(site) {
     if (seen.has(url)) report('/sitemap.xml', 'sitemap-duplicate', url, 'The sitemap lists this URL more than once.');
     seen.add(url);
 
-    let parsedUrl;
+    const parsedUrl = parseUrl(url);
 
-    try {
-      parsedUrl = new URL(url);
-    } catch {
+    if (!parsedUrl) {
       report('/sitemap.xml', 'sitemap-url', url, 'A sitemap entry is not an absolute URL.');
       continue;
     }
@@ -365,19 +427,17 @@ export function checkBuiltSite(site) {
       continue;
     }
 
+    const excluded = excludedKindOf(file, pagePathFor(file), plannedPaths);
+
+    if (excluded && excluded !== 'planned') {
+      report(pagePathFor(file), 'sitemap-excluded', url, 'The sitemap lists a page that is never indexed: the 404 page or a campaign entry.');
+    }
+
     listedFiles.set(file, url);
   }
 
   // The registry decides the indexable Gizlet routes; the sitemap must agree.
-  const listedPaths = new Set(
-    sitemapUrls.flatMap((url) => {
-      try {
-        return [new URL(url).pathname];
-      } catch {
-        return [];
-      }
-    }),
-  );
+  const listedPaths = new Set(sitemapUrls.flatMap((url) => parseUrl(url)?.pathname ?? []));
 
   for (const path of routes.listed) {
     if (!listedPaths.has(path)) {
@@ -406,11 +466,14 @@ export function checkBuiltSite(site) {
       return;
     }
 
-    const image = new URL(value, site.siteUrl);
+    const image = parseUrl(value, site.siteUrl);
+    const imageFile = image && decodeComponent(image.pathname)?.replace(/^\//, '');
 
-    if (image.origin !== origin) {
+    if (!image) {
+      report(page, rule, value, 'The social image is not a valid URL.');
+    } else if (image.origin !== origin) {
       report(page, rule, value, `The social image must be on ${origin}.`);
-    } else if (!site.files.has(decodeURIComponent(image.pathname).replace(/^\//, ''))) {
+    } else if (!imageFile || !site.files.has(imageFile)) {
       report(page, rule, value, 'The social image names a file the build did not write.');
     }
   };
@@ -444,22 +507,26 @@ export function checkBuiltSite(site) {
       checkSocialImage(page, html.socialImages[0], 'og-image');
       checkSocialImage(page, html.socialImages[1], 'twitter-image');
     } else if (!noindex) {
-      // Anything the sitemap leaves out — a planned Gizlet, the 404 page, a
-      // campaign landing page — must say so to a crawler that finds it anyway.
+      // Anything else the sitemap leaves out must say so to a crawler that
+      // finds it anyway.
       report(page, 'unlisted-indexable', html.robots ?? '(none)', 'A page missing from the sitemap must carry a noindex robots policy.');
     }
 
-    if (plannedPaths.has(page) && !html.robots?.toLowerCase().includes('nofollow')) {
-      report(page, 'planned-robots', html.robots ?? '(none)', 'A planned Gizlet page must be noindex, nofollow.');
+    // The 404 page, campaign entries and planned Gizlets carry their own
+    // policy whatever the sitemap says about them.
+    const excluded = excludedKindOf(file, page, plannedPaths);
+
+    if (excluded && robotsDirectives(html.robots) !== robotsDirectives(excludedRobotsPolicies[excluded])) {
+      report(page, 'excluded-robots', html.robots ?? '(none)', `This page must be ${excludedRobotsPolicies[excluded]}.`);
     }
 
     for (const canonical of html.canonicals) {
-      try {
-        if (new URL(canonical).origin !== origin) {
-          report(page, 'canonical-host', canonical, `The canonical must be on ${origin}.`);
-        }
-      } catch {
+      const canonicalUrl = parseUrl(canonical);
+
+      if (!canonicalUrl) {
         report(page, 'canonical-host', canonical, 'The canonical is not an absolute URL.');
+      } else if (canonicalUrl.origin !== origin) {
+        report(page, 'canonical-host', canonical, `The canonical must be on ${origin}.`);
       }
     }
 
@@ -477,9 +544,15 @@ export function checkBuiltSite(site) {
 
       walkStructuredData(data, (node) => {
         for (const [key, value] of Object.entries(node)) {
-          if (!structuredDataUrlKeys.has(key) || typeof value !== 'string' || !/^[a-z][a-z0-9+.-]*:/i.test(value)) continue;
+          if (!structuredDataUrlKeys.has(key) || typeof value !== 'string') continue;
 
-          if (!/^https?:/i.test(value) || new URL(value).origin !== origin) {
+          // Resolved against the site, so a relative or protocol-relative
+          // value is judged by the host a crawler would read it as.
+          const url = parseUrl(value, site.siteUrl);
+
+          if (!url) {
+            report(page, 'jsonld-url', value, `JSON-LD "${key}" is not a valid URL.`);
+          } else if (url.origin !== origin) {
             report(page, 'jsonld-host', value, `JSON-LD "${key}" must be on ${origin}.`);
           }
         }
@@ -488,13 +561,7 @@ export function checkBuiltSite(site) {
 
         if (types.some((type) => applicationTypes.has(type))) {
           const url = typeof node.url === 'string' ? node.url : '';
-          let path = '';
-
-          try {
-            path = new URL(url, site.siteUrl).pathname;
-          } catch {
-            // Reported below as an app with no available Gizlet behind it.
-          }
+          const path = parseUrl(url, site.siteUrl)?.pathname ?? '';
 
           if (plannedPaths.has(page) || !availablePaths.has(path)) {
             report(page, 'jsonld-unavailable-app', url || '(no url)', `JSON-LD presents ${types.join('/')} for a Gizlet the registry does not mark available.`);
@@ -515,11 +582,9 @@ export function checkBuiltSite(site) {
           : [raw.trim()];
 
         for (const value of values) {
-          let target;
+          const target = parseUrl(value, new URL(page, site.siteUrl));
 
-          try {
-            target = new URL(value, new URL(page, site.siteUrl));
-          } catch {
+          if (!target) {
             report(page, 'link-invalid', value, 'The link is not a valid URL.');
             continue;
           }
@@ -539,7 +604,11 @@ export function checkBuiltSite(site) {
           // A fragment written as key=value is state a page's script reads —
           // a flow recipe, say — rather than an element to scroll to.
           if (fragment && !fragment.includes('=') && resolved.endsWith('.html') && site.files.has(resolved)) {
-            if (!pageFor(resolved).anchors.has(decodeURIComponent(fragment))) {
+            const anchor = decodeComponent(fragment);
+
+            if (anchor === undefined) {
+              report(page, 'link-fragment', value, 'The link\'s fragment is not validly percent-encoded.');
+            } else if (!pageFor(resolved).anchors.has(anchor)) {
               report(page, 'link-fragment', value, `The link's fragment names no id on ${pagePathFor(resolved)}.`);
             }
           }
