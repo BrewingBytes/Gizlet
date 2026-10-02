@@ -214,3 +214,57 @@ test("explains unsupported and unreadable flow inputs when they are chosen", asy
   await page.getByRole("button", { name: "Add step" }).click();
   await expect(page.getByRole("button", { name: "Run flow" })).toBeDisabled();
 });
+
+test("an edit made while a flow runs stops it, and the stopped run puts no download back", async ({ page }) => {
+  // Frames are held on request, so the run can be caught at its first
+  // progress line — the boundary it stops at once something supersedes it.
+  await page.addInitScript(() => {
+    const held: FrameRequestCallback[] = [];
+    const request = window.requestAnimationFrame.bind(window);
+    const flags = window as unknown as { holdFrames: boolean; releaseFrames: () => void };
+
+    flags.holdFrames = false;
+    flags.releaseFrames = () => {
+      flags.holdFrames = false;
+      for (const callback of held.splice(0)) request(callback);
+    };
+    window.requestAnimationFrame = (callback) => {
+      if (!flags.holdFrames) return request(callback);
+      held.push(callback);
+      return 0;
+    };
+  });
+  await page.goto("/flows/");
+
+  await page.getByLabel("Choose images for this flow").setInputFiles({
+    name: "tiny.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLZywAAAABJRU5ErkJggg==",
+      "base64",
+    ),
+  });
+  await expect(page.getByText("tiny.png")).toBeVisible();
+  await page.getByLabel("Next compatible Gizlet").selectOption("resize-image");
+  await page.getByRole("button", { name: "Add step" }).click();
+
+  await page.evaluate(() => { (window as unknown as { holdFrames: boolean }).holdFrames = true; });
+  await page.getByRole("button", { name: "Run flow" }).click();
+  await expect(page.locator("[data-status]")).toContainText("Running 1 of 1: Resize Image");
+  await expect(page.locator("[data-run-flow]")).toHaveText("Running…");
+
+  await page.getByLabel("Resize Image width").fill("40");
+  await page.evaluate(() => (window as unknown as { releaseFrames: () => void }).releaseFrames());
+
+  await expect(page.locator("[data-run-flow]")).toHaveText("Run flow");
+  await expect(page.locator("[data-run-flow]")).toBeEnabled();
+  await expect(page.locator("[data-status]")).toBeHidden();
+  await expect(page.locator("[data-error]")).toBeHidden();
+  await expect(page.locator("[data-result]")).toBeHidden();
+  await expect(page.locator("[data-download]")).not.toHaveAttribute("href", /.+/);
+
+  // The edit is what the next run reads.
+  await page.getByRole("button", { name: "Run flow" }).click();
+  await expect(page.locator("[data-status]")).toContainText("final image is ready");
+  await expect(page.getByAltText("Final flow result")).toHaveJSProperty("naturalWidth", 40);
+});

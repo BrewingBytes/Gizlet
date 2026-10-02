@@ -272,18 +272,9 @@ const [firstCategory] = categories;
     describeCsvTable,
     detectCsvDelimiter,
     getCsvTextProblem,
-    getFormattedCsvName,
     readCsvTable,
   } from '../data/csv-viewer';
-  import {
-    convertCsvToJson,
-    convertJsonToCsv,
-    defaultCsvDelimiter,
-    defaultCsvValueReading,
-    describeConversion,
-    getConvertedRecordsName,
-  } from '../data/json-csv';
-  import { formatJsonParseError, transformJson, validateJson } from '../data/json-formatter';
+  import { formatJsonParseError, validateJson } from '../data/json-formatter';
   import {
     formatFileSize,
     getFormatLabel,
@@ -293,7 +284,6 @@ const [firstCategory] = categories;
   } from '../data/image-compression';
   import {
     describeBatchCount,
-    getBatchArchiveName,
     maximumBatchImages,
     summariseBatch,
     validateBatchPixels,
@@ -312,16 +302,9 @@ const [firstCategory] = categories;
     type OrientationPresetName,
   } from '../data/image-orientation';
   import {
-    defaultCollageBackground,
     defaultCollageLayout,
-    defaultCollageSpacing,
-    defaultCollageWidth,
-    describeCollageImageCount,
     getCollageLayoutOptions,
-    getCollageOutputFilename,
     isCollageLayoutName,
-    planCollage,
-    validateCollage,
     type CollageLayoutName,
   } from '../data/image-collage';
   import {
@@ -352,7 +335,6 @@ const [firstCategory] = categories;
   import {
     defaultPdfImageResolution,
     describePdfImageCount,
-    getPdfImageArchiveName,
     getPdfImageResolutionOptions,
     isPdfImageResolution,
     type PdfImageResolution,
@@ -391,15 +373,17 @@ const [firstCategory] = categories;
     isPdfPageTurn,
     type PdfPageTurn,
   } from '../data/organize-pdf';
-  import {
-    describeSplitPdfCount,
-    getSplitPdfArchiveName,
-  } from '../data/split-pdf';
+  import { describeSplitPdfCount } from '../data/split-pdf';
   import { toolRegistry } from '../data/tools';
-  import { createZipArchive, zipMimeType } from '../data/zip-archive';
-  import { runFlowImageStep, type FlowPayload } from '../scripts/flow-image-runner';
-  import { isFlowPdfStep, runFlowPdfStep, type FlowPdf } from '../scripts/flow-pdf-runner';
-  import { drawCollage, encodeBrowserImage, loadBrowserImage } from '../scripts/image-processing';
+  import type { FlowPayload } from '../scripts/flow-image-runner';
+  import type { FlowPdf } from '../scripts/flow-pdf-runner';
+  import {
+    runFlowSteps,
+    snapshotFlowRun,
+    type FlowRunPhase,
+    type FlowRunResult,
+  } from '../scripts/flow-runner';
+  import { loadBrowserImage } from '../scripts/image-processing';
   import { createPdfPageView } from '../scripts/pdf-page-view';
 
   // Chainable, published, and derived: adding a Gizlet with an image or PDF
@@ -463,21 +447,6 @@ const [firstCategory] = categories;
         readonly summary: string;
       };
 
-  /**
-   * A text document travelling between steps.
-   *
-   * It carries which kind it is, because that is what decides what the next
-   * block does with it: the converter reads a table and writes JSON, or reads
-   * JSON and writes a table, and the payload in hand is the whole of the
-   * difference.
-   */
-  interface FlowText {
-    readonly file: File;
-    readonly kind: 'csv-file' | 'json-text';
-    /** What the block that made it wants said about it. */
-    readonly summary: string;
-  }
-
   const root = document.querySelector<HTMLElement>('[data-flow-builder]');
 
   if (root) {
@@ -535,6 +504,12 @@ const [firstCategory] = categories;
     /** The object URLs a set of results holds, so none outlives the panel. */
     let resultItemUrls: string[] = [];
     let isRunning = false;
+    /**
+     * The run whose result the panel is waiting for. Resetting the panel aborts
+     * it, so a run overtaken by an edit stops at its next boundary and cannot
+     * put back a download the reset just took away.
+     */
+    let activeRun: AbortController | undefined;
     let outputFormat: ImageOutputFormat = 'image/webp';
     // A recipe's chosen format outlives the source file, which would otherwise
     // reset it to the format preferred for that input.
@@ -627,6 +602,8 @@ const [firstCategory] = categories;
       resultItemUrls = [];
     };
     const resetResult = () => {
+      activeRun?.abort();
+      activeRun = undefined;
       revokeResult();
       // Discards a preview still being drawn, so clearing the panel cannot be
       // followed by a page appearing in it.
@@ -1304,331 +1281,149 @@ const [firstCategory] = categories;
         previewError.hidden = false;
       }
     };
+    /** Puts a run's phase on the page; nothing else decides whether one is going. */
+    const showRunPhase = (phase: FlowRunPhase) => {
+      isRunning = phase === 'pending' || phase === 'running';
+      runButton.textContent = isRunning ? 'Running…' : 'Run flow';
+      renderSteps();
+    };
+    /**
+     * Shows a finished run. It is reached only from a `success` outcome, and
+     * every object URL the panel holds is made here, so a run that failed or
+     * was superseded has none to leak.
+     */
+    const showResult = async (outcome: FlowRunResult, signal: AbortSignal) => {
+      if (outcome.kind === 'text') {
+        const { text, shown } = outcome;
+        const isCsv = text.kind === 'csv-file';
+
+        resultUrl = URL.createObjectURL(text.file);
+        resultTitle.textContent = isCsv ? 'Your CSV is ready.' : 'Your JSON is ready.';
+        resultDetails.textContent = `${text.summary} · ${formatFileSize(text.file.size)}`;
+        resultFigure.hidden = true;
+        // The document itself, capped: a result panel is for reading the
+        // answer, and a hundred thousand lines of it is a download rather
+        // than something to look at.
+        resultTextContent.textContent = shown.length > maximumResultTextCharacters
+          ? `${shown.slice(0, maximumResultTextCharacters)}\n…`
+          : shown;
+        resultText.hidden = false;
+        download.textContent = isCsv ? 'Download CSV' : 'Download JSON';
+        download.href = resultUrl;
+        download.download = text.file.name;
+        result.hidden = false;
+        showStatus(`Done. Your ${isCsv ? 'CSV' : 'JSON'} is ready to download.`);
+      } else if (outcome.kind === 'pdf') {
+        const { pdf } = outcome;
+
+        resultUrl = URL.createObjectURL(pdf.blob);
+        resultTitle.textContent = 'Your PDF is ready.';
+        resultDetails.textContent = `${describePdfPageCount(pdf.pages)} · ${getPdfPageSizeLabel(pdf.pageSize)} · ${formatFileSize(pdf.blob.size)}`;
+        resultFigure.hidden = true;
+        download.textContent = 'Download PDF';
+        download.href = resultUrl;
+        download.download = pdf.name;
+        result.hidden = false;
+        // The panel is complete before the preview is drawn, so the download
+        // is there to be used whether or not the drawing succeeds.
+        await drawPreview(pdf.blob);
+        // A panel cleared while the preview was drawing has no PDF to be done.
+        if (!signal.aborted) showStatus('Done. Your PDF is ready to download.');
+      } else if (outcome.kind === 'pdf-set') {
+        const { pdfs } = outcome;
+        const pages = pdfs.reduce((total, pdf) => total + pdf.pages, 0);
+        const total = pdfs.reduce((bytes, pdf) => bytes + pdf.blob.size, 0);
+
+        resultUrl = URL.createObjectURL(outcome.archive);
+        resultTitle.textContent = 'Your PDFs are ready.';
+        resultDetails.textContent = `${describeSplitPdfCount(pdfs.length)} · ${describePdfPageCount(pages)} · ${formatFileSize(total)}`;
+        resultFigure.hidden = true;
+        resultList.replaceChildren(...pdfs.map(renderPdfResultItem));
+        resultList.hidden = false;
+        download.textContent = `Download all ${pdfs.length} PDFs`;
+        download.href = resultUrl;
+        download.download = outcome.archiveName;
+        result.hidden = false;
+        showStatus('Done. Your PDFs are ready to download.');
+      } else if (outcome.kind === 'image-set') {
+        const { payloads, failed, fromDocument } = outcome;
+        const total = payloads.reduce((bytes, payload) => bytes + payload.file.size, 0);
+        const outcomes = [
+          ...payloads.map((payload) => ({ status: 'done', name: payload.file.name, output: payload }) as const),
+          ...failed.map((failure) => ({ status: 'failed', name: failure.name, reason: failure.reason }) as const),
+        ];
+
+        resultUrl = URL.createObjectURL(outcome.archive);
+        resultTitle.textContent = 'Your images are ready.';
+        resultDetails.textContent = fromDocument && failed.length === 0
+          ? `${describePdfImageCount(payloads.length)} · ${getFormatLabel(outputFormat)} · ${formatFileSize(total)}`
+          : `${summariseBatch(outcomes, total)} · ${getFormatLabel(outputFormat)}`;
+        resultFigure.hidden = true;
+        resultList.replaceChildren(
+          ...payloads.map(renderResultItem),
+          ...failed.map(renderFailedItem),
+        );
+        resultList.hidden = false;
+        download.textContent = fromDocument
+          ? `Download all ${payloads.length} pages`
+          : `Download all ${payloads.length} as a ZIP`;
+        download.href = resultUrl;
+        download.download = outcome.archiveName;
+        result.hidden = false;
+        showStatus('Done. Your images are ready to download.');
+      } else {
+        const output = outcome.payload;
+        resultUrl = URL.createObjectURL(output.file);
+        resultImage.src = resultUrl;
+        resultDetails.textContent = `${getFormatLabel(outputFormat)} · ${output.width} × ${output.height} px · ${formatFileSize(output.file.size)}`;
+        download.href = resultUrl;
+        download.download = output.file.name;
+        result.hidden = false;
+        showStatus('Done. Your final image is ready to download.');
+      }
+    };
     const runFlow = async () => {
       if (sources.length === 0 || steps.length === 0 || isRunning) return;
-      isRunning = true;
       clearError();
       resetResult();
-      renderSteps();
-      runButton.textContent = 'Running…';
 
-      // A flow starts in whichever hand the category filled: images travel as
-      // payloads and documents as results, which is the same pair of hands every
-      // block after the first one uses.
-      let payloads: readonly FlowPayload[] = sources
-        .filter((source): source is Extract<FlowSource, { kind: 'image' }> => source.kind === 'image')
-        .map((source) => ({ file: source.file, width: source.width, height: source.height }));
-      let pdfResults: readonly FlowPdf[] = sources
-        .filter((source): source is Extract<FlowSource, { kind: 'pdf' }> => source.kind === 'pdf')
-        .map((source) => ({
-          blob: source.file,
-          pages: source.pages,
-          // A chosen document lays its own pages out; nothing here re-sizes them,
-          // and `fit` is the page size that says exactly that.
-          pageSize: 'fit',
-          name: source.file.name,
-        }));
-      // A text chain carries one document, already read: the third hand a
-      // category can fill, and the only one whose payload is characters rather
-      // than bytes this page has never looked at.
-      let textResult: FlowText | undefined = sources
-        .filter((source): source is Extract<FlowSource, { kind: 'text' }> => source.kind === 'text')
-        .map((source) => ({ file: source.file, kind: source.payload, summary: source.summary }))
-        .at(0);
-      // The document the visitor chose, which is what a converted result is
-      // named after. Naming it after the file the previous block made would
-      // stack one block's suffix under the next block's extension, and a chain
-      // of three would hand back a name describing the chain rather than the
-      // document.
-      const textSourceName = textResult?.file.name;
-      // The document a set came out of, which names its archive. It is the
-      // earliest such document rather than the latest: a split followed by a
-      // conversion has taken the same original apart twice over.
-      let setSourceName: string | undefined;
-      /**
-       * The pictures a step could not do, kept rather than thrown.
-       *
-       * A batch of twenty photographs with one broken file in it should finish
-       * nineteen and say which one it did not, instead of discarding the work
-       * and reporting the single failure as the outcome of the run.
-       */
-      const failed: { readonly name: string; readonly reason: string }[] = [];
+      // Taken after the reset, which would otherwise abort the run it starts.
+      const run = new AbortController();
+      activeRun = run;
+      let ended: FlowRunPhase = 'failure';
 
       try {
-        for (const [index, step] of steps.entries()) {
-          const tool = toolBySlug(step.toolSlug);
-          const position = `${index + 1} of ${steps.length}`;
-
-          if (step.toolSlug === 'csv-viewer' || step.toolSlug === 'json-csv-converter' || step.toolSlug === 'json-formatter') {
-            if (!textResult) throw new Error(`${tool.name} needs the document this flow started from.`);
-
-            showStatus(`Running ${position}: ${tool.name} locally…`);
+        const outcome = await runFlowSteps(snapshotFlowRun({ steps, sources, outputFormat }), {
+          signal: run.signal,
+          onProgress: async (message) => {
+            showStatus(message);
             await nextFrame();
+          },
+          // The page stays running until the result is drawn, preview and
+          // all, so only the phases before an outcome are shown as they come.
+          onPhase: (phase) => {
+            if (phase === 'pending' || phase === 'running') showRunPhase(phase);
+          },
+        });
 
-            const text = await textResult.file.text();
-            const name = textResult.file.name;
+        ended = outcome.status;
 
-            if (step.toolSlug === 'csv-viewer') {
-              // Tidying, which is what this block hands on. The separator is
-              // read off the document rather than carried by the chain: a link
-              // that named one would be asserting something about a file it has
-              // never seen.
-              const table = readCsvTable(text, detectCsvDelimiter(text).delimiter, true);
-
-              if (!table) throw new Error(`${tool.name} found nothing in this document to read as a table.`);
-
-              textResult = {
-                file: new File([table.formatted], getFormattedCsvName(name), { type: 'text/csv' }),
-                kind: 'csv-file',
-                summary: describeCsvTable(table),
-              };
-              continue;
-            }
-
-            if (step.toolSlug === 'json-formatter') {
-              const formatted = transformJson(text, 'format');
-
-              if (!formatted.valid) throw new Error(`${tool.name}: ${formatJsonParseError(formatted.error)}`);
-
-              textResult = {
-                file: new File([formatted.output], name, { type: 'application/json' }),
-                kind: 'json-text',
-                summary: 'indented',
-              };
-              continue;
-            }
-
-            // The converter, in whichever direction the payload in hand asks
-            // for. Nothing chose it: a table arriving is read, and JSON
-            // arriving is written out as a table.
-            const reading = textResult.kind === 'csv-file'
-              ? convertCsvToJson(text, detectCsvDelimiter(text).delimiter, defaultCsvValueReading)
-              : convertJsonToCsv(text, defaultCsvDelimiter);
-
-            if (!reading) throw new Error(`${tool.name} was handed an empty document, so there was nothing to convert.`);
-            if (!reading.ok) throw new Error(`${tool.name}: ${reading.message}`);
-
-            const becomes = textResult.kind === 'csv-file' ? 'json' : 'csv';
-
-            textResult = {
-              file: new File([reading.conversion.output], getConvertedRecordsName(textSourceName ?? name, becomes), {
-                type: becomes === 'json' ? 'application/json' : 'text/csv',
-              }),
-              kind: becomes === 'json' ? 'json-text' : 'csv-file',
-              summary: describeConversion(reading.conversion),
-            };
-            continue;
-          }
-
-          if (step.toolSlug === 'collage-maker') {
-            if (payloads.length === 0) throw new Error(`${tool.name} needs the images this flow started from.`);
-
-            showStatus(`Running ${position}: ${tool.name}, arranging ${describeCollageImageCount(payloads.length)} locally…`);
-            await nextFrame();
-
-            // A flow has no canvas to arrange by hand, so the collage uses its
-            // own defaults for everything but the arrangement: the gap, the
-            // background and the width are taste rather than the shape of the
-            // chain, and a link cannot carry taste it did not ask for.
-            const collageItems = payloads.map((payload) => ({ width: payload.width, height: payload.height }));
-            const options = {
-              layout: step.layout ?? defaultCollageLayout,
-              spacing: defaultCollageSpacing,
-              width: defaultCollageWidth,
-            };
-            const plan = planCollage(collageItems, options);
-            const invalid = validateCollage(collageItems, plan);
-
-            if (invalid) throw new Error(`${tool.name}: ${invalid}`);
-
-            const images = [];
-
-            for (const payload of payloads) {
-              images.push(await loadBrowserImage(payload.file));
-            }
-
-            const canvas = drawCollage(document.createElement('canvas'), plan, images, defaultCollageBackground);
-            const blob = await encodeBrowserImage(canvas, plan, outputFormat);
-
-            payloads = [{
-              file: new File([blob], getCollageOutputFilename(payloads[0].file.name, outputFormat), { type: blob.type }),
-              width: plan.width,
-              height: plan.height,
-            }];
-            continue;
-          }
-
-          if (isFlowPdfStep(step)) {
-            const next = await runFlowPdfStep(step, { payloads, pdfs: pdfResults }, {
-              position,
-              outputFormat,
-              onProgress: async (message) => {
-                showStatus(message);
-                await nextFrame();
-              },
-            });
-
-            payloads = next.payloads;
-            pdfResults = next.pdfs;
-            setSourceName ??= next.setSourceName;
-            continue;
-          }
-
-          const processed: FlowPayload[] = [];
-          for (const [payloadIndex, payload] of payloads.entries()) {
-            showStatus(payloads.length === 1
-              ? `Running ${position}: ${tool.name} locally…`
-              : `Running ${position}: ${tool.name} on image ${payloadIndex + 1} of ${payloads.length} locally…`);
-            await nextFrame();
-
-            // A batch is a set of independent jobs: a picture this step cannot
-            // do is dropped, named, and the rest go on. A flow over one picture
-            // has nothing to go on with, so its failure is still the run's.
-            if (payloads.length === 1 && failed.length === 0) {
-              processed.push(await runFlowImageStep(step, payload, outputFormat));
-              continue;
-            }
-
-            try {
-              processed.push(await runFlowImageStep(step, payload, outputFormat));
-            } catch (caughtError) {
-              failed.push({
-                name: payload.file.name,
-                reason: caughtError instanceof Error ? caughtError.message : `${tool.name} could not process this image.`,
-              });
-            }
-          }
-
-          if (processed.length === 0) {
-            throw new Error(failed[0]?.reason ?? `${tool.name} could not process these images.`);
-          }
-
-          payloads = processed;
-        }
-
-        if (textResult) {
-          const isCsv = textResult.kind === 'csv-file';
-          const shown = await textResult.file.text();
-
-          resultUrl = URL.createObjectURL(textResult.file);
-          resultTitle.textContent = isCsv ? 'Your CSV is ready.' : 'Your JSON is ready.';
-          resultDetails.textContent = `${textResult.summary} · ${formatFileSize(textResult.file.size)}`;
-          resultFigure.hidden = true;
-          // The document itself, capped: a result panel is for reading the
-          // answer, and a hundred thousand lines of it is a download rather
-          // than something to look at.
-          resultTextContent.textContent = shown.length > maximumResultTextCharacters
-            ? `${shown.slice(0, maximumResultTextCharacters)}\n…`
-            : shown;
-          resultText.hidden = false;
-          download.textContent = isCsv ? 'Download CSV' : 'Download JSON';
-          download.href = resultUrl;
-          download.download = textResult.file.name;
-          result.hidden = false;
-          showStatus(`Done. Your ${isCsv ? 'CSV' : 'JSON'} is ready to download.`);
-        } else if (pdfResults.length === 1) {
-          const [pdf] = pdfResults;
-
-          resultUrl = URL.createObjectURL(pdf.blob);
-          resultTitle.textContent = 'Your PDF is ready.';
-          resultDetails.textContent = `${describePdfPageCount(pdf.pages)} · ${getPdfPageSizeLabel(pdf.pageSize)} · ${formatFileSize(pdf.blob.size)}`;
-          resultFigure.hidden = true;
-          download.textContent = 'Download PDF';
-          download.href = resultUrl;
-          download.download = pdf.name;
-          result.hidden = false;
-          // The panel is complete before the preview is drawn, so the download
-          // is there to be used whether or not the drawing succeeds.
-          await drawPreview(pdf.blob);
-          showStatus('Done. Your PDF is ready to download.');
-        } else if (pdfResults.length > 1) {
-          showStatus(`Packing ${describeSplitPdfCount(pdfResults.length)} into one archive locally…`);
-          await nextFrame();
-
-          // A set of documents is one download too, packed here from the same
-          // files the individual links point at.
-          const entries = await Promise.all(
-            pdfResults.map(async (pdf) => ({
-              name: pdf.name,
-              data: new Uint8Array(await pdf.blob.arrayBuffer()),
-            })),
-          );
-          const archive = new Blob([createZipArchive(entries)], { type: zipMimeType });
-          const pages = pdfResults.reduce((total, pdf) => total + pdf.pages, 0);
-          const total = pdfResults.reduce((bytes, pdf) => bytes + pdf.blob.size, 0);
-
-          resultUrl = URL.createObjectURL(archive);
-          resultTitle.textContent = 'Your PDFs are ready.';
-          resultDetails.textContent = `${describeSplitPdfCount(pdfResults.length)} · ${describePdfPageCount(pages)} · ${formatFileSize(total)}`;
-          resultFigure.hidden = true;
-          resultList.replaceChildren(...pdfResults.map(renderPdfResultItem));
-          resultList.hidden = false;
-          download.textContent = `Download all ${pdfResults.length} PDFs`;
-          download.href = resultUrl;
-          download.download = getSplitPdfArchiveName(setSourceName ?? 'document.pdf');
-          result.hidden = false;
-          showStatus('Done. Your PDFs are ready to download.');
-        } else if (payloads.length > 1 || (payloads.length === 1 && failed.length > 0)) {
-          showStatus(`Packing ${describePdfImageCount(payloads.length)} into one archive locally…`);
-          await nextFrame();
-
-          // The archive is written here, from the same files the individual
-          // links point at: one download at the end, and still no server.
-          const entries = await Promise.all(
-            payloads.map(async (payload) => ({
-              name: payload.file.name,
-              data: new Uint8Array(await payload.file.arrayBuffer()),
-            })),
-          );
-          const archive = new Blob([createZipArchive(entries)], { type: zipMimeType });
-          const total = payloads.reduce((bytes, payload) => bytes + payload.file.size, 0);
-
-          resultUrl = URL.createObjectURL(archive);
-          // A set that came out of a document is named for that document; a
-          // batch that started as a folder of pictures has no such name, and is
-          // named for what it is instead.
-          const fromDocument = setSourceName !== undefined;
-          const outcomes = [
-            ...payloads.map((payload) => ({ status: 'done', name: payload.file.name, output: payload }) as const),
-            ...failed.map((failure) => ({ status: 'failed', name: failure.name, reason: failure.reason }) as const),
-          ];
-
-          resultTitle.textContent = 'Your images are ready.';
-          resultDetails.textContent = fromDocument && failed.length === 0
-            ? `${describePdfImageCount(payloads.length)} · ${getFormatLabel(outputFormat)} · ${formatFileSize(total)}`
-            : `${summariseBatch(outcomes, total)} · ${getFormatLabel(outputFormat)}`;
-          resultFigure.hidden = true;
-          resultList.replaceChildren(
-            ...payloads.map(renderResultItem),
-            ...failed.map(renderFailedItem),
-          );
-          resultList.hidden = false;
-          download.textContent = fromDocument
-            ? `Download all ${payloads.length} pages`
-            : `Download all ${payloads.length} as a ZIP`;
-          download.href = resultUrl;
-          download.download = fromDocument
-            ? getPdfImageArchiveName(setSourceName ?? 'document.pdf')
-            : getBatchArchiveName('flow');
-          result.hidden = false;
-          showStatus('Done. Your images are ready to download.');
+        if (outcome.status === 'success') {
+          await showResult(outcome.result, run.signal);
+        } else if (outcome.status === 'failure') {
+          showError(outcome.message);
+          clearStatus();
         } else {
-          const [output] = payloads;
-          resultUrl = URL.createObjectURL(output.file);
-          resultImage.src = resultUrl;
-          resultDetails.textContent = `${getFormatLabel(outputFormat)} · ${output.width} × ${output.height} px · ${formatFileSize(output.file.size)}`;
-          download.href = resultUrl;
-          download.download = output.file.name;
-          result.hidden = false;
-          showStatus('Done. Your final image is ready to download.');
+          // Whatever stopped it already cleared the panel; a stopped run only
+          // has to stop saying it is running.
+          clearStatus();
         }
       } catch (caughtError) {
         showError(caughtError instanceof Error ? caughtError.message : 'This flow could not be processed. Try another image or adjust the step settings.');
         clearStatus();
       } finally {
-        isRunning = false;
-        runButton.textContent = 'Run flow';
-        renderSteps();
+        if (activeRun === run) activeRun = undefined;
+        showRunPhase(ended);
       }
     };
 
