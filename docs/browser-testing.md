@@ -9,6 +9,23 @@ Gizlet's Playwright suite runs against a fresh production build served on its ow
 
 The smoke spec sets a 390 × 844 touch viewport. It picks files by tapping the visible button and reads each saved download back in Node: JPEG and WebP magic bytes, the merged PDF's pages in order, and the extracted ZIP's entries and contents. It also checks that nothing except GET requests left the page.
 
+## What a page loads
+
+`tests/e2e/script-loading.spec.ts` measures what the built homepage, JSON Formatter, Compress Image and PDF Viewer actually fetch. Reading `src/pages/tools/[slug].astro`, which imports every workspace into one dispatch map, cannot tell you that. Each production build writes `node_modules/.cache/gizlet/client-modules.json`, which lists the source modules in every emitted file. It is written outside `dist/`, so it is never deployed and changes nothing a visitor receives. The spec uses it to turn each request back into source modules, so no assertion depends on a generated chunk name.
+
+Every page is measured on arrival. Three pages are measured again after one interaction: formatting JSON, compressing an image, and opening a PDF. The spec asserts:
+
+- A tool page loads its own workspace component and no other.
+- pdf.js and its worker, pdf-lib, the archive reader and writer (`src/scripts/archive-reading.ts` and `zip-writing.ts`), and the canvas image pipeline are absent from every page that does not need them.
+- Opening a PDF on PDF Viewer fetches pdf.js, `src/scripts/pdf-rendering.ts` and the worker, and the page is then drawn. The absence checks are therefore a measurement: if the loader stopped loading, this would fail.
+- No request leaves the site. Requests to other origins are aborted and listed, and with advertising and analytics off by default the list must be empty.
+
+The spec reports sizes but does not budget them. For each stage it prints every request, with its decoded size and the modules in it, and attaches the same data as JSON to the HTML report. Compare that output across a change instead of adding a byte limit. A request the map does not list fails the test: it means the map came from a different build than `dist/`.
+
+```sh
+pnpm exec playwright test tests/e2e/script-loading.spec.ts --project=chromium
+```
+
 ## Commands
 
 ```sh
