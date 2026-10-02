@@ -24,6 +24,9 @@ jobs:
     # and Renovate bumps both together.
     container:
       image: mcr.microsoft.com/playwright:v1.62.1-noble
+      # Docker's default 64 MB /dev/shm is too small for several Chromiums at
+      # once; Playwright's Docker guide recommends sharing the host's IPC.
+      options: --ipc=host
 
     steps:
       - name: Check out the tag
