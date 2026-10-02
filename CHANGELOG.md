@@ -8,6 +8,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Entries for the next release are written as files in [changelog.d/](changelog.d/), one per change. See [docs/releasing.md](docs/releasing.md).
 
+## [0.12.0] - 2026-10-02
+
+### Added
+
+- **UTM Builder** adds campaign parameters to a link. Paste the address, fill in a source, a medium and a campaign — and a term and a content value if you want them — and the tagged link appears as you type, ready to copy.
+- **A link that was already tagged comes out tagged once.** Every `utm_source`, `utm_medium`, `utm_campaign`, `utm_term` and `utm_content` already in the address is replaced, however many times it was repeated, and an optional field left empty removes the old value rather than keeping it. The address's other query parameters and its `#` fragment are kept exactly as they were written, and the page says which keys it replaced.
+- **Only a whole `http://` or `https://` address is accepted.** A path such as `/pricing` is not a link on its own, and a `javascript:`, `data:` or `mailto:` link is not a web page, so each is refused by name; a bare `example.com` gets a suggestion with `https://` in front.
+- Spaces, ampersands and accented letters reach the analytics as themselves, and a space is written as `%20` so that every reader of the link agrees it is a space.
+- If the browser will not let the page copy, the link is selected in its box instead, ready for your own copy shortcut.
+- The link is built on this device. The address is never fetched, shortened, previewed or opened, and nothing is remembered. Whether a campaign is counted is up to the analytics on the destination site: Gizlet does not track clicks, and its own Cloudflare Web Analytics does not report UTM parameters.
+
+### Changed
+
+- A flow's image blocks now run through one module, `src/scripts/flow-image-runner.ts`, instead of inside the Flow Builder's page script. It takes the block's settings, the picture, and the output format as arguments and hands back the same picture-and-size it always did, so resize, crop, compression, conversion, turning, and backgrounds produce the same files, names, and errors as before. The canvas work is passed in, which is what lets the choice of transform, size, name, and error be tested without a browser.
+- A flow's PDF blocks now run through one module, `src/scripts/flow-pdf-runner.ts`, instead of inside the Flow Builder's page script. Image to PDF, Merge, Split, PDF to Image, Watermark, Page Numbers, Organize, and Clean Metadata take the documents and pictures the flow is holding as arguments and hand back the same files, page counts, page sizes, names, progress lines, and errors as before, and pdf.js still loads only when a block draws pages. The document work is passed in, which is what lets each block's guards, naming, and renderer cleanup be tested without a browser.
+- A flow's run now goes through one module, `src/scripts/flow-runner.ts`, which works through the blocks in order from a copy of the steps, settings, and files taken as the run starts. Editing a block while a flow runs stops that run at its next step or progress line instead of letting it finish with a mix of old and new settings and put back a result the edit had cleared; pressing Run flow again runs the edited chain. Outputs, names, batch results, archives, and recipe links are unchanged, and everything still runs in this browser.
+
+### Fixed
+
+- **Clearing a PDF flow's result, or changing a step's setting, while its preview is being drawn no longer leaves "Drawing the preview locally…" on the page.** The result and the download already went away, and **Run flow** came back; now the status line goes with them, and nothing reappears once the preview work finishes.
+
 ## [0.11.0] - 2026-10-02
 
 ### Added
