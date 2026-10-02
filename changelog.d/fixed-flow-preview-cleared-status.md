@@ -1,1 +1,1 @@
-- **Clearing a PDF flow's result while its preview is being drawn no longer leaves "Drawing the preview locally…" on the page.** The result and the download already went away, and **Run flow** came back; now the status line goes with them.
+- **Clearing a PDF flow's result, or changing a step's setting, while its preview is being drawn no longer leaves "Drawing the preview locally…" on the page.** The result and the download already went away, and **Run flow** came back; now the status line goes with them, and nothing reappears once the preview work finishes.

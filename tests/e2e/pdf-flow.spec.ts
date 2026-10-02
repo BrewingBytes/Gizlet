@@ -212,58 +212,84 @@ test("shows the pages of the PDF a flow made, before anything is downloaded", as
   await expect(page.locator("[data-preview]")).toBeHidden();
 });
 
-test("clearing the result while its preview is drawn stops saying it is drawing", async ({
-  page,
-}) => {
-  // The frame the first preview waits for, after announcing itself, is held,
-  // so the result can be cleared at exactly the moment it is being drawn.
-  // Later previews are left alone, so the next run can finish.
-  await page.addInitScript(() => {
-    const held: FrameRequestCallback[] = [];
-    const request = window.requestAnimationFrame.bind(window);
-    const flags = window as unknown as { releaseFrames: () => void };
-    let holding = true;
+/**
+ * Holds the first request for the PDF preview's renderer until released.
+ *
+ * The preview is the only thing on the flows page that imports it, and it does
+ * so lazily, so the request arriving is the moment the preview is loading. The
+ * run has already returned success by then, and its download is on the page.
+ */
+async function holdPreviewLoading(page: Page) {
+  let release!: () => void;
+  let arrived!: () => void;
+  const released = new Promise<void>((resolve) => (release = resolve));
+  const requested = new Promise<void>((resolve) => (arrived = resolve));
+  let holding = true;
 
-    flags.releaseFrames = () => {
+  await page.route(/\/_astro\/pdf-rendering\.[^/]+\.js$/, async (route) => {
+    if (holding) {
       holding = false;
-      for (const callback of held.splice(0)) request(callback);
-    };
-    window.requestAnimationFrame = (callback) => {
-      const drawing = document
-        .querySelector("[data-status]")
-        ?.textContent?.includes("Drawing the preview locally");
+      arrived();
+      await released;
+    }
 
-      if (!holding || !drawing) return request(callback);
-      held.push(callback);
-      return 0;
-    };
+    await route.continue();
   });
-  await page.goto("/flows/");
 
-  await addStep(page, "jpg-to-pdf");
-  await chooseImages(page).setInputFiles([asFile("tall.jpg", tallJpeg)]);
-  await page.getByRole("button", { name: "Run flow" }).click();
+  return { requested, release };
+}
 
-  const status = page.locator("[data-status]");
-  await expect(status).toHaveText("Drawing the preview locally…");
-  await expect(page.getByRole("link", { name: "Download PDF" })).toBeVisible();
+for (const [name, cancel] of [
+  [
+    "clearing the result",
+    (page: Page) => page.getByRole("button", { name: "Clear result" }).click(),
+  ],
+  [
+    "editing a step",
+    (page: Page) =>
+      page.getByLabel("Image to PDF page size").selectOption({ label: "US Letter" }),
+  ],
+] as const) {
+  test(`${name} while the preview loads leaves no progress, result or download behind`, async ({
+    page,
+  }) => {
+    const preview = await holdPreviewLoading(page);
+    await page.goto("/flows/");
 
-  await page.getByRole("button", { name: "Clear result" }).click();
-  await page.evaluate(() => (window as unknown as { releaseFrames: () => void }).releaseFrames());
+    await addStep(page, "jpg-to-pdf");
+    await chooseImages(page).setInputFiles([asFile("tall.jpg", tallJpeg)]);
+    await page.getByRole("button", { name: "Run flow" }).click();
 
-  await expect(page.locator("[data-run-flow]")).toHaveText("Run flow");
-  await expect(page.locator("[data-run-flow]")).toBeEnabled();
-  await expect(status).toBeHidden();
-  await expect(status).toHaveText("");
-  await expect(page.locator("[data-result]")).toBeHidden();
-  await expect(page.locator("[data-preview]")).toBeHidden();
-  await expect(page.locator("[data-download]")).not.toHaveAttribute("href", /.+/);
+    const status = page.locator("[data-status]");
+    const download = page.locator("[data-download]");
 
-  // The next run draws its preview and finishes as usual.
-  await page.getByRole("button", { name: "Run flow" }).click();
-  await expect(status).toHaveText("Done. Your PDF is ready to download.");
-  await expect(page.locator("[data-preview]")).toBeVisible();
-});
+    await preview.requested;
+    await expect(status).toHaveText("Drawing the preview locally…");
+    await expect(download).toHaveAttribute("href", /^blob:/);
+
+    await cancel(page);
+    await expect(page.locator("[data-result]")).toBeHidden();
+    preview.release();
+
+    await expect(page.locator("[data-run-flow]")).toHaveText("Run flow");
+    await expect(page.locator("[data-run-flow]")).toBeEnabled();
+    // Long enough for the released preview to have finished whatever it was
+    // going to do; none of it may put anything back.
+    await page.waitForTimeout(500);
+    await expect(status).toBeHidden();
+    await expect(status).toHaveText("");
+    await expect(page.locator("[data-error]")).toBeHidden();
+    await expect(page.locator("[data-result]")).toBeHidden();
+    await expect(page.locator("[data-preview]")).toBeHidden();
+    await expect(download).not.toHaveAttribute("href", /.+/);
+
+    // The next run is not held, and finishes as usual.
+    await page.getByRole("button", { name: "Run flow" }).click();
+    await expect(status).toHaveText("Done. Your PDF is ready to download.");
+    await expect(page.locator("[data-preview]")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Download PDF" })).toHaveAttribute("href", /^blob:/);
+  });
+}
 
 test("runs every image step on every page before combining them", async ({
   page,
