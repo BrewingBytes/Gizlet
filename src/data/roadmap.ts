@@ -138,7 +138,7 @@ export const roadmapPhases: readonly RoadmapPhase[] = [
     title: 'Text in, text out',
     status: 'next',
     when: 'Whenever a phase ahead of it is blocked. These need no file handling, no new dependency worth arguing about, and no shared surface, so they are the work that fits in the gaps.',
-    what: 'The small conversions and inspections that are a single pure function each: percent-encoding, Base64, a token read without being verified, a file digest and the same digest checked against one somebody published, records moved between JSON and CSV, a delimited file read as a table, a timestamp read as a date, identifiers, and a link turned into a scannable square.',
+    what: 'The small conversions and inspections that are a single pure function each: percent-encoding, Base64, a token read without being verified, a file digest and the same digest checked against one somebody published, records moved between JSON and CSV, a delimited file read as a table, a timestamp read as a date, identifiers, a link tagged with the campaign that sent it, and a link turned into a scannable square.',
     toolSlugs: [
       'qr-code-generator',
       'url-encode-decode',
@@ -149,10 +149,11 @@ export const roadmapPhases: readonly RoadmapPhase[] = [
       'csv-viewer',
       'timestamp-converter',
       'uuid-generator',
+      'utm-builder',
     ],
     sharedMachinery: ['pure functions in one place, unit-tested with no browser', 'Web Crypto', 'the MD5 written for the UUID versions, which the digests need too', 'no file leaves the text box'],
     signal: 'Pageviews on the two text Gizlets that already exist, which are the only evidence that the text half of this site is read at all.',
-    killCriterion: 'If the existing text Gizlets stay the least-visited routes on the site across two consecutive 30-day windows, none of these nine ships, however cheap it is. Cheap is not a reason.',
+    killCriterion: 'If the existing text Gizlets stay the least-visited routes on the site across two consecutive 30-day windows, none of these ten ships, however cheap it is. Cheap is not a reason.',
   },
   {
     number: 5,

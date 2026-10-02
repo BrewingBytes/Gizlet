@@ -1898,6 +1898,95 @@ const toolPageContent: Record<string, ToolPageContent> = {
       },
     ],
   },
+  'utm-builder': {
+    what: {
+      heading: 'What UTM Builder does',
+      paragraphs: [
+        'It adds campaign parameters to a link. Paste the address the link should open, say where it is being posted, what kind of channel that is, and which campaign it belongs to, and the finished link appears underneath as you type, ready to copy.',
+        'The parameters are the five utm_ keys most analytics tools read: utm_source, utm_medium and utm_campaign, which are required, and utm_term and utm_content, which are not. Whatever query and fragment the address already had are kept exactly as they were written.',
+      ],
+    },
+    when: {
+      heading: 'When a link should say where it came from',
+      paragraphs: [
+        'When the same page is linked from a newsletter, a social post and an ad, and the site’s analytics should tell the three apart. Without parameters, a visit from an email app often arrives with no referrer at all and is counted as direct.',
+        'It is also the quick fix for a link that was tagged twice — copied from an old campaign and tagged again on top. Paste it in and every utm_ key comes out exactly once, with the new values.',
+      ],
+    },
+    options: {
+      heading: 'The five parameters, and what this does to them',
+      paragraphs: [
+        'Each field is written under its own key, in a fixed order, after the address’s own query. Values are trimmed at the ends and escaped as UTF-8, so a space, an ampersand or an accented letter reaches the analytics as itself.',
+      ],
+      details: [
+        {
+          term: 'Source, medium and campaign',
+          description:
+            'Required. Source is where the link is posted or sent, medium is the kind of channel, and campaign is the name the visits are reported under. Use the same campaign spelling on every link that belongs to it, or the report splits it in two.',
+        },
+        {
+          term: 'Term and content',
+          description:
+            'Optional. Term is the keyword behind a paid search ad; content tells apart two links in the same message, such as a header button and a footer link. Left empty, they are not written at all.',
+        },
+        {
+          term: 'A link that was already tagged',
+          description:
+            'Every utm_source, utm_medium, utm_campaign, utm_term and utm_content already in the address is taken out before the new values go on, however many times it was repeated. An optional field left empty removes the old value under its key rather than keeping it, so last month’s term never rides along with this month’s campaign. The page says which keys it replaced or removed.',
+        },
+        {
+          term: 'Which addresses it accepts',
+          description:
+            'Only a whole http:// or https:// address. A path such as /pricing is refused, because it is not a link on its own, and so is any other scheme — a javascript:, data: or mailto: link is not a web page and cannot carry a campaign. A bare example.com gets a suggestion with https:// in front.',
+        },
+        {
+          term: 'Capital letters',
+          description:
+            'Most analytics tools count Newsletter and newsletter as two different sources. The value is written exactly as typed, but the page points out any field with a capital letter in it so the mismatch is a choice rather than an accident.',
+        },
+      ],
+    },
+    privacy: {
+      heading: 'The link is text, and it stays text',
+      paragraphs: [
+        'The link is assembled in this browser from what is in the boxes, and is not sent anywhere. The address is never fetched, shortened, previewed or opened, and no request is made when you type — not even to check that the page exists.',
+        'Nothing is remembered either. There is no history of links you built, and clearing the form or closing the tab is the end of it.',
+        'Attribution is the destination site’s business. Its own analytics reads the parameters when someone follows the link; Gizlet does not count those clicks, and its own Cloudflare Web Analytics does not report UTM parameters, or any query string.',
+      ],
+    },
+    faq: [
+      {
+        question: 'Does Gizlet track clicks on the links I build?',
+        answer:
+          'No. The link goes straight to your destination, with nothing of Gizlet’s in between, and Gizlet’s own analytics does not report query strings at all. The visits are counted, if at all, by the analytics on the destination site.',
+      },
+      {
+        question: 'Why does my campaign not show up in my reports?',
+        answer:
+          'Usually because the destination site has no analytics that reads utm_ parameters, because a redirect on the way dropped the query string, or because the visit has not been processed yet. The link itself only carries the values; something on the destination has to read them.',
+      },
+      {
+        question: 'What happens to utm_ parameters the address already had?',
+        answer:
+          'They are replaced. Every managed utm_ key is taken out of the address first, including repeats, and the values in the form are written once each. Any other query parameter, and the fragment after a #, is kept as it was.',
+      },
+      {
+        question: 'Why are spaces written as %20 rather than +?',
+        answer:
+          'Both mean a space to the analytics scripts that read a query string, but only %20 means a space to every reader of a URL. A plus typed into a value is escaped as %2B, so it arrives as a plus.',
+      },
+      {
+        question: 'Why will it not take a link that starts with javascript: or data:?',
+        answer:
+          'Because those are not web pages. A campaign parameter only means something on an http or https address, and refusing everything else means this page can never hand you a link that runs code when it is clicked.',
+      },
+      {
+        question: 'Can I make a QR code from the link?',
+        answer:
+          'Not here yet. Copy the link and use it wherever you make QR codes; a QR Code Generator is on the Gizlet roadmap, and a campaign link is exactly what it is for.',
+      },
+    ],
+  },
   'json-formatter': {
     what: {
       heading: 'What the JSON Formatter does',

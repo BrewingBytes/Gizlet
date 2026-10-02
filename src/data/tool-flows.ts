@@ -279,6 +279,11 @@ export const toolFlowRegistry = [
  * moment written five ways. Neither end is a document, so neither end is
  * something this graph can pass on.
  *
+ * UTM Builder takes an address and five words and hands back a longer
+ * address. A link is text, not a document, and no payload kind here carries
+ * text on its own, so it stays out of the graph until one does — at which
+ * point a campaign link going into a QR code is the obvious first edge.
+ *
  * File Hash Generator is the one that reads every payload kind and still is
  * not a step. It takes any file at all, which is not one of the kinds declared
  * here, and gives back a digest and a verdict — a fact about the file rather
@@ -300,6 +305,7 @@ export const flowlessToolSlugs = [
   'jwt-decoder',
   'file-hash-generator',
   'timestamp-converter',
+  'utm-builder',
 ] as const satisfies readonly ToolRegistryEntry['slug'][];
 
 /** The registry's own entries, with their payload kinds preserved. */

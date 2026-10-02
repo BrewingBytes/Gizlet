@@ -36,7 +36,7 @@ const expectedMembership = {
     'image-color-picker',
     'favicon-generator',
   ],
-  seo: ['json-ld-generator'],
+  seo: ['json-ld-generator', 'utm-builder'],
   developer: [
     'json-formatter',
     'url-encode-decode',
