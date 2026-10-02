@@ -13,7 +13,7 @@ Read [docs/architecture.md](docs/architecture.md) before changing the applicatio
 - `src/components/` — one Astro component per Gizlet workspace plus the shared shell (`SiteHeader`, `SiteFooter`, `ToolPageLayout`, `AdvertisementSlot`, `ToolSearchOverlay`, `FlowBuilder`). Each keeps its own markup, scoped CSS, and `<script>` module.
 - `src/layouts/BaseLayout.astro` — document shell, metadata, theme bootstrap, and the env-gated ads tag.
 - `src/pages/` — static routes, including `tools/[slug].astro` (generated from the registry) and the generated `sitemap.xml`, `robots.txt`, `tools.json`, and `llms.txt`.
-- `tests/unit/` — Vitest, one file per `src/data` module. `tests/e2e/` — Playwright smoke coverage; `tests/e2e/smoke/` is the subset that also runs on WebKit.
+- `tests/unit/` — Vitest, one file per `src/data` module. `tests/e2e/` — Playwright smoke coverage; `tests/e2e/smoke/` is the subset that also runs on WebKit, and `tests/e2e/script-loading.spec.ts` checks what the built pages load against the module map each build writes (`scripts/lib/client-modules.mjs`).
 - `docs/` — architecture baseline, privacy data contract, measurement constraints, request-form behavior, the roadmap narrative, release procedure.
 - `changelog.d/` — one file per unreleased changelog entry. A change writes its entry here rather than editing `CHANGELOG.md`, so two pull requests never edit the same lines; the release collects them.
 

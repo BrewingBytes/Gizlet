@@ -44,7 +44,7 @@ Do not import browser-only WASM code from Astro frontmatter or other build-time 
 
 ## Testing policy
 
-Test transformations, validation, filenames, registry rules, and other deterministic behavior with Vitest. Browser tests use Playwright against a local Vite preview of the Astro production build and cover the homepage plus high-value user paths such as a tool's primary action and download/copy result. The full suite runs on Chromium. A bounded smoke set in `tests/e2e/smoke/` also runs on WebKit at phone size; it is not a device matrix, and it does not replace the manual iPhone check in [browser-testing.md](browser-testing.md).
+Test transformations, validation, filenames, registry rules, and other deterministic behavior with Vitest. Browser tests use Playwright against a local Vite preview of the Astro production build and cover the homepage plus high-value user paths such as a tool's primary action and download/copy result. The full suite runs on Chromium. A bounded smoke set in `tests/e2e/smoke/` also runs on WebKit at phone size; it is not a device matrix, and it does not replace the manual iPhone check in [browser-testing.md](browser-testing.md). A script-loading spec checks the built pages' requests against build metadata, so that each Gizlet ships only its own JavaScript and loads its heavy libraries only on demand ([browser-testing.md](browser-testing.md#what-a-page-loads)).
 
 The project uses these scripts once initialized:
 
