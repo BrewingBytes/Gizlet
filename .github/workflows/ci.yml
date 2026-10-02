@@ -36,6 +36,13 @@ jobs:
   validate:
     name: Validate
     runs-on: ubuntu-latest
+    # The official Playwright image carries Chromium, WebKit and their OS
+    # packages, which the runner otherwise installs on every run
+    # (docs/ci-performance.md). Its tag must equal the @playwright/test version
+    # in pnpm-lock.yaml: tests/unit/ci-workflows.test.ts fails when it does not,
+    # and Renovate bumps both together.
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
 
     steps:
       - name: Check out repository
@@ -67,9 +74,6 @@ jobs:
       - name: Built site check
         run: pnpm run site:check
 
-      - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
-
       # Chromium runs the whole suite, `smoke/` included, so a failure that
       # only the WebKit step below shows is a WebKit failure.
       - name: Browser smoke tests
@@ -96,11 +100,8 @@ jobs:
           PUBLIC_ADSENSE_CLIENT: ca-pub-1234567890123456
         run: pnpm exec playwright test tests/e2e/advertising.spec.ts
 
-      # Its own install and its own step, so the WebKit cost and any WebKit-only
-      # failure read separately from Chromium's. Each Playwright run starts a
-      # fresh build and preview of its own, this one included.
-      - name: Install Playwright WebKit
-        run: pnpm exec playwright install --with-deps webkit
-
+      # Its own step, so a WebKit-only failure reads separately from Chromium's.
+      # Each Playwright run starts a fresh build and preview of its own, this
+      # one included.
       - name: Browser smoke tests on WebKit
         run: pnpm exec playwright test --project=webkit-smoke
