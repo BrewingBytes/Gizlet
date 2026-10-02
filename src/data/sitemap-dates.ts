@@ -11,7 +11,7 @@ export const sitemapDates: Readonly<Record<string, string>> = {
   '/': '2026-10-02',
   '/tools/': '2026-10-02',
   '/flows/': '2026-10-02',
-  '/roadmap/': '2026-09-07',
+  '/roadmap/': '2026-10-02',
   '/privacy/': '2026-09-16',
   '/terms/': '2026-09-16',
   '/about/': '2026-09-02',
