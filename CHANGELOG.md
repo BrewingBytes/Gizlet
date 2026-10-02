@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Entries for the next release are written as files in [changelog.d/](changelog.d/), one per change. See [docs/releasing.md](docs/releasing.md).
 
+## [0.12.1] - 2026-10-02
+
+### Added
+
+- `pnpm run site:check` checks the production build against its own sitemap, and CI and the `Release` workflow run it after every build. Each sitemap URL has to be a generated, indexable page with a canonical that matches it, one title and H1, a description, and a social image that exists; any page the sitemap leaves out has to be `noindex`, and the 404 page and campaign entries are never listed and must be `noindex, follow`, as planned Gizlets must be `noindex, nofollow`; JSON-LD has to parse, stay on gizlet.app, and never present a planned Gizlet as a working app; and every same-site link and fragment has to land on a page or file the build wrote. A malformed address is reported rather than crashing the check, and every failure names the page, the offending value, and the rule it broke.
+- The browser tests now measure what the built homepage, JSON Formatter, Compress Image and PDF Viewer actually load, on arrival and after formatting JSON, compressing an image or opening a PDF. Each production build records which source modules are in every emitted script, in `node_modules/.cache/gizlet/` and never in `dist/`. The test uses that record to show that a tool page loads only its own workspace, and that pdf.js and its worker, pdf-lib, and the archive and image code stay off pages that do not need them. It also checks that opening a PDF still loads pdf.js and draws the page. Sizes are reported per request, not budgeted. [docs/browser-testing.md](docs/browser-testing.md#what-a-page-loads) explains how to read the report.
+- The browser tests now run a small set of local file workflows on WebKit at phone size: converting an image, merging and previewing PDFs, extracting a ZIP, and the theme and search. Each test reads the saved download back to check what was saved. Where a browser cannot encode a format, the test checks for the existing message instead of skipping. CI and the release workflow install WebKit and run this set as its own step after Chromium, so failures that only WebKit shows, and the time it adds, appear separately. [docs/browser-testing.md](docs/browser-testing.md) describes the manual iPhone check that this does not replace.
+
 ## [0.12.0] - 2026-10-02
 
 ### Added
