@@ -1,4 +1,5 @@
 import { fallbackSocialImagePath, getToolSocialImagePath } from './social-images';
+import type { ToolCategoryPage } from './tool-categories';
 import type { ToolRegistryEntry } from './tools';
 
 export const siteUrl = 'https://gizlet.app';
@@ -64,5 +65,14 @@ export function getToolMetadata(
     description: valueOrFallback(overrides.description, tool.description),
     image: valueOrFallback(overrides.image, getToolSocialImagePath(tool)),
     pathname: tool.path,
+  });
+}
+
+/** A category page's metadata, canonical to the page itself. */
+export function getToolCategoryMetadata(page: ToolCategoryPage): PageMetadata {
+  return getPageMetadata({
+    title: page.title,
+    description: page.description,
+    pathname: page.path,
   });
 }

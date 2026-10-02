@@ -1,6 +1,7 @@
 import { siteUrl } from './metadata';
 import { roadmapPath } from './roadmap';
 import { sitemapDates } from './sitemap-dates';
+import { getToolCategoryPages } from './tool-categories';
 import { toolRegistry } from './tools';
 
 const sitemapPathname = '/sitemap.xml';
@@ -30,12 +31,15 @@ export interface SitemapEntry {
  * Returns every route that is ready for public search discovery.
  *
  * Tool routes deliberately come from the canonical registry so a tool cannot
- * be listed in the sitemap before its launch status is marked available.
+ * be listed in the sitemap before its launch status is marked available, and
+ * category routes come from the categories that hold an available tool, so a
+ * category whose Gizlets are all planned is never listed.
  */
 export function getSitemapEntries(): readonly SitemapEntry[] {
   const pathnames = [
     '/',
     ...publicInformationPathnames,
+    ...getToolCategoryPages().map((page) => page.path),
     ...toolRegistry.filter((tool) => tool.launchStatus === 'available').map((tool) => tool.path),
   ];
   const entries = pathnames.map((pathname) => {

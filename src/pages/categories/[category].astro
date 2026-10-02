@@ -1,0 +1,260 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getToolCategoryMetadata } from '../../data/metadata';
+import { getToolCategoryStructuredData } from '../../data/structured-data';
+import { getToolCategoryPages, type ToolCategoryPage } from '../../data/tool-categories';
+import { toolsIndexPath } from '../../data/tools';
+
+interface Props {
+  page: ToolCategoryPage;
+}
+
+// Only categories holding an available Gizlet get a route, so a planned-only
+// category has no page to index rather than an empty one.
+export function getStaticPaths() {
+  return getToolCategoryPages().map((page) => ({
+    params: { category: page.category },
+    props: { page },
+  }));
+}
+
+const { page } = Astro.props;
+const metadata = getToolCategoryMetadata(page);
+const otherPages = getToolCategoryPages().filter((other) => other.category !== page.category);
+const count = page.tools.length;
+---
+
+<BaseLayout metadata={metadata} structuredData={getToolCategoryStructuredData(page)}>
+  <article class="category-page" aria-labelledby="category-title">
+    <nav class="category-page__breadcrumb" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="/">Gizlet</a></li>
+        <li><a href={toolsIndexPath}>Tools</a></li>
+        <li aria-current="page">{page.label}</li>
+      </ol>
+    </nav>
+
+    <header class="category-page__header">
+      <p class="metadata">{page.label} · {count} {count === 1 ? 'Gizlet' : 'Gizlets'}</p>
+      <h1 id="category-title">{page.heading}</h1>
+      {page.introduction.map((paragraph) => <p>{paragraph}</p>)}
+      <p
+        class:list={['category-page__locality', { 'category-page__locality--local': page.isEntirelyLocal }]}
+      >
+        {page.locality}
+      </p>
+    </header>
+
+    <section class="category-page__section" aria-labelledby="category-choices-title">
+      <h2 id="category-choices-title">{count === 1 ? 'When to use it' : 'Which one you need'}</h2>
+      <dl class="category-page__choices">
+        {
+          page.guidance.map((choice) => (
+            <div>
+              <dt>{choice.need}</dt>
+              <dd><a href={choice.tool.path}>{choice.tool.name}</a></dd>
+            </div>
+          ))
+        }
+      </dl>
+    </section>
+
+    <section class="category-page__section" aria-labelledby="category-tools-title">
+      <h2 id="category-tools-title">Every {page.label} Gizlet</h2>
+      <ol class="category-page__list">
+        {
+          page.tools.map((tool) => (
+            <li>
+              <a href={tool.path}>
+                <span class="category-page__number">{String(tool.id).padStart(3, '0')}</span>
+                <span>
+                  <strong>{tool.name}</strong>
+                  <span>{tool.description}</span>
+                </span>
+                {tool.processesLocally && <span class="status-local">Local</span>}
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <nav class="category-page__elsewhere" aria-label="Other categories">
+      <p class="metadata">Something else?</p>
+      <ul>
+        {
+          otherPages.map((other) => (
+            <li><a href={other.path}>{other.heading}</a></li>
+          ))
+        }
+        <li><a href={toolsIndexPath}>All Gizlets</a></li>
+      </ul>
+    </nav>
+  </article>
+</BaseLayout>
+
+<style>
+  .category-page {
+    max-width: 60rem;
+  }
+
+  .category-page__breadcrumb {
+    margin-bottom: var(--space-5);
+  }
+
+  .category-page__breadcrumb ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    list-style: none;
+  }
+
+  .category-page__breadcrumb li:not(:last-child)::after {
+    margin-left: var(--space-1);
+    content: '/';
+  }
+
+  .category-page__header {
+    max-width: 42rem;
+  }
+
+  .category-page__header > .metadata {
+    margin-bottom: var(--space-1);
+  }
+
+  .category-page__header h1 {
+    font-size: clamp(2.25rem, 5vw, 3.75rem);
+  }
+
+  .category-page__header > p:not(.metadata) {
+    color: var(--text-muted);
+    font-size: var(--font-size-lg);
+  }
+
+  .category-page__header > p.category-page__locality {
+    margin-top: var(--space-4);
+    padding: var(--space-3);
+    border-left: var(--border-strong-width) solid var(--border);
+    color: var(--text);
+    font-size: var(--font-size-base);
+  }
+
+  .category-page__header > p.category-page__locality--local {
+    border-left-color: var(--success);
+  }
+
+  .category-page__section {
+    margin-top: var(--space-6);
+  }
+
+  .category-page__section h2 {
+    padding-bottom: var(--space-2);
+    border-bottom: var(--border-strong-width) solid var(--text);
+  }
+
+  .category-page__choices {
+    margin: 0;
+  }
+
+  .category-page__choices div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(10rem, 16rem);
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 3.5rem;
+    padding: var(--space-2);
+    border-bottom: var(--border-width) solid var(--border);
+  }
+
+  .category-page__choices dt {
+    color: var(--text);
+  }
+
+  .category-page__choices dd {
+    margin: 0;
+  }
+
+  .category-page__choices a {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    font-weight: 700;
+  }
+
+  .category-page__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .category-page__list li {
+    border-bottom: var(--border-width) solid var(--border);
+  }
+
+  .category-page__list a {
+    display: grid;
+    grid-template-columns: 3ch minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 3.5rem;
+    padding: var(--space-2);
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .category-page__list a:hover {
+    background: var(--surface);
+  }
+
+  .category-page__number {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+  }
+
+  .category-page__list a > span:nth-child(2) {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .category-page__list strong {
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+  }
+
+  .category-page__list a > span:nth-child(2) span {
+    color: var(--text-muted);
+  }
+
+  .category-page__elsewhere {
+    margin-top: var(--space-6);
+  }
+
+  .category-page__elsewhere ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .category-page__elsewhere a {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    font-weight: 700;
+  }
+
+  @media (max-width: 40rem) {
+    .category-page__choices div {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+  }
+</style>

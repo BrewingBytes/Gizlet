@@ -1,0 +1,1 @@
+- Every kind of Gizlet now has a page of its own: images, PDF, developer, SEO and archive. Each one says which Gizlet fits which job, lists every one that works, and says plainly whether they all run in your browser. A category with nothing built yet gets no page. The index at `/tools/` keeps its jump links, and each group there now links to its guide.
