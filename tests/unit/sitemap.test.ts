@@ -22,6 +22,11 @@ describe("sitemap generation", () => {
       new URL("/terms/", siteUrl).toString(),
       new URL("/about/", siteUrl).toString(),
       new URL("/request-a-gizlet/", siteUrl).toString(),
+      new URL("/categories/images/", siteUrl).toString(),
+      new URL("/categories/seo/", siteUrl).toString(),
+      new URL("/categories/developer/", siteUrl).toString(),
+      new URL("/categories/pdf/", siteUrl).toString(),
+      new URL("/categories/archive/", siteUrl).toString(),
       ...toolRegistry
         .filter((tool) => tool.launchStatus === "available")
         .map((tool) => new URL(tool.path, siteUrl).toString()),
@@ -36,6 +41,11 @@ describe("sitemap generation", () => {
     expect(getSitemapXml()).toContain("<loc>https://gizlet.app/request-a-gizlet/</loc>");
     expect(getSitemapXml()).toContain("json-ld-generator");
     expect(getSitemapXml()).toContain("json-formatter");
+  });
+
+  it("lists no page for a category whose Gizlets are all planned", () => {
+    expect(getSitemapUrls()).not.toContain(new URL("/categories/video/", siteUrl).toString());
+    expect(getSitemapUrls().filter((url) => url.includes("/categories/"))).toHaveLength(5);
   });
 
   it("gives every page a lastmod, so no page is left without one by accident", () => {

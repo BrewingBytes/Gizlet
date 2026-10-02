@@ -7,10 +7,13 @@ import { getAdvertisementConfiguration, getPageAdvertisementPolicy } from '../da
 import { getPageMetadata } from '../data/metadata';
 import { homeSocialImagePath } from '../data/social-images';
 import { getSiteStructuredData } from '../data/structured-data';
+import { getToolCategoryPages } from '../data/tool-categories';
 import { toolSearchPlaceholder } from '../data/tool-search-examples';
-import { getAvailableTools, getToolCategoryGroups, toolsIndexPath } from '../data/tools';
+import { getAvailableTools, toolsIndexPath } from '../data/tools';
 
-const categoryGroups = getToolCategoryGroups();
+// Each category with an available Gizlet has its own page, so the strip links
+// there; the jump anchors stay on /tools for the index's own navigation.
+const categoryPages = getToolCategoryPages();
 // The index rows are links, so they list the Gizlets that exist. A planned one
 // belongs in the not-built block on /tools, where a row is not a link.
 const availableTools = getAvailableTools();
@@ -91,10 +94,10 @@ const advertising = getPageAdvertisementPolicy({
     <p class="metadata">Browse by type</p>
     <ul>
       {
-        categoryGroups.map((group) => (
+        categoryPages.map((categoryPage) => (
           <li>
-            <a href={group.path}>
-              {group.label} <span>{group.tools.length}</span>
+            <a href={categoryPage.path}>
+              {categoryPage.label} <span>{categoryPage.tools.length}</span>
             </a>
           </li>
         ))

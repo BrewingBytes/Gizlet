@@ -383,14 +383,14 @@ test("offers only categories that have a Gizlet behind them", async ({
   });
   await expect(categories.getByRole("link", { name: /Images/ })).toHaveAttribute(
     "href",
-    "/tools/#images",
+    "/categories/images/",
   );
   await expect(
     categories.getByRole("link", { name: "All Gizlets" }),
   ).toHaveAttribute("href", "/tools/");
   await expect(categories.getByRole("link", { name: /PDF/ })).toHaveAttribute(
     "href",
-    "/tools/#pdf",
+    "/categories/pdf/",
   );
   await expect(categories.getByRole("link", { name: /Video/ })).toHaveCount(0);
   await expect(categories.getByRole("link", { name: /Audio/ })).toHaveCount(0);

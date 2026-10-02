@@ -1,4 +1,5 @@
 import { siteUrl } from './metadata';
+import type { ToolCategoryPage } from './tool-categories';
 import { getToolPageContent, type ToolFaqEntry } from './tool-page-content';
 import { getAvailableTools, isAvailableTool, toolsIndexPath, type ToolRegistryEntry } from './tools';
 
@@ -55,6 +56,43 @@ export function getToolIndexStructuredData(): readonly StructuredDataItem[] {
           url: absoluteUrl(tool.path),
         })),
       },
+    },
+  ];
+}
+
+/**
+ * Describes a category page as the list it shows: the category's available
+ * Gizlets, in the order the page prints them, and the trail back to the index.
+ * Like the index, it says nothing about price or locality — the list is the
+ * claim, and the registry decides what is on it.
+ */
+export function getToolCategoryStructuredData(page: ToolCategoryPage): readonly StructuredDataItem[] {
+  return [
+    {
+      '@context': schemaContext,
+      '@type': 'CollectionPage',
+      name: page.heading,
+      url: absoluteUrl(page.path),
+      description: page.description,
+      mainEntity: {
+        '@type': 'ItemList',
+        numberOfItems: page.tools.length,
+        itemListElement: page.tools.map((tool, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          name: tool.name,
+          url: absoluteUrl(tool.path),
+        })),
+      },
+    },
+    {
+      '@context': schemaContext,
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Gizlet', item: absoluteUrl('/') },
+        { '@type': 'ListItem', position: 2, name: 'Tools', item: absoluteUrl(toolsIndexPath) },
+        { '@type': 'ListItem', position: 3, name: page.label },
+      ],
     },
   ];
 }

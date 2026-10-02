@@ -119,6 +119,26 @@ async function getToolSources() {
   return sources;
 }
 
+/**
+ * Each category page, for every category that holds an available Gizlet —
+ * the same rule `data/tool-categories` uses to decide which pages exist, and
+ * the same `/categories/<category>/` path. The sitemap test holds the two
+ * lists to each other.
+ *
+ * Only the route dates them. The introduction and guidance live in
+ * `data/tool-categories`, one module shared by every category, so an edit to
+ * one category's copy would otherwise move the date on all of them; by the
+ * rule above, a shared module dates nothing.
+ */
+function getCategorySources() {
+  const categories = [...new Set(getAvailableTools().map((tool) => tool.category))];
+
+  return categories.map((category) => ({
+    pathname: `/categories/${category}/`,
+    files: ['src/pages/categories/[category].astro'],
+  }));
+}
+
 async function exists(relativePath) {
   try {
     await readFile(join(repositoryRoot, relativePath));
@@ -205,7 +225,7 @@ async function main() {
   const check = argv.includes('--check');
   await assertUsableHistory();
 
-  const sources = [...staticPageSources, ...(await getToolSources())];
+  const sources = [...staticPageSources, ...getCategorySources(), ...(await getToolSources())];
   const dates = [];
 
   for (const source of sources) {

@@ -9,6 +9,7 @@ import {
 } from '../data/tool-page-content';
 import { getToolProcessingStatus } from '../data/tool-page-status';
 import { getToolStructuredData } from '../data/structured-data';
+import { getToolCategoryPage } from '../data/tool-categories';
 import type { ToolRegistryEntry } from '../data/tools';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AdvertisementSlot from './AdvertisementSlot.astro';
@@ -42,6 +43,9 @@ const {
 const status = getToolProcessingStatus(tool, processingStatus);
 const content = getToolPageContent(tool);
 const metadata = getToolMetadata(tool, { title, description, image, robots });
+// A category only has a page while it holds an available Gizlet, so the label
+// stays plain text for a planned Gizlet in a category that has none.
+const categoryPage = getToolCategoryPage(tool.category);
 const requestedSlots: AdvertisementSlotVariant[] = [
   ...(showPostResultAd ? ['inline' as const] : []),
   ...(showRail ? ['rail' as const] : []),
@@ -74,7 +78,9 @@ const shouldShowRail = showRail && advertising.enabled && advertising.slots.rail
     </nav>
 
     <header class="tool-page__header">
-      <p class="metadata">{tool.category}</p>
+      <p class="metadata">
+        {categoryPage ? <a href={categoryPage.path}>{tool.category}</a> : tool.category}
+      </p>
       <h1>{tool.name}</h1>
       <p>{tool.description}</p>
 
@@ -202,6 +208,10 @@ const shouldShowRail = showRail && advertising.enabled && advertising.slots.rail
 
   .tool-page__header > .metadata {
     margin-bottom: var(--space-1);
+  }
+
+  .tool-page__header > .metadata a {
+    color: inherit;
   }
 
   .tool-page__header h1 {

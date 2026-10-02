@@ -4,6 +4,7 @@ import NotBuiltYet from '../../components/NotBuiltYet.astro';
 import { getPageMetadata } from '../../data/metadata';
 import { toolIndexSocialImagePath } from '../../data/social-images';
 import { getToolIndexStructuredData } from '../../data/structured-data';
+import { getToolCategoryPage } from '../../data/tool-categories';
 import { getToolCategoryGroups } from '../../data/tools';
 
 const metadata = getPageMetadata({
@@ -12,7 +13,12 @@ const metadata = getPageMetadata({
   pathname: '/tools/',
   image: toolIndexSocialImagePath,
 });
-const categoryGroups = getToolCategoryGroups();
+// The jump links keep pointing at the anchors below; each group's own heading
+// links out to the category's standalone page.
+const categoryGroups = getToolCategoryGroups().map((group) => ({
+  ...group,
+  page: getToolCategoryPage(group.category),
+}));
 ---
 
 <BaseLayout metadata={metadata} structuredData={getToolIndexStructuredData()}>
@@ -42,7 +48,10 @@ const categoryGroups = getToolCategoryGroups();
           id={group.category}
           aria-labelledby={`${group.category}-title`}
         >
-          <h2 id={`${group.category}-title`}>{group.label}</h2>
+          <div class="tool-catalogue__group-heading">
+            <h2 id={`${group.category}-title`}>{group.label}</h2>
+            {group.page && <a href={group.page.path}>{group.page.heading} guide</a>}
+          </div>
           <ol class="tool-catalogue__list">
             {group.tools.map((tool) => (
               <li>
@@ -96,9 +105,26 @@ const categoryGroups = getToolCategoryGroups();
     margin-top: var(--space-6);
   }
 
-  .tool-catalogue__group h2 {
+  .tool-catalogue__group-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-3);
     padding-bottom: var(--space-2);
     border-bottom: var(--border-strong-width) solid var(--text);
+  }
+
+  .tool-catalogue__group-heading h2 {
+    margin: 0;
+  }
+
+  .tool-catalogue__group-heading a {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
   }
 
   .tool-catalogue__list {
