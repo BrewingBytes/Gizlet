@@ -8,8 +8,8 @@
  * dates are committed rather than read during the build.
  */
 export const sitemapDates: Readonly<Record<string, string>> = {
-  '/': '2026-09-09',
-  '/tools/': '2026-09-05',
+  '/': '2026-10-02',
+  '/tools/': '2026-10-02',
   '/flows/': '2026-09-11',
   '/roadmap/': '2026-09-07',
   '/privacy/': '2026-09-16',

@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Entries for the next release are written as files in [changelog.d/](changelog.d/), one per change. See [docs/releasing.md](docs/releasing.md).
 
+## [0.11.0] - 2026-10-02
+
+### Added
+
+- Every kind of Gizlet now has a page of its own: images, PDF, developer, SEO and archive. Each one says which Gizlet fits which job, lists every one that works, and says plainly whether they all run in your browser. A category with nothing built yet gets no page. The index at `/tools/` keeps its jump links, and each group there now links to its guide.
+- Every Gizlet that makes a file now offers to send it straight to the next one. Finish a resize and the image Gizlets are there to take it; finish a watermark and the PDF ones are. The result travels in this browser, on this device, so there is no download and no second upload in between. A run that produces several files offers a send for each of them.
+
 ## [0.10.0] - 2026-09-16
 
 ### Added
