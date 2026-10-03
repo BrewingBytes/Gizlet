@@ -294,3 +294,44 @@ test("names a format it cannot read instead of failing vaguely", async ({ page }
 
   await expect(page.locator("[data-error]")).toContainText("does not begin like an archive");
 });
+
+test("refuses understated output, retains the archive, and recovers with a safe selection", async ({ page }) => {
+  const archive = archiveOf([
+    { name: "safe.txt", body: "safe output" },
+    { name: "understated.txt", body: "too much output ".repeat(20), deflate: true },
+  ]);
+  archive.writeUInt32LE(2, centralHeaders(archive)[1] + 24);
+  await openArchive(page, "understated.zip", archive);
+  await page.getByRole("button", { name: "Extract the ticked files as a ZIP" }).click();
+  await expect(page.locator("[data-error]")).toContainText("expands beyond its declared size");
+  await expect(page.locator("[data-result]")).toBeHidden();
+  await expect(page.locator("[data-download]")).not.toHaveAttribute("href", /blob:/);
+  await expect(page.locator("[data-status]")).toBeHidden();
+  await expect(page.locator("[data-viewer]")).toBeVisible();
+  await expect(page.getByLabel("Tick safe.txt")).toBeChecked();
+  await expect(page.getByRole("button", { name: /^Extract the ticked/ })).toBeEnabled();
+  await page.getByLabel("Tick understated.txt").uncheck();
+  await page.getByRole("button", { name: "Extract the ticked file", exact: true }).click();
+  const download = page.getByRole("link", { name: /^Download / });
+  await expect(download).toBeVisible();
+  expect(await readDownload(download)).toBe("safe output");
+  await expect(page.locator("[data-error]")).toBeHidden();
+});
+
+test("refuses a declared total above the limit before attempting to unpack", async ({ page }) => {
+  const archive = archiveOf([
+    { name: "a.txt", body: "a" },
+    { name: "b.txt", body: "b" },
+  ]);
+  // Stored entries are individually allowed; their combined declared output
+  // is too large. No large allocation is needed to test the preflight.
+  for (const header of centralHeaders(archive)) {
+    archive.writeUInt32LE(300 * 1024 * 1024, header + 20);
+    archive.writeUInt32LE(300 * 1024 * 1024, header + 24);
+  }
+  await openArchive(page, "large-total.zip", archive);
+  await page.getByRole("button", { name: "Extract the ticked files as a ZIP" }).click();
+  await expect(page.locator("[data-error]")).toContainText("selected files exceed the extraction size limit");
+  await expect(page.locator("[data-result]")).toBeHidden();
+  await expect(page.locator("[data-viewer]")).toBeVisible();
+});
