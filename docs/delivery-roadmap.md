@@ -1,15 +1,16 @@
 # Implementation and release roadmap
 
-Prepared 2026-10-04 for [BRE-54](https://linear.app/brewingbytes/issue/BRE-54/docs-plan-implementation-priorities-and-release-cadence). This is a maintainer delivery plan. The public [roadmap](roadmap.md) continues to describe dependency order; its tool names and status remain in `src/data/roadmap.ts`.
+Prepared 2026-10-04 for [BRE-54](https://linear.app/brewingbytes/issue/BRE-54/docs-plan-implementation-priorities-and-release-cadence), corrected against merged feature evidence in [BRE-56](https://linear.app/brewingbytes/issue/BRE-56/docs-reconcile-delivery-roadmap-with-merged-features). This is a maintainer delivery plan. The public [roadmap](roadmap.md) continues to describe dependency order; its tool names and status remain in `src/data/roadmap.ts`.
 
-Fix data integrity first, finish the useful image capability whose engine already exists, then improve composition. Broader format support and acquisition spending wait for evidence. The priorities below are recommendations, not changes to Linear issue priorities.
+Fix data integrity first, document the useful image capability that already exists, then add local named recipes. Broader format support and acquisition spending wait for evidence. The priorities below are recommendations, not changes to Linear issue priorities.
 
 ## Starting point
 
-- Latest published release: [v0.12.1](https://github.com/BrewingBytes/Gizlet/releases/tag/v0.12.1), published 2026-10-02.
+- Latest published release at initial preparation: [v0.12.1](https://github.com/BrewingBytes/Gizlet/releases/tag/v0.12.1), published 2026-10-02. Recheck the latest tag before using the version candidates below.
 - Current main at preparation: `87f733e`. Since that tag, [#249](https://github.com/BrewingBytes/Gizlet/pull/249) adds actual and cumulative archive extraction limits, [#250](https://github.com/BrewingBytes/Gizlet/pull/250) removes unrelated recipe code from the shared analytics bundle, and [#244](https://github.com/BrewingBytes/Gizlet/pull/244) reduces CI setup work. All three are merged. A merge alone does not deploy them.
-- The target-size image compression engine (BRE-29) and starter Flow recipes (BRE-32) are done. The target-size control (BRE-30) and worked guides (BRE-33) remain unfinished.
-- The tool registry still marks QR Code Generator and the three video tools as planned. Local named recipes and universal result handoff remain backlog work; homepage file handoff already exists and is a different capability.
+- The target-size image compression engine (BRE-29), target-size control (BRE-30, merged [#220](https://github.com/BrewingBytes/Gizlet/pull/220)) and starter Flow recipes (BRE-32) are shipped. Worked guides (BRE-33) remain unfinished; both their code prerequisites are satisfied.
+- Universal image/PDF result handoff (BRE-14) is shipped in [#228](https://github.com/BrewingBytes/Gizlet/pull/228), alongside the older homepage file handoff. Local named recipes (BRE-15) remain unfinished. The tool registry still marks QR Code Generator and the three video tools as planned.
+- Linear's Backlog status for BRE-30 and BRE-14 was stale when this plan was prepared. Their merged PRs and current source establish implementation status; do not implement them again. Any gaps found in shipped behavior need a separately scoped defect issue.
 - Search and revenue baseline documents are delivered templates, with account values still unknown in the repository. A Done documentation ticket does not establish demand, earnings, or permission to spend.
 
 ## Capacity and dates
@@ -20,8 +21,8 @@ Target windows assume one implementer, one active code issue at a time, and revi
 | --- | --- | --- | --- |
 | 0 | 4–5 October | Release the already merged archive safety fix, shared-script improvement and CI change | Recommend `0.12.2` within 24 hours of release review; do not wait for new features |
 | 1 | 5–9 October | JSON/CSV data-integrity fixes, then the timestamp test race | Recommend `0.12.3` as soon as the first reviewed integrity fix is ready; include the other fixes if already ready |
-| 2 | 12–18 October | Target-size image compression UI, followed by its worked guides | Recommend `0.13.0` once the target-size feature meets its full acceptance criteria |
-| 3 | 19 October–1 November | Universal result handoff, then local named Flow recipes | Recommend `0.14.0` once one complete composition feature is ready; carry the other forward if unfinished |
+| 2 | 12–18 October | Worked guides using shipped target-size compression and starter recipes | Include completed content in the next patch; do not reserve a minor for an already shipped feature |
+| 3 | 19 October–1 November | Local named Flow recipes | Recommend `0.13.0` when the complete recipe-library feature is ready |
 | 4 | November review | QR generation or a format-support spike, selected using observed demand and feasibility | Schedule the next minor only after selecting and completing the feature; a spike alone needs no product release |
 
 Version numbers assume the previous release has shipped. If an urgent fix needs another patch, take the next unused patch number. If the work slips, change the target date rather than assigning a version to unfinished code.
@@ -39,23 +40,19 @@ Work through these separately and sequentially: the first three share `src/data/
 
 Each integrity fix needs its specified unit/browser regressions and a changelog fragment. Do not hold a verified corruption fix for the rest of the batch or wait for the next minor. If more than 48 hours separates completed fixes, release the earlier one and use a subsequent patch for the rest. BRE-49 can join a release but is not a reason to delay an urgent fix.
 
-### Finish target-size image compression
+### Document the shipped target-size capability
 
-[BRE-30](https://linear.app/brewingbytes/issue/BRE-30/featimage-add-under-this-file-size-to-compress-image) is the next feature. Its engine prerequisite, BRE-29, is merged; recheck that fact and remove the stale prerequisite-blocked assumption when picking it up.
+[BRE-30](https://linear.app/brewingbytes/issue/BRE-30/featimage-add-under-this-file-size-to-compress-image) is already implemented in [#220](https://github.com/BrewingBytes/Gizlet/pull/220), merged 2026-09-15. `CompressImageTool.astro` contains Quality and Target file size modes, decimal-unit presets/custom limits, met/unmet results, batch handling, PNG guidance, cancellation and replacement protection. These are existing capabilities, not a future milestone. Target-size settings in shared Flow links remain outside the original ticket's scope.
 
-Expose Quality and Target file size modes, with Quality remaining the default. Apply targets independently to each file; show actual bytes and met/unmet/error status. Keep the PNG explanation, batch ZIP output, cancellation and replacement behavior. Never silently resize or change format to hit the limit. This solves a specific upload-limit job using existing machinery, which is a stronger implementation case than starting another codec stack.
-
-Then implement [BRE-33 — two worked guides](https://linear.app/brewingbytes/issue/BRE-33/featcontent-publish-two-worked-guides-with-real-before-and-after). Its starter-recipe prerequisite is done; target-size UI is the remaining dependency. Record reproducible example files, settings, output sizes and limitations, and wire metadata and sitemap inputs. Include the guides in `0.13.0` if ready; the feature should not wait for unfinished content. Public content shipped later can take a patch when it introduces no new tool behavior.
-
-The feature release is ready when single-file success, an impossible target, mixed batches, PNG selection, cancellation and input replacement all pass, with reviewed before/after UI evidence. New Flow target-size settings remain outside this ticket's scope.
+Implement [BRE-33 — two worked guides](https://linear.app/brewingbytes/issue/BRE-33/featcontent-publish-two-worked-guides-with-real-before-and-after). Its target-size and starter-recipe prerequisites are both merged. Record reproducible example files, settings, output sizes and limitations, and wire metadata and sitemap inputs. Include completed content in a routine patch when it introduces no new tool behavior. Do not hold an integrity patch for unfinished guides.
 
 ### Improve composition before adding more heavy tools
 
-Start with [BRE-14 — Send to another Gizlet](https://linear.app/brewingbytes/issue/BRE-14/featflows-add-a-universal-send-to-another-gizlet-action), using its linked [#109 scope](https://github.com/BrewingBytes/Gizlet/issues/109). Ordinary tool results should expose compatible destinations from payload contracts, with local transfer and an explicit explanation when transfer fails. Existing homepage handoff is a starting point to inspect, not proof that result handoff is implemented. Complete the ticket's image and PDF acceptance criteria in one PR.
+[BRE-14 — Send to another Gizlet](https://linear.app/brewingbytes/issue/BRE-14/featflows-add-a-universal-send-to-another-gizlet-action) is already implemented in [#228](https://github.com/BrewingBytes/Gizlet/pull/228). `SendToGizlet.astro` and `src/data/send-to-gizlet.ts` offer image/PDF result destinations through the existing local file handoff. Use this shipped behavior; there is no new handoff milestone in this plan.
 
-Follow with [BRE-15 — save named Flow recipes locally](https://linear.app/brewingbytes/issue/BRE-15/featflows-save-named-flow-recipes-locally), using its linked [#108 scope](https://github.com/BrewingBytes/Gizlet/issues/108). Persist validated settings only; implement reopen, rename and delete, bounded storage, and visible storage failure. Files, filenames and outputs must not enter the recipe library. Update the local-storage disclosure.
+The next composition feature is [BRE-15 — save named Flow recipes locally](https://linear.app/brewingbytes/issue/BRE-15/featflows-save-named-flow-recipes-locally), using its linked [#108 scope](https://github.com/BrewingBytes/Gizlet/issues/108). Persist validated settings only; implement reopen, rename and delete, bounded storage, and visible storage failure. Files, filenames and outputs must not enter the recipe library. Update the local-storage disclosure.
 
-These are separate features and separate PRs. Both use shipped Flow infrastructure; neither requires the other to merge. The order is a product recommendation: make composition discoverable during a normal job, then support repeat use. Release the first fully accepted feature as `0.14.0`; if the second lands later, it warrants the next minor rather than being squeezed into a patch.
+Deliver BRE-15 in its own PR and release it as the next minor candidate, `0.13.0`, once its full acceptance criteria pass. The product step is repeat use of existing composition, rather than rebuilding the already shipped discovery surface. Recheck whether any intervening feature release has consumed that version.
 
 ### Conditional work
 
@@ -92,4 +89,4 @@ Only a version tag triggers release promotion; merging this plan or a feature is
 
 ## Keep the plan current
 
-At each weekly review, record the latest tag, main commit, completed milestones and remaining blockers here. Consult Linear descriptions before implementation; older GitHub mirrors and blocked labels can lag merged prerequisites. Update dates and version candidates when intervening releases happen. Public roadmap status still changes in the same PR that makes a planned tool available.
+At each weekly review, record the latest tag, main commit, completed milestones and remaining blockers here. Consult Linear descriptions for scope, then verify implementation status against merged PRs and current source: ticket status and blocked labels can lag shipped work. Update dates and version candidates when intervening releases happen. Public roadmap status still changes in the same PR that makes a planned tool available.
