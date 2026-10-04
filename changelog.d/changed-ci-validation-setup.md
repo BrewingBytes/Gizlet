@@ -1,0 +1,1 @@
+- CI and release validation use the official Playwright image and all available runner cores, reducing repeated browser setup while retaining the existing checks. Measurements and image-update instructions are recorded in `docs/ci-performance.md`.

@@ -26,7 +26,7 @@ What this shows:
 
 ## What was tried
 
-Both candidates were measured on [PR #244](https://github.com/BrewingBytes/Gizlet/pull/244), on the same commit, in three attempts each. The real `Validate` job ran with four workers. A temporary trial workflow, since removed, ran two more jobs beside it: the current runner setup with two workers, and the official Playwright image with two workers, so worker count did not blur the image comparison.
+Both candidates were measured on [PR #244](https://github.com/BrewingBytes/Gizlet/pull/244), on commit `f2eff83`, in three attempts each. The real `Validate` job ([run 37018772619](https://github.com/BrewingBytes/Gizlet/actions/runs/37018772619)) ran with four workers. A temporary trial workflow, since removed, ran two more jobs beside it ([run 37018772827](https://github.com/BrewingBytes/Gizlet/actions/runs/37018772827)): the current runner setup with two workers, and the official Playwright image with two workers, so worker count did not blur the image comparison. Both runs' attempt-specific pages expose the three measurements.
 
 | Chromium suite (340 tests), as Playwright reports it | Attempt 1 | Attempt 2 | Attempt 3 | Median |
 | --- | --- | --- | --- | --- |
@@ -63,15 +63,35 @@ The jobs are noisy. The same step on the same commit varies by a third between a
 Both validation jobs run in the official image, with Playwright on every core. The two changes act on different parts of the job — the image on setup, the workers on the longest test step — so they were adopted together.
 
 - **The image.** `container: image: mcr.microsoft.com/playwright:v<version>-noble` in both workflows, and no `playwright install` step. Dependencies still come from `pnpm install --frozen-lockfile`, so the project's packages match `pnpm-lock.yaml` as before; the image provides the operating system, the browsers and their OS packages. Node is still set up by `actions/setup-node` at version 24.
-- **Keeping the tag in step.** `tests/unit/ci-workflows.test.ts` fails if either workflow's image tag differs from the `@playwright/test` version in `pnpm-lock.yaml`, or if a workflow installs browsers again. It runs in the unit-test step, before any browser test, so a mismatch is reported in seconds and names the file to change. A `Playwright` group in [renovate.json](../renovate.json) updates the npm package and the image in one pull request. Renovate's `github-actions` manager reads `container` images.
+- **Keeping the tag in step.** `tests/unit/ci-workflows.test.ts` fails if either workflow's image tag differs from the `@playwright/test` version in `pnpm-lock.yaml`, or if a workflow installs browsers again. It runs in the unit-test step, before any browser test, so a mismatch is reported in seconds and names the file to change. A `Playwright` group in [renovate.json](../renovate.json) updates the npm package and the image in one pull request. Renovate's [`github-actions` manager](https://docs.renovatebot.com/modules/manager/github-actions/#dependency-types) reads `container` images.
 - **Git inside the container.** The container runs as root over a checkout owned by the runner's user, so git refuses the repository (`fatal: detected dubious ownership`). `release.yml` marks the workspace safe right after checkout, because its tag check and `sitemap:dates --check` read the history. This path was trialed on the pull request, since Release itself only runs on a tag. Without the step, git failed with that error; with it, the fetch-and-ancestor check and `Sitemap dates are current for 47 pages.` both passed. CI's `Validate` runs no git command after checkout, so it needs no such step.
 - **Workers.** `playwright.config.ts` sets `workers: '100%'` when `CI` is set. Local runs keep Playwright's default.
+- **Shared memory.** Both container jobs use `options: --ipc=host`, as [Playwright's Docker guide](https://playwright.dev/docs/docker#recommended-docker-configuration) recommends for Chromium. This avoids Docker's default 64 MB shared-memory limit when several browser workers run together. The final measurements below include this option.
 
 Every gate is unchanged: the same checks, the same Chromium suite, the same analytics and advertising configurations, the WebKit smoke set in its own step, and Release's tag, changelog, version and sitemap checks before promotion. Nothing is cached between runs except the pnpm store, as before, and every Playwright step still builds the site it tests.
 
 ### After
 
-AFTER_PLACEHOLDER
+Three successful attempts of [run 37024646036](https://github.com/BrewingBytes/Gizlet/actions/runs/37024646036), all on `4bd4675`, measure the adopted image, four workers and host IPC together. These are full CI `Validate` jobs, including every environment-specific browser step. Times are in seconds; setup includes container initialisation, checkout, pnpm and Node, using the same definition as the baseline plus the container pull.
+
+| Attempt | Queue | Setup | Install deps | Check | Unit | Build + site check | Chromium tests | Env-specific browser tests | WebKit tests | Job |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [1](https://github.com/BrewingBytes/Gizlet/actions/runs/37024646036/attempts/1) | 4 | 45 | 1 | 16 | 8 | 3 | 95 | 20 | 10 | 203 |
+| [2](https://github.com/BrewingBytes/Gizlet/actions/runs/37024646036/attempts/2) | 4 | 40 | 2 | 16 | 8 | 4 | 102 | 20 | 11 | 208 |
+| [3](https://github.com/BrewingBytes/Gizlet/actions/runs/37024646036/attempts/3) | 4 | 48 | 1 | 13 | 6 | 2 | 75 | 18 | 9 | 175 |
+
+Queue is the interval from the attempt's API `created_at` to the Validate job's `started_at`. Job duration is `completed_at - started_at`; it includes inter-step overhead and cleanup, so summing rounded step durations does not reproduce it.
+
+| Full CI comparison | Before: six successful jobs | After: three successful attempts |
+| --- | --- | --- |
+| Environment setup, including deps and browser/OS installs | Median 68 s; range 50–89 s | Median 46 s; range 42–49 s |
+| Whole Validate job | Median 229 s; range 173–271 s | Median 203 s; range 175–208 s |
+
+The observed median difference is 22 s (32%) for environment setup and 26 s (11%) for the job. The application, browser tests and lockfile were unchanged from the latest baseline commit (`ba76044`) to these measurements; both ran 340 Chromium tests plus the same configured-browser steps and five WebKit smoke tests. All three final attempts reported four Chromium workers, 331 passed and nine existing configuration-dependent skips, five WebKit passes, and no retries or flaky results. The final Chromium step median was 95 s versus 103 s in the baseline; the larger worker-only improvement in the trial did not carry through at that magnitude. These are observed differences across noisy runners, not a guaranteed saving or a controlled estimate of each change's contribution.
+
+All three final attempts logged a pnpm cache hit for `node-cache-Linux-x64-pnpm-4c27…`; the six baseline runs also hit that cache. Each final job initialised its container from scratch in 28, 28 and 37 s, with no workflow-managed image cache. The first image trial had a cold pnpm cache and spent 27 s saving it; later trials and all final runs were warm. A completely cold dependency run of the final full workflow was not measured, so its total is unavailable. Trial jobs omitted the non-browser gates and configured-browser steps, so their whole-job times above must not be compared directly with the full CI baseline.
+
+Release has no after measurement: it only runs on a version tag, and this issue does not authorize a release. The existing Release baseline remains recorded above. Its container git operations were checked by the temporary [release-git trial](https://github.com/BrewingBytes/Gizlet/actions/runs/37020722117); the full Release job and promotion must be verified on the next authorized release.
 
 ## Keeping this true
 
