@@ -53,6 +53,6 @@ export const sitemapDates: Readonly<Record<string, string>> = {
   '/tools/timestamp-converter/': '2026-09-07',
   '/tools/uuid-generator/': '2026-09-07',
   '/tools/create-zip/': '2026-09-06',
-  '/tools/extract-archive/': '2026-09-06',
+  '/tools/extract-archive/': '2026-10-03',
   '/tools/utm-builder/': '2026-10-02',
 };
