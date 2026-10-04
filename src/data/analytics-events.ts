@@ -1,4 +1,4 @@
-import { maximumRecipeSteps } from './recipes';
+import { maximumRecipeSteps } from './recipe-limits';
 import { getAvailableTools } from './tools';
 
 /**

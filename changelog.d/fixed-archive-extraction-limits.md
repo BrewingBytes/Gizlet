@@ -1,0 +1,1 @@
+- Extract Archive now checks the total size of selected files and stops unpacking if actual output exceeds the allowed size, including when an archive understates a file's size. A failed extraction leaves the archive open so you can choose other files.
