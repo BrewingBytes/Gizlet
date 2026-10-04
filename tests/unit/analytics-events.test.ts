@@ -104,6 +104,8 @@ describe('buildAnalyticsEvent', () => {
   });
 
   it('bounds the step index rather than passing a number through', () => {
+    expect(maximumRecipeSteps).toBe(8);
+    expect(buildAnalyticsEvent('flow_step', { from_slug: slug, to_slug: slug, step_index: 7 })).toBeDefined();
     expect(buildAnalyticsEvent('flow_step', { from_slug: slug, to_slug: slug, step_index: 0 })).toBeDefined();
     for (const value of [-1, 1.5, maximumRecipeSteps, Number.NaN, Number.POSITIVE_INFINITY, '1']) {
       expect(

@@ -1,3 +1,5 @@
+import { maximumRecipeSteps } from './recipe-limits';
+export { maximumRecipeSteps } from './recipe-limits';
 import { type ImageOutputFormat } from './image-compression';
 import {
   collageLayoutNames,
@@ -130,7 +132,6 @@ export interface Recipe {
 export const recipeVersion = 'v1';
 /** Caps, so a crafted link cannot become an absurd chain. */
 export const maximumRecipeLength = 512;
-export const maximumRecipeSteps = 8;
 /** Matches the quality range the flow builder offers. */
 export const minimumRecipeQuality = 40;
 export const maximumRecipeQuality = 100;

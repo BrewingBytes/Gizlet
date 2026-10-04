@@ -23,10 +23,8 @@ import {
  * arrives, and that the lazily loaded code still arrives and works when it is
  * asked for, so an absence here cannot be a loader that has stopped loading.
  *
- * Not asserted yet: every page also receives `src/data/recipes.ts` and the
- * per-tool option modules it imports, through the shared analytics script
- * rather than through the dispatch map. BRE-48 removes that edge and adds the
- * assertion here.
+ * Shared analytics needs only the recipe step limit, not the recipe parser or
+ * its per-tool option modules. Guard that boundary on the initial requests.
  */
 
 test.beforeEach(() => {
@@ -44,6 +42,7 @@ test("the homepage loads shared infrastructure and no workspace", async ({ page,
   await reportStage(testInfo, "homepage, on arrival", initial);
 
   expect(initial.length).toBeGreaterThan(0);
+  expect(sourcesIn(initial)).not.toContain("src/data/recipes.ts");
   expect(workspacesIn(initial)).toEqual([]);
   expect(heavyweightIn(initial)).toEqual([]);
   expect(scripts.unmapped).toEqual([]);
@@ -58,6 +57,7 @@ test("JSON Formatter loads only its own workspace", async ({ page, baseURL }, te
   const initial = await scripts.take();
   await reportStage(testInfo, "JSON Formatter, on arrival", initial);
 
+  expect(sourcesIn(initial)).not.toContain("src/data/recipes.ts");
   expect(workspacesIn(initial)).toEqual(["src/components/JsonFormatterTool.astro"]);
   expect(heavyweightIn(initial)).toEqual([]);
 
@@ -82,6 +82,7 @@ test("Compress Image loads its image pipeline and no PDF or archive code", async
   const initial = await scripts.take();
   await reportStage(testInfo, "Compress Image, on arrival", initial);
 
+  expect(sourcesIn(initial)).not.toContain("src/data/recipes.ts");
   expect(workspacesIn(initial)).toEqual(["src/components/CompressImageTool.astro"]);
   // The canvas pipeline is this Gizlet's own code, so it is here from the start.
   expect(heavyweightIn(initial)).toEqual(["image processing"]);
@@ -114,6 +115,7 @@ test("PDF Viewer loads pdf.js only once a PDF is opened, and then draws it", asy
   const initial = await scripts.take();
   await reportStage(testInfo, "PDF Viewer, on arrival", initial);
 
+  expect(sourcesIn(initial)).not.toContain("src/data/recipes.ts");
   expect(workspacesIn(initial)).toEqual(["src/components/PdfViewerTool.astro"]);
   expect(heavyweightIn(initial)).toEqual([]);
 
