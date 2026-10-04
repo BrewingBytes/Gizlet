@@ -34,3 +34,7 @@ The rule the table closes on is the one that generates it: if it needs a server,
 ## Closing a tool issue
 
 A Gizlet becoming real is a change to the roadmap, and it happens in the same pull request. `AGENTS.md` states the rule; the reason is that any other order leaves the site briefly lying. A registry entry that flips to available gains an agent-facing description, a flow contract or a declared exemption, a related-tools key and a social card, and its phase records it as shipped. Nothing about the bench is a separate follow-up: a Gizlet that works and a page that says it does not are the same defect this whole design exists to prevent.
+
+## Maintainer delivery planning
+
+[delivery-roadmap.md](delivery-roadmap.md) records implementation priorities and conditional release windows. Those are maintainer planning assumptions; the public roadmap continues to present dependency order without promising dates.
