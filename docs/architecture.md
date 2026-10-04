@@ -55,7 +55,7 @@ The project uses these scripts once initialized:
 - `test` for Vitest
 - `test:e2e` for Playwright
 
-GitHub Actions validates pull requests and pushes to `main`. The pull-request-only `Commit Title` job requires Conventional Commit subjects. The validation job installs from the lockfile and runs checks, tests, the production build, a check of the built site against its sitemap, and Playwright tests without deployment secrets: Chromium first, then the WebKit smoke set in its own install and test steps.
+GitHub Actions validates pull requests and pushes to `main`. The pull-request-only `Commit Title` job requires Conventional Commit subjects. The validation job installs from the lockfile and runs checks, tests, the production build, a check of the built site against its sitemap, and Playwright tests without deployment secrets: Chromium first, then the WebKit smoke set in its own test step. The validation jobs run in the official Playwright image pinned to the locked `@playwright/test` version, so the browsers and their OS packages are not installed on every run; [ci-performance.md](ci-performance.md) records the measurements behind that and how the pin is kept in step.
 
 ## Dependency policy
 
