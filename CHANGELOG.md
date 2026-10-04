@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Entries for the next release are written as files in [changelog.d/](changelog.d/), one per change. See [docs/releasing.md](docs/releasing.md).
 
+## [0.12.2] - 2026-10-04
+
+### Changed
+
+- CI and release validation use the official Playwright image and all available runner cores, reducing repeated browser setup while retaining the existing checks. Measurements and image-update instructions are recorded in `docs/ci-performance.md`.
+- Pages no longer load the Flow recipe parser and unrelated tool options just to read the shared recipe step limit.
+
+### Fixed
+
+- Extract Archive now checks the total size of selected files and stops unpacking if actual output exceeds the allowed size, including when an archive understates a file's size. A failed extraction leaves the archive open so you can choose other files.
+
 ## [0.12.1] - 2026-10-02
 
 ### Added
